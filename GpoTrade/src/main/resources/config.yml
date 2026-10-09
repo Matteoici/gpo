@@ -1,0 +1,5 @@
+# Symbole affiché devant les montants
+currency-symbol: "₲"
+
+# Pas d'ajustement au clic sur le lingot d'or (shift = x10)
+money-step: 100
