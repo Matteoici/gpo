@@ -1,0 +1,19 @@
+name: GpoTrade
+version: '${version}'
+main: fr.gpotrade.TradePlugin
+api-version: '26.2'
+softdepend: [Vault]
+description: Fenêtre d'échange inspirée de Grand Piece Online
+commands:
+  trade:
+    description: Échanger des objets avec un joueur
+    usage: /trade <joueur>
+    aliases: [echange]
+    permission: gpotrade.use
+permissions:
+  gpotrade.use:
+    description: Utiliser les échanges
+    default: true
+  gpotrade.admin:
+    description: Recharger la configuration (/trade reload)
+    default: op

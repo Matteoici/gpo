@@ -1,0 +1,42 @@
+# =====================================================================
+#  GpoTrade - configuration
+#  Après une modification : /trade reload (ou redémarrage du serveur)
+# =====================================================================
+
+# ---------- Échange ----------
+# Durée du compte à rebours quand les deux joueurs ont accepté (2 à 60 s)
+countdown-seconds: 10
+# Délai pendant lequel on ne peut pas accepter juste après un changement d'offre (anti-arnaque)
+anti-scam-delay-ms: 1500
+# Si un joueur ferme la fenêtre, l'échange reste en pause ce temps-là avant d'être annulé
+pause-timeout-seconds: 120
+# Durée de validité d'une demande d'échange
+request-timeout-seconds: 30
+# Distance maximale entre les deux joueurs (0 = aucune limite, même dans un autre monde)
+max-distance: 0
+# Accroupi + clic droit sur un joueur = demande d'échange
+sneak-click-request: true
+
+# ---------- Monnaie (nécessite Vault + un plugin d'économie comme EssentialsX) ----------
+currency-symbol: "₲"
+# Pas du lingot d'or : clic gauche +, clic droit -, shift = x10
+money-step: 100
+
+# ---------- Avis (étoiles affichées sur la tête du joueur) ----------
+reviews: true
+
+# ---------- Fond graphique (resource pack) ----------
+resource-pack:
+  # Envoyer automatiquement le pack aux joueurs quand ils se connectent
+  enabled: true
+  # Si tu héberges toi-même le zip (lien DIRECT), mets le lien ici. Sinon laisse vide.
+  url: ""
+  # Sinon, le plugin héberge lui-même le pack sur ce port (il doit être ouvert chez ton hébergeur)
+  self-host: true
+  port: 8163
+  # IP publique ou nom de domaine de ton serveur. Vide = détection automatique.
+  public-address: ""
+  # true = les joueurs qui refusent le pack sont expulsés
+  required: false
+  # true = toujours afficher le joli fond (si tu distribues le pack autrement, ex. server.properties)
+  force-fancy-title: false
