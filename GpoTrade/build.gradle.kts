@@ -13,7 +13,9 @@ repositories {
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:26.2.build.+")
-    compileOnly("com.github.MilkBowl:VaultAPI:1.7")
+    compileOnly("com.github.MilkBowl:VaultAPI:1.7") {
+        isTransitive = false // évite le conflit avec l'ancien Bukkit embarqué par Vault
+    }
 }
 
 java {
