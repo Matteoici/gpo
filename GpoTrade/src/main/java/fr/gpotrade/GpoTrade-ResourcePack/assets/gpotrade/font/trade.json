@@ -1,0 +1,19 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "gpotrade:font/trade_bg.png",
+      "ascent": 13,
+      "height": 256,
+      "chars": [
+        "\ue000"
+      ]
+    },
+    {
+      "type": "space",
+      "advances": {
+        "\uf808": -8
+      }
+    }
+  ]
+}
