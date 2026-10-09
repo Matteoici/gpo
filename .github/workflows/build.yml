@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-           working-directory: GpoTrade_1/GpoTrade
+        working-directory: GpoTrade_1/GpoTrade
     steps:
       - uses: actions/checkout@v4
 
@@ -28,4 +28,4 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: GpoTrade-jar
-             path: GpoTrade_1/GpoTrade/build/libs/*.jar
+          path: GpoTrade_1/GpoTrade/build/libs/*.jar
