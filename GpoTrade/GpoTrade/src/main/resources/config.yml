@@ -1,0 +1,15 @@
+# Symbole affiché devant les montants
+currency-symbol: "₲"
+
+# Pas d'ajustement au clic sur le lingot d'or (shift = x10)
+money-step: 100
+
+# Durée (en secondes) du compte à rebours une fois que les deux joueurs ont accepté (2 à 60)
+countdown-seconds: 10
+
+# Si un joueur ferme la fenêtre (Échap), l'échange reste en pause ce nombre de secondes avant d'être annulé
+pause-timeout-seconds: 120
+
+# Mettre à true UNIQUEMENT une fois le resource pack GpoTrade-ResourcePack.zip installé chez les joueurs
+# (voir resource-pack / server.properties). Sans le pack, la fenêtre garde un affichage simple.
+use-resource-pack: false
