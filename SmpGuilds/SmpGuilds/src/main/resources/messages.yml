@@ -1,0 +1,721 @@
+# =====================================================================
+#  SmpGuilds - textes (format MiniMessage : https://docs.advntr.dev/minimessage/format.html)
+#  Couleurs : <red> <gold> <#ff8800> <gradient:#ff0000:#00ff00> ...  Gras : <b>  Italique : <i>
+#  Les mots entre < > comme <player> ou <guild> sont remplacés automatiquement.
+#  Après une modification : /guild admin reload
+# =====================================================================
+
+prefix: "<gradient:#ffcc33:#ff7a1a><b>Guildes</b></gradient> <dark_gray>»</dark_gray> "
+
+role:
+  recruit: "<gray>Recrue"
+  member: "<green>Membre"
+  officer: "<aqua>Officier"
+  leader: "<gold>Chef"
+
+# --------------------------------------------------------------- erreurs
+error:
+  no-guild: "<red>Tu n'es dans aucune guilde. <gray>Tape <white>/guild</white> pour en créer ou en rejoindre une."
+  no-permission: "<red>Ton rang ne te permet pas de faire ça."
+  player-only: "<red>Cette commande doit être utilisée en jeu."
+  unknown-command: "<red>Commande inconnue. <gray>Tape <white>/guild help</white>."
+  usage: "<red>Utilisation : <white><usage>"
+  already-in-guild: "<red>Tu es déjà dans une guilde."
+  invalid-name: "<red>Nom invalide : 3 à 16 caractères (lettres, chiffres, _)."
+  invalid-tag: "<red>Tag invalide : 2 à 5 lettres ou chiffres."
+  name-taken: "<red>Ce nom de guilde est déjà pris."
+  tag-taken: "<red>Ce tag est déjà pris."
+  not-enough-money: "<red>Il te faut <gold><amount> $</gold> pour faire ça."
+  bank-insufficient: "<red>La trésorerie n'a pas assez : il faut <gold><amount> $</gold> (trésorerie : <gold><bank> $</gold>)."
+  leader-only: "<red>Seul le chef de la guilde peut faire ça."
+  leader-cannot-leave: "<red>Le chef ne peut pas quitter la guilde. Transmets la direction (<white>/guild transfer</white>) ou dissous-la."
+  at-war: "<red>Impossible pendant une guerre."
+  player-offline: "<red>Ce joueur n'est pas connecté."
+  target-in-guild: "<red>Ce joueur est déjà dans une guilde."
+  guild-full: "<red>La guilde est pleine. Montez de niveau pour accueillir plus de membres."
+  guild-not-found: "<red>Guilde introuvable."
+  not-invited: "<red>La guilde <guild> recrute sur candidature uniquement."
+  already-applied: "<red>Tu as déjà envoyé une candidature à cette guilde."
+  no-application: "<red>Aucune candidature de ce joueur."
+  not-member: "<red>Ce joueur n'est pas membre de ta guilde."
+  rank-too-low: "<red>Ton rang est trop bas pour faire ça à ce membre."
+  use-transfer: "<red>Pour nommer un nouveau chef, utilise <white>/guild transfer <joueur></white>."
+  too-long: "<red>Texte trop long (<max> caractères maximum)."
+  invalid-color: "<red>Couleur inconnue. Couleurs possibles : <gray><colors>"
+  hold-banner: "<red>Tiens une bannière dans ta main."
+  home-outside-claim: "<red>Le home doit être placé dans un terrain de ta guilde."
+  no-home: "<red>Ta guilde n'a pas encore de home. <gray>(<white>/guild sethome</white>)"
+  claim-world-disabled: "<red>On ne peut pas claim dans ce monde."
+  claim-near-spawn: "<red>Trop près du spawn (il faut être à plus de <radius> blocs)."
+  already-claimed-own: "<yellow>Ce chunk appartient déjà à ta guilde."
+  already-claimed: "<red>Ce chunk appartient à <guild>."
+  claim-limit: "<red>Limite de terrains atteinte (<max>). Montez de niveau pour en avoir plus."
+  claim-not-connected: "<red>Le nouveau terrain doit toucher un terrain existant de ta guilde."
+  claim-too-close: "<red>Trop près des terrains de <guild>."
+  not-your-claim: "<red>Ce chunk n'appartient pas à ta guilde."
+  no-economy: "<red>Aucun plugin d'économie n'est installé."
+  invalid-amount: "<red>Montant invalide."
+  self: "<red>Tu ne peux pas faire ça avec ta propre guilde."
+  already-allies: "<red>Vous êtes déjà alliés."
+  ally-limit: "<red>Limite d'alliances atteinte (<max>)."
+  ally-already-requested: "<yellow>Demande d'alliance déjà envoyée, attends leur réponse."
+  not-allies: "<red>Vous n'êtes pas alliés."
+  war-ally: "<red>Impossible de déclarer la guerre à un allié. Rompez l'alliance d'abord."
+  already-at-war: "<red>Ta guilde est déjà en guerre."
+  target-at-war: "<red><guild> <red>est déjà en guerre."
+  not-at-war: "<red>Ta guilde n'est pas en guerre."
+  war-not-enough-online: "<red>Il faut au moins <min> défenseur(s) connecté(s) pour les attaquer."
+  war-cooldown: "<red>Vous vous êtes déjà affrontés récemment. Réessaie dans <white><minutes> min</white>."
+
+button:
+  confirm: "<red><b>[CONFIRMER]</b>"
+  join: "<green><b>[REJOINDRE]</b>"
+  info: "<aqua>[INFOS]"
+  apply: "<yellow><b>[POSTULER]</b>"
+  view: "<aqua><b>[VOIR]</b>"
+  accept: "<green><b>[ACCEPTER]</b>"
+
+# --------------------------------------------------------------- guilde
+guild:
+  created: "<green>Guilde <tag> <gname> <green>créée ! Tape <white>/guild</white> pour ouvrir le menu."
+  created-title: "<gradient:#ffcc33:#ff7a1a><b><guild>"
+  created-subtitle: "<gray>Ta guilde est née. Recrute, claim, conquiers."
+  disband-confirm: "<red>Dissoudre la guilde ? La trésorerie et le coffre te seront rendus. C'est définitif."
+  disbanded: "<red>La guilde <gname> <red>a été dissoute."
+
+broadcast:
+  created: "<gray><white><player></white> a fondé la guilde <tag> <gname><gray> !"
+  disbanded: "<gray>La guilde <tag> <gname> <gray>n'existe plus."
+
+members:
+  invite-sent: "<green>Invitation envoyée à <white><player></white>."
+  invite-received: "<yellow><white><player></white> t'invite dans la guilde <tag> <gname><yellow>."
+  joined: "<green><white><player></white> a rejoint <gname><green> !"
+  welcome-title: "<gradient:#ffcc33:#ff7a1a><b><guild>"
+  welcome-subtitle: "<gray>Bienvenue dans la guilde !"
+  kicked: "<red><white><player></white> a été expulsé par <white><by></white>."
+  kicked-target: "<red>Tu as été expulsé de la guilde <gname><red>."
+  left-self: "<gray>Tu as quitté la guilde <gname><gray>."
+  left: "<gray><white><player></white> a quitté la guilde."
+  promoted: "<green><white><player></white> est maintenant <role><green> !"
+  demoted: "<yellow><white><player></white> est maintenant <role><yellow>."
+  new-leader: "<gold><b><player></b> est le nouveau chef de la guilde !"
+  online: "<gray><green>●</green> <white><player></white> s'est connecté."
+
+applications:
+  sent: "<green>Candidature envoyée à <gname><green>. Tu seras prévenu de la réponse."
+  received: "<yellow>Nouvelle candidature de <white><player></white> : <gray>« <message> »"
+  accepted: "<green>Ta candidature à <gname> <green>a été acceptée !"
+  denied: "<gray>Candidature de <white><player></white> refusée."
+  denied-target: "<red>Ta candidature à <gname> <red>a été refusée."
+  pending: "<yellow><count> candidature(s) en attente. <gray>(<white>/guild applications</white>)"
+
+settings:
+  description-set: "<green>Description mise à jour : <gray><description>"
+  tag-set: "<green>Nouveau tag : <tag>"
+  renamed: "<green>La guilde s'appelle maintenant <gname><green> !"
+  color-set: "<green>Nouvelle couleur : <tag> <gname>"
+  banner-set: "<green>Bannière de guilde mise à jour."
+  opened: "<green>Recrutement <b>ouvert</b> : tout le monde peut rejoindre."
+  closed: "<yellow>Recrutement <b>sur candidature</b>."
+
+home:
+  set: "<green>Home de guilde placé ici."
+  warmup: "<yellow>Téléportation dans <white><seconds>s</white>... ne bouge pas."
+  teleported: "<green>Bienvenue au home de la guilde."
+  cancelled: "<red>Téléportation annulée."
+  cooldown: "<red>Attends encore <white><seconds>s</white>."
+
+claims:
+  claimed: "<green>Chunk <white><x>, <z></white> claim ! <gray>(<count>/<max>)"
+  unclaimed: "<yellow>Chunk <white><x>, <z></white> libéré."
+  unclaimed-all: "<yellow><count> terrain(s) libéré(s)."
+  unclaimall-confirm: "<red>Libérer tous les terrains de la guilde ? L'argent n'est pas rendu."
+  map-header: "<gold><b>Carte des terrains</b> <gray>(chunk <x>, <z>)"
+  map-legend: "<white>⬛ toi  <green>■ ta guilde  <aqua>■ alliés  <red>■ ennemis  <dark_gray>▪ libre"
+  autoclaim-on: "<green>Auto-claim activé : marche pour claim les chunks libres."
+  autoclaim-off: "<yellow>Auto-claim désactivé."
+
+bank:
+  deposited: "<green>+<gold><amount> $</gold> déposés. <gray>Trésorerie : <gold><bank> $"
+  withdrawn: "<yellow>-<gold><amount> $</gold> retirés. <gray>Trésorerie : <gold><bank> $"
+
+allies:
+  formed: "<aqua><b>Alliance</b> conclue avec <tag> <gname><aqua> !"
+  request-sent: "<aqua>Demande d'alliance envoyée à <gname><aqua>."
+  request-received: "<aqua><tag> <gname> <aqua>propose une alliance."
+  broken: "<red>L'alliance avec <gname> <red>est rompue."
+
+level:
+  up: "<gold><b>NIVEAU SUPÉRIEUR !</b> <gname> <gold>passe niveau <white><level></white> !"
+  up-title: "<gradient:#ffe259:#ffa751><b>NIVEAU <level></b>"
+  up-subtitle: "<gray><guild> devient plus puissante"
+
+territory:
+  enter: "<tag> <gname>"
+  enter-sub: "<gray><description>"
+  wilderness: "<dark_green>Zone sauvage"
+  wilderness-sub: "<gray>Personne ne possède ces terres"
+
+protection:
+  denied: "<red>Ce terrain appartient à <gname><red>."
+  friendly-fire: "<red>Tu ne peux pas frapper un membre de ta guilde."
+  ally-fire: "<red>Tu ne peux pas frapper un allié."
+
+chat:
+  guild-format: "<dark_gray>[<green>Guilde</green>]</dark_gray> <role> <white><player></white><dark_gray>:</dark_gray> <green><message>"
+  ally-format: "<dark_gray>[<aqua>Alliés</aqua>]</dark_gray> <tag> <white><player></white><dark_gray>:</dark_gray> <aqua><message>"
+  spy-prefix: "<dark_gray>[Espion] "
+  mode-public: "<gray>Chat : <white>public</white>."
+  mode-guild: "<green>Chat : <b>guilde</b>. <gray>Tes messages ne vont qu'à ta guilde."
+  mode-ally: "<aqua>Chat : <b>alliés</b>. <gray>Tes messages vont à ta guilde et ses alliés."
+  mode-name-public: "<white>Public"
+  mode-name-guild: "<green>Guilde"
+  mode-name-ally: "<aqua>Alliés"
+
+war:
+  declared-broadcast: "<red><b>⚔ GUERRE !</b> <attacker> <red>déclare la guerre à <defender><red> ! Combats dans <white><seconds>s</white>."
+  declared-title: "<dark_red><b>⚔ GUERRE ⚔"
+  declared-subtitle: "<gname> <red>vous attaque !"
+  started-title: "<red><b>LES COMBATS COMMENCENT"
+  started-subtitle: "<gray>Ennemi : <gname>"
+  bar-preparation: "<yellow>Préparation : <attacker> <gray>vs</gray> <defender> <gray>- début dans <white><time>"
+  bar-active: "<attacker> <white><score_a></white> <gray>-</gray> <white><score_d></white> <defender> <dark_gray>|</dark_gray> <gray><time>"
+  draw-broadcast: "<gray><b>Égalité</b> entre <attacker> <gray>et <defender><gray> (<score_a> - <score_d>)."
+  won-broadcast: "<gold><b>VICTOIRE !</b> <winner> <gold>bat <loser> <white><score_w> - <score_l></white> <gray>(<reason>)<gold>, butin : <white><loot> $"
+  reason-surrender: "abandon"
+  reason-kills: "objectif de kills atteint"
+  reason-time: "fin du temps"
+  victory-title: "<gold><b>VICTOIRE"
+  victory-subtitle: "<gray>Butin : <gold><loot> $"
+  defeat-title: "<dark_red><b>DÉFAITE"
+  defeat-subtitle: "<gray>Perte : <gold><loot> $"
+
+upkeep:
+  paid: "<gray>Entretien quotidien payé : <gold><amount> $</gold> pour <count> chunk(s). Trésorerie : <gold><bank> $"
+  lost: "<red>Trésorerie insuffisante pour l'entretien (<amount> $) : <white><count></white> chunk(s) perdu(s) !"
+
+input:
+  cancel-hint: "<dark_gray>(écris <gray>annuler</gray> pour annuler)"
+  cancelled: "<gray>Annulé."
+  guild-name: "<gold>Écris le <b>nom</b> de ta guilde dans le chat <gray>(3 à 16 caractères)"
+  guild-tag: "<gold>Écris maintenant le <b>tag</b> <gray>(2 à 5 caractères, ex : <white>DRAG</white>)"
+  invite-player: "<gold>Écris le pseudo du joueur à inviter."
+  amount: "<gold>Écris le montant <gray>(ex : 2500, 10k, 1.5m)"
+  description: "<gold>Écris la nouvelle description."
+  tag: "<gold>Écris le nouveau tag."
+  rename: "<gold>Écris le nouveau nom de la guilde."
+  application-message: "<gold>Écris un message pour ta candidature <gray>(pourquoi toi ?)"
+
+info:
+  open: "<green>Ouverte"
+  closed: "<yellow>Sur candidature"
+  lines:
+    - "<dark_gray><st>                                        </st>"
+    - " <tag> <gname> <dark_gray>|</dark_gray> <gray>Niveau <white><level>"
+    - " <gray><i><description>"
+    - " <gray>Chef : <gold><leader>"
+    - " <gray>Membres : <white><members>/<max_members></white> <dark_gray>(<green><online> en ligne</green>)"
+    - " <gray>XP : <white><xp></white> / <white><next>"
+    - " <gray>Terrains : <white><claims>/<max_claims>"
+    - " <gray>Trésorerie : <gold><bank> $"
+    - " <gray>Kills : <white><kills></white>  Morts : <white><deaths></white>  K/D : <white><kdr>"
+    - " <gray>Guerres : <green><wars_won> victoires</green> / <red><wars_lost> défaites"
+    - " <gray>Alliés : <aqua><allies>"
+    - " <gray>Recrutement : <status>"
+    - "<dark_gray><st>                                        </st>"
+
+top:
+  header: "<gold><b>Classement des guildes"
+  line: " <yellow>#<rank></yellow> <tag> <gname> <gray>- niveau <white><level></white>, <white><xp></white> XP, <white><members></white> membres"
+  empty: "<gray>Aucune guilde pour l'instant."
+
+placeholder:
+  no-guild: "Aucune"
+  wilderness: "Zone sauvage"
+
+help:
+  admin-hint: "<dark_gray>Admin : <gray>/guild admin"
+  player:
+    - "<gradient:#ffcc33:#ff7a1a><b>Guildes</b></gradient> <dark_gray>- <gray>clique sur une commande pour l'écrire"
+    - "<click:run_command:'/guild'><yellow>/guild</yellow></click> <gray>menu de ta guilde"
+    - "<click:suggest_command:'/guild create '><yellow>/guild create <nom> <tag></yellow></click> <gray>créer une guilde"
+    - "<click:suggest_command:'/guild join '><yellow>/guild join <guilde></yellow></click> <gray>rejoindre"
+    - "<click:suggest_command:'/guild apply '><yellow>/guild apply <guilde> [message]</yellow></click> <gray>postuler"
+    - "<click:suggest_command:'/guild invite '><yellow>/guild invite <joueur></yellow></click> <gray>inviter"
+    - "<click:suggest_command:'/guild info '><yellow>/guild info [guilde|joueur]</yellow></click> <gray>infos"
+    - "<click:run_command:'/guild top'><yellow>/guild top</yellow></click> <gray>classement"
+    - "<yellow>/guild kick | promote | demote | transfer <joueur>"
+    - "<yellow>/guild claim | unclaim | autoclaim | map"
+    - "<yellow>/guild home | sethome"
+    - "<yellow>/guild deposit | withdraw <montant></yellow> <gray>trésorerie (10k, 1.5m...)"
+    - "<yellow>/guild vault</yellow> <gray>coffre partagé"
+    - "<yellow>/guild ally | unally <guilde>"
+    - "<yellow>/guild war <guilde></yellow> <gray>| <yellow>/guild war surrender"
+    - "<yellow>/guild description <texte></yellow> <gray>| <yellow>tag | rename | color | banner | open"
+    - "<yellow>/gc [message]</yellow> <gray>chat de guilde  <yellow>/ac [message]</yellow> <gray>chat alliés"
+    - "<yellow>/guild leave</yellow> <gray>| <yellow>/guild disband"
+  admin:
+    - "<red><b>Guildes - admin"
+    - "<yellow>/guild admin reload</yellow> <gray>recharger config et textes"
+    - "<yellow>/guild admin bypass</yellow> <gray>construire partout"
+    - "<yellow>/guild admin spy</yellow> <gray>voir les chats de guilde"
+    - "<yellow>/guild admin info <guilde>"
+    - "<yellow>/guild admin disband <guilde>"
+    - "<yellow>/guild admin addxp | setxp | setbank <guilde> <valeur>"
+    - "<yellow>/guild admin unclaim</yellow> <gray>libérer le chunk où tu es"
+    - "<yellow>/guild admin save"
+
+admin:
+  reloaded: "<green>Configuration et textes rechargés."
+  saved: "<green><count> guilde(s) sauvegardée(s)."
+  bypass-on: "<green>Bypass activé : tu peux construire dans tous les terrains."
+  bypass-off: "<yellow>Bypass désactivé."
+  spy-on: "<green>Espion activé : tu vois les chats de guilde."
+  spy-off: "<yellow>Espion désactivé."
+  disbanded: "<green>Guilde <gname> <green>dissoute."
+  disbanded-members: "<red>Ta guilde <gname> <red>a été dissoute par un administrateur."
+  updated: "<green><gname> <gray>: niveau <white><level></white>, <white><xp></white> XP, trésorerie <gold><bank> $"
+  not-claimed: "<red>Ce chunk n'appartient à aucune guilde."
+  unclaimed: "<green>Chunk retiré à <gname><green>."
+
+# =====================================================================
+#  Menus
+# =====================================================================
+gui:
+  vault:
+    title: "<dark_gray>Coffre de <guild>"
+
+  common:
+    guild-name: "<tag> <gname>"
+    back:
+      name: "<gray>← Retour"
+    close:
+      name: "<red>Fermer"
+    previous:
+      name: "<yellow>← Page précédente"
+      lore: ["<gray>Page <page>/<pages>"]
+    next:
+      name: "<yellow>Page suivante →"
+      lore: ["<gray>Page <page>/<pages>"]
+
+  main:
+    title: "<dark_gray>Guilde <guild>"
+    banner-lore:
+      - "<gray><i><description>"
+      - ""
+      - "<gray>Niveau <white><level></white>  <progress>"
+      - "<gray>XP : <white><xp></white> / <white><next>"
+      - "<gray>Chef : <gold><leader>"
+      - "<gray>Membres : <white><members>/<max_members></white> <dark_gray>(<green><online> en ligne</green>)"
+      - "<gray>Terrains : <white><claims>/<max_claims>"
+      - "<gray>Trésorerie : <gold><bank> $"
+      - "<gray>K/D : <white><kills></white>/<white><deaths></white> <dark_gray>(<kdr>)"
+      - "<gray>Recrutement : <status>"
+    members:
+      name: "<yellow><b>Membres"
+      lore:
+        - "<gray><members>/<max_members> membres, <green><online> en ligne"
+        - ""
+        - "<yellow>▶ Clic pour gérer"
+    bank:
+      name: "<gold><b>Trésorerie"
+      lore:
+        - "<gray>Solde : <gold><bank> $"
+        - "<gray>Sert à claim, déclarer des guerres..."
+        - ""
+        - "<yellow>▶ Clic pour déposer / retirer"
+    vault:
+      name: "<light_purple><b>Coffre de guilde"
+      lore:
+        - "<gray>Un coffre partagé entre les membres."
+        - "<gray>Sa taille augmente avec le niveau."
+        - ""
+        - "<yellow>▶ Clic pour ouvrir"
+    home:
+      name: "<green><b>Home de guilde"
+      lore:
+        - "<yellow>▶ Clic</yellow> <gray>pour s'y téléporter"
+        - "<yellow>▶ Shift + clic</yellow> <gray>pour le placer ici"
+    claims:
+      name: "<dark_green><b>Terrains"
+      lore:
+        - "<gray>Terrains : <white><claims>/<max_claims>"
+        - "<gray>Protégés contre les autres joueurs."
+        - ""
+        - "<yellow>▶ Clic gauche</yellow> <gray>claim ce chunk"
+        - "<yellow>▶ Clic droit</yellow> <gray>libérer ce chunk"
+        - "<yellow>▶ Shift + clic</yellow> <gray>carte"
+    war:
+      name: "<red><b>Guerres"
+      lore:
+        - "<gray>Victoires : <green><wars_won></green>  Défaites : <red><wars_lost>"
+        - "<gray>Ta guilde est en paix."
+        - ""
+        - "<yellow>▶ Clic pour déclarer une guerre"
+    war-active:
+      name: "<dark_red><b>⚔ EN GUERRE ⚔"
+      lore:
+        - "<gray>Une guerre est en cours !"
+        - ""
+        - "<yellow>▶ Clic pour voir le score"
+    levels:
+      name: "<aqua><b>Niveau <level>"
+      lore:
+        - "<progress>"
+        - "<gray>XP : <white><xp></white> / <white><next>"
+        - "<gray>Gagnez de l'XP en tuant ennemis et monstres."
+        - ""
+        - "<yellow>▶ Clic pour voir les paliers"
+    allies:
+      name: "<aqua><b>Alliances"
+      lore:
+        - "<gray>Alliés : <white><allies>"
+        - ""
+        - "<yellow>▶ Clic pour gérer"
+    applications:
+      name: "<yellow><b>Candidatures"
+      lore:
+        - "<gray>En attente : <white><applications>"
+        - "<gray>Recrutement : <status>"
+        - ""
+        - "<yellow>▶ Clic pour voir"
+    settings:
+      name: "<gray><b>Personnalisation"
+      lore:
+        - "<gray>Nom, tag, couleur, bannière,"
+        - "<gray>description, recrutement, home..."
+        - ""
+        - "<yellow>▶ Clic pour modifier"
+    log:
+      name: "<white><b>Journal"
+      lore:
+        - "<gray>Les dernières actions de la guilde."
+        - ""
+        - "<yellow>▶ Clic pour lire"
+    top:
+      name: "<gold><b>Classement"
+      lore:
+        - "<gray>Les meilleures guildes du serveur."
+        - ""
+        - "<yellow>▶ Clic pour voir"
+    chat:
+      name: "<green><b>Chat de guilde"
+      lore:
+        - "<gray>Mode actuel : <mode>"
+        - ""
+        - "<yellow>▶ Clic gauche</yellow> <gray>chat de guilde"
+        - "<yellow>▶ Clic droit</yellow> <gray>chat des alliés"
+        - "<dark_gray>Re-clique pour revenir au chat public"
+    you:
+      name: "<white><b>Toi"
+      lore:
+        - "<gray>Rang : <role>"
+    leave:
+      name: "<red><b>Quitter la guilde"
+      lore: ["<gray>Tu pourras en rejoindre une autre."]
+    disband:
+      name: "<dark_red><b>Dissoudre la guilde"
+      lore:
+        - "<gray>Supprime définitivement la guilde."
+        - "<gray>La trésorerie et le coffre te sont rendus."
+
+  noguild:
+    title: "<dark_gray>Guildes"
+    create:
+      name: "<gold><b>Créer une guilde"
+      lore:
+        - "<gray>Fonde ta propre guilde."
+        - "<gray>Prix : <gold><cost> $"
+        - ""
+        - "<yellow>▶ Clic pour commencer"
+    browse:
+      name: "<aqua><b>Rejoindre une guilde"
+      lore:
+        - "<gray><count> guilde(s) sur le serveur."
+        - ""
+        - "<yellow>▶ Clic pour parcourir"
+    invites:
+      name: "<green><b>Mes invitations"
+      lore:
+        - "<gray><count> invitation(s) en attente."
+        - ""
+        - "<yellow>▶ Clic pour voir"
+    top:
+      name: "<gold><b>Classement"
+      lore: ["<yellow>▶ Clic pour voir"]
+
+  members:
+    title: "<dark_gray>Membres"
+    name: "<white><b><player>"
+    online: "<green>● En ligne"
+    offline: "<gray>● Hors ligne"
+    lore:
+      - "<role> <dark_gray>|</dark_gray> <status>"
+      - "<gray>Kills : <white><kills></white>  Morts : <white><deaths>"
+      - "<gray>Déposé : <gold><deposited> $"
+      - "<gray>Membre depuis le <white><joined>"
+    lore-manage:
+      - ""
+      - "<yellow>▶ Clic pour gérer"
+    header:
+      name: "<yellow><b>Membres <members>/<max_members>"
+      lore: ["<green><online> en ligne"]
+    invite:
+      name: "<green><b>Inviter un joueur"
+      lore: ["<yellow>▶ Clic puis écris son pseudo"]
+
+  member:
+    title: "<dark_gray>Gérer <player>"
+    promote:
+      name: "<green><b>Promouvoir"
+      lore: ["<gray><player> deviendra <role>"]
+    demote:
+      name: "<gold><b>Rétrograder"
+      lore: ["<gray><player> deviendra <role>"]
+    kick:
+      name: "<red><b>Expulser"
+      lore: ["<gray>Retirer <player> de la guilde"]
+    transfer:
+      name: "<gold><b>Nommer chef"
+      lore:
+        - "<gray><player> deviendra le chef."
+        - "<gray>Tu deviendras officier."
+
+  confirm:
+    "yes":
+      name: "<green><b>Confirmer"
+    "no":
+      name: "<red><b>Annuler"
+    disband:
+      title: "<dark_red>Dissoudre la guilde ?"
+      info:
+        name: "<red><b>Dissoudre la guilde"
+        lore: ["<gray>C'est définitif."]
+    leave:
+      title: "<dark_gray>Quitter la guilde ?"
+      info:
+        name: "<yellow><b>Quitter la guilde"
+    kick:
+      title: "<dark_gray>Expulser <player> ?"
+      info:
+        name: "<red><b>Expulser <player>"
+    transfer:
+      title: "<dark_gray>Nommer <player> chef ?"
+      info:
+        name: "<gold><b><player> devient chef"
+        lore: ["<gray>Tu deviendras officier."]
+    unclaimall:
+      title: "<dark_gray>Libérer tous les terrains ?"
+      info:
+        name: "<red><b>Libérer tous les terrains"
+        lore: ["<gray>L'argent dépensé n'est pas rendu."]
+    war:
+      title: "<dark_red>Guerre contre <target> ?"
+      info:
+        name: "<red><b>Déclarer la guerre à <target>"
+        lore: ["<gray>Coût : <gold><cost> $</gold> (trésorerie)"]
+    surrender:
+      title: "<dark_gray>Abandonner la guerre ?"
+      info:
+        name: "<white><b>Abandonner"
+        lore: ["<gray>L'ennemi gagne et prend le butin."]
+
+  applications:
+    title: "<dark_gray>Candidatures"
+    name: "<white><b><player>"
+    lore:
+      - "<gray>« <white><message></white> »"
+      - "<dark_gray><date>"
+    lore-manage:
+      - ""
+      - "<green>▶ Clic gauche</green> <gray>accepter"
+      - "<red>▶ Clic droit</red> <gray>refuser"
+    empty:
+      name: "<gray>Aucune candidature"
+    header:
+      name: "<yellow><b><count> candidature(s)"
+      lore: ["<gray>Recrutement : <status>"]
+
+  bank:
+    title: "<dark_gray>Trésorerie"
+    balance:
+      name: "<gold><b><bank> $"
+      lore: ["<gray>Ton argent : <gold><wallet> $"]
+    deposit:
+      name: "<green>Déposer <gold><amount> $"
+    withdraw:
+      name: "<red>Retirer <gold><amount> $"
+    deposit-custom:
+      name: "<green><b>Déposer un montant"
+      lore: ["<yellow>▶ Clic puis écris le montant"]
+    deposit-all:
+      name: "<green><b>Tout déposer"
+      lore: ["<gray>Dépose <gold><amount> $"]
+    withdraw-custom:
+      name: "<red><b>Retirer un montant"
+      lore: ["<yellow>▶ Clic puis écris le montant"]
+
+  settings:
+    title: "<dark_gray>Personnalisation"
+    description:
+      name: "<white><b>Description"
+      lore: ["<gray><description>", "", "<yellow>▶ Clic pour modifier"]
+    tag:
+      name: "<white><b>Tag : <tag>"
+      lore: ["<yellow>▶ Clic pour modifier"]
+    rename:
+      name: "<white><b>Renommer"
+      lore: ["<gray>Actuel : <gname>", "<gray>Prix : <gold><cost> $", "", "<yellow>▶ Clic pour modifier"]
+    color:
+      name: "<white><b>Couleur"
+      lore: ["<gray>Actuelle : <tag> <gname>", "", "<yellow>▶ Clic pour choisir"]
+    banner:
+      name: "<white><b>Bannière"
+      lore: ["<gray>Tiens une bannière en main", "<gray>puis clique ici."]
+    open:
+      name: "<white><b>Recrutement : <status>"
+      lore: ["<gray>Ouverte = tout le monde peut rejoindre.", "<gray>Sinon, sur candidature.", "", "<yellow>▶ Clic pour changer"]
+    sethome:
+      name: "<white><b>Placer le home ici"
+      lore: ["<gray>Doit être dans un terrain de la guilde."]
+    map:
+      name: "<white><b>Carte des terrains"
+      lore: ["<gray>Affiche la carte dans le chat."]
+    autoclaim:
+      name: "<white><b>Auto-claim"
+      lore: ["<gray>Claim automatiquement les chunks", "<gray>libres en marchant."]
+    unclaimall:
+      name: "<red><b>Libérer tous les terrains"
+      lore: ["<gray>Chef uniquement."]
+
+  color:
+    title: "<dark_gray>Couleur de la guilde"
+    current: "<green>✔ Couleur actuelle"
+    pick: "<yellow>▶ Clic pour choisir"
+
+  list:
+    title-browse: "<dark_gray>Rejoindre une guilde"
+    title-top: "<dark_gray>Classement des guildes"
+    title-invites: "<dark_gray>Mes invitations"
+    title-war_target: "<dark_red>Déclarer la guerre à..."
+    title-ally_target: "<dark_gray>Proposer une alliance à..."
+    empty:
+      name: "<gray>Aucune guilde"
+    header-browse:
+      name: "<aqua><b><count> guilde(s)"
+      lore: ["<gray>Les guildes ouvertes sont en premier."]
+    header-top:
+      name: "<gold><b>Top <count>"
+    header-invites:
+      name: "<green><b><count> invitation(s)"
+    header-war_target:
+      name: "<red><b>Choisis ta cible"
+    header-ally_target:
+      name: "<aqua><b>Choisis une guilde"
+    lore-browse:
+      - "<gray><i><description>"
+      - "<gray>Niveau <white><level></white> - <white><members>/<max_members></white> membres"
+      - "<gray>Recrutement : <status>"
+      - ""
+      - "<yellow>▶ Clic pour rejoindre / postuler"
+    lore-top:
+      - "<gray><i><description>"
+      - "<gray>Niveau <white><level></white> <progress>"
+      - "<gray>XP : <white><xp>"
+      - "<gray>Membres : <white><members></white>  Terrains : <white><claims>"
+      - "<gray>Guerres gagnées : <green><wars_won>"
+      - ""
+      - "<yellow>▶ Clic pour les infos"
+    lore-invites:
+      - "<gray><i><description>"
+      - "<gray>Niveau <white><level></white> - <white><members>/<max_members></white> membres"
+      - ""
+      - "<green>▶ Clic pour rejoindre"
+    lore-war_target:
+      - "<gray>Niveau <white><level></white> - <green><online> en ligne"
+      - "<gray>Trésorerie : <gold><bank> $"
+      - "<gray>K/D : <white><kdr>"
+      - ""
+      - "<red>▶ Clic pour déclarer la guerre"
+    lore-ally_target:
+      - "<gray>Niveau <white><level></white> - <white><members></white> membres"
+      - ""
+      - "<aqua>▶ Clic pour proposer une alliance"
+
+  war:
+    title: "<dark_red>Guerres"
+    record:
+      name: "<gold><b>Bilan"
+      lore:
+        - "<gray>Victoires : <green><wars_won></green>  Défaites : <red><wars_lost>"
+        - "<gray>Kills : <white><kills></white>  Morts : <white><deaths></white>  K/D : <white><kdr>"
+    peace:
+      name: "<green><b>En paix"
+    declare:
+      name: "<red><b>Déclarer une guerre"
+      lore:
+        - "<gray>Coût : <gold><cost> $</gold> (trésorerie)"
+        - "<gray>Durée : <white><duration> min</white>, victoire à <white><kills></white> kills"
+        - "<gray>Le gagnant prend <white><loot> %</white> de la trésorerie du perdant."
+        - ""
+        - "<yellow>▶ Clic pour choisir la cible"
+    preparing:
+      name: "<yellow><b>Préparation contre <enemy>"
+      lore: ["<gray>Les combats commencent dans <white><time>"]
+    active:
+      name: "<red><b>Guerre contre <enemy>"
+      lore:
+        - "<gray>Score : <green><score></green> - <red><enemy_score>"
+        - "<gray>Temps restant : <white><time>"
+    surrender:
+      name: "<white><b>Abandonner"
+      lore: ["<gray>L'ennemi remporte la guerre."]
+
+  allies:
+    title: "<dark_gray>Alliances"
+    header:
+      name: "<aqua><b>Alliés <count>/<max>"
+      lore: ["<gray>Pas de dégâts entre alliés.", "<gray>Chat commun : /ac"]
+    none:
+      name: "<gray>Aucun allié"
+    requests-header:
+      name: "<yellow><b>Demandes reçues ↓"
+    ally-lore:
+      - "<gray>Niveau <white><level></white> - <white><members></white> membres"
+      - ""
+      - "<red>▶ Shift + clic droit</red> <gray>rompre l'alliance"
+    request-lore:
+      - "<gray>Niveau <white><level></white> - <white><members></white> membres"
+      - ""
+      - "<green>▶ Clic pour accepter"
+    add:
+      name: "<aqua><b>Proposer une alliance"
+      lore: ["<yellow>▶ Clic pour choisir une guilde"]
+
+  levels:
+    title: "<dark_gray>Niveaux de guilde"
+    progress:
+      name: "<aqua><b>Niveau <level>"
+      lore: ["<progress>", "<gray>XP : <white><xp></white> / <white><next>"]
+    name: "<aqua><b>Niveau <level>"
+    lore:
+      - "<gray>XP requise : <white><xp>"
+      - "<gray>Membres max : <white><max_members>"
+      - "<gray>Terrains max : <white><max_claims>"
+      - "<gray>Coffre : <white><vault> cases"
+      - "<gray>Bonus dans vos terrains : <light_purple><effects>"
+    reached: "<green>✔ Atteint"
+    locked: "<red>✖ Pas encore atteint"
+    how:
+      name: "<white><b>Comment gagner de l'XP ?"
+      lore:
+        - "<gray>Tuer un joueur ennemi : <white>+<player_kill>"
+        - "<gray>Tuer un monstre : <white>+<mob_kill>"
+        - "<gray>Kill pendant une guerre : <white>+<war_kill>"
+        - "<gray>Gagner une guerre : <white>+<war_win>"
+
+  log:
+    title: "<dark_gray>Journal"
+    empty:
+      name: "<gray>Journal vide"

@@ -1,0 +1,30 @@
+name: SmpGuilds
+version: '${version}'
+main: fr.smpguilds.SmpGuilds
+api-version: '26.2'
+softdepend: [Vault, PlaceholderAPI]
+description: Guildes complètes pour SMP (claims, guerres, niveaux, trésorerie, coffre)
+commands:
+  guild:
+    description: Menu et commandes de guilde
+    usage: /guild help
+    aliases: [g, guilde, clan]
+    permission: smpguilds.use
+  gc:
+    description: Chat de guilde
+    usage: /gc <message>
+    permission: smpguilds.use
+  ac:
+    description: Chat des alliés
+    usage: /ac <message>
+    permission: smpguilds.use
+permissions:
+  smpguilds.use:
+    description: Utiliser les guildes
+    default: true
+  smpguilds.admin:
+    description: Commandes admin (/guild admin ...)
+    default: op
+  smpguilds.bypass:
+    description: Ignorer la protection des terrains
+    default: op
