@@ -131,3 +131,25 @@ jobs:
         with:
           name: SmpDrop-jar
           path: ${{ steps.find.outputs.dir }}/build/libs/*.jar
+
+  smpadmin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Trouver le dossier du plugin
+        id: find
+        run: |
+          f=$(grep -rl --include=build.gradle.kts 'fr.smpadmin' . | head -n1)
+          echo "dir=$(dirname "$f")" >> "$GITHUB_OUTPUT"
+      - name: Build SmpAdmin
+        working-directory: ${{ steps.find.outputs.dir }}
+        run: gradle build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmpAdmin-jar
+          path: ${{ steps.find.outputs.dir }}/build/libs/*.jar
