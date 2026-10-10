@@ -1,0 +1,19 @@
+name: SmpStart
+version: '${version}'
+main: fr.smpstart.SmpStart
+api-version: '26.2'
+softdepend: [Vault, Essentials]
+description: Début de partie guidé pour SMP (kit, protection, étapes, accueil)
+commands:
+  guide:
+    description: Ouvrir le guide du débutant
+    usage: /guide [bar|protection|reload]
+    aliases: [start, debut, tuto]
+    permission: smpstart.use
+permissions:
+  smpstart.use:
+    description: Utiliser le guide
+    default: true
+  smpstart.admin:
+    description: Commandes admin (/guide reset, complete, kit, reload)
+    default: op

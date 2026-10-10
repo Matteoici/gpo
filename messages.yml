@@ -1,0 +1,117 @@
+# =====================================================================
+#  SmpStart - textes (format MiniMessage : https://docs.advntr.dev/minimessage/format.html)
+#  Après une modification : /guide reload
+# =====================================================================
+
+prefix: "<gradient:#ffcc33:#ff7a1a><b>Guide</b></gradient> <dark_gray>»</dark_gray> "
+
+error:
+  player-only: "<red>Cette commande doit être utilisée en jeu."
+  no-permission: "<red>Tu n'as pas la permission."
+  no-guide: "<gray>Tu as déjà terminé le guide."
+  player-offline: "<red>Ce joueur n'est pas connecté."
+  usage: "<red>Utilisation : <white><usage>"
+
+first-join:
+  title: "<gradient:#ffcc33:#ff7a1a><b>Bienvenue <player> !"
+  subtitle: "<gray>Ton aventure commence ici"
+  message:
+    - ""
+    - "<gradient:#ffcc33:#ff7a1a><b>✦ Bienvenue sur le serveur, <player> ! ✦</b></gradient>"
+    - "<gray>Tu es le joueur n°<white><number></white>."
+    - "<gray>Ton <yellow>kit de départ</yellow> est dans ton inventaire."
+    - "<gray>Tu es <green>protégé du PvP</green> pendant <white><minutes> minutes</white> de jeu."
+    - "<gray>Suis ton <yellow>guide</yellow> : chaque étape te rapporte des récompenses."
+    - "<click:run_command:'/guide'><green><b>[Ouvrir mon guide]</b></green></click> <dark_gray>ou fais clic droit sur le livre."
+    - ""
+  broadcast: "<gray><white><player></white> rejoint le serveur pour la première fois (joueur n°<number>) ! Dis-lui <yellow><b>bienvenue</b></yellow> dans le chat !"
+
+kit:
+  received: "<green>Kit de départ reçu ! Équipe ton armure et pose ton lit en lieu sûr."
+  money: "<green>+<gold><amount> $</gold> d'argent de départ."
+
+greet:
+  reward: "<green>+<gold><amount> $</gold> pour avoir accueilli <white><newbie></white> !"
+
+protection:
+  "on": "<green>Protection débutant active : <white><minutes> minutes</white> de jeu sans PvP."
+  ended: "<yellow>Ta protection débutant est terminée. Le PvP est maintenant possible."
+  none: "<gray>Tu n'as plus de protection débutant."
+  status: "<green>Protection débutant : encore <white><minutes> min</white> de jeu. <gray>(<white>/guide protection off</white> pour la retirer)"
+  disabled: "<yellow>Protection débutant retirée. Tu peux maintenant te battre."
+  victim: "<red><player> est protégé (nouveau joueur)."
+  attacker: "<red>Tu es protégé en tant que nouveau joueur. <gray>/guide protection off pour pouvoir te battre."
+
+step:
+  title: "<green><b>Étape terminée !"
+  subtitle: "<gray><step> <dark_gray>(<number>/<total>)"
+  done: "<green>✔ <step> <gray>(<number>/<total>)"
+  next: "<yellow>▶ Étape <number>/<total> : <white><b><step>"
+  hint: "  <aqua>[<command>] <gray>clique pour l'écrire"
+
+reward:
+  money: "<gray>Récompense : <gold>+<amount> $"
+  item: "<gray>Récompense : <white><amount>x <item>"
+
+finished:
+  title: "<gradient:#ffe259:#ffa751><b>GUIDE TERMINÉ !"
+  subtitle: "<gray>Tu n'es plus un débutant"
+  message:
+    - ""
+    - "<gradient:#ffcc33:#ff7a1a><b>★ Félicitations <player> ! ★</b></gradient>"
+    - "<gray>Tu as terminé toutes les étapes du guide."
+    - "<gray>Le serveur est à toi : construis, explore, rejoins une guilde."
+    - ""
+  broadcast: "<gold><b><player></b> <gray>a terminé le guide du débutant !"
+
+reminder: "<gray>Petit rappel : ton guide t'attend."
+returning: "<gray>Content de te revoir ! Tu en es à l'<yellow>étape <number>/<total></yellow> du guide. <click:run_command:'/guide'><green>[Ouvrir]</green></click>"
+
+bar:
+  title: "<yellow>Étape <number>/<total> <dark_gray>»</dark_gray> <white><step> <gray>(<progress>/<amount>)"
+  "on": "<green>Barre de progression affichée."
+  "off": "<yellow>Barre de progression masquée."
+
+admin:
+  reloaded: "<green>Configuration rechargée (<steps> étapes)."
+  reset: "<green>Guide de <white><player></white> remis à zéro."
+  completed: "<green>Guide de <white><player></white> terminé."
+  kit: "<green>Kit de départ donné à <white><player></white>."
+
+gui:
+  title: "<dark_gray>Guide du voyageur"
+  close: "<red>Fermer"
+  header:
+    name: "<yellow><b>Ton guide"
+    name-done: "<gold><b>Guide terminé !"
+    lore:
+      - "<gray>Étapes terminées : <white><done>/<total></white> <dark_gray>(<percent> %)"
+      - "<bar>"
+      - ""
+      - "<gray>Les étapes se font dans l'ordre."
+      - "<gray>Chacune te rapporte une récompense."
+  step:
+    done: "<green>✔ <step>"
+    current: "<yellow>▶ <step>"
+    locked: "<gray>🔒 <step>"
+    lore-done: "<green>Terminée"
+    lore-progress: "<yellow>Progression : <white><progress>/<amount>"
+    lore-locked: "<dark_gray>Se débloque après l'étape précédente"
+    lore-reward: "<gray>Récompense :"
+    reward-money: "<gold>  +<amount> $"
+    reward-item: "<white>  +<amount>x <item>"
+    lore-click: "<yellow>▶ Clic pour voir la consigne"
+  protection:
+    name: "<green><b>Protection débutant"
+    lore:
+      - "<gray>Il te reste environ <white><minutes> min</white> de jeu"
+      - "<gray>sans pouvoir être attaqué (ni attaquer)."
+      - ""
+      - "<red>▶ Clic droit pour la retirer"
+  bar:
+    name-on: "<aqua><b>Barre de progression : activée"
+    name-off: "<gray><b>Barre de progression : masquée"
+    lore:
+      - "<gray>Affiche l'étape en cours en haut de l'écran."
+      - ""
+      - "<yellow>▶ Clic pour changer"
