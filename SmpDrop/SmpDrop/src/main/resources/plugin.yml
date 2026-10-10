@@ -1,0 +1,19 @@
+name: SmpDrop
+version: '${version}'
+main: fr.smpdrop.SmpDrop
+api-version: '26.2'
+softdepend: [PlaceholderAPI, SmpGuilds, SmpStart]
+description: Largages aériens PvP toutes les 3 heures (caisse en parachute, traqueur, butin rare)
+commands:
+  largage:
+    description: Infos sur le largage aérien
+    usage: /largage [chances|top|start|here|stop|tp|next|loot|reload]
+    aliases: [airdrop, ld, drop]
+    permission: smpdrop.use
+permissions:
+  smpdrop.use:
+    description: Voir les infos du largage
+    default: true
+  smpdrop.admin:
+    description: Lancer, arrêter et configurer les largages
+    default: op

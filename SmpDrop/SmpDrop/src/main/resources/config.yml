@@ -1,0 +1,229 @@
+# =====================================================================
+#  SmpDrop - largages aériens PvP
+#  Les textes sont dans messages.yml. Après une modification : /largage reload
+# =====================================================================
+
+# ---------------------------------------------------------------- Fréquence
+schedule:
+  # un largage toutes les X minutes (180 = 3 heures)
+  interval-minutes: 180
+  # nombre minimum de joueurs connectés, sinon le largage est repoussé
+  min-players: 2
+  # s'il n'y a pas assez de joueurs : nouvel essai X minutes plus tard
+  retry-minutes: 15
+  # après un redémarrage, si l'heure du largage est déjà passée : X minutes d'attente
+  startup-delay-minutes: 10
+  # messages "prochain largage dans X minutes" avant le début de l'événement
+  warnings-minutes: [30, 10, 5]
+  # durée entre l'annonce de la position et la chute de la caisse (en secondes)
+  announce-seconds: 300
+  # rappels du compte à rebours (en secondes avant la chute)
+  countdown: [240, 180, 120, 60, 30, 15, 10, 5, 4, 3, 2, 1]
+  # grand chiffre au milieu de l'écran pour les dernières secondes
+  countdown-titles: true
+
+# ---------------------------------------------------------------- Lieu de chute
+location:
+  world: world
+  # centre de la zone (souvent le spawn)
+  center-x: 0
+  center-z: 0
+  # distance du centre : jamais plus près que min, jamais plus loin que max
+  min-radius: 400
+  max-radius: 2500
+  # ne jamais tomber dans un territoire de guilde (SmpGuilds)
+  avoid-guild-claims: true
+  # blocs sur lesquels la caisse ne doit pas tomber
+  avoid-blocks: [WATER, LAVA, ICE, PACKED_ICE, BLUE_ICE, CACTUS, MAGMA_BLOCK, POWDER_SNOW, BAMBOO, POINTED_DRIPSTONE]
+  max-attempts: 40
+
+# ---------------------------------------------------------------- Chute
+fall:
+  # hauteur d'apparition au-dessus du sol
+  height: 90
+  # durée de la descente en parachute (secondes)
+  seconds: 24
+  # rotation de la caisse pendant la chute (degrés par tick)
+  spin: 1.2
+  # éclair (sans dégâts) à l'atterrissage
+  lightning: true
+
+# ---------------------------------------------------------------- Apparence de la caisse
+crate:
+  size: 1.1
+  body: LIGHT_BLUE_CONCRETE
+  straps: GOLD_BLOCK
+  lamp: SEA_LANTERN
+  # contour lumineux visible à travers les murs
+  glow: true
+  glow-color: "#4fd6ff"
+  # faisceau lumineux au-dessus de la caisse posée
+  beam: LIGHT_BLUE_STAINED_GLASS
+  beam-height: 120
+  # couleurs du parachute (alternées)
+  parachute: [RED_WOOL, WHITE_WOOL]
+  ropes: WHITE_WOOL
+  # caisse toujours éclairée, même la nuit
+  full-bright: true
+  # distance d'affichage (1.0 = normale)
+  view-range: 4.0
+
+# ---------------------------------------------------------------- Ouverture
+opening:
+  # temps à tenir sans se faire frapper
+  seconds: 10
+  # distance maximale avec la caisse pendant l'ouverture
+  max-distance: 4.0
+  # true  = n'importe quel dégât interrompt (chute, feu, poison...)
+  # false = seulement les coups (joueurs, monstres, flèches, explosions)
+  interrupt-on-any-damage: false
+  # celui qui ouvre et qui frappe quelqu'un arrête aussi son ouverture
+  interrupt-when-attacking: true
+  # interdit l'ouverture aux joueurs sous protection débutant (SmpStart)
+  block-protected-newbies: true
+  # après une caisse posée sans être ouverte : elle s'autodétruit (minutes)
+  despawn-minutes: 20
+  # rayon des messages "X ouvre la caisse" (en blocs, -1 = tout le serveur)
+  alert-radius: 250
+
+# ---------------------------------------------------------------- Traqueur
+tracker:
+  # barre en haut de l'écran avec timer, flèche et distance
+  bossbar: true
+  # toutes les boussoles pointent vers la caisse pendant l'événement
+  compass: true
+
+# ---------------------------------------------------------------- Butin
+loot:
+  # CHEST = le gagnant ouvre un coffre (les autres peuvent s'y servir s'il part)
+  # SPILL = les objets jaillissent de la caisse et tombent au sol
+  mode: CHEST
+  # temps pendant lequel le coffre reste ouvert, puis ce qui reste tombe au sol
+  chest-seconds: 120
+
+  # nombre total d'objets dans une caisse (tirages)
+  rolls: 5-7
+  # rareté garantie : un objet de cette rareté au minimum dans chaque caisse
+  guaranteed: [epique]
+
+  # probabilité de chaque rareté à chaque tirage (poids relatifs)
+  # announce = message à tout le serveur quand quelqu'un l'obtient
+  rarities:
+    commun:
+      weight: 46
+      display: "<gray>Commun"
+      color: "#b0b0b0"
+    rare:
+      weight: 30
+      display: "<aqua>Rare"
+      color: "#3fb6ff"
+    epique:
+      weight: 16
+      display: "<light_purple>Épique"
+      color: "#c060ff"
+      glow: true
+    legendaire:
+      weight: 7
+      display: "<gold><b>Légendaire</b>"
+      color: "#ffb020"
+      glow: true
+      announce: true
+    mythique:
+      weight: 0.5
+      display: "<gradient:#ff4a4a:#ff9cf0><b>MYTHIQUE</b></gradient>"
+      color: "#ff4a8a"
+      glow: true
+      announce: true
+
+  # Objets. Champs :
+  #   rarity, material, amount ("2-4" ou 3), weight (chance dans sa rareté),
+  #   name, lore, enchants {nom: niveau ou "min-max"}, potion (type), max (par caisse),
+  #   bonus (objets offerts avec : ["MATERIAL:quantité"])
+  items:
+    # ------------------------------------------------ COMMUN
+    - {rarity: commun, material: GOLDEN_APPLE, amount: 2-4, weight: 10}
+    - {rarity: commun, material: ENDER_PEARL, amount: 2-4, weight: 10}
+    - {rarity: commun, material: ARROW, amount: 16-32, weight: 6}
+    - {rarity: commun, material: COBWEB, amount: 4-8, weight: 6}
+    - {rarity: commun, material: EXPERIENCE_BOTTLE, amount: 8-16, weight: 6}
+    - {rarity: commun, material: WIND_CHARGE, amount: 4-8, weight: 6}
+    - {rarity: commun, material: SPLASH_POTION, potion: healing, amount: 2, weight: 8}
+    - {rarity: commun, material: SHIELD, weight: 4, enchants: {unbreaking: 2}}
+
+    # ------------------------------------------------ RARE
+    - {rarity: rare, material: DIAMOND_HELMET, weight: 6, enchants: {protection: 2-3, unbreaking: 1-2}}
+    - {rarity: rare, material: DIAMOND_CHESTPLATE, weight: 5, enchants: {protection: 2-3, unbreaking: 1-2}}
+    - {rarity: rare, material: DIAMOND_LEGGINGS, weight: 5, enchants: {protection: 2-3, unbreaking: 1-2}}
+    - {rarity: rare, material: DIAMOND_BOOTS, weight: 6, enchants: {protection: 2-3, feather_falling: 2}}
+    - {rarity: rare, material: DIAMOND_SWORD, weight: 6, enchants: {sharpness: 2-3, unbreaking: 1}}
+    - {rarity: rare, material: BOW, weight: 4, enchants: {power: 2-3, unbreaking: 1}}
+    - {rarity: rare, material: CROSSBOW, weight: 3, enchants: {quick_charge: 2, piercing: 2}}
+    - {rarity: rare, material: POTION, potion: strength, amount: 1-2, weight: 5}
+    - {rarity: rare, material: POTION, potion: swiftness, amount: 1-2, weight: 4}
+    - {rarity: rare, material: SPLASH_POTION, potion: strong_healing, amount: 2-3, weight: 5}
+    - {rarity: rare, material: GOLDEN_APPLE, amount: 5-8, weight: 5}
+    - {rarity: rare, material: ENDER_PEARL, amount: 6-10, weight: 4}
+
+    # ------------------------------------------------ ÉPIQUE
+    - {rarity: epique, material: DIAMOND_HELMET, weight: 5, enchants: {protection: 4, unbreaking: 3}}
+    - {rarity: epique, material: DIAMOND_CHESTPLATE, weight: 4, enchants: {protection: 4, unbreaking: 3}}
+    - {rarity: epique, material: DIAMOND_LEGGINGS, weight: 4, enchants: {protection: 4, unbreaking: 3}}
+    - {rarity: epique, material: DIAMOND_BOOTS, weight: 5, enchants: {protection: 4, feather_falling: 4, unbreaking: 3}}
+    - {rarity: epique, material: DIAMOND_SWORD, weight: 5, enchants: {sharpness: 4-5, fire_aspect: 1, unbreaking: 3}}
+    - {rarity: epique, material: DIAMOND_AXE, weight: 3, enchants: {sharpness: 4, unbreaking: 3}}
+    - {rarity: epique, material: BOW, weight: 3, enchants: {power: 4-5, punch: 1, flame: 1}}
+    - {rarity: epique, material: TRIDENT, weight: 2, enchants: {loyalty: 3, impaling: 3}}
+    - {rarity: epique, material: TOTEM_OF_UNDYING, weight: 4, max: 1}
+    - {rarity: epique, material: POTION, potion: strong_strength, amount: 1-2, weight: 4}
+    - {rarity: epique, material: NETHERITE_INGOT, weight: 3}
+
+    # ------------------------------------------------ LÉGENDAIRE
+    - rarity: legendaire
+      material: NETHERITE_HELMET
+      weight: 5
+      name: "<gold>Casque du Largage"
+      enchants: {protection: 4, unbreaking: 3, mending: 1}
+    - rarity: legendaire
+      material: NETHERITE_CHESTPLATE
+      weight: 4
+      name: "<gold>Plastron du Largage"
+      enchants: {protection: 4, unbreaking: 3, mending: 1}
+    - rarity: legendaire
+      material: NETHERITE_LEGGINGS
+      weight: 4
+      name: "<gold>Jambières du Largage"
+      enchants: {protection: 4, unbreaking: 3, mending: 1}
+    - rarity: legendaire
+      material: NETHERITE_BOOTS
+      weight: 5
+      name: "<gold>Bottes du Largage"
+      enchants: {protection: 4, feather_falling: 4, unbreaking: 3, mending: 1}
+    - rarity: legendaire
+      material: NETHERITE_SWORD
+      weight: 5
+      name: "<gold>Lame du Largage"
+      enchants: {sharpness: 5, fire_aspect: 2, unbreaking: 3, mending: 1}
+    - rarity: legendaire
+      material: NETHERITE_AXE
+      weight: 3
+      name: "<gold>Hache du Largage"
+      enchants: {sharpness: 5, unbreaking: 3}
+    - rarity: legendaire
+      material: MACE
+      weight: 4
+      max: 1
+      name: "<gold>Masse du Ciel"
+      enchants: {density: 4, wind_burst: 1, unbreaking: 3}
+    - {rarity: legendaire, material: ENCHANTED_GOLDEN_APPLE, amount: 1-2, weight: 4}
+    - {rarity: legendaire, material: NETHERITE_UPGRADE_SMITHING_TEMPLATE, amount: 1-2, weight: 3}
+    - {rarity: legendaire, material: TOTEM_OF_UNDYING, amount: 2, weight: 2, max: 1}
+
+    # ------------------------------------------------ MYTHIQUE (le plus rare)
+    - rarity: mythique
+      material: ELYTRA
+      weight: 1
+      max: 1
+      name: "<gradient:#ff4a4a:#ff9cf0><b>Élytres du Largage</b></gradient>"
+      lore: ["<gray>Tombées du ciel avec la caisse."]
+      enchants: {unbreaking: 3}
+      bonus: ["FIREWORK_ROCKET:32"]

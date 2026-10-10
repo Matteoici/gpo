@@ -1,0 +1,126 @@
+# =====================================================================
+#  SmpDrop - textes (format MiniMessage : https://docs.advntr.dev/minimessage/format.html)
+#  Après une modification : /largage reload
+# =====================================================================
+
+prefix: "<gradient:#4fd6ff:#2a7bff><b>LARGAGE</b></gradient> <dark_gray>»</dark_gray> "
+
+# ---------------------------------------------------------------- Avant l'événement
+warning: "<gray>Prochain largage aérien dans <white><b><time></b></white>. Prépare ton stuff !"
+not-enough-players: "<gray>Pas assez de joueurs pour un largage. Nouvel essai dans <white><time></white>."
+
+# ---------------------------------------------------------------- Annonce
+announce:
+  title: "<gradient:#4fd6ff:#2a7bff><b>📦 LARGAGE AÉRIEN"
+  subtitle: "<gray>Chute dans <white><time></white> <dark_gray>•</dark_gray> <white>X <x> Z <z>"
+  message:
+    - ""
+    - "<gradient:#4fd6ff:#2a7bff><b>━━━━━━━━━ 📦 LARGAGE AÉRIEN ━━━━━━━━━</b></gradient>"
+    - ""
+    - "  <gray>Une caisse remplie de <gold>stuff PvP</gold> va tomber du ciel !"
+    - "  <gray>Position : <white><b>X <x>  Z <z></b></white> <dark_gray>(<world>)"
+    - "  <gray>Chute dans : <yellow><b><time></b></yellow>"
+    - ""
+    - "  <gray>Suis la <aqua>flèche</aqua> en haut de l'écran ou ta <aqua>boussole</aqua>."
+    - "  <gray>Pour l'ouvrir : <white>clic droit</white> et tiens <white><b><seconds> secondes</b></white> <red>sans te faire frapper</red>."
+    - "  <dark_gray>Butins possibles : netherite, totems, pommes de Notch... et des <gradient:#ff4a4a:#ff9cf0><b>élytres</b></gradient> !"
+    - ""
+    - "  <click:run_command:'/largage chances'><hover:show_text:'<gray>Voir les chances de chaque objet'><aqua><b>[Voir les chances]</b></aqua></hover></click>"
+    - ""
+countdown:
+  chat: "<gray>Le largage tombe dans <yellow><b><time></b></yellow> <dark_gray>• <gray>X <white><x></white> Z <white><z>"
+  title: "<gradient:#ffe259:#ffa751><b><seconds>"
+  subtitle: "<gray>La caisse arrive..."
+
+# ---------------------------------------------------------------- Chute et atterrissage
+fall:
+  title: "<aqua><b>LA CAISSE TOMBE !"
+  subtitle: "<gray>Elle atterrit dans <white><time></white>"
+  chat: "<aqua><b>La caisse est larguée !</b></aqua> <gray>Elle descend en parachute vers <white>X <x> Z <z></white>."
+landed:
+  chat: "<green><b>La caisse a atterri !</b></green> <gray>Le premier qui tient <white><seconds> s</white> sans être frappé remporte le butin."
+  label:
+    - "<gradient:#4fd6ff:#2a7bff><b>📦 LARGAGE AÉRIEN</b></gradient>"
+    - "<yellow>Clic droit pour ouvrir"
+    - "<gray>Tiens <white><seconds> s</white> sans être frappé"
+
+# ---------------------------------------------------------------- Ouverture
+opening:
+  start: "<yellow>Ouverture en cours... <gray>reste près de la caisse et ne te fais pas toucher !"
+  broadcast: "<red><b>⚠</b> <white><player></white> <gray>est en train d'ouvrir le largage !"
+  actionbar: "<yellow><b>Ouverture</b> <bar> <white><percent>%"
+  label:
+    - "<red><b>⚠ <player> OUVRE LA CAISSE</b>"
+    - "<bar> <white><percent>%"
+  bar-done: "<green>"
+  bar-left: "<dark_gray>"
+  interrupted:
+    hit: "<red><b>Ouverture interrompue !</b> <gray>Tu t'es fait frapper."
+    hurt: "<red><b>Ouverture interrompue !</b> <gray>Tu as pris des dégâts."
+    attack: "<red><b>Ouverture interrompue !</b> <gray>Tu as attaqué quelqu'un."
+    moved: "<red><b>Ouverture interrompue !</b> <gray>Tu t'es trop éloigné de la caisse."
+    died: "<red><b>Ouverture interrompue !</b> <gray>Tu es mort."
+  interrupted-broadcast: "<gray>L'ouverture de <white><player></white> a été <red>interrompue</red> !"
+  already: "<red><player> est déjà en train d'ouvrir la caisse. <gray>Arrête-le !"
+  not-ready: "<gray>La caisse n'est pas encore au sol."
+  too-far: "<red>Approche-toi de la caisse."
+  gamemode: "<red>Tu dois être en survie pour ouvrir la caisse."
+  newbie: "<red>Tu es sous protection débutant. <gray>Fais <white>/guide protection off</white> pour pouvoir ouvrir la caisse."
+
+# ---------------------------------------------------------------- Ouverte
+opened:
+  title: "<gradient:#ffe259:#ffa751><b>CAISSE OUVERTE !"
+  subtitle: "<gray>Meilleur butin : <best>"
+  broadcast: "<gold><b>🎉 <player></b></gold> <gray>a ouvert le largage ! Meilleur butin : <best> <details>"
+  details: "<dark_gray>(<aqua>survole pour tout voir</aqua>)"
+  details-header: "<gold><b>Contenu de la caisse"
+  rare-drop: "<gradient:#ffe259:#ffa751><b>✦</b></gradient> <white><player></white> <gray>a obtenu <item> <dark_gray>[<rarity><dark_gray>]"
+  item: "<white><amount>x <name> <dark_gray>[<rarity><dark_gray>]"
+  inventory-title: "<dark_gray>📦 Largage aérien"
+  label:
+    - "<gold><b>Ouverte par <player>"
+    - "<gray>Clic droit pour voir le butin restant"
+  spilled: "<gray>Le butin qui restait dans la caisse est tombé au sol."
+expired: "<gray>Personne n'a ouvert la caisse... <red>elle s'est autodétruite</red>."
+stopped: "<gray>Le largage a été annulé par un administrateur."
+search-failed: "<red>Aucun emplacement valide trouvé pour le largage (vérifie la section location de config.yml)."
+
+# ---------------------------------------------------------------- Barre en haut de l'écran
+bossbar:
+  announced: "<gradient:#4fd6ff:#2a7bff><b>📦 LARGAGE</b></gradient> <gray>dans <white><b><time></b></white> <dark_gray>|</dark_gray> <yellow><b><arrow></b> <distance></yellow> <dark_gray>|</dark_gray> <gray>X <white><x></white> Z <white><z>"
+  falling: "<aqua><b>📦 LA CAISSE TOMBE !</b></aqua> <dark_gray>|</dark_gray> <yellow><b><arrow></b> <distance></yellow> <dark_gray>|</dark_gray> <gray>X <white><x></white> Z <white><z>"
+  landed: "<green><b>📦 CAISSE AU SOL</b></green> <gray>(<time>) <dark_gray>|</dark_gray> <yellow><b><arrow></b> <distance></yellow> <dark_gray>|</dark_gray> <gray>X <white><x></white> Z <white><z>"
+  opening: "<red><b>⚠ <player> OUVRE LA CAISSE <white><percent>%</white></b></red> <dark_gray>|</dark_gray> <yellow><b><arrow></b> <distance>"
+  looting: "<gold><b>🎉 <player> a ouvert le largage !</b></gold> <dark_gray>|</dark_gray> <yellow><b><arrow></b> <distance>"
+  other-world: "<gray>dans <white><world>"
+  here: "<green><b>ICI"
+
+# ---------------------------------------------------------------- Commandes
+info:
+  none: "<gray>Prochain largage dans <white><b><time></b></white>."
+  active: "<gray>Un largage est en cours en <white>X <x> Z <z></white> <dark_gray>(<world>)</dark_gray>. <yellow><arrow> <distance>"
+  help:
+    - "<gradient:#4fd6ff:#2a7bff><b>📦 Largage aérien</b></gradient>"
+    - "<gray>Toutes les <white><interval></white>, une caisse de stuff PvP tombe au hasard sur la carte."
+    - "<gray>Ouvre-la en tenant <white><seconds> s</white> sans te faire frapper."
+    - "<aqua>/largage chances</aqua> <dark_gray>- <gray>chances de chaque objet"
+    - "<aqua>/largage top</aqua> <dark_gray>- <gray>joueurs qui ont ouvert le plus de caisses"
+chances:
+  header: "<gradient:#4fd6ff:#2a7bff><b>📦 Chances du largage</b></gradient> <gray>(<rolls> objets par caisse, dont 1 <guaranteed> minimum)"
+  rarity: "<rarity> <dark_gray>- <white><percent>%</white> <gray>par objet"
+  item: "  <dark_gray>• <gray><name> <dark_gray>- <white><percent>%</white> <gray>par caisse"
+top:
+  header: "<gradient:#4fd6ff:#2a7bff><b>📦 Meilleurs pilleurs de largages"
+  line: "<yellow>#<rank> <white><player> <dark_gray>- <gold><count> caisse(s)"
+  empty: "<gray>Personne n'a encore ouvert de caisse."
+admin:
+  started: "<green>Largage lancé."
+  already: "<red>Un largage est déjà en cours."
+  none: "<red>Aucun largage en cours."
+  stopped: "<green>Largage arrêté."
+  next: "<green>Prochain largage dans <white><time></white>."
+  reloaded: "<green>Configuration rechargée."
+  loot: "<green>Voici un tirage de test (rien n'est retiré)."
+  usage: "<red>Utilisation : <white><usage>"
+player-only: "<red>Commande à utiliser en jeu."
+no-permission: "<red>Tu n'as pas la permission."
