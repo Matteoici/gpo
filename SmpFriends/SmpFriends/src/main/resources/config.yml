@@ -1,0 +1,31 @@
+# =====================================================================
+#  SmpFriends - configuration    (/amis reload après modification)
+# =====================================================================
+
+# Nombre maximum d'amis (permission smpfriends.unlimited = sans limite)
+max-friends: 30
+
+# Un joueur est affiché "AFK" après ce nombre de minutes sans bouger
+afk-minutes: 5
+
+# Durée du suivi à la boussole (flèche dans la barre d'action)
+tracking-seconds: 60
+
+# Symbole de la monnaie (Vault)
+currency-symbol: "$"
+# Montants proposés dans le menu "Envoyer de l'argent"
+pay-amounts: [100, 1000, 10000, 100000]
+
+# Commandes lancées par les boutons du menu ({player} = pseudo de l'ami).
+# Laisse vide ("") pour masquer le bouton.
+commands:
+  teleport: "tpa {player}"   # EssentialsX
+  trade: "trade {player}"    # GpoTrade
+
+# Réglages par défaut des joueurs (chacun peut les changer dans /amis > Réglages)
+defaults:
+  SHOW_LOCATION: true
+  SHOW_MONEY: true
+  SHOW_STATS: true
+  ALLOW_REQUESTS: true
+  NOTIFICATIONS: true

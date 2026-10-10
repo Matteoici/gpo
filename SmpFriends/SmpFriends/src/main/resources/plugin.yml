@@ -1,0 +1,27 @@
+name: SmpFriends
+version: '${version}'
+main: fr.smpfriends.FriendsPlugin
+api-version: '26.2'
+softdepend: [Vault, GpoTrade, Essentials]
+description: Menu d'amis complet pour SMP
+commands:
+  amis:
+    description: Ouvrir le menu des amis
+    usage: /amis [add|remove|accept|deny|msg|requests|settings] [joueur]
+    aliases: [friends, friend, ami]
+    permission: smpfriends.use
+  fc:
+    description: Envoyer un message à tous tes amis connectés
+    usage: /fc <message>
+    aliases: [friendchat]
+    permission: smpfriends.use
+permissions:
+  smpfriends.use:
+    description: Utiliser le système d'amis
+    default: true
+  smpfriends.unlimited:
+    description: Pas de limite d'amis
+    default: op
+  smpfriends.admin:
+    description: /amis reload
+    default: op
