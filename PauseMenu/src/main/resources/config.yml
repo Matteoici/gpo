@@ -1,0 +1,169 @@
+# ============================================================================
+#  PauseMenu : boutons cliquables dans le menu Echap de Minecraft
+# ============================================================================
+#  Le plugin génère un datapack (dialogues Minecraft). Après CHAQUE changement
+#  de ce fichier : /pausemenu reload, puis REDÉMARRE le serveur, puis les
+#  joueurs se reconnectent.
+#
+#  Un bouton n'apparaît que si le plugin indiqué dans "plugin:" est installé.
+#  Laisse "plugin:" vide pour qu'il soit toujours affiché.
+#  mode: run      -> exécute la commande directement
+#  mode: suggest  -> écrit la commande dans le chat (pour les commandes avec un pseudo)
+#  Les commandes sont à écrire SANS le "/". Vérifie-les avec celles de ton serveur !
+# ============================================================================
+
+# Titre de la fenêtre et texte du bouton dans le menu Echap
+title: "Menu du serveur"
+button-label: "★ Menu du serveur ★"
+title-color: "gold"
+
+# true  = une seule fenêtre avec tous les boutons
+# false = une fenêtre d'accueil avec des catégories
+flat: false
+
+# Nombre de colonnes de boutons
+columns: 2
+button-width: 150
+
+# Dossier du datapack. "auto" = <monde principal>/datapacks
+datapacks-folder: auto
+
+# Ajouter aussi le menu au raccourci "Actions rapides" (touche configurable en jeu)
+quick-actions: true
+
+categories:
+  deplacements:
+    name: "Déplacements"
+    color: "aqua"
+    description: "Spawn, maisons, warps, téléportation"
+    buttons:
+      spawn:
+        name: "Spawn"
+        command: "spawn"
+        plugin: "EssentialsSpawn"
+        description: "Retourner au spawn"
+      rtp:
+        name: "Téléportation aléatoire"
+        command: "rtp"
+        plugin: "JustRTP"
+        description: "Partir explorer un lieu au hasard"
+      homes:
+        name: "Mes maisons"
+        command: "homes"
+        plugin: "Essentials"
+        description: "Liste de tes homes"
+      warps:
+        name: "Warps"
+        command: "warps"
+        plugin: "Essentials"
+        description: "Liste des warps du serveur"
+      afk:
+        name: "Mode AFK"
+        command: "afk"
+        plugin: "Essentials"
+        description: "Te mettre / sortir du mode AFK"
+
+  economie:
+    name: "Économie"
+    color: "gold"
+    description: "Boutique, vente, marché, primes"
+    buttons:
+      shop:
+        name: "Boutique"
+        command: "shop"
+        plugin: "DonutShop"
+        description: "Acheter des objets"
+      sell:
+        name: "Vendre"
+        command: "sell"
+        plugin: "DonutSell"
+        description: "Vendre tes objets"
+      orders:
+        name: "Commandes joueurs"
+        command: "orders"
+        plugin: "DonutOrders"
+        description: "Commander ou livrer des objets"
+      market:
+        name: "Marché des joueurs"
+        command: "market"
+        plugin: "PlayerMarketGUI"
+        description: "Acheter et vendre entre joueurs"
+      bounty:
+        name: "Primes"
+        command: "bounty"
+        plugin: "NotBounties"
+        description: "Voir et poser des primes"
+      balance:
+        name: "Mon argent"
+        command: "balance"
+        plugin: "Essentials"
+        description: "Voir ton solde"
+      baltop:
+        name: "Top richesse"
+        command: "baltop"
+        plugin: "Essentials"
+        description: "Classement des plus riches"
+
+  social:
+    name: "Social"
+    color: "green"
+    description: "Amis, échanges, guilde"
+    buttons:
+      amis:
+        name: "Amis"
+        command: "amis"
+        plugin: "SmpFriends"
+        description: "Ouvrir le menu des amis"
+      trade:
+        name: "Échanger"
+        command: "trade "
+        mode: suggest
+        plugin: "GpoTrade"
+        description: "Écrit /trade dans le chat, ajoute un pseudo"
+      guild:
+        name: "Guilde"
+        command: "guild"
+        plugin: "GuildPlugin"
+        description: "Menu de ta guilde"
+
+  progression:
+    name: "Progression"
+    color: "light_purple"
+    description: "Quêtes, récompenses, caisses, kits"
+    buttons:
+      quests:
+        name: "Quêtes"
+        command: "quests"
+        plugin: "ODailyQuests"
+        description: "Tes quêtes quotidiennes"
+      daily:
+        name: "Récompense du jour"
+        command: "dailyreward"
+        plugin: "DailyReward"
+        description: "Récupérer ta récompense quotidienne"
+      crates:
+        name: "Caisses"
+        command: "crates"
+        plugin: "CoreCrates"
+        description: "Ouvrir les caisses"
+      kits:
+        name: "Kits"
+        command: "kits"
+        plugin: "Essentials"
+        description: "Réclamer un kit"
+
+  infos:
+    name: "Infos"
+    color: "gray"
+    description: "Aide et règles"
+    buttons:
+      rules:
+        name: "Règles"
+        command: "rules"
+        plugin: "Essentials"
+        description: "Lire les règles du serveur"
+      help:
+        name: "Aide"
+        command: "help"
+        plugin: ""
+        description: "Liste des commandes"
