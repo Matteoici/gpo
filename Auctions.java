@@ -1,0 +1,237 @@
+package fr.smpmarket;
+
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.Player;
+
+import java.util.UUID;
+
+import static fr.smpmarket.Texts.ph;
+
+/**
+ * Enchères des stands.
+ * - Stand libre : enchère ouverte en permanence, le compte à rebours démarre à la première offre.
+ * - Stand loué : X heures avant la fin, une enchère s'ouvre pour la location suivante (le locataire peut enchérir aussi).
+ * L'argent de l'offre est retenu tout de suite et rendu si quelqu'un surenchérit.
+ */
+public final class Auctions {
+
+    private final SmpMarket plugin;
+
+    Auctions(SmpMarket plugin) {
+        this.plugin = plugin;
+    }
+
+    private Settings s() {
+        return plugin.settings();
+    }
+
+    private Economy eco() {
+        return plugin.economy();
+    }
+
+    // ================================================================= boucle (chaque seconde)
+
+    void tick() {
+        long now = System.currentTimeMillis();
+        for (Stall st : plugin.store().stalls()) {
+            Auction a = st.auction;
+            if (!st.isRented() && a == null) {
+                st.auction = new Auction();
+                plugin.store().markDirty();
+                plugin.visuals().refreshSign(st);
+                continue;
+            }
+            if (st.isRented() && a == null && st.leaseEnd - now <= s().renewWindowMs) {
+                Auction r = new Auction();
+                r.renewal = true;
+                r.endsAt = Math.max(st.leaseEnd, now + 1000);
+                st.auction = r;
+                plugin.store().markDirty();
+                plugin.notify(st.owner, plugin.texts().get("auction.renewal-opened", stallTags(st),
+                        ph("time", Settings.time(r.endsAt - now)), ph("price", s().money(st.startPrice))));
+                plugin.visuals().refreshSign(st);
+                continue;
+            }
+            if (a != null && a.endsAt > 0 && now >= a.endsAt) resolve(st);
+        }
+    }
+
+    // ================================================================= offre
+
+    /** Nombre de stands loués + enchères menées par ce joueur, sans compter "except". */
+    public int holdings(UUID player, Stall except) {
+        int n = 0;
+        for (Stall st : plugin.store().stalls()) {
+            if (st == except) continue;
+            if (st.isOwner(player)) n++;
+            else if (st.auction != null && player.equals(st.auction.bidder)) n++;
+        }
+        return n;
+    }
+
+    public boolean bid(Player p, Stall st, double amount) {
+        Texts t = plugin.texts();
+        if (st.auction == null) {
+            if (st.isRented()) {
+                t.send(p, "auction.closed", ph("time", Settings.time(st.leaseEnd - s().renewWindowMs - System.currentTimeMillis())));
+                return false;
+            }
+            st.auction = new Auction();
+        }
+        Auction a = st.auction;
+        amount = Math.floor(amount);
+        double min = s().minBid(st);
+        if (amount < min) {
+            t.send(p, "auction.too-low", ph("min", s().money(min)));
+            return false;
+        }
+        if (p.getUniqueId().equals(a.bidder)) {
+            // il est déjà en tête : il augmente simplement son offre
+        } else if (holdings(p.getUniqueId(), st) >= s().maxPerPlayer) {
+            t.send(p, "auction.limit", ph("max", s().maxPerPlayer));
+            return false;
+        }
+        double need = p.getUniqueId().equals(a.bidder) ? amount - a.bid : amount;
+        if (!eco().has(p, need)) {
+            t.send(p, "auction.no-money", ph("amount", s().money(need)));
+            return false;
+        }
+        if (!eco().take(p, need)) {
+            t.send(p, "auction.no-money", ph("amount", s().money(need)));
+            return false;
+        }
+        // rembourser l'ancien meilleur enchérisseur
+        if (a.bidder != null && !a.bidder.equals(p.getUniqueId())) {
+            OfflinePlayer prev = Bukkit.getOfflinePlayer(a.bidder);
+            eco().give(prev, a.bid);
+            plugin.notify(a.bidder, t.get("auction.outbid", stallTags(st), ph("player", p.getName()),
+                    ph("amount", s().money(amount)), ph("refund", s().money(a.bid))));
+        }
+        long now = System.currentTimeMillis();
+        a.bidder = p.getUniqueId();
+        a.bidderName = p.getName();
+        a.bid = amount;
+        a.bids++;
+        if (a.endsAt == 0) {
+            a.endsAt = now + s().auctionMs;
+            for (Player o : Bukkit.getOnlinePlayers()) {
+                t.send(o, "auction.started", stallTags(st), ph("player", p.getName()), ph("amount", s().money(amount)),
+                        ph("time", Settings.time(s().auctionMs)));
+            }
+        } else if (a.endsAt - now < s().antiSnipeMs) {
+            a.endsAt = now + s().antiSnipeMs;
+            if (a.renewal && st.isRented()) st.leaseEnd = Math.max(st.leaseEnd, a.endsAt);
+            t.send(p, "auction.extended", ph("time", Settings.time(s().antiSnipeMs)));
+        }
+        if (st.isRented() && !st.isOwner(p.getUniqueId()) && a.renewal) {
+            plugin.notify(st.owner, t.get("auction.owner-warned", stallTags(st), ph("player", p.getName()),
+                    ph("amount", s().money(amount))));
+        }
+        t.send(p, "auction.bid-ok", stallTags(st), ph("amount", s().money(amount)), ph("time", Settings.time(a.endsAt - now)));
+        Fx.sound(p, "entity.experience_orb.pickup", 1.2f);
+        plugin.store().save(); // de l'argent a bougé : on sauvegarde tout de suite
+        plugin.visuals().refreshSign(st);
+        return true;
+    }
+
+    // ================================================================= fin d'enchère
+
+    void resolve(Stall st) {
+        Auction a = st.auction;
+        st.auction = null;
+        long now = System.currentTimeMillis();
+        Texts t = plugin.texts();
+        if (a.hasBid()) {
+            if (!st.isRented()) {
+                assign(st, a.bidder, a.bidderName, now + s().leaseMs);
+                announceWin(st, a);
+            } else if (st.isOwner(a.bidder)) {
+                st.leaseEnd = Math.max(st.leaseEnd, now) + s().leaseMs;
+                plugin.notify(st.owner, t.get("auction.renewed", stallTags(st), ph("amount", s().money(a.bid)),
+                        ph("time", Settings.time(st.leaseEnd - now))));
+            } else {
+                UUID old = st.owner;
+                evict(st);
+                plugin.notify(old, t.get("auction.lost-stall", stallTags(st), ph("player", a.bidderName)));
+                assign(st, a.bidder, a.bidderName, now + s().leaseMs);
+                announceWin(st, a);
+            }
+        } else if (a.renewal && st.isRented()) {
+            OfflinePlayer owner = Bukkit.getOfflinePlayer(st.owner);
+            if (st.autoRenew && eco().has(owner, st.startPrice) && eco().take(owner, st.startPrice)) {
+                st.leaseEnd = Math.max(st.leaseEnd, now) + s().leaseMs;
+                plugin.notify(st.owner, t.get("auction.auto-renewed", stallTags(st), ph("amount", s().money(st.startPrice)),
+                        ph("time", Settings.time(st.leaseEnd - now))));
+            } else {
+                UUID old = st.owner;
+                evict(st);
+                plugin.notify(old, t.get("auction.expired", stallTags(st)));
+            }
+        }
+        plugin.store().save();
+        plugin.visuals().rebuild(st);
+    }
+
+    private void announceWin(Stall st, Auction a) {
+        Texts t = plugin.texts();
+        for (Player o : Bukkit.getOnlinePlayers()) {
+            t.send(o, "auction.won-broadcast", stallTags(st), ph("player", a.bidderName), ph("amount", s().money(a.bid)));
+        }
+        plugin.notify(a.bidder, t.get("auction.won", stallTags(st), ph("amount", s().money(a.bid)),
+                ph("time", Settings.time(s().leaseMs))));
+        Player p = Bukkit.getPlayer(a.bidder);
+        if (p != null) Fx.sound(p, "ui.toast.challenge_complete", 1f);
+    }
+
+    /** Donne le stand à un joueur. */
+    public void assign(Stall st, UUID owner, String name, long leaseEnd) {
+        st.owner = owner;
+        st.ownerName = name;
+        st.leaseEnd = leaseEnd;
+        st.autoRenew = true;
+        st.name = null;
+        st.trusted.clear();
+        st.totalSold = 0;
+        st.totalRevenue = 0;
+        plugin.store().markDirty();
+    }
+
+    /** Libère le stand : le stock des vitrines part dans le colis de l'ancien locataire. */
+    public void evict(Stall st) {
+        if (st.owner != null) {
+            int items = 0;
+            for (Showcase c : st.showcases) {
+                if (c.stock > 0) {
+                    plugin.store().addParcel(st.owner, c.template, c.stock);
+                    items += c.stock;
+                }
+            }
+            if (items > 0) plugin.notify(st.owner, plugin.texts().get("parcel.received", ph("count", items)));
+        }
+        plugin.visuals().removeShowcases(st);
+        st.showcases.clear();
+        st.owner = null;
+        st.ownerName = null;
+        st.leaseEnd = 0;
+        st.name = null;
+        st.trusted.clear();
+        plugin.store().markDirty();
+    }
+
+    /** Annule l'enchère en cours et rembourse (suppression / remise à zéro d'un stand). */
+    public void cancel(Stall st) {
+        Auction a = st.auction;
+        st.auction = null;
+        if (a != null && a.bidder != null) {
+            eco().give(Bukkit.getOfflinePlayer(a.bidder), a.bid);
+            plugin.notify(a.bidder, plugin.texts().get("auction.cancelled", stallTags(st), ph("amount", s().money(a.bid))));
+        }
+        plugin.store().markDirty();
+    }
+
+    public TagResolver stallTags(Stall st) {
+        return TagResolver.resolver(ph("stall", st.id), ph("shop", st.displayName()), ph("size", st.region.size()));
+    }
+}

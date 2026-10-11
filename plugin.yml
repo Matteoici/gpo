@@ -1,19 +1,20 @@
-name: SmpStart
+name: SmpMarket
 version: '${version}'
-main: fr.smpstart.SmpStart
+main: fr.smpmarket.SmpMarket
 api-version: '26.2'
-softdepend: [Vault, Essentials]
-description: Début de partie guidé pour SMP (kit, protection, étapes, accueil)
+depend: [Vault]
+softdepend: [Essentials, WorldGuard]
+description: Marché de joueurs - stands loués aux enchères, vitrines et achats
 commands:
-  guide:
-    description: Ouvrir le guide du débutant
-    usage: /guide [bar|protection|reload]
-    aliases: [start, debut, tuto]
-    permission: smpstart.use
+  marche:
+    description: Ouvrir le marché
+    usage: /marche [chercher|vitrine|gerer|colis|encheres|tp|ami|nom|admin]
+    aliases: [mk, stand, stands, stalls]
+    permission: smpmarket.use
 permissions:
-  smpstart.use:
-    description: Utiliser le guide
+  smpmarket.use:
+    description: Utiliser le marché
     default: true
-  smpstart.admin:
-    description: Commandes admin (/guide reset, complete, kit, reload)
+  smpmarket.admin:
+    description: Créer et gérer les stands
     default: op

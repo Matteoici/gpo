@@ -1,10 +1,10 @@
-package fr.smpstart;
+package fr.smpmarket;
 
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.plugin.RegisteredServiceProvider;
 
-/** Accès à l'argent via Vault (classe chargée uniquement si Vault est présent). */
+/** Accès à l'argent des joueurs via Vault (classe chargée uniquement si Vault est présent). */
 public final class Economy {
 
     private net.milkbowl.vault.economy.Economy eco() {
@@ -15,6 +15,23 @@ public final class Economy {
 
     public boolean available() {
         return eco() != null;
+    }
+
+    public double balance(OfflinePlayer p) {
+        var e = eco();
+        return e == null ? 0 : e.getBalance(p);
+    }
+
+    public boolean has(OfflinePlayer p, double amount) {
+        if (amount <= 0) return true;
+        var e = eco();
+        return e != null && e.has(p, amount);
+    }
+
+    public boolean take(OfflinePlayer p, double amount) {
+        if (amount <= 0) return true;
+        var e = eco();
+        return e != null && e.withdrawPlayer(p, amount).transactionSuccess();
     }
 
     public boolean give(OfflinePlayer p, double amount) {

@@ -2,20 +2,18 @@ plugins {
     java
 }
 
-group = "fr.smpstart"
+group = "fr.smpmarket"
 version = "1.0.0"
 
 repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
-    maven("https://jitpack.io") // Vault API
+    maven("https://jitpack.io") // Vault
 }
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:26.2.build.+")
-    compileOnly("com.github.MilkBowl:VaultAPI:1.7") {
-        isTransitive = false // évite le conflit avec l'ancien Bukkit embarqué par Vault
-    }
+    compileOnly("com.github.MilkBowl:VaultAPI:1.7") { isTransitive = false }
 }
 
 java {

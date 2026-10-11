@@ -1,0 +1,84 @@
+package fr.smpmarket;
+
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.World;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+/** Un stand du marché. */
+public final class Stall {
+
+    public final String id;
+    public Cuboid region;
+    // point d'entrée (téléportation, panneau flottant au-dessus)
+    public String world;
+    public double ex, ey, ez;
+    public float eyaw;
+
+    public double startPrice;
+    public int maxShowcases;
+
+    public UUID owner;
+    public String ownerName;
+    public long leaseEnd;
+    public boolean autoRenew = true;
+    public String name;                                    // nom de boutique choisi par le locataire
+    public final Map<UUID, String> trusted = new LinkedHashMap<>();
+    public final List<Showcase> showcases = new ArrayList<>();
+    public Auction auction;
+
+    public long totalSold;
+    public double totalRevenue;
+
+    public Stall(String id) {
+        this.id = id;
+    }
+
+    public boolean isRented() {
+        return owner != null;
+    }
+
+    public boolean isOwner(UUID id) {
+        return owner != null && owner.equals(id);
+    }
+
+    public boolean canBuild(UUID id) {
+        return isOwner(id) || trusted.containsKey(id);
+    }
+
+    public Location entrance() {
+        World w = Bukkit.getWorld(world);
+        if (w == null) return null;
+        Location l = new Location(w, ex, ey, ez);
+        l.setYaw(eyaw);
+        return l;
+    }
+
+    public Showcase showcaseAt(int x, int y, int z) {
+        for (Showcase s : showcases) if (s.isAt(x, y, z)) return s;
+        return null;
+    }
+
+    public Showcase showcase(UUID id) {
+        for (Showcase s : showcases) if (s.id.equals(id)) return s;
+        return null;
+    }
+
+    public int itemsForSale() {
+        int n = 0;
+        for (Showcase s : showcases) if (s.stock > 0) n++;
+        return n;
+    }
+
+    /** Nom affiché : nom choisi, sinon "Boutique de X", sinon l'identifiant. */
+    public String displayName() {
+        if (name != null && !name.isBlank()) return name;
+        if (ownerName != null) return "Boutique de " + ownerName;
+        return "Stand " + id;
+    }
+}

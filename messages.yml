@@ -1,117 +1,429 @@
 # =====================================================================
-#  SmpStart - textes (format MiniMessage : https://docs.advntr.dev/minimessage/format.html)
-#  Après une modification : /guide reload
+#  SmpMarket - textes (format MiniMessage : https://docs.advntr.dev/minimessage/format.html)
+#  Après une modification : /marche admin reload
 # =====================================================================
 
-prefix: "<gradient:#ffcc33:#ff7a1a><b>Guide</b></gradient> <dark_gray>»</dark_gray> "
+prefix: "<gradient:#ffd36b:#ff8a3d><b>MARCHÉ</b></gradient> <dark_gray>»</dark_gray> "
 
 error:
-  player-only: "<red>Cette commande doit être utilisée en jeu."
   no-permission: "<red>Tu n'as pas la permission."
-  no-guide: "<gray>Tu as déjà terminé le guide."
-  player-offline: "<red>Ce joueur n'est pas connecté."
+  player-only: "<red>Commande à utiliser en jeu."
   usage: "<red>Utilisation : <white><usage>"
+  unknown-player: "<red>Joueur inconnu : <white><player>"
+  bad-amount: "<red>Montant invalide : <white><value></white>. Exemples : 1500, 2.5k, 1m"
 
-first-join:
-  title: "<gradient:#ffcc33:#ff7a1a><b>Bienvenue <player> !"
-  subtitle: "<gray>Ton aventure commence ici"
-  message:
-    - ""
-    - "<gradient:#ffcc33:#ff7a1a><b>✦ Bienvenue sur le serveur, <player> ! ✦</b></gradient>"
-    - "<gray>Tu es le joueur n°<white><number></white>."
-    - "<gray>Ton <yellow>kit de départ</yellow> est dans ton inventaire."
-    - "<gray>Tu es <green>protégé du PvP</green> pendant <white><minutes> minutes</white> de jeu."
-    - "<gray>Suis ton <yellow>guide</yellow> : chaque étape te rapporte des récompenses."
-    - "<click:run_command:'/guide'><green><b>[Ouvrir mon guide]</b></green></click> <dark_gray>ou fais clic droit sur le livre."
-    - ""
-  broadcast: "<gray><white><player></white> rejoint le serveur pour la première fois (joueur n°<number>) ! Dis-lui <yellow><b>bienvenue</b></yellow> dans le chat !"
+input:
+  cancel-hint: "<dark_gray>(écris « annuler » pour annuler)"
+  cancelled: "<gray>Annulé."
+  price: "<yellow>Écris le nouveau prix à l'unité dans le chat."
+  bid: "<yellow>Écris le montant de ton offre dans le chat. <gray>(ex. 2500 ou 3k)"
+  name: "<yellow>Écris le nom de ta boutique dans le chat (28 caractères max)."
+  trust: "<yellow>Écris le pseudo du joueur à ajouter."
+  search: "<yellow>Écris ce que tu cherches dans le chat (ex. diamant, épée, bûche)."
 
-kit:
-  received: "<green>Kit de départ reçu ! Équipe ton armure et pose ton lit en lieu sûr."
-  money: "<green>+<gold><amount> $</gold> d'argent de départ."
+help:
+  - ""
+  - "<gradient:#ffd36b:#ff8a3d><b>🏪 Le marché</b></gradient>"
+  - "<gray>Loue un stand aux <yellow>enchères</yellow>, expose tes objets dans des <yellow>vitrines</yellow> et vends même quand tu n'es pas là."
+  - "<aqua>/marche</aqua> <dark_gray>- <gray>menu du marché"
+  - "<aqua>/marche chercher <objet></aqua> <dark_gray>- <gray>trouver le meilleur prix"
+  - "<aqua>/marche encheres</aqua> <dark_gray>- <gray>stands à louer"
+  - "<aqua>/marche vitrine <prix></aqua> <dark_gray>- <gray>exposer l'objet en main sur le bloc visé"
+  - "<aqua>/marche gerer</aqua> <dark_gray>- <gray>gérer ta boutique"
+  - "<aqua>/marche colis</aqua> <dark_gray>- <gray>récupérer tes objets"
+  - ""
 
-greet:
-  reward: "<green>+<gold><amount> $</gold> pour avoir accueilli <white><newbie></white> !"
+# ---------------------------------------------------------------- Panneaux flottants
+sign:
+  rented:
+    - "<gradient:#ffd36b:#ff8a3d><b>🏪 <shop></b></gradient>"
+    - "<gray>tenue par <white><owner>"
+    - "<yellow><count></yellow> <gray>article(s) en vente"
+    - "<dark_gray>Clic droit : catalogue"
+  renewal: "<red>⚑ Enchère en cours : <gold><bid></gold> <gray>(<time>)"
+  free:
+    - "<green><b>★ STAND À LOUER ★</b></green>"
+    - "<gray>Stand <white><stall></white> <dark_gray>(<size>)"
+    - "<bid-line>"
+    - "<time-line>"
+    - "<yellow>Clic droit pour enchérir"
+  free-start: "<gray>Mise à prix : <gold><bid>"
+  free-bid: "<gray>Meilleure offre : <gold><bid></gold> <gray>par <white><bidder>"
+  free-time: "<gray>Fin dans <white><time>"
+  free-waiting: "<dark_gray>En attente de la première offre"
+
+showcase-label:
+  in-stock:
+    - "<white><item>"
+    - "<gold><b><price></b> <gray>/ pièce"
+    - "<gray>Stock : <white><stock>"
+  out-of-stock:
+    - "<white><item>"
+    - "<gold><price> <gray>/ pièce"
+    - "<red><b>RUPTURE DE STOCK"
+
+# ---------------------------------------------------------------- Enchères
+auction:
+  bid-ok: "<green>Offre enregistrée : <gold><amount></gold> sur <white><shop></white>. <gray>Fin dans <white><time></white>. L'argent est retenu et te sera rendu si quelqu'un surenchérit."
+  too-low: "<red>Offre trop basse. <gray>Minimum : <gold><min>"
+  no-money: "<red>Il te faut <gold><amount></gold> pour cette offre."
+  limit: "<red>Tu as déjà <white><max></white> stand(s) ou enchère(s) en tête. Tu ne peux pas en avoir plus."
+  closed: "<red>Ce stand est loué. <gray>L'enchère pour la location suivante ouvrira dans <white><time></white>."
+  extended: "<yellow>Offre de dernière minute : l'enchère est prolongée de <white><time></white>."
+  started: "<gold><b>🔨</b></gold> <white><player></white> <gray>a lancé l'enchère du stand <white><stall></white> <dark_gray>(<size>)</dark_gray> à <gold><amount></gold>. <gray>Fin dans <white><time></white>. <aqua>/marche encheres"
+  outbid: "<red><b>Surenchère !</b></red> <white><player></white> <gray>a proposé <gold><amount></gold> sur <white><shop></white>. Tes <gold><refund></gold> <gray>t'ont été rendus. <aqua>/marche encheres"
+  owner-warned: "<red><b>⚠</b> <white><player></white> <gray>veut reprendre ton stand <white><shop></white> (<gold><amount></gold>). Surenchéris pour le garder : <aqua>/marche encheres"
+  won: "<green><b>🎉 Stand remporté !</b></green> <gray>Le stand <white><stall></white> est à toi pour <white><time></white> (<gold><amount></gold>). Pose tes objets : tiens-les en main, vise un bloc de ton stand et tape <aqua>/marche vitrine <prix></aqua>."
+  won-broadcast: "<gold><b>🏪</b></gold> <white><player></white> <gray>a remporté le stand <white><stall></white> pour <gold><amount></gold> !"
+  renewal-opened: "<yellow>Ta location du stand <white><shop></white> se termine dans <white><time></white>. <gray>L'enchère pour la suite est ouverte : enchéris pour garder ton stand. Sans offre, il sera renouvelé automatiquement pour <gold><price></gold> si l'option est activée."
+  renewed: "<green>Tu gardes ton stand <white><shop></white> ! <gray>(<gold><amount></gold>) Location prolongée : <white><time></white> restants."
+  auto-renewed: "<green>Stand <white><shop></white> renouvelé automatiquement pour <gold><amount></gold>. <gray><white><time></white> restants."
+  lost-stall: "<red>Ton stand <white><shop></white> a été repris par <white><player></white>. <gray>Tes objets t'attendent dans <aqua>/marche colis</aqua>."
+  expired: "<red>Ta location du stand <white><shop></white> est terminée. <gray>Tes objets t'attendent dans <aqua>/marche colis</aqua>."
+  cancelled: "<yellow>L'enchère sur <white><shop></white> a été annulée par un administrateur. <gold><amount></gold> <gray>t'ont été rendus."
+
+# ---------------------------------------------------------------- Vitrines
+showcase:
+  created: "<green>Vitrine créée : <white><item></white> à <gold><price></gold> pièce <gray>(stock <white><stock></white>)."
+  not-your-stall: "<red>Vise un bloc de <b>ton</b> stand. <gray>(/marche encheres pour en louer un)"
+  already: "<red>Il y a déjà une vitrine sur ce bloc."
+  limit: "<red>Ton stand ne peut avoir que <white><max></white> vitrines."
+  no-space: "<red>Il faut un espace libre au-dessus du bloc, à l'intérieur du stand."
+  bad-price: "<red>Le prix doit être entre <gold><min></gold> et <gold><max></gold>."
+  empty-hand: "<red>Tiens en main l'objet à vendre."
+  look-at-block: "<red>Regarde le bloc sur lequel exposer l'objet (table, tonneau, bloc décoratif...)."
+  stock-full: "<red>Cette vitrine est pleine (<white><max></white> objets max)."
+  nothing-to-add: "<red>Tu n'as pas de <white><item></white> identique dans ton inventaire."
+  stock-added: "<green>+<white><count></white> <item> <gray>(stock <white><stock></white>)"
+  withdrawn: "<green>Tu as récupéré <white><count></white> <item>."
+  empty: "<red>Cette vitrine est vide."
+  price-set: "<green>Nouveau prix de <white><item></white> : <gold><price></gold> pièce."
+  removed: "<yellow>Vitrine retirée (<white><item></white>). Le stock t'a été rendu."
+
+# ---------------------------------------------------------------- Achats
+buy:
+  done: "<green>Achat : <white><count>x <item></white> pour <gold><price></gold> <gray>chez <white><shop>"
+  seller: "<gold><b>💰</b></gold> <white><player></white> <gray>a acheté <white><count>x <item></white> <gray>(<gold>+<price></gold>)"
+  seller-empty: "<red>Ta vitrine de <white><item></white> est vide ! <gray>Réapprovisionne-la."
+  own: "<red>Tu ne peux pas acheter dans ta propre boutique."
+  out-of-stock: "<red>Rupture de stock."
+  no-space: "<red>Pas assez de place dans ton inventaire."
+  no-money: "<red>Il te faut <gold><price></gold>. <gray>Tu as <white><balance></white>."
+  too-far: "<red>Approche-toi du stand pour acheter. <gray>(clic gauche pour t'y téléporter)"
+
+# ---------------------------------------------------------------- Stand
+stall:
+  none: "<red>Tu n'as pas de stand. <gray>Gagne une enchère : <aqua>/marche encheres"
+  unknown: "<red>Stand inconnu : <white><stall>"
+  teleported: "<gray>Bienvenue au stand <white><shop></white> !"
+  renamed: "<green>Ta boutique s'appelle maintenant <white><shop></white>."
+  bad-name: "<red>Nom invalide (1 à 28 caractères)."
+  trusted: "<green><white><player></white> peut maintenant construire dans ton stand."
+  untrusted: "<yellow><white><player></white> ne peut plus construire dans ton stand."
+  auto-renew-on: "<green>Renouvellement automatique activé."
+  auto-renew-off: "<yellow>Renouvellement automatique désactivé."
 
 protection:
-  "on": "<green>Protection débutant active : <white><minutes> minutes</white> de jeu sans PvP."
-  ended: "<yellow>Ta protection débutant est terminée. Le PvP est maintenant possible."
-  none: "<gray>Tu n'as plus de protection débutant."
-  status: "<green>Protection débutant : encore <white><minutes> min</white> de jeu. <gray>(<white>/guide protection off</white> pour la retirer)"
-  disabled: "<yellow>Protection débutant retirée. Tu peux maintenant te battre."
-  victim: "<red><player> est protégé (nouveau joueur)."
-  attacker: "<red>Tu es protégé en tant que nouveau joueur. <gray>/guide protection off pour pouvoir te battre."
+  not-yours: "<red>Ce stand ne t'appartient pas."
+  container: "<red>Ce coffre appartient au stand de quelqu'un d'autre."
+  showcase-block: "<red>Ce bloc porte une vitrine. Retire d'abord la vitrine (clic droit sur l'objet exposé)."
 
-step:
-  title: "<green><b>Étape terminée !"
-  subtitle: "<gray><step> <dark_gray>(<number>/<total>)"
-  done: "<green>✔ <step> <gray>(<number>/<total>)"
-  next: "<yellow>▶ Étape <number>/<total> : <white><b><step>"
-  hint: "  <aqua>[<command>] <gray>clique pour l'écrire"
+parcel:
+  received: "<yellow><white><count></white> objet(s) ont été mis dans ton colis. <aqua>/marche colis"
+  taken: "<green>Objets récupérés."
+  no-space: "<red>Plus de place dans ton inventaire."
 
-reward:
-  money: "<gray>Récompense : <gold>+<amount> $"
-  item: "<gray>Récompense : <white><amount>x <item>"
+join:
+  sales: "<gold><b>💰 Pendant ton absence</b></gold> <gray>: <white><count></white> objet(s) vendu(s) pour <gold><money></gold> !"
+  parcels: "<yellow>Tu as <white><count></white> colis à récupérer : <aqua>/marche colis"
 
-finished:
-  title: "<gradient:#ffe259:#ffa751><b>GUIDE TERMINÉ !"
-  subtitle: "<gray>Tu n'es plus un débutant"
-  message:
-    - ""
-    - "<gradient:#ffcc33:#ff7a1a><b>★ Félicitations <player> ! ★</b></gradient>"
-    - "<gray>Tu as terminé toutes les étapes du guide."
-    - "<gray>Le serveur est à toi : construis, explore, rejoins une guilde."
-    - ""
-  broadcast: "<gold><b><player></b> <gray>a terminé le guide du débutant !"
-
-reminder: "<gray>Petit rappel : ton guide t'attend."
-returning: "<gray>Content de te revoir ! Tu en es à l'<yellow>étape <number>/<total></yellow> du guide. <click:run_command:'/guide'><green>[Ouvrir]</green></click>"
-
-bar:
-  title: "<yellow>Étape <number>/<total> <dark_gray>»</dark_gray> <white><step> <gray>(<progress>/<amount>)"
-  "on": "<green>Barre de progression affichée."
-  "off": "<yellow>Barre de progression masquée."
-
+# ---------------------------------------------------------------- Admin
 admin:
-  reloaded: "<green>Configuration rechargée (<steps> étapes)."
-  reset: "<green>Guide de <white><player></white> remis à zéro."
-  completed: "<green>Guide de <white><player></white> terminé."
-  kit: "<green>Kit de départ donné à <white><player></white>."
+  help:
+    - "<gold><b>SmpMarket - admin"
+    - "<aqua>/marche admin wand</aqua> <dark_gray>- <gray>baguette (clic gauche / droit = coins du stand)"
+    - "<aqua>/marche admin create <id> [prix]</aqua> <dark_gray>- <gray>crée le stand ; ta position = entrée et panneau"
+    - "<aqua>/marche admin setentrance <id></aqua> <dark_gray>- <gray>déplace l'entrée et le panneau"
+    - "<aqua>/marche admin price <id> <prix></aqua> <dark_gray>- <gray>mise à prix"
+    - "<aqua>/marche admin showcases <id> <n></aqua> <dark_gray>- <gray>nombre de vitrines"
+    - "<aqua>/marche admin give <id> <joueur> [jours]</aqua> <dark_gray>- <gray>donner sans enchère"
+    - "<aqua>/marche admin end <id></aqua> <dark_gray>- <gray>terminer l'enchère maintenant"
+    - "<aqua>/marche admin reset <id></aqua> <dark_gray>- <gray>libérer le stand"
+    - "<aqua>/marche admin delete <id></aqua> <dark_gray>- <gray>supprimer le stand"
+    - "<aqua>/marche admin list</aqua> · <aqua>/marche admin reload"
+  wand-name: "<gold><b>Baguette du marché"
+  wand-lore: ["<gray>Clic gauche : coin 1", "<gray>Clic droit : coin 2"]
+  wand-given: "<green>Baguette donnée. Sélectionne les deux coins du stand (sol et plafond compris)."
+  pos1: "<green>Coin 1 : <white><x> <y> <z>"
+  pos2: "<green>Coin 2 : <white><x> <y> <z>"
+  no-selection: "<red>Sélectionne d'abord les deux coins avec <white>/marche admin wand</white>."
+  exists: "<red>Le stand <white><stall></white> existe déjà."
+  overlap: "<red>Cette zone touche le stand <white><stall></white>."
+  created: "<green>Stand <white><stall></white> créé <gray>(<size>, mise à prix <gold><price></gold>). <gray>Le panneau apparaît au-dessus de ta position."
+  deleted: "<yellow>Stand <white><stall></white> supprimé."
+  reset: "<yellow>Stand <white><stall></white> libéré."
+  entrance-set: "<green>Entrée du stand <white><stall></white> déplacée."
+  given: "<green>Stand <white><stall></white> donné à <white><player></white>."
+  ended: "<green>Enchère du stand <white><stall></white> terminée."
+  no-auction: "<red>Pas d'enchère en cours sur <white><stall></white>."
+  no-bid: "<red>Personne n'a encore enchéri sur <white><stall></white>."
+  showcases-set: "<green>Le stand <white><stall></white> a maintenant <white><count></white> vitrines."
+  price-set: "<green>Mise à prix du stand <white><stall></white> : <gold><price>"
+  list-header: "<gold><b><count> stand(s)"
+  list-line: "<dark_gray>• <white><stall></white> <gray>(<size>) <dark_gray>- <gray><owner> <dark_gray>- <gold><price>"
+  reloaded: "<green>Configuration rechargée."
 
+# =====================================================================
+#  Menus
+# =====================================================================
 gui:
-  title: "<dark_gray>Guide du voyageur"
-  close: "<red>Fermer"
-  header:
-    name: "<yellow><b>Ton guide"
-    name-done: "<gold><b>Guide terminé !"
-    lore:
-      - "<gray>Étapes terminées : <white><done>/<total></white> <dark_gray>(<percent> %)"
-      - "<bar>"
+  common:
+    back: {name: "<yellow>← Retour"}
+    close: {name: "<red>Fermer"}
+    previous: {name: "<yellow>← Page <page>/<pages>"}
+    next: {name: "<yellow>Page <page>/<pages> →"}
+
+  main:
+    title: "<dark_gray>🏪 Marché"
+    header:
+      name: "<gradient:#ffd36b:#ff8a3d><b>Le marché"
+      lore:
+        - "<gray>Boutiques ouvertes : <white><rented>"
+        - "<gray>Stands à louer : <green><free>"
+        - "<gray>Ton argent : <gold><balance>"
+    directory:
+      name: "<gold><b>Parcourir les boutiques"
+      lore: ["<gray>Toutes les boutiques des joueurs.", "", "<yellow>▶ Clic"]
+    search:
+      name: "<aqua><b>Rechercher un objet"
+      lore: ["<gray>Trouve le meilleur prix du marché.", "<gray>Astuce : <white>/marche chercher diamant", "", "<yellow>▶ Clic pour écrire"]
+    auctions:
+      name: "<yellow><b>Enchères <gray>(<count>)"
+      lore: ["<gray>Loue un stand pour vendre", "<gray>tes propres objets.", "", "<yellow>▶ Clic"]
+    mystall:
+      name: "<green><b>Ma boutique"
+      lore: ["<gray><shop>", "<gray>Location : <white><time></white> restants", "", "<yellow>▶ Clic pour gérer"]
+    nostall:
+      name: "<gray><b>Ma boutique"
+      lore: ["<gray>Tu n'as pas encore de stand.", "<gray>Remporte une enchère pour en avoir un !"]
+    parcels:
+      name: "<light_purple><b>Mes colis <gray>(<count>)"
+      lore: ["<gray>Objets rendus quand une vitrine", "<gray>ou une location se termine.", "", "<yellow>▶ Clic"]
+    help:
+      name: "<white><b>Comment ça marche ?"
+      lore:
+        - "<yellow>1.</yellow> <gray>Enchéris sur un stand libre."
+        - "<yellow>2.</yellow> <gray>Gagne-le pour <white><days> jours</white>."
+        - "<yellow>3.</yellow> <gray>Décore-le comme tu veux."
+        - "<yellow>4.</yellow> <gray>Objet en main + vise un bloc :"
+        - "    <aqua>/marche vitrine <prix>"
+        - "<yellow>5.</yellow> <gray>Les joueurs achètent même si"
+        - "    <gray>tu n'es pas connecté !"
+        - ""
+        - "<gray>Taxe sur les ventes : <white><tax>%"
+
+  directory:
+    title: "<dark_gray>Boutiques (<count>)"
+    shop:
+      name: "<gold><b><shop>"
+      lore:
+        - "<gray>Tenue par <white><owner>"
+        - "<gray>Articles en vente : <white><count>"
+        - "<top>"
+        - ""
+        - "<yellow>▶ Clic gauche : y aller"
+        - "<yellow>▶ Clic droit : voir le catalogue"
+    top-line: "<dark_gray>• <white><item> <dark_gray>- <gold><price>"
+    free:
+      name: "<green><b>Stand <stall> à louer"
+      lore:
+        - "<gray>Taille : <white><size>"
+        - "<gray>Offre actuelle : <gold><bid>"
+        - "<gray>Fin : <white><time>"
+        - ""
+        - "<yellow>▶ Clic : enchérir"
+    empty: {name: "<gray>Aucun stand pour l'instant"}
+
+  catalog:
+    title: "<dark_gray><shop>"
+    header:
+      name: "<gold><b><shop>"
+      lore: ["<gray>Tenue par <white><owner>", "<gray>Ventes totales : <white><sold>"]
+    item-lore:
       - ""
-      - "<gray>Les étapes se font dans l'ordre."
-      - "<gray>Chacune te rapporte une récompense."
-  step:
-    done: "<green>✔ <step>"
-    current: "<yellow>▶ <step>"
-    locked: "<gray>🔒 <step>"
-    lore-done: "<green>Terminée"
-    lore-progress: "<yellow>Progression : <white><progress>/<amount>"
-    lore-locked: "<dark_gray>Se débloque après l'étape précédente"
-    lore-reward: "<gray>Récompense :"
-    reward-money: "<gold>  +<amount> $"
-    reward-item: "<white>  +<amount>x <item>"
-    lore-click: "<yellow>▶ Clic pour voir la consigne"
-  protection:
-    name: "<green><b>Protection débutant"
-    lore:
-      - "<gray>Il te reste environ <white><minutes> min</white> de jeu"
-      - "<gray>sans pouvoir être attaqué (ni attaquer)."
+      - "<gray>Prix : <gold><b><price></b> <gray>/ pièce"
+      - "<gray>Stock : <white><stock>"
       - ""
-      - "<red>▶ Clic droit pour la retirer"
-  bar:
-    name-on: "<aqua><b>Barre de progression : activée"
-    name-off: "<gray><b>Barre de progression : masquée"
-    lore:
-      - "<gray>Affiche l'étape en cours en haut de l'écran."
+      - "<yellow>▶ Clic : acheter"
+    item-lore-empty:
       - ""
-      - "<yellow>▶ Clic pour changer"
+      - "<gray>Prix : <gold><price> <gray>/ pièce"
+      - "<red><b>Rupture de stock"
+    tp:
+      name: "<aqua><b>Aller au stand"
+    empty: {name: "<gray>Aucun article pour l'instant"}
+
+  buy:
+    title: "<dark_gray>Acheter"
+    info-lore:
+      - ""
+      - "<gray>Prix : <gold><b><price></b> <gray>/ pièce"
+      - "<gray>Stock : <white><stock>"
+      - "<gray>Vendeur : <white><owner>"
+      - "<gray>Ton argent : <gold><balance>"
+    amount:
+      name: "<green><b>Acheter x<count>"
+      lore: ["<gray>Total : <gold><total>", "", "<yellow>▶ Clic pour acheter"]
+    amount-max:
+      name: "<green><b>Acheter le maximum (x<count>)"
+      lore: ["<gray>Autant que ton argent, ta place", "<gray>et le stock le permettent.", "<gray>Total : <gold><total>", "", "<yellow>▶ Clic pour acheter"]
+    cant:
+      name: "<red>Impossible d'acheter"
+      lore: ["<gray>Pas assez d'argent, de place ou de stock."]
+
+  auctions:
+    title: "<dark_gray>Enchères (<count>)"
+    item:
+      name: "<yellow><b>Stand <stall>"
+      lore:
+        - "<gray><kind>"
+        - "<gray>Taille : <white><size>"
+        - "<gray>Offre : <gold><bid></gold> <gray><bidder>"
+        - "<gray>Fin : <white><time>"
+        - ""
+        - "<yellow>▶ Clic : enchérir"
+    kind-free: "<green>Stand libre"
+    kind-renewal: "<red>Location suivante de <white><owner>"
+    by: "par <white><player>"
+    waiting: "en attente de la 1re offre"
+    empty: {name: "<gray>Aucune enchère en cours"}
+
+  auction:
+    title: "<dark_gray>Enchère : stand <stall>"
+    header:
+      name: "<yellow><b>Stand <stall>"
+      lore:
+        - "<gray>Taille : <white><size>"
+        - "<gray>Position : <white><x>, <z>"
+        - "<gray>Location : <white><days> jours"
+        - ""
+        - "<gray>Offre actuelle : <gold><bid>"
+        - "<gray>Meilleur enchérisseur : <white><bidder>"
+        - "<gray>Fin : <white><time>"
+        - "<gray>Offre minimale : <gold><min>"
+    min:
+      name: "<gold><b>Enchérir : <amount>"
+      lore: ["<gray>Offre minimale.", "", "<yellow>▶ Clic"]
+    plus10:
+      name: "<gold><b>Enchérir : <amount>"
+      lore: ["<gray>+10 %", "", "<yellow>▶ Clic"]
+    plus25:
+      name: "<gold><b>Enchérir : <amount>"
+      lore: ["<gray>+25 % (pour décourager les autres)", "", "<yellow>▶ Clic"]
+    custom:
+      name: "<yellow><b>Autre montant..."
+      lore: ["<gray>Écrire le montant dans le chat."]
+    tp:
+      name: "<aqua><b>Voir le stand"
+      lore: ["<gray>Se téléporter à l'entrée."]
+    balance:
+      name: "<green><b>Ton argent : <balance>"
+      lore: ["<gray>L'argent de l'offre est retenu", "<gray>et rendu si quelqu'un surenchérit."]
+    leading:
+      name: "<green><b>✔ Tu es en tête !"
+    rented:
+      name: "<gray><b>Stand loué"
+      lore: ["<gray>Loué par <white><owner>", "<gray>L'enchère ouvrira dans <white><time>"]
+
+  stall:
+    title: "<dark_gray>Ma boutique"
+    header:
+      name: "<gold><b><shop>"
+      lore:
+        - "<gray>Stand <white><stall></white> <dark_gray>(<size>)"
+        - "<gray>Location : <white><time></white> restants"
+        - "<gray>Objets vendus : <white><sold>"
+        - "<gray>Recettes : <gold><revenue>"
+        - "<gray>Vitrines : <white><used>/<max>"
+    showcase-lore:
+      - ""
+      - "<gray>Prix : <gold><price>"
+      - "<gray>Stock : <white><stock>"
+      - "<gray>Vendus : <white><sold></white> <dark_gray>(<revenue>)"
+      - ""
+      - "<yellow>▶ Clic pour gérer"
+    rename:
+      name: "<white><b>Renommer la boutique"
+      lore: ["<gray>Nom actuel : <white><shop>"]
+    trusted:
+      name: "<white><b>Amis du stand <gray>(<count>)"
+      lore: ["<gray>Ils peuvent construire dans ton stand."]
+    autorenew:
+      name: "<white><b>Renouvellement auto : <state>"
+      lore: ["<gray>Si personne n'enchérit, ton stand est", "<gray>reloué pour <gold><price></gold> à la fin."]
+    "on": "<green>activé"
+    "off": "<red>désactivé"
+    tp:
+      name: "<aqua><b>Aller au stand"
+    howto:
+      name: "<yellow><b>Ajouter une vitrine"
+      lore:
+        - "<gray>1. Va dans ton stand"
+        - "<gray>2. Prends l'objet en main"
+        - "<gray>3. Vise un bloc (tonneau, dalle...)"
+        - "<gray>4. Tape <aqua>/marche vitrine <prix>"
+        - "<gray>Le stock = la quantité en main."
+    renewal:
+      name: "<red><b>Enchère pour garder ton stand"
+      lore: ["<gray>Offre : <gold><bid></gold> <gray><bidder>", "<gray>Fin : <white><time>", "", "<yellow>▶ Clic"]
+
+  showcase:
+    title: "<dark_gray>Vitrine"
+    info-lore:
+      - ""
+      - "<gray>Prix : <gold><price></gold> <gray>/ pièce"
+      - "<gray>Stock : <white><stock></white> <dark_gray>/ <max>"
+      - "<gray>Vendus : <white><sold>"
+      - "<gray>Recettes : <gold><revenue>"
+    add:
+      name: "<green><b>Ajouter du stock"
+      lore: ["<gray>Prend tous les objets identiques", "<gray>de ton inventaire (<white><count></white>)."]
+    take-stack:
+      name: "<yellow><b>Retirer une pile"
+    take-all:
+      name: "<yellow><b>Tout retirer"
+    price:
+      name: "<gold><b>Changer le prix"
+      lore: ["<gray>Actuel : <gold><price>"]
+    remove:
+      name: "<red><b>Supprimer la vitrine"
+      lore: ["<gray>Le stock te sera rendu.", "", "<red>▶ Shift + clic pour confirmer"]
+
+  trusted:
+    title: "<dark_gray>Amis du stand"
+    player:
+      name: "<white><b><player>"
+      lore: ["<red>▶ Clic pour retirer"]
+    add:
+      name: "<green><b>Ajouter un ami"
+
+  search:
+    title: "<dark_gray>Recherche : <query>"
+    lore:
+      - ""
+      - "<gray>Prix : <gold><b><price></b> <gray>/ pièce"
+      - "<gray>Stock : <white><stock>"
+      - "<gray>Chez <white><shop></white> <dark_gray>(<owner>)"
+      - ""
+      - "<yellow>▶ Clic gauche : y aller"
+      - "<yellow>▶ Clic droit : acheter (si tu es sur place)"
+    empty:
+      name: "<gray>Aucun résultat"
+      lore: ["<gray>Personne ne vend ça pour l'instant."]
+
+  mailbox:
+    title: "<dark_gray>Mes colis (<count>)"
+    take-all:
+      name: "<green><b>Tout récupérer"
+    item-lore: ["", "<yellow>▶ Clic pour récupérer"]
+    empty: {name: "<gray>Aucun colis"}
