@@ -34,6 +34,13 @@ public final class Settings {
     public final Map<Material, Double> xrayOres = new HashMap<>();
     // freecam
     public final double freecamMinSeconds;
+    // auto-totem
+    public final double totemMinReactionMs;
+    public final boolean totemBlockImpossible;
+    // cristaux
+    public final double crystalMinReactionMs, crystalInhumanRatio, crystalMaxAngle;
+    public final int crystalMaxPerSecond;
+    public final boolean crystalBlockImpossible;
     // anti-esp
     public final boolean hideBehindWalls;
     public final double hideDistance;
@@ -87,6 +94,14 @@ public final class Settings {
         }
 
         freecamMinSeconds = Math.max(2, c.getDouble("checks.freecam.min-seconds", 4));
+
+        totemMinReactionMs = c.getDouble("checks.auto-totem.min-reaction-ms", 90);
+        totemBlockImpossible = c.getBoolean("checks.auto-totem.block-impossible", true);
+        crystalMinReactionMs = c.getDouble("checks.crystal.min-reaction-ms", 40);
+        crystalInhumanRatio = Math.max(0.3, Math.min(1, c.getDouble("checks.crystal.inhuman-ratio", 0.75)));
+        crystalMaxPerSecond = Math.max(5, c.getInt("checks.crystal.max-per-second", 12));
+        crystalMaxAngle = c.getDouble("checks.crystal.max-angle", 75);
+        crystalBlockImpossible = c.getBoolean("checks.crystal.block-impossible", true);
 
         hideBehindWalls = c.getBoolean("anti-esp.hide-players-behind-walls", false);
         hideDistance = Math.max(8, c.getDouble("anti-esp.distance", 48));

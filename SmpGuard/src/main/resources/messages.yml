@@ -33,6 +33,8 @@ checks:
   esp-aim: "<light_purple>ESP (visée à travers les murs)"
   xray: "<aqua>X-ray (minerais cachés)"
   freecam: "<yellow>Freecam / blink"
+  auto-totem: "<gold>Auto-totem"
+  crystal: "<red>Crystal aura"
   bait: "<red>Test appât"
 
 # Détail d'une alerte (texte brut)
@@ -43,12 +45,21 @@ detail:
   nether: "Nether"
   freecam: "touches de déplacement enfoncées <seconds>s sans que le corps bouge"
   bait: "a visé l'appât invisible <rate>% du temps (point témoin : <control>%)"
+  auto-totem: "totem remis en seconde main <delay> ms après l'activation, soit ~<reaction> ms de réaction une fois le ping retiré (ping <ping> ms)"
+  auto-totem-instant: "totem remis dans le même tick que l'activation (impossible : le client ne le savait pas encore) - action annulée"
+  auto-totem-walking: "a déplacé un totem dans son inventaire en gardant les touches de déplacement enfoncées (inventaire jamais ouvert)"
+  crystal-reaction: "<count> cristaux sur <total> cassés en moins de 40 ms de réaction (ping <ping> ms retiré)"
+  crystal-instant: "cristal cassé dans le même tick que son apparition (prédiction d'identifiant) - coup annulé"
+  crystal-rate: "<rate> cristaux cassés par seconde pendant 3 secondes"
+  crystal-aim: "<count> cristaux sur 10 posés ou cassés hors du champ de vision (jusqu'à <angle>°)"
 
 # Explications dans le rapport
 explain:
   esp-aim: "<gray>Suit avec sa visée des joueurs cachés derrière des blocs."
   xray: "<gray>Trouve des filons rares enfermés dans la roche bien trop vite."
   freecam: "<gray>Appuie sur avancer mais son corps ne bouge pas."
+  auto-totem: "<gray>Remet ses totems plus vite qu'un humain."
+  crystal: "<gray>Pose / casse les cristaux plus vite et plus précisément qu'un humain."
   bait: "<gray>Résultat des tests appât lancés par le staff."
 
 alert:

@@ -21,7 +21,8 @@ import static fr.smpguard.Texts.pp;
 /** Rapport détaillé d'un joueur + outils de vérification. */
 public final class ReportMenu extends Menu {
 
-    private static final Material[] ICONS = {Material.SPYGLASS, Material.DIAMOND_ORE, Material.ENDER_EYE, Material.ZOMBIE_HEAD};
+    private static final Material[] ICONS = {Material.SPYGLASS, Material.DIAMOND_ORE, Material.ENDER_EYE,
+            Material.TOTEM_OF_UNDYING, Material.END_CRYSTAL, Material.ZOMBIE_HEAD};
 
     private final Player target;
 
@@ -42,7 +43,7 @@ public final class ReportMenu extends Menu {
                 ph("gamemode", target.getGameMode().name().toLowerCase(Locale.ROOT))};
         set(4, Items.head(target, t().get("gui.report.header.name", r), t().list("gui.report.header.lore", r)));
 
-        int[] slots = {19, 21, 23, 25};
+        int[] slots = {19, 20, 21, 23, 24, 25};
         for (Check c : Check.values()) {
             Settings.Limits lim = plugin.settings().limits(c);
             double vl = prof.vl[c.ordinal()];

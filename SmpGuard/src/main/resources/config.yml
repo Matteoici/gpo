@@ -75,6 +75,35 @@ checks:
     sus-vl: 6
     decay-per-minute: 0.1
 
+  # Auto-totem : totem remis en seconde main plus vite qu'un humain ne peut réagir.
+  # Le ping est retiré du délai mesuré (on suppose même le ping le plus bas) :
+  # seules les réactions impossibles comptent. Un très bon joueur met 150 ms ou plus.
+  auto-totem:
+    enabled: true
+    min-reaction-ms: 90
+    # annule un totem remis dans le même tick que l'activation (impossible sans triche)
+    block-impossible: true
+    alert-vl: 2
+    sus-vl: 4
+    decay-per-minute: 0.05
+
+  # Crystal aura : cristaux de l'End posés / cassés plus vite et plus précisément qu'un humain.
+  crystal:
+    enabled: true
+    # réaction (ping retiré) en dessous de laquelle un cassage est "trop rapide"
+    min-reaction-ms: 40
+    # part des 12 derniers cassages trop rapides pour alerter (un bon joueur en a parfois 1 ou 2, pas 9)
+    inhuman-ratio: 0.75
+    # cristaux cassés par seconde, tenus 3 secondes de suite (un excellent joueur : 6 à 9)
+    max-per-second: 12
+    # angle (degrés) entre le regard et le cristal au-delà duquel c'est "hors champ"
+    max-angle: 75
+    # annule un cristal cassé dans le même tick que son apparition (prédiction d'identifiant, impossible sans triche)
+    block-impossible: true
+    alert-vl: 3
+    sus-vl: 6
+    decay-per-minute: 0.1
+
 # ---------------------------------------------------------------- Protection anti-ESP
 # Cache les joueurs qui ne sont pas visibles (derrière un mur) : l'ESP et le freecam
 # ne peuvent plus les voir, puisque le client ne reçoit même pas leur position.

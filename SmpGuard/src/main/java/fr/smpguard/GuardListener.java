@@ -1,6 +1,8 @@
 package fr.smpguard;
 
 import fr.smpguard.gui.Menu;
+import fr.smpguard.check.AutoTotemCheck;
+import org.bukkit.entity.EnderCrystal;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
@@ -9,15 +11,20 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityPlaceEvent;
+import org.bukkit.event.entity.EntityResurrectEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerGameModeChangeEvent;
+import org.bukkit.event.player.PlayerInputEvent;
+import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 
 final class GuardListener implements Listener {
@@ -79,6 +86,47 @@ final class GuardListener implements Listener {
     @EventHandler(priority = EventPriority.LOWEST)
     public void onBaitDamage(EntityDamageEvent e) {
         if (e.getEntity().getPersistentDataContainer().has(plugin.key(), PersistentDataType.BYTE)) e.setCancelled(true);
+    }
+
+    // ---------------------------------------------------------------- auto-totem
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onResurrect(EntityResurrectEvent e) {
+        if (e.getEntity() instanceof Player p) plugin.autoTotem().onPop(p);
+    }
+
+    @EventHandler
+    public void onInput(PlayerInputEvent e) {
+        plugin.autoTotem().onInputChange(e.getPlayer());
+    }
+
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    public void onSwap(PlayerSwapHandItemsEvent e) {
+        ItemStack toOffhand = e.getOffHandItem();
+        boolean totem = toOffhand != null && toOffhand.getType() == org.bukkit.Material.TOTEM_OF_UNDYING;
+        plugin.autoTotem().onTotemAction(e.getPlayer(), e, totem, false);
+    }
+
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    public void onTotemClick(InventoryClickEvent e) {
+        if (!(e.getWhoClicked() instanceof Player p)) return;
+        if (e.getView().getTopInventory().getHolder() instanceof Menu) return;
+        ItemStack hotbar = null;
+        if (e.getHotbarButton() >= 0) hotbar = p.getInventory().getItem(e.getHotbarButton());
+        boolean totem = AutoTotemCheck.involvesTotem(e.getCurrentItem(), e.getCursor(), hotbar);
+        plugin.autoTotem().onTotemAction(p, e, totem, AutoTotemCheck.isOwnInventory(e.getView().getTopInventory().getType()));
+    }
+
+    // ---------------------------------------------------------------- cristaux de l'End
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onCrystalPlace(EntityPlaceEvent e) {
+        if (e.getEntity() instanceof EnderCrystal c) plugin.crystal().onPlace(e.getPlayer(), c, e.getBlock());
+    }
+
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    public void onCrystalHit(EntityDamageByEntityEvent e) {
+        if (e.getEntity() instanceof EnderCrystal c && e.getDamager() instanceof Player p) plugin.crystal().onHit(p, c, e);
     }
 
     // ---------------------------------------------------------------- menus

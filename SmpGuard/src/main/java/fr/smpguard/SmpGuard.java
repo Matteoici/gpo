@@ -1,6 +1,8 @@
 package fr.smpguard;
 
+import fr.smpguard.check.AutoTotemCheck;
 import fr.smpguard.check.BaitTest;
+import fr.smpguard.check.CrystalCheck;
 import fr.smpguard.check.Culling;
 import fr.smpguard.check.EspAimCheck;
 import fr.smpguard.check.FreecamCheck;
@@ -27,6 +29,8 @@ public final class SmpGuard extends JavaPlugin {
     private FreecamCheck freecam;
     private XrayCheck xray;
     private Culling culling;
+    private AutoTotemCheck autoTotem;
+    private CrystalCheck crystal;
     private NamespacedKey key;
     private final Map<UUID, Profile> profiles = new HashMap<>();
     private final Map<UUID, BaitTest> baits = new HashMap<>();
@@ -45,6 +49,8 @@ public final class SmpGuard extends JavaPlugin {
         freecam = new FreecamCheck(this);
         xray = new XrayCheck(this);
         culling = new Culling(this);
+        autoTotem = new AutoTotemCheck(this);
+        crystal = new CrystalCheck(this);
 
         getServer().getPluginManager().registerEvents(new GuardListener(this), this);
         PluginCommand cmd = getCommand("anticheat");
@@ -80,6 +86,10 @@ public final class SmpGuard extends JavaPlugin {
         if (tick % EspAimCheck.period() == 0) espAim.run();
         if (tick % FreecamCheck.PERIOD == 3) freecam.run();
         culling.tick();
+        if (tick % 20 == 11) {
+            crystal.tickSecond();
+            autoTotem.prune();
+        }
         if (tick % 20 == 7) {
             for (Player p : Bukkit.getOnlinePlayers()) {
                 Profile prof = profiles.get(p.getUniqueId());
@@ -103,6 +113,8 @@ public final class SmpGuard extends JavaPlugin {
         BaitTest b = baits.get(p.getUniqueId());
         if (b != null) b.cancel();
         culling.forget(p);
+        autoTotem.forget(p);
+        crystal.forget(p);
         for (Profile o : profiles.values()) o.tracks.remove(p.getUniqueId());
     }
 
@@ -138,6 +150,11 @@ public final class SmpGuard extends JavaPlugin {
 
     public boolean sameGuild(Player a, Player b) {
         return Hooks.sameGuild(a, b);
+    }
+
+    /** Joueur Bedrock (Geyser/Floodgate) : ses touches et son inventaire sont traduits, on ne les analyse pas. */
+    public boolean isBedrock(Player p) {
+        return p.getUniqueId().getMostSignificantBits() == 0;
     }
 
     public boolean frozen(Player p) {
@@ -183,6 +200,19 @@ public final class SmpGuard extends JavaPlugin {
 
     public XrayCheck xray() {
         return xray;
+    }
+
+    public AutoTotemCheck autoTotem() {
+        return autoTotem;
+    }
+
+    public CrystalCheck crystal() {
+        return crystal;
+    }
+
+    /** Numéro du tick serveur (compté par le plugin). */
+    public int currentTick() {
+        return tick;
     }
 
     public Culling culling() {

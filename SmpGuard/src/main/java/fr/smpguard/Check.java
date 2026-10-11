@@ -5,6 +5,8 @@ public enum Check {
     ESP_AIM("esp-aim"),
     XRAY("xray"),
     FREECAM("freecam"),
+    AUTO_TOTEM("auto-totem"),
+    CRYSTAL("crystal"),
     BAIT("bait");
 
     public final String key;

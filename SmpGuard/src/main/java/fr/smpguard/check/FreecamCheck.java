@@ -41,7 +41,7 @@ public final class FreecamCheck {
             Profile prof = plugin.profile(p);
             if (prof == null) continue;
             if (!plugin.analysed(p) || p.isInsideVehicle() || p.isFlying() || p.isGliding() || p.isSleeping()
-                    || p.isDead() || p.isSneaking() || p.isSwimming() || plugin.frozen(p)) {
+                    || p.isDead() || p.isSneaking() || p.isSwimming() || plugin.frozen(p) || plugin.isBedrock(p)) {
                 prof.inputStillSeconds = 0;
                 continue;
             }
