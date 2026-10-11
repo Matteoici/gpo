@@ -93,6 +93,10 @@ public final class MainMenu extends Menu {
             if (!viewer.hasPermission("smpadmin.chat")) return;
             plugin.actions().clearChat(viewer);
         });
+        // lien avec l'anticheat SmpGuard (s'il est installé)
+        if (org.bukkit.Bukkit.getPluginManager().isPluginEnabled("SmpGuard") && viewer.hasPermission("smpguard.staff")) {
+            button(51, item(Material.SHIELD, "gui.main.anticheat"), c -> viewer.performCommand("ac"));
+        }
         close(49);
     }
 

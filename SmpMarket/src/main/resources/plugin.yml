@@ -1,0 +1,20 @@
+name: SmpMarket
+version: '${version}'
+main: fr.smpmarket.SmpMarket
+api-version: '26.2'
+depend: [Vault]
+softdepend: [Essentials, WorldGuard]
+description: Marché de joueurs - stands loués aux enchères, vitrines et achats
+commands:
+  marche:
+    description: Ouvrir le marché
+    usage: /marche [chercher|vitrine|gerer|colis|encheres|tp|ami|nom|admin]
+    aliases: [mk, stand, stands, stalls]
+    permission: smpmarket.use
+permissions:
+  smpmarket.use:
+    description: Utiliser le marché
+    default: true
+  smpmarket.admin:
+    description: Créer et gérer les stands
+    default: op

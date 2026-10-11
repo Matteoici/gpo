@@ -139,6 +139,11 @@ public final class PlayerMenu extends Menu {
         if (can("smpadmin.history")) button(33, item(Material.WRITABLE_BOOK, "gui.player.history"),
                 c -> new HistoryMenu(plugin, viewer, target, 0).open());
 
+        // rapport anticheat SmpGuard (s'il est installé)
+        if (online != null && org.bukkit.Bukkit.getPluginManager().isPluginEnabled("SmpGuard")
+                && viewer.hasPermission("smpguard.staff")) {
+            button(34, item(Material.SHIELD, "gui.player.anticheat"), c -> viewer.performCommand("ac check " + name));
+        }
         back(45, () -> new MainMenu(plugin, viewer, 0).open());
         close(49);
     }

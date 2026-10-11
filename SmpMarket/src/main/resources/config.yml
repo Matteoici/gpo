@@ -1,0 +1,55 @@
+# =====================================================================
+#  SmpMarket - marché de joueurs (stands loués aux enchères + vitrines)
+#  Les textes sont dans messages.yml. Après une modification : /marche admin reload
+# =====================================================================
+
+currency-symbol: "$"
+
+# ---------------------------------------------------------------- Location des stands
+lease:
+  # durée d'une location gagnée aux enchères (jours)
+  days: 7
+  # l'enchère pour la location suivante s'ouvre X heures avant la fin de la location
+  renew-window-hours: 24
+  # nombre maximum de stands par joueur (en comptant les enchères où il est en tête)
+  max-per-player: 1
+
+# ---------------------------------------------------------------- Enchères
+auction:
+  # durée d'une enchère sur un stand libre, à partir de la première offre (heures)
+  duration-hours: 12
+  # surenchère minimale : le plus grand des deux
+  min-increment: 100
+  min-increment-percent: 5
+  # une offre dans les X dernières minutes prolonge l'enchère de X minutes (anti-dernière seconde)
+  anti-snipe-minutes: 5
+
+# ---------------------------------------------------------------- Vitrines et ventes
+shop:
+  # taxe prélevée sur chaque vente (en %), l'argent disparaît (bon pour l'économie)
+  tax-percent: 5
+  # nombre de vitrines par stand (peut être changé stand par stand : /marche admin showcases <stand> <n>)
+  default-showcases: 6
+  # stock maximum par vitrine (en objets)
+  max-stock: 3456
+  # distance maximale pour acheter depuis le catalogue d'un stand
+  buy-distance: 12
+  # prix minimum et maximum par objet
+  min-price: 1
+  max-price: 100000000
+
+# ---------------------------------------------------------------- Protection
+protection:
+  # seul le locataire (et ses amis) peut construire / casser / ouvrir les coffres dans son stand
+  protect-stalls: true
+  # autorise le locataire à construire dans son stand même si le spawn est protégé (WorldGuard, spawn-protection...)
+  override-other-protections: true
+
+# ---------------------------------------------------------------- Visuels
+visuals:
+  # hauteur du panneau flottant au-dessus du point d'entrée du stand
+  sign-height: 2.6
+  # taille des objets exposés
+  item-scale: 0.55
+  # les objets exposés tournent sur eux-mêmes
+  spin: true

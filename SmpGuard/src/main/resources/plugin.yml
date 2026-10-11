@@ -1,0 +1,28 @@
+name: SmpGuard
+version: '${version}'
+main: fr.smpguard.SmpGuard
+api-version: '26.2'
+softdepend: [SmpAdmin]
+description: Anticheat ESP / X-ray / Freecam, tolérant au lag, relié au panneau admin
+commands:
+  ac:
+    description: Panneau anticheat
+    usage: /ac [check|alerts|bait|reset|reload]
+    aliases: [anticheat, guard]
+    permission: smpguard.staff
+permissions:
+  smpguard.staff:
+    description: Panneau anticheat, rapports, test appât
+    default: op
+  smpguard.alerts:
+    description: Recevoir les alertes anticheat
+    default: op
+  smpguard.admin:
+    description: Reset des scores, reload
+    default: op
+  smpguard.bypass:
+    description: Jamais analysé (staff)
+    default: false
+  smpguard.see-all:
+    description: Voit tous les joueurs même derrière les murs (staff)
+    default: op

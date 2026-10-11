@@ -1,0 +1,158 @@
+# =====================================================================
+#  SmpGuard - textes (format MiniMessage)
+#  Après une modification : /ac reload
+# =====================================================================
+
+prefix: "<gradient:#ff5f6d:#ffc371><b>GUARD</b></gradient> <dark_gray>»</dark_gray> "
+
+no-permission: "<red>Tu n'as pas la permission."
+usage: "<red>Utilisation : <white><usage>"
+offline: "<red><player> n'est pas connecté."
+reloaded: "<green>Configuration rechargée."
+reset: "<green>Scores de <white><player></white> remis à zéro."
+alerts-on: "<green>Alertes anticheat activées."
+alerts-off: "<yellow>Alertes anticheat coupées (pour toi seulement)."
+
+help:
+  - "<gradient:#ff5f6d:#ffc371><b>SmpGuard</b></gradient> <gray>- anticheat ESP / X-ray / Freecam"
+  - "<aqua>/ac</aqua> <dark_gray>- <gray>panneau (joueurs triés par suspicion)"
+  - "<aqua>/ac check <joueur></aqua> <dark_gray>- <gray>rapport détaillé"
+  - "<aqua>/ac bait <joueur> [secondes]</aqua> <dark_gray>- <gray>test appât anti-ESP"
+  - "<aqua>/ac alerts</aqua> <dark_gray>- <gray>couper / remettre les alertes"
+  - "<aqua>/ac status</aqua> · <aqua>/ac reset <joueur></aqua> · <aqua>/ac reload"
+
+status:
+  - "<gradient:#ff5f6d:#ffc371><b>SmpGuard</b></gradient>"
+  - "<gray>Joueurs analysés : <white><players>"
+  - "<gray>Alertes depuis le démarrage : <white><alerts>"
+  - "<gray>TPS : <white><tps>"
+  - "<gray>Joueurs cachés derrière les murs : <white><culling>"
+
+# Nom des détections
+checks:
+  esp-aim: "<light_purple>ESP (visée à travers les murs)"
+  xray: "<aqua>X-ray (minerais cachés)"
+  freecam: "<yellow>Freecam / blink"
+  bait: "<red>Test appât"
+
+# Détail d'une alerte (texte brut)
+detail:
+  esp-aim: "a suivi <target> caché derrière des blocs pendant <seconds>s (écart <angle>°, <distance> blocs)"
+  xray: "<veins> filons pour <stone> blocs minés (<where>), <hidden>% sans aucune ouverture"
+  overworld: "monde normal"
+  nether: "Nether"
+  freecam: "touches de déplacement enfoncées <seconds>s sans que le corps bouge"
+  bait: "a visé l'appât invisible <rate>% du temps (point témoin : <control>%)"
+
+# Explications dans le rapport
+explain:
+  esp-aim: "<gray>Suit avec sa visée des joueurs cachés derrière des blocs."
+  xray: "<gray>Trouve des filons rares enfermés dans la roche bien trop vite."
+  freecam: "<gray>Appuie sur avancer mais son corps ne bouge pas."
+  bait: "<gray>Résultat des tests appât lancés par le staff."
+
+alert:
+  format: "<red><b>⚠</b></red> <white><b><player></b></white> <dark_gray>|</dark_gray> <check> <dark_gray>|</dark_gray> <gray>confiance <white><confidence>%</white> <dark_gray>(VL <vl>)</dark_gray><newline>   <gray><detail> <dark_gray>[<lag>]</dark_gray> <spec> <sheet> <report>"
+  spec: "<aqua><b>[SPEC]"
+  spec-hover: "<gray>L'observer en spectateur (SmpAdmin)"
+  sheet: "<yellow><b>[FICHE]"
+  sheet-hover: "<gray>Sa fiche dans le panneau admin"
+  report: "<light_purple><b>[RAPPORT]"
+  report-hover: "<gray>Rapport anticheat détaillé"
+
+bait:
+  started: "<green>Test appât lancé sur <white><player></white> pendant <white><seconds>s</white>. <gray>Un faux joueur, visible par lui seul, tourne dans la roche autour de lui. Ne lui dis rien."
+  no-path: "<red>Impossible de cacher l'appât autour de <white><player></white> (il est à découvert : ciel, océan...). Réessaie quand il est sous terre ou dans une base."
+  already: "<red>Un test est déjà en cours sur <white><player></white>."
+  aborted: "<yellow>Test appât sur <white><player></white> interrompu (déconnexion, changement de monde...)."
+  not-enough: "<yellow>Test appât sur <white><player></white> : pas assez de mesures fiables (<samples>). Connexion trop instable ? Relance-le."
+  result: "<white><b>Test appât - <player></b></white><newline>   <gray>Visée sur l'appât : <white><rate>%</white> <dark_gray>|</dark_gray> <gray>sur le point témoin : <white><control>%</white> <dark_gray>(<samples> mesures, <lag>)</dark_gray><newline>   <verdict>"
+  verdict-strong: "<red><b>TRÈS SUSPECT</b> <gray>: il voit les entités à travers les murs (ESP probable)."
+  verdict-medium: "<gold><b>SUSPECT</b> <gray>: intérêt anormal pour l'appât. Relance un test ou observe-le avec /spec."
+  verdict-clean: "<green><b>RIEN D'ANORMAL</b> <gray>: il ne semble pas voir l'appât. (Un ESP réglé sur « joueurs uniquement » peut l'ignorer.)"
+
+gui:
+  "on": "<green>activée"
+  "off": "<red>désactivée"
+  common:
+    back: {name: "<yellow>← Retour"}
+    close: {name: "<red>Fermer"}
+    previous: {name: "<yellow>← Page <page>/<pages>"}
+    next: {name: "<yellow>Page <page>/<pages> →"}
+  score-line: "<check> <bar> <white><confidence>%"
+
+  panel:
+    title: "<dark_gray>Anticheat"
+    header:
+      name: "<gradient:#ff5f6d:#ffc371><b>SmpGuard"
+      lore:
+        - "<gray>Joueurs analysés : <white><online>"
+        - "<gray>Alertes : <white><alerts>"
+        - "<gray>TPS : <white><tps>"
+        - "<gray>Joueurs cachés (anti-ESP) : <white><culling>"
+        - ""
+        - "<dark_gray>Les scores tiennent compte du lag :"
+        - "<dark_gray>un joueur qui lague n'est pas compté."
+    player:
+      name: "<white><b><player>"
+      lore-top:
+        - "<gray>Ping : <white><ping> ms</white> <dark_gray>±<jitter>"
+        - "<gray>Fiabilité des mesures : <white><weight>%"
+        - ""
+      lore-bottom:
+        - ""
+        - "<gray>Alertes : <white><alerts>"
+        - "<yellow>▶ Clic gauche : rapport"
+        - "<yellow>▶ Clic droit : spectateur"
+    alerts:
+      name: "<white><b>Mes alertes"
+      lore: ["<gray>Couper / remettre les alertes", "<gray>dans ton chat."]
+    anti-esp:
+      name: "<white><b>Anti-ESP : <state>"
+      lore: ["<gray>Cache les joueurs derrière les murs.", "<gray>Réglage : anti-esp dans config.yml"]
+    admin:
+      name: "<gold><b>Panneau admin"
+      lore: ["<gray>Ouvrir /admin"]
+
+  report:
+    title: "<dark_gray>Rapport : <player>"
+    header:
+      name: "<white><b><player>"
+      lore:
+        - "<gray>Ping : <white><ping> ms</white> <dark_gray>±<jitter>"
+        - "<gray>Fiabilité des mesures : <white><weight>%"
+        - "<gray>Mode : <white><gamemode>"
+        - "<gray>Alertes : <white><alerts>"
+    check:
+      name: "<check>"
+      lore:
+        - "<explain>"
+        - ""
+        - "<gray>Score : <bar> <white><vl></white> <dark_gray>(alerte à <alert>)"
+        - "<gray>Confiance : <white><confidence>%"
+        - "<gray>Maximum atteint : <white><peak>"
+    spec:
+      name: "<aqua><b>Observer"
+      lore: ["<gray>Spectateur à la 1re personne (SmpAdmin)."]
+    bait:
+      name: "<red><b>Test appât (<seconds>s)"
+      lore:
+        - "<gray>Un faux joueur, visible par lui seul,"
+        - "<gray>tourne dans la roche autour de lui."
+        - "<gray>S'il le regarde, il voit à travers les murs."
+        - ""
+        - "<yellow>▶ Clic pour lancer"
+    bait-running:
+      name: "<gold><b>Test appât en cours..."
+    sheet:
+      name: "<gold><b>Fiche admin"
+      lore: ["<gray>Sanctions, freeze, inventaire... (/admin)"]
+    sus:
+      name: "<red><b>Marquer suspect"
+      lore: ["<gray>Le staff sera alerté à chaque connexion."]
+    history:
+      name: "<white><b>Dernières alertes"
+    no-history: "<gray>Aucune alerte."
+    reset:
+      name: "<red><b>Remettre les scores à zéro"
+      lore: ["<red>▶ Shift + clic"]

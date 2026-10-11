@@ -1,0 +1,94 @@
+# =====================================================================
+#  SmpGuard - anticheat ESP / X-ray / Freecam
+#
+#  IMPORTANT : l'ESP et le freecam sont des triches d'affichage, côté client.
+#  Aucun plugin ne peut les prouver à 100 %. SmpGuard :
+#    1. les rend inutiles (joueurs cachés derrière les murs, voir anti-esp)
+#    2. repère les comportements typiques et donne un score de confiance
+#    3. donne au staff des outils pour vérifier (/ac bait, /spec)
+#  SmpGuard ne bannit jamais tout seul : il alerte et peut marquer le joueur "suspect" dans /admin.
+#  Après une modification : /ac reload
+# =====================================================================
+
+# ---------------------------------------------------------------- Lag
+# Chaque indice est pondéré par la qualité de connexion du joueur et l'état du serveur.
+# Au-delà des limites, rien n'est compté : un joueur qui lague ne peut pas être accusé.
+lag:
+  good-ping: 120        # en dessous : confiance pleine
+  max-ping: 350         # au-dessus : rien n'est compté
+  max-jitter: 120       # variation du ping (ms) au-dessus de laquelle rien n'est compté
+  min-tps: 17.0         # serveur en dessous de ces TPS : rien n'est compté
+  grace-seconds:        # pause après ces événements
+    join: 15
+    teleport: 4
+    respawn: 5
+    world-change: 6
+
+# ---------------------------------------------------------------- Alertes
+alerts:
+  cooldown-seconds: 30
+  log-to-file: true
+  # marquer automatiquement le joueur comme suspect dans SmpAdmin (/sus) au seuil "sus-vl"
+  smpadmin-auto-sus: true
+
+# ---------------------------------------------------------------- Détections
+checks:
+  # Le joueur suit avec sa visée un joueur caché derrière des murs (typique de l'ESP).
+  esp-aim:
+    enabled: true
+    min-distance: 6
+    max-distance: 40
+    angle: 3.5              # précision (degrés) ; élargie automatiquement selon le ping et la vitesse de la cible
+    track-samples: 6        # échantillons consécutifs (4 par seconde) pour compter une "poursuite"
+    min-target-move: 1.5    # la cible doit bouger d'au moins X blocs pendant la poursuite
+    hidden-before-seconds: 1.5
+    alert-vl: 3
+    sus-vl: 6
+    decay-per-minute: 0.15
+
+  # Le joueur trouve des minerais rares cachés (sans grotte autour) bien plus vite qu'un mineur normal.
+  xray:
+    enabled: true
+    max-y: 40
+    window-minutes: 20
+    min-veins: 4
+    # nombre de blocs de pierre minés par filon "normal" (en dessous = trop chanceux)
+    blocks-per-vein:
+      overworld: 70
+      nether: 90
+    hidden-ratio: 0.6       # part des filons trouvés sans aucune ouverture naturelle
+    ores:
+      DIAMOND_ORE: 1.0
+      DEEPSLATE_DIAMOND_ORE: 1.0
+      ANCIENT_DEBRIS: 1.5
+      EMERALD_ORE: 0.8
+      DEEPSLATE_EMERALD_ORE: 0.8
+    alert-vl: 2
+    sus-vl: 4
+    decay-per-minute: 0.05
+
+  # Le joueur appuie sur les touches de déplacement mais son corps ne bouge pas (freecam, blink).
+  freecam:
+    enabled: true
+    min-seconds: 4
+    alert-vl: 3
+    sus-vl: 6
+    decay-per-minute: 0.1
+
+# ---------------------------------------------------------------- Protection anti-ESP
+# Cache les joueurs qui ne sont pas visibles (derrière un mur) : l'ESP et le freecam
+# ne peuvent plus les voir, puisque le client ne reçoit même pas leur position.
+# ⚠ Un joueur caché disparaît aussi de la liste TAB de celui qui ne le voit pas,
+#   et on n'entend plus ses pas à travers les murs. Désactivé par défaut : teste avant.
+anti-esp:
+  hide-players-behind-walls: false
+  distance: 48
+  # nombre maximum de lancers de rayons par tick (protège les performances)
+  budget-per-tick: 400
+
+# ---------------------------------------------------------------- Test appât (/ac bait)
+# Un faux joueur, visible UNIQUEMENT par le suspect, se déplace dans la roche autour de lui.
+# Un joueur normal ne peut pas le voir ; avec un ESP, il le voit à travers les murs.
+bait:
+  default-seconds: 30
+  radius: 12

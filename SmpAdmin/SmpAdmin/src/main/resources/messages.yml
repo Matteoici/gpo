@@ -183,6 +183,9 @@ gui:
     clearchat:
       name: "<white><b>Nettoyer le chat"
       lore: ["<gray>Efface le chat de tous les joueurs.", "", "<yellow>▶ Clic"]
+    anticheat:
+      name: "<gradient:#ff5f6d:#ffc371><b>Anticheat"
+      lore: ["<gray>Joueurs triés par suspicion,", "<gray>alertes, test appât (SmpGuard).", "", "<yellow>▶ Clic"]
     "on": "<green>activé"
     "off": "<red>désactivé"
     locked: "<red>bloqué"
@@ -256,6 +259,9 @@ gui:
     unban:
       name: "<green><b>Débannir"
       lore: ["<gray>Banni encore <white><remaining>", "<gray>Raison : <white><reason>"]
+    anticheat:
+      name: "<gradient:#ff5f6d:#ffc371><b>Rapport anticheat"
+      lore: ["<gray>Scores ESP / X-ray / Freecam,", "<gray>test appât (SmpGuard)."]
     history:
       name: "<white><b>Casier judiciaire"
       lore: ["<gray>Toutes ses sanctions."]

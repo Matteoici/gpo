@@ -88,6 +88,11 @@ categories:
         command: "market"
         plugin: "PlayerMarketGUI"
         description: "Acheter et vendre entre joueurs"
+      stands:
+        name: "Stands du marché"
+        command: "marche"
+        plugin: "SmpMarket"
+        description: "Boutiques des joueurs, enchères des stands"
       bounty:
         name: "Primes"
         command: "bounty"
@@ -123,7 +128,7 @@ categories:
       guild:
         name: "Guilde"
         command: "guild"
-        plugin: "GuildPlugin"
+        plugin: "SmpGuilds"
         description: "Menu de ta guilde"
 
   progression:
@@ -151,12 +156,22 @@ categories:
         command: "kits"
         plugin: "Essentials"
         description: "Réclamer un kit"
+      largage:
+        name: "Largage aérien"
+        command: "largage"
+        plugin: "SmpDrop"
+        description: "Prochain largage, position et chances de butin"
 
   infos:
     name: "Infos"
     color: "gray"
-    description: "Aide et règles"
+    description: "Guide, aide et règles"
     buttons:
+      guide:
+        name: "Guide du débutant"
+        command: "guide"
+        plugin: "SmpStart"
+        description: "Tes étapes et récompenses de départ"
       rules:
         name: "Règles"
         command: "rules"

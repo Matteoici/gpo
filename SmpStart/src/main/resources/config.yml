@@ -1,0 +1,282 @@
+# =====================================================================
+#  SmpStart - début de partie guidé
+#  Les textes sont dans messages.yml. Après une modification : /guide reload
+#  Les noms et descriptions ci-dessous acceptent le format MiniMessage (<red>, <bold>...).
+# =====================================================================
+
+# Les joueurs déjà venus avant l'installation du plugin :
+#   false = ils n'ont ni kit ni guide (recommandé)
+#   true  = ils démarrent le guide comme les nouveaux
+include-existing-players: false
+
+# Rappel de l'étape en cours dans le chat toutes les X minutes (0 = jamais)
+reminder-minutes: 6
+
+# Annoncer à tout le serveur l'arrivée d'un nouveau joueur
+broadcast-first-join: true
+
+# Commandes console lancées à la première connexion ({player} = le pseudo).
+# Exemples : "spawn {player}" pour le téléporter au spawn.
+first-join-commands: []
+
+# ---------------------------------------------------------------- Protection débutant
+# Pendant ce temps (de jeu, pas de temps réel), le nouveau ne peut ni frapper
+# ni être frappé par un autre joueur. Il peut la désactiver avec /guide protection off.
+protection:
+  minutes: 20
+
+# ---------------------------------------------------------------- Kit de départ
+# Donné une seule fois, à la première connexion. Les pièces d'armure sont équipées.
+kit:
+  enabled: true
+  # argent de départ (Vault)
+  starter-money: 500
+  items:
+    - material: BOOK
+      amount: 1
+      name: "<gradient:#ffcc33:#ff7a1a><bold>Guide du voyageur"
+      lore:
+        - "<gray>Clic droit pour ouvrir ton guide."
+        - "<gray>Il t'accompagne pas à pas."
+      guide-item: true
+    - material: STONE_PICKAXE
+      name: "<aqua>Pioche du voyageur"
+      lore: ["<gray>Offerte à ton arrivée"]
+      enchants: {efficiency: 1, unbreaking: 2}
+    - material: STONE_AXE
+      name: "<aqua>Hache du voyageur"
+      enchants: {unbreaking: 2}
+    - material: STONE_SHOVEL
+      name: "<aqua>Pelle du voyageur"
+    - material: STONE_SWORD
+      name: "<aqua>Épée du voyageur"
+      enchants: {unbreaking: 2}
+    - material: LEATHER_HELMET
+    - material: LEATHER_CHESTPLATE
+    - material: LEATHER_LEGGINGS
+    - material: LEATHER_BOOTS
+    - material: COOKED_BEEF
+      amount: 16
+    - material: BREAD
+      amount: 8
+    - material: TORCH
+      amount: 32
+    - material: RED_BED
+      name: "<red>Lit du voyageur"
+      lore: ["<gray>Pose-le pour passer la nuit en sécurité."]
+    - material: OAK_SAPLING
+      amount: 4
+
+# ---------------------------------------------------------------- Accueil par les autres joueurs
+# Les joueurs qui écrivent « bienvenue » (ou un mot de la liste) dans les `window-seconds`
+# secondes après l'arrivée d'un nouveau reçoivent une petite récompense.
+greet:
+  enabled: true
+  window-seconds: 60
+  max-greeters: 5
+  reward: 50
+  words: [bienvenue, bvn, welcome]
+
+# ---------------------------------------------------------------- Fin du guide
+completion:
+  broadcast: true
+  reward:
+    money: 1500
+    items: ["DIAMOND:5", "GOLDEN_APPLE:3"]
+    commands: []
+
+# ---------------------------------------------------------------- Les étapes
+# Elles se valident dans l'ordre. Chaque étape :
+#   name, icon (matériau), description (liste de lignes), type, targets, amount, hint, reward
+#
+# type :
+#   BREAK    casser des blocs      targets: matériaux (voir les jokers plus bas)
+#   PLACE    poser des blocs       targets: matériaux
+#   CRAFT    fabriquer des objets  targets: matériaux
+#   KILL     tuer des créatures    targets: types (ZOMBIE...) ou HOSTILE = tous les monstres
+#   COMMAND  utiliser une commande targets: la commande SANS "/" (ex. "sethome", "guild create")
+#   PLAYTIME jouer N minutes       (amount = minutes, pas de targets)
+# Jokers dans targets : "*_LOG" (finit par), "COAL*" (commence par), "ANY" (tout).
+# hint : commande proposée en cliquant dans le chat (laisser vide si inutile).
+# reward : money (Vault), items ("MATERIAL:quantité"), commands (console, {player} = pseudo).
+#
+# ⚠ Les commandes ci-dessous sont des valeurs probables : vérifie-les avec celles de tes plugins.
+steps:
+  guide:
+    name: "Ouvre ton guide"
+    icon: BOOK
+    description:
+      - "Ton guide t'accompagne dans tes premières minutes."
+      - "Tape /guide ou fais clic droit sur le livre."
+    type: COMMAND
+    targets: [guide, start, debut, tuto]
+    hint: "guide"
+    reward: {money: 100}
+
+  wood:
+    name: "Récolte du bois"
+    icon: OAK_LOG
+    description:
+      - "Frappe un arbre : 8 bûches suffisent."
+      - "Tout commence par le bois."
+    type: BREAK
+    targets: ["*_LOG"]
+    amount: 8
+    reward: {money: 100, items: ["COOKED_BEEF:8"]}
+
+  table:
+    name: "Fabrique un établi"
+    icon: CRAFTING_TABLE
+    description:
+      - "Transforme tes bûches en planches,"
+      - "puis place 4 planches en carré."
+    type: CRAFT
+    targets: [CRAFTING_TABLE]
+    reward: {money: 100}
+
+  bed:
+    name: "Pose ton lit"
+    icon: RED_BED
+    description:
+      - "La nuit, les monstres sortent."
+      - "Pose le lit de ton kit pour passer la nuit."
+    type: PLACE
+    targets: ["*_BED"]
+    reward: {money: 100}
+
+  home:
+    name: "Définis ton home"
+    icon: COMPASS
+    description:
+      - "Marque l'endroit où tu veux pouvoir revenir."
+      - "Tu pourras y retourner avec /home."
+    type: COMMAND
+    targets: [sethome]
+    hint: "sethome"
+    reward: {money: 150}
+
+  coal:
+    name: "Trouve du charbon"
+    icon: COAL
+    description:
+      - "Descends dans une grotte ou creuse sous terre."
+      - "Le charbon sert à faire des torches et à cuire."
+    type: BREAK
+    targets: [COAL_ORE, DEEPSLATE_COAL_ORE]
+    amount: 6
+    reward: {money: 150}
+
+  iron:
+    name: "Trouve du fer"
+    icon: IRON_INGOT
+    description:
+      - "Le fer fait de meilleurs outils et armures."
+      - "Cherche-le dans les grottes."
+    type: BREAK
+    targets: [IRON_ORE, DEEPSLATE_IRON_ORE, RAW_IRON_BLOCK]
+    amount: 5
+    reward: {money: 200}
+
+  furnace:
+    name: "Fabrique un four"
+    icon: FURNACE
+    description:
+      - "8 blocs de pierre en cercle."
+      - "Il cuit ton minerai et ta nourriture."
+    type: CRAFT
+    targets: [FURNACE]
+    reward: {money: 150}
+
+  sell:
+    name: "Vends tes ressources"
+    icon: GOLD_INGOT
+    description:
+      - "Tout ce que tu récoltes peut se vendre."
+      - "Utilise /sell avec des objets en main."
+    type: COMMAND
+    targets: [sell]
+    hint: "sell"
+    reward: {money: 200}
+
+  shop:
+    name: "Visite la boutique"
+    icon: EMERALD
+    description:
+      - "Achète ce qui te manque avec ton argent."
+    type: COMMAND
+    targets: [shop]
+    hint: "shop"
+    reward: {money: 150}
+
+  hunt:
+    name: "Chasse les monstres"
+    icon: IRON_SWORD
+    description:
+      - "Tue 8 monstres (zombies, squelettes...)."
+      - "Ils lâchent de l'expérience et du butin."
+    type: KILL
+    targets: [HOSTILE]
+    amount: 8
+    reward: {money: 250, items: ["ARROW:16"]}
+
+  rtp:
+    name: "Pars à l'aventure"
+    icon: MAP
+    description:
+      - "Téléporte-toi à un endroit au hasard."
+      - "Idéal pour trouver un coin tranquille où construire."
+    type: COMMAND
+    targets: [rtp, randomtp, wild]
+    hint: "rtp"
+    reward: {money: 200}
+
+  quests:
+    name: "Consulte tes quêtes"
+    icon: WRITABLE_BOOK
+    description:
+      - "Des quêtes quotidiennes rapportent de l'argent."
+    type: COMMAND
+    targets: [quests, quest, dailyquests, odq]
+    hint: "quests"
+    reward: {money: 200}
+
+  daily:
+    name: "Récompense du jour"
+    icon: CHEST
+    description:
+      - "Reviens chaque jour : la récompense grandit."
+    type: COMMAND
+    targets: [dailyreward, daily, reward]
+    hint: "dailyreward"
+    reward: {money: 200}
+
+  friends:
+    name: "Ouvre le menu des amis"
+    icon: PLAYER_HEAD
+    description:
+      - "Ajoute un ami pour le retrouver facilement."
+    type: COMMAND
+    targets: [amis, friends, friend, ami]
+    hint: "amis"
+    reward: {money: 200}
+
+  guild:
+    name: "Découvre les guildes"
+    icon: WHITE_BANNER
+    description:
+      - "Une guilde, c'est une équipe, des terrains protégés,"
+      - "un coffre partagé et des guerres."
+    type: COMMAND
+    targets: [guild, g, guilde, clan]
+    hint: "guild"
+    reward: {money: 300}
+
+  playtime:
+    name: "Reste 30 minutes"
+    icon: CLOCK
+    description:
+      - "Tu y es presque !"
+      - "Profite, le serveur est à toi."
+    type: PLAYTIME
+    amount: 30
+    reward: {money: 500}
