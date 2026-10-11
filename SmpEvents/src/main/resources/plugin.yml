@@ -21,6 +21,10 @@ commands:
     description: Mettre une prime sur la tête d'un joueur
     usage: /prime [joueur] [montant]
     aliases: [primes, bounty, bounties]
+  zoneafk:
+    description: Aller à la zone AFK (récompenses en restant dedans)
+    usage: /zoneafk
+    aliases: [afkzone, zafk]
   smpevents:
     description: Administration de SmpEvents
     usage: /smpevents reload

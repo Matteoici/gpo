@@ -252,6 +252,7 @@ public final class Holograms {
         java.util.Set<java.util.UUID> known = new java.util.HashSet<>();
         for (Holo h : holos.values()) if (h.display != null) known.add(h.display.getUniqueId());
         if (plugin.koth() != null) known.addAll(plugin.koth().entityIds());
+        if (plugin.afk() != null) known.addAll(plugin.afk().entityIds());
         for (World w : Bukkit.getWorlds()) {
             for (Entity e : w.getEntitiesByClass(TextDisplay.class)) {
                 if (e.getPersistentDataContainer().has(plugin.key(), PersistentDataType.BYTE) && !known.contains(e.getUniqueId())) {

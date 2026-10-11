@@ -123,6 +123,35 @@ bounties:
   # ou même connexion (maintenant ou dans les "memory-days" derniers jours)
   block-friends-guild-allies-ip: true
 
+# ---------------------------------------------------------------- Zone AFK
+afk-zone:
+  enabled: true
+  # récompense toutes les X minutes passées dans la zone
+  every-minutes: 10
+  money: 10000
+  # commandes à chaque récompense (%player%)
+  commands: []
+  # tirages bonus à chaque récompense (chance en %)
+  bonus:
+    - chance: 10
+      money: 25000
+      label: "<gold>+25,000$ bonus"
+    - chance: 2
+      money: 0
+      label: "<light_purple>une clé de caisse"
+      commands: []
+      #  - "crates key give %player% vote 1"
+  # 0 = illimité ; sinon nombre max de récompenses par jour et par joueur
+  max-rewards-per-day: 0
+  # sortir de la zone remet le compteur à zéro
+  reset-timer-on-leave: true
+  # pas de dégâts ni de faim dans la zone
+  protect-players: true
+  # une seule récompense par connexion (les doubles comptes ne gagnent rien de plus)
+  one-reward-per-ip: true
+  # /zoneafk : délai avant la téléportation (sans bouger)
+  teleport-delay-seconds: 3
+
 # ---------------------------------------------------------------- Anti-abus
 anti-abuse:
   # pendant combien de jours on se souvient des guildes / alliances / amitiés / connexions

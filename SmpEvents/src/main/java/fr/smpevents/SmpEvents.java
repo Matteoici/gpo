@@ -1,5 +1,6 @@
 package fr.smpevents;
 
+import fr.smpevents.afk.AfkZones;
 import fr.smpevents.board.Boards;
 import fr.smpevents.board.Holograms;
 import fr.smpevents.bounty.Bounties;
@@ -27,6 +28,7 @@ public final class SmpEvents extends JavaPlugin {
     private Holograms holograms;
     private Koth koth;
     private Bounties bounties;
+    private AfkZones afk;
     private NamespacedKey key, spawnerKey;
     private boolean dirty;
     private int ticks;
@@ -45,6 +47,7 @@ public final class SmpEvents extends JavaPlugin {
         holograms = new Holograms(this);
         koth = new Koth(this);
         bounties = new Bounties(this);
+        afk = new AfkZones(this);
         if (getServer().getPluginManager().getPlugin("Vault") != null) {
             economy = new Economy();
         } else {
@@ -55,15 +58,17 @@ public final class SmpEvents extends JavaPlugin {
         holograms.load();
         koth.load();
         bounties.load();
+        afk.load();
 
         questListener = new QuestListener(this);
         var pm = getServer().getPluginManager();
         pm.registerEvents(new MainListener(this), this);
         pm.registerEvents(questListener, this);
         pm.registerEvents(bounties, this);
+        pm.registerEvents(afk, this);
 
         Commands c = new Commands(this);
-        for (String name : new String[]{"quetes", "classement", "koth", "prime", "smpevents"}) {
+        for (String name : new String[]{"quetes", "classement", "koth", "prime", "zoneafk", "smpevents"}) {
             PluginCommand pc = getCommand(name);
             if (pc != null) {
                 pc.setExecutor(c);
@@ -94,6 +99,7 @@ public final class SmpEvents extends JavaPlugin {
         holograms.loadSettings(getConfig().getConfigurationSection("leaderboards"));
         koth.loadSettings(getConfig().getConfigurationSection("koth"));
         bounties.loadSettings(getConfig().getConfigurationSection("bounties"));
+        afk.loadSettings(getConfig().getConfigurationSection("afk-zone"));
     }
 
     void reload() {
@@ -103,11 +109,13 @@ public final class SmpEvents extends JavaPlugin {
         for (var p : Bukkit.getOnlinePlayers()) quests.ensure(data.of(p));
         boards.recompute();
         holograms.renderAll();
+        afk.refreshLabel();
     }
 
     @Override
     public void onDisable() {
         if (koth != null) koth.stop(false);
+        if (afk != null) afk.shutdown();
         if (holograms != null) holograms.removeAll();
         if (boards != null) boards.updateOnline();
         if (data != null) data.save(false);
@@ -120,8 +128,12 @@ public final class SmpEvents extends JavaPlugin {
         if (ticks % 20 == 0) {
             questListener.tickSecond();
             koth.tickSecond();
+            afk.tickSecond();
         }
-        if (ticks % 100 == 5) holograms.ensureAll();
+        if (ticks % 100 == 5) {
+            holograms.ensureAll();
+            afk.ensureLabel();
+        }
         if (ticks % (holograms.rotateSeconds * 20) == 0) holograms.rotate();
         if (ticks % (boards.refreshSeconds * 20) == 10) {
             boards.updateOnline();
@@ -138,6 +150,7 @@ public final class SmpEvents extends JavaPlugin {
             data.save(true);
             dirty = false;
             holograms.prune();
+            afk.save();
         } else if (dirty && ticks % 1200 == 30) {
             data.save(true);
             dirty = false;
@@ -201,6 +214,10 @@ public final class SmpEvents extends JavaPlugin {
 
     public Bounties bounties() {
         return bounties;
+    }
+
+    public AfkZones afk() {
+        return afk;
     }
 
     public NamespacedKey key() {

@@ -49,6 +49,7 @@ final class Commands implements CommandExecutor, TabCompleter {
             case "classement" -> boards(sender, a);
             case "koth" -> koth(sender, a);
             case "prime" -> bounty(sender, a);
+            case "zoneafk" -> plugin.afk().command(sender, a);
             case "smpevents" -> {
                 if (!admin(sender)) {
                     t().send(sender, "no-permission");
@@ -371,6 +372,9 @@ final class Commands implements CommandExecutor, TabCompleter {
                     if (adm) out.add("reset");
                 }
                 case "smpevents" -> out.add("reload");
+                case "zoneafk" -> {
+                    if (adm) out.addAll(List.of("pos1", "pos2", "creer", "setspawn", "supprimer", "liste", "tp"));
+                }
                 default -> {
                 }
             }
@@ -391,6 +395,9 @@ final class Commands implements CommandExecutor, TabCompleter {
                 }
                 case "quetes" -> {
                     for (Player p : Bukkit.getOnlinePlayers()) out.add(p.getName());
+                }
+                case "zoneafk" -> {
+                    if (adm && a[0].equalsIgnoreCase("supprimer")) out.addAll(plugin.afk().zoneNames());
                 }
                 default -> {
                 }

@@ -18,6 +18,7 @@ help-admin:
   - "<aqua>/koth lancer [nom]</aqua> · <aqua>/koth stop</aqua> · <aqua>/koth liste"
   - "<aqua>/prime retirer <joueur></aqua> <dark_gray>- <gray>annule une prime (remboursée)"
   - "<aqua>/quetes reset <joueur></aqua> <dark_gray>- <gray>nouvelles quêtes pour ce joueur"
+  - "<aqua>/zoneafk aide</aqua> <dark_gray>- <gray>créer une zone AFK"
   - "<aqua>/smpevents reload"
 
 # =====================================================================
@@ -174,6 +175,40 @@ bounty:
   none: "<gray>Aucune prime sur <white><player></white>."
   removed: "<green>Prime sur <white><player></white> annulée et remboursée."
   info: "<gray>Prime sur <white><player></white> : <gold><total></gold> <dark_gray>(<count> contributeur(s))"
+
+# =====================================================================
+#  Zone AFK
+# =====================================================================
+afk:
+  bar: "<green><b>ZONE AFK</b> <dark_gray>|</dark_gray> <gray>prochaine récompense (<gold><money></gold>) dans <white><time>"
+  bar-duplicate: "<red><b>ZONE AFK</b> <dark_gray>|</dark_gray> <gray>un autre compte de ta connexion est déjà récompensé"
+  bar-capped: "<yellow><b>ZONE AFK</b> <dark_gray>|</dark_gray> <gray>maximum du jour atteint (<white><max></white>), reviens demain"
+  reward: "<green>Récompense AFK : <gold>+<money>"
+  bonus: "<light_purple><b>BONUS AFK !</b> <reward>"
+  label:
+    - "<green><b>✦ ZONE AFK ✦"
+    - "<gray>Reste ici pour gagner"
+    - "<gold><money></gold> <gray>toutes les <white><minutes> min"
+    - "<dark_gray>Pas de dégâts, pas de faim"
+  no-spawn: "<red>Aucune zone AFK n'est encore prête."
+  teleporting: "<gray>Téléportation vers la zone AFK dans <white><seconds>s</white>, ne bouge pas..."
+  moved: "<red>Téléportation annulée : tu as bougé."
+  teleported: "<green>Bienvenue dans la zone AFK ! <gray>Reste à l'intérieur pour gagner des récompenses."
+  pos: "<green>Coin <white><n></white> : <white><x> <y> <z>"
+  need-selection: "<red>Place d'abord les deux coins : <white>/zoneafk pos1</white> et <white>/zoneafk pos2</white>, puis <white>/zoneafk creer <nom>"
+  created: "<green>Zone AFK <white><zone></white> créée (<x>×<y>×<z>). <gray>Point d'arrivée de /zoneafk : <white>/zoneafk setspawn"
+  spawn-set: "<green>Point d'arrivée de /zoneafk placé ici."
+  unknown: "<red>Zone inconnue. <gray>/zoneafk liste"
+  deleted: "<green>Zone AFK <white><zone></white> supprimée."
+  list-empty: "<gray>Aucune zone AFK."
+  list-line: "<green><zone></green> <dark_gray>»</dark_gray> <gray><world> <white><from></white> → <white><to>"
+  help:
+    - "<gradient:#3cff9a:#00c8ff><b>Zone AFK</b></gradient>"
+    - "<aqua>/zoneafk pos1</aqua> puis <aqua>/zoneafk pos2</aqua> <dark_gray>- <gray>deux coins opposés (là où tu es)"
+    - "<aqua>/zoneafk creer <nom></aqua> <dark_gray>- <gray>crée la zone"
+    - "<aqua>/zoneafk setspawn</aqua> <dark_gray>- <gray>point d'arrivée de /zoneafk"
+    - "<aqua>/zoneafk liste</aqua> · <aqua>/zoneafk supprimer <nom></aqua> · <aqua>/zoneafk tp"
+    - "<gray>Les joueurs : <white>/zoneafk</white> pour y aller."
 
 # =====================================================================
 #  Menus
