@@ -11,8 +11,15 @@ public final class KothZone {
     public final String world;
     public final double x, y, z;
     public final double radius;
+    /** zone trouvée au hasard (pas sauvegardée) */
+    public final boolean auto;
 
     public KothZone(String name, String world, double x, double y, double z, double radius) {
+        this(name, world, x, y, z, radius, false);
+    }
+
+    public KothZone(String name, String world, double x, double y, double z, double radius, boolean auto) {
+        this.auto = auto;
         this.name = name;
         this.world = world;
         this.x = x;

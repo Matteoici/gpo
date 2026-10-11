@@ -63,10 +63,29 @@ leaderboards:
 # ---------------------------------------------------------------- Roi de la colline
 koth:
   enabled: true
-  # heures de lancement automatique (fuseau "timezone")
+  # toutes les X heures (0 = utiliser "schedule" à la place). Ex : 3 -> 0h, 3h, 6h, 9h, 12h, 15h, 18h, 21h
+  every-hours: 0
+  first-hour: 0
+  minute: 0
+  # heures fixes de lancement (utilisées si every-hours = 0), fuseau "timezone"
   schedule:
     - "18:00"
     - "21:30"
+  # auto  = un endroit au hasard dans le monde à chaque fois (rien à créer)
+  # zones = seulement les zones créées avec /koth creer
+  # both  = mélange des deux
+  zone-mode: auto
+  auto-zone:
+    world: "world"
+    center-x: 0
+    center-z: 0
+    # distance au centre (évite le spawn)
+    min-distance: 300
+    max-distance: 2000
+    radius: 7
+    avoid-guild-claims: true
+  # colonne de lumière visible de loin (jaune = libre, verte = tenue, rouge = contestée)
+  light-beam: true
   # jours (vide = tous les jours). Ex : [samedi, dimanche]
   days: []
   # pas d'événement s'il y a moins de X joueurs connectés

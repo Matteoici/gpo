@@ -88,6 +88,9 @@ boards:
 # =====================================================================
 koth:
   nobody: "Personne"
+  auto-name: "Colline sauvage"
+  searching: "<gray>Recherche d'un endroit au hasard pour la colline..."
+  not-found: "<red>Aucun endroit valable trouvé (eau, terrains de guilde...). Réessaie ou crée une zone : /koth creer <nom>"
   soon:
     - ""
     - "<gold><b>♛ ROI DE LA COLLINE</b> <gray>dans <white><minutes> min</white> !"
@@ -141,7 +144,7 @@ koth:
   info-none:
     - "<gray>Aucun roi de la colline prévu pour le moment."
   help-admin:
-    - "<dark_gray>Admin : <aqua>/koth creer <nom> [rayon]</aqua>, <aqua>lancer [nom]</aqua>, <aqua>stop</aqua>, <aqua>liste</aqua>, <aqua>supprimer <nom></aqua>, <aqua>tp <nom>"
+    - "<dark_gray>Admin : <aqua>/koth lancer</aqua> (endroit au hasard), <aqua>/koth creer <nom> [rayon]</aqua>, <aqua>lancer [nom]</aqua>, <aqua>stop</aqua>, <aqua>liste</aqua>, <aqua>supprimer <nom></aqua>, <aqua>tp <nom>"
 
 # =====================================================================
 #  Primes

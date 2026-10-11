@@ -16,6 +16,10 @@ import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.FireworkEffect;
 import org.bukkit.GameMode;
+import org.bukkit.HeightMap;
+import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.entity.BlockDisplay;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.World;
@@ -43,6 +47,12 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Consumer;
+import org.bukkit.util.Transformation;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
 import static fr.smpevents.Texts.pc;
 import static fr.smpevents.Texts.ph;
@@ -76,6 +86,13 @@ public final class Koth {
     public int participantSeconds;
     public double height;
     public boolean bossbarEveryone;
+    public int everyHours;
+    /** auto = endroit au hasard à chaque fois ; zones = seulement les zones créées ; both = les deux mélangées */
+    public String zoneMode;
+    public String autoWorld;
+    public double autoCenterX, autoCenterZ, autoMin, autoMax, autoRadius;
+    public boolean autoAvoidClaims;
+    public boolean beam;
 
     // événement en cours
     private KothZone active;
@@ -88,6 +105,8 @@ public final class Koth {
     private final Map<UUID, String> playerTeam = new HashMap<>();
     private BossBar bar;
     private TextDisplay label;
+    private BlockDisplay pillar;
+    private boolean searching;
     private final Set<String> sent = new HashSet<>();
     private String lastZone;
 
@@ -107,6 +126,13 @@ public final class Koth {
                 plugin.getLogger().warning("koth.schedule : heure invalide « " + s + " » (format 18:30)");
             }
         }
+        everyHours = Math.max(0, Math.min(24, c.getInt("every-hours", 0)));
+        if (everyHours > 0) {
+            int first = Math.floorMod(c.getInt("first-hour", 0), 24);
+            int minute = Math.floorMod(c.getInt("minute", 0), 60);
+            schedule = new ArrayList<>();
+            for (int i = 0; i < 24; i += everyHours) schedule.add(LocalTime.of((first + i) % 24, minute));
+        }
         days = new HashSet<>();
         for (String d : c.getStringList("days")) {
             DayOfWeek dw = day(d);
@@ -123,6 +149,15 @@ public final class Koth {
         participantSeconds = Math.max(0, c.getInt("participant-seconds", 30));
         height = Math.max(2, c.getDouble("height", 6));
         bossbarEveryone = c.getBoolean("bossbar-everyone", true);
+        zoneMode = c.getString("zone-mode", "auto").toLowerCase(Locale.ROOT);
+        autoWorld = c.getString("auto-zone.world", "world");
+        autoCenterX = c.getDouble("auto-zone.center-x", 0);
+        autoCenterZ = c.getDouble("auto-zone.center-z", 0);
+        autoMin = Math.max(0, c.getDouble("auto-zone.min-distance", 300));
+        autoMax = Math.max(autoMin + 32, c.getDouble("auto-zone.max-distance", 2000));
+        autoRadius = Math.max(3, Math.min(30, c.getDouble("auto-zone.radius", 7)));
+        autoAvoidClaims = c.getBoolean("auto-zone.avoid-guild-claims", true);
+        beam = c.getBoolean("light-beam", true);
     }
 
     private static DayOfWeek day(String s) {
@@ -190,6 +225,7 @@ public final class Koth {
         KothZone z = zones.remove(name.toLowerCase(Locale.ROOT));
         if (z == null) return false;
         if (active == z) stop(false);
+        if (pendingZone == z) pendingZone = null;
         save();
         return true;
     }
@@ -201,6 +237,7 @@ public final class Koth {
     public List<UUID> entityIds() {
         List<UUID> l = new ArrayList<>();
         if (label != null) l.add(label.getUniqueId());
+        if (pillar != null) l.add(pillar.getUniqueId());
         return l;
     }
 
@@ -224,7 +261,7 @@ public final class Koth {
     }
 
     private void checkSchedule() {
-        if (!enabled || zones.isEmpty() || schedule.isEmpty()) return;
+        if (!enabled || schedule.isEmpty() || (zones.isEmpty() && zoneMode.equals("zones"))) return;
         ZonedDateTime now = ZonedDateTime.now(plugin.settings().zone).withSecond(0).withNano(0);
         if (!days.isEmpty() && !days.contains(now.getDayOfWeek())) return;
         String date = now.toLocalDate().toString();
@@ -235,8 +272,9 @@ public final class Koth {
                 if (minutesLeft == m) {
                     String k = date + t + "-" + m;
                     if (sent.add(k) && active == null && Bukkit.getOnlinePlayers().size() >= minPlayers) {
-                        KothZone z = upcoming();
-                        if (z != null) broadcast("koth.soon", z, ph("minutes", m));
+                        upcoming(z -> {
+                            if (z != null && active == null) broadcast("koth.soon", z, ph("minutes", m));
+                        });
                     }
                 }
             }
@@ -246,7 +284,10 @@ public final class Koth {
                     if (Bukkit.getOnlinePlayers().size() < minPlayers) {
                         Bukkit.broadcast(plugin.texts().prefixed("koth.not-enough", ph("min", minPlayers)));
                     } else {
-                        start(upcoming());
+                        upcoming(z -> {
+                            if (z == null) plugin.getLogger().warning("KOTH : aucun endroit valable trouvé (eau, claims...).");
+                            else start(z);
+                        });
                     }
                 }
             }
@@ -256,14 +297,100 @@ public final class Koth {
 
     private KothZone pendingZone;
 
-    /** Zone du prochain événement (choisie au hasard, différente de la précédente si possible). */
-    private KothZone upcoming() {
-        if (pendingZone != null && zones.containsValue(pendingZone)) return pendingZone;
-        List<KothZone> list = new ArrayList<>(zones.values());
-        if (list.isEmpty()) return null;
-        if (list.size() > 1 && lastZone != null) list.removeIf(z -> z.name.equalsIgnoreCase(lastZone));
-        pendingZone = list.get(random.nextInt(list.size()));
-        return pendingZone;
+    /** Zone du prochain événement : une zone créée, ou un endroit trouvé au hasard (asynchrone). */
+    public void upcoming(Consumer<KothZone> then) {
+        if (pendingZone != null && (pendingZone.auto || zones.containsValue(pendingZone))) {
+            then.accept(pendingZone);
+            return;
+        }
+        boolean auto = switch (zoneMode) {
+            case "zones" -> false;
+            case "both" -> zones.isEmpty() || random.nextInt(zones.size() + 1) == 0;
+            default -> true;
+        };
+        if (!auto && !zones.isEmpty()) {
+            List<KothZone> list = new ArrayList<>(zones.values());
+            if (list.size() > 1 && lastZone != null) list.removeIf(z -> z.name.equalsIgnoreCase(lastZone));
+            pendingZone = list.get(random.nextInt(list.size()));
+            then.accept(pendingZone);
+            return;
+        }
+        if (searching) {
+            Bukkit.getScheduler().runTaskLater(plugin, () -> upcoming(then), 20L);
+            return;
+        }
+        searching = true;
+        findRandom().whenComplete((z, err) -> Bukkit.getScheduler().runTask(plugin, () -> {
+            searching = false;
+            if (z != null) pendingZone = z;
+            then.accept(z);
+        }));
+    }
+
+    /** Endroit au hasard (sol plat, pas d'eau, pas dans un terrain de guilde). Chunks chargés en asynchrone. */
+    private CompletableFuture<KothZone> findRandom() {
+        CompletableFuture<KothZone> out = new CompletableFuture<>();
+        World w = Bukkit.getWorld(autoWorld);
+        if (w == null) {
+            plugin.getLogger().warning("koth.auto-zone.world introuvable : " + autoWorld);
+            out.complete(null);
+            return out;
+        }
+        attempt(w, 50, out);
+        return out;
+    }
+
+    private void attempt(World w, int left, CompletableFuture<KothZone> out) {
+        if (left <= 0 || !plugin.isEnabled()) {
+            out.complete(null);
+            return;
+        }
+        ThreadLocalRandom r = ThreadLocalRandom.current();
+        double angle = r.nextDouble() * Math.PI * 2;
+        double dist = Math.sqrt(r.nextDouble() * (autoMax * autoMax - autoMin * autoMin) + autoMin * autoMin);
+        int x = (int) Math.floor(autoCenterX + Math.cos(angle) * dist);
+        int z = (int) Math.floor(autoCenterZ + Math.sin(angle) * dist);
+        if (!w.getWorldBorder().isInside(new Location(w, x + 0.5, 64, z + 0.5))) {
+            attempt(w, left - 1, out);
+            return;
+        }
+        w.getChunkAtAsync(x >> 4, z >> 4, true).whenComplete((chunk, err) -> Bukkit.getScheduler().runTask(plugin, () -> {
+            Location ok = err == null && chunk != null ? check(w, x, z) : null;
+            if (ok == null) {
+                attempt(w, left - 1, out);
+                return;
+            }
+            String name = plugin.texts().raw("koth.auto-name").replace("<x>", String.valueOf(x)).replace("<z>", String.valueOf(z));
+            out.complete(new KothZone(name, w.getName(), ok.getX() + 0.5, ok.getY(), ok.getZ() + 0.5, autoRadius, true));
+        }));
+    }
+
+    /** Le centre et quelques points du cercle doivent être sur la terre ferme, à peu près au même niveau. */
+    private Location check(World w, int x, int z) {
+        int y = w.getHighestBlockYAt(x, z, HeightMap.MOTION_BLOCKING_NO_LEAVES);
+        if (y <= w.getMinHeight() + 1 || y >= w.getMaxHeight() - 20) return null;
+        if (!solidGround(w.getBlockAt(x, y, z))) return null;
+        for (int i = 0; i < 8; i++) {
+            double a = Math.PI * 2 * i / 8;
+            int px = (int) Math.floor(x + Math.cos(a) * autoRadius), pz = (int) Math.floor(z + Math.sin(a) * autoRadius);
+            if ((px >> 4) != (x >> 4) || (pz >> 4) != (z >> 4)) {
+                if (!w.isChunkLoaded(px >> 4, pz >> 4)) continue;
+            }
+            int py = w.getHighestBlockYAt(px, pz, HeightMap.MOTION_BLOCKING_NO_LEAVES);
+            if (Math.abs(py - y) > 4 || !solidGround(w.getBlockAt(px, py, pz))) return null;
+        }
+        Location loc = new Location(w, x, y + 1, z);
+        if (autoAvoidClaims && Hooks.isClaimed(loc)) return null;
+        return loc;
+    }
+
+    private static boolean solidGround(Block top) {
+        Material m = top.getType();
+        if (top.isLiquid() || !m.isSolid()) return false;
+        return switch (m) {
+            case ICE, PACKED_ICE, BLUE_ICE, MAGMA_BLOCK, CACTUS, POWDER_SNOW, BEDROCK -> false;
+            default -> true;
+        };
     }
 
     // ================================================================= déroulement
@@ -274,8 +401,10 @@ public final class Koth {
         if (c == null) return false;
         active = z;
         pendingZone = null;
-        lastZone = z.name;
-        save();
+        if (!z.auto) {
+            lastZone = z.name;
+            save();
+        }
         elapsed = 0;
         king = null;
         contested = false;
@@ -296,6 +425,19 @@ public final class Koth {
             d.setViewRange(3f);
             d.setBrightness(new Display.Brightness(15, 15));
         });
+        if (beam) {
+            pillar = c.getWorld().spawn(c.clone().add(0, 0.2, 0), BlockDisplay.class, d -> {
+                d.setPersistent(false);
+                d.getPersistentDataContainer().set(plugin.key(), PersistentDataType.BYTE, (byte) 1);
+                d.setBlock(Material.YELLOW_STAINED_GLASS.createBlockData());
+                d.setTransformation(new Transformation(new Vector3f(-0.25f, 0f, -0.25f), new Quaternionf(),
+                        new Vector3f(0.5f, 120f, 0.5f), new Quaternionf()));
+                d.setGlowing(true);
+                d.setGlowColorOverride(Color.YELLOW);
+                d.setBrightness(new Display.Brightness(15, 15));
+                d.setViewRange(16f);
+            });
+        }
         updateLabel();
         broadcast("koth.started", z);
         for (Player p : Bukkit.getOnlinePlayers()) {
@@ -315,6 +457,8 @@ public final class Koth {
         bar = null;
         if (label != null) label.remove();
         label = null;
+        if (pillar != null) pillar.remove();
+        pillar = null;
         if (active != null) {
             Location c = active.center();
             if (c != null) c.getChunk().removePluginChunkTicket(plugin);
@@ -480,6 +624,14 @@ public final class Koth {
 
     private void updateBar() {
         if (bar == null || active == null) return;
+        if (pillar != null && pillar.isValid()) {
+            Color col = contested ? Color.RED : king == null ? Color.YELLOW : Color.LIME;
+            if (!col.equals(pillar.getGlowColorOverride())) {
+                pillar.setGlowColorOverride(col);
+                pillar.setBlock((contested ? Material.RED_STAINED_GLASS : king == null ? Material.YELLOW_STAINED_GLASS
+                        : Material.LIME_STAINED_GLASS).createBlockData());
+            }
+        }
         int kt = king == null ? 0 : teamTime.getOrDefault(king, 0);
         String kingName = king == null ? plugin.texts().raw("koth.nobody") : teamNames.getOrDefault(king, "?");
         String status = contested ? "koth.boss-contested" : "koth.boss";

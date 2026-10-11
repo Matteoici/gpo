@@ -106,6 +106,18 @@ public final class Hooks {
         return ga.equals(gb) || allyIds(a).contains(gb) || allyIds(b).contains(ga);
     }
 
+    /** Ce lieu est-il dans le terrain d'une guilde (SmpGuilds) ? */
+    public static boolean isClaimed(org.bukkit.Location loc) {
+        Plugin p = enabled("SmpGuilds");
+        if (p == null) return false;
+        try {
+            Object gm = p.getClass().getMethod("guilds").invoke(p);
+            return gm.getClass().getMethod("at", org.bukkit.Location.class).invoke(gm, loc) != null;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
     // ------------------------------------------------------------------ amis
 
     public static boolean friends(UUID a, UUID b) {

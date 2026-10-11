@@ -214,12 +214,21 @@ final class Commands implements CommandExecutor, TabCompleter {
                 }
             }
             case "lancer", "start" -> {
-                KothZone z = a.length >= 2 ? k.zone(a[1]) : (k.zones().isEmpty() ? null : k.zones().get(0));
-                if (z == null) {
-                    t().send(sender, "koth.unknown");
+                if (k.active() != null) {
+                    t().send(sender, "koth.already");
                     return;
                 }
-                if (!k.start(z)) t().send(sender, "koth.already");
+                if (a.length >= 2) {
+                    KothZone z = k.zone(a[1]);
+                    if (z == null) t().send(sender, "koth.unknown");
+                    else k.start(z);
+                    return;
+                }
+                t().send(sender, "koth.searching");
+                k.upcoming(z -> {
+                    if (z == null) t().send(sender, "koth.not-found");
+                    else if (!k.start(z)) t().send(sender, "koth.already");
+                });
             }
             case "stop" -> {
                 if (k.active() == null) t().send(sender, "koth.not-running");
@@ -247,7 +256,7 @@ final class Commands implements CommandExecutor, TabCompleter {
             return;
         }
         ZonedDateTime next = k.next();
-        if (next == null || !k.enabled || k.zones().isEmpty()) {
+        if (next == null || !k.enabled || (k.zones().isEmpty() && k.zoneMode.equals("zones"))) {
             t().sendLines(sender, "koth.info-none");
         } else {
             long ms = next.toInstant().toEpochMilli() - System.currentTimeMillis();
