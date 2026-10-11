@@ -4,6 +4,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.Color;
 import org.bukkit.Location;
+import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
@@ -16,7 +17,6 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 
@@ -48,14 +48,30 @@ public final class Visuals {
     private final SmpMarket plugin;
     private final Map<String, SignParts> signs = new HashMap<>();
     private final Map<UUID, ShowParts> shows = new HashMap<>();
-    private final Map<UUID, Target> targets = new HashMap<>();
+    private final NamespacedKey stallKey;
+    private final NamespacedKey showKey;
 
     Visuals(SmpMarket plugin) {
         this.plugin = plugin;
+        this.stallKey = new NamespacedKey(plugin, "stall");
+        this.showKey = new NamespacedKey(plugin, "showcase");
     }
 
+    /**
+     * Ce que représente cette entité. Lu directement sur l'entité (et pas dans une liste en mémoire)
+     * pour que le clic marche toujours, même si le serveur a "oublié" l'entité un moment (chunk à moitié chargé).
+     */
     public Target target(Entity e) {
-        return e == null ? null : targets.get(e.getUniqueId());
+        if (e == null) return null;
+        var pdc = e.getPersistentDataContainer();
+        String stall = pdc.get(stallKey, PersistentDataType.STRING);
+        if (stall == null) return null;
+        String show = pdc.get(showKey, PersistentDataType.STRING);
+        try {
+            return new Target(stall, show == null ? null : UUID.fromString(show));
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
     }
 
     // ================================================================= création
@@ -67,7 +83,7 @@ public final class Visuals {
         Location entrance = st.entrance();
         if (entrance != null) {
             SignParts sp = signs.get(st.id);
-            if ((sp == null || sp.text == null || !sp.text.isValid()) && loaded(entrance)) {
+            if ((sp == null || !valid(sp.text) || !valid(sp.hit)) && loaded(entrance)) {
                 if (sp != null) removeSign(sp);
                 signs.put(st.id, spawnSign(st, entrance));
             }
@@ -75,7 +91,7 @@ public final class Visuals {
         for (Showcase c : st.showcases) {
             ShowParts p = shows.get(c.id);
             Location top = c.top(w);
-            if ((p == null || p.item == null || !p.item.isValid()) && loaded(top)) {
+            if ((p == null || !valid(p.item) || !valid(p.label) || !valid(p.hit)) && loaded(top)) {
                 if (p != null) removeShow(p);
                 shows.put(c.id, spawnShow(st, c, top));
             }
@@ -91,6 +107,10 @@ public final class Visuals {
         for (Stall st : plugin.store().stalls()) if (st.region.touchesChunk(world, cx, cz)) ensure(st);
     }
 
+    private static boolean valid(Entity e) {
+        return e != null && e.isValid();
+    }
+
     private static boolean loaded(Location l) {
         return l.getWorld() != null && l.getWorld().isChunkLoaded(l.getBlockX() >> 4, l.getBlockZ() >> 4);
     }
@@ -98,7 +118,10 @@ public final class Visuals {
     private void tag(Entity e, Target t) {
         e.setPersistent(false);
         e.getPersistentDataContainer().set(plugin.key(), PersistentDataType.BYTE, (byte) 1);
-        if (t != null) targets.put(e.getUniqueId(), t);
+        if (t != null) {
+            e.getPersistentDataContainer().set(stallKey, PersistentDataType.STRING, t.stall());
+            if (t.showcase() != null) e.getPersistentDataContainer().set(showKey, PersistentDataType.STRING, t.showcase().toString());
+        }
     }
 
     private SignParts spawnSign(Stall st, Location entrance) {
@@ -264,7 +287,6 @@ public final class Visuals {
 
     private void kill(Entity e) {
         if (e == null) return;
-        targets.remove(e.getUniqueId());
         e.remove();
     }
 
@@ -273,16 +295,26 @@ public final class Visuals {
         for (ShowParts p : shows.values()) removeShow(p);
         signs.clear();
         shows.clear();
-        targets.clear();
     }
 
-    /** Nettoie les références vers des entités disparues (chunk déchargé). */
+    /** Toutes les 30 s : supprime les entités du plugin qui ne sont plus suivies (doublons, restes). */
     public void prune() {
-        Iterator<Map.Entry<UUID, Target>> it = targets.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<UUID, Target> e = it.next();
-            Entity ent = plugin.getServer().getEntity(e.getKey());
-            if (ent == null || !ent.isValid()) it.remove();
+        java.util.Set<UUID> known = new java.util.HashSet<>();
+        for (SignParts sp : signs.values()) {
+            if (sp.text != null) known.add(sp.text.getUniqueId());
+            if (sp.hit != null) known.add(sp.hit.getUniqueId());
+        }
+        for (ShowParts p : shows.values()) {
+            if (p.item != null) known.add(p.item.getUniqueId());
+            if (p.label != null) known.add(p.label.getUniqueId());
+            if (p.hit != null) known.add(p.hit.getUniqueId());
+        }
+        for (World w : plugin.getServer().getWorlds()) {
+            for (Entity e : w.getEntitiesByClasses(TextDisplay.class, ItemDisplay.class, Interaction.class)) {
+                if (e.getPersistentDataContainer().has(plugin.key(), PersistentDataType.BYTE) && !known.contains(e.getUniqueId())) {
+                    e.remove();
+                }
+            }
         }
     }
 }
