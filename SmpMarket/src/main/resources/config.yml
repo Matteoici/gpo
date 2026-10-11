@@ -28,6 +28,10 @@ auction:
 shop:
   # taxe prélevée sur chaque vente (en %), l'argent disparaît (bon pour l'économie)
   tax-percent: 5
+  # impôt progressif : une vente d'au moins X paie Y % (le plus haut palier atteint s'applique)
+  tax-brackets:
+    "1000000": 7
+    "10000000": 10
   # nombre de vitrines par stand (peut être changé stand par stand : /marche admin showcases <stand> <n>)
   default-showcases: 6
   # stock maximum par vitrine (en objets)

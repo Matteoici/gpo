@@ -17,6 +17,14 @@ public final class Settings {
     public final long auctionMs, antiSnipeMs;
     public final double minIncrement, minIncrementPercent;
     public final double taxPercent;
+    /** vente d'au moins X -> impôt de Y % (impôt progressif) */
+    public final java.util.TreeMap<Double, Double> taxBrackets;
+
+    /** Impôt (en %) sur une vente de ce montant. */
+    public double taxFor(double total) {
+        var e = taxBrackets.floorEntry(total);
+        return e == null ? taxPercent : Math.max(taxPercent, e.getValue());
+    }
     public final int defaultShowcases, maxStock;
     public final double buyDistance, minPrice, maxPrice;
     public final boolean protectStalls, overrideProtections;
@@ -34,6 +42,17 @@ public final class Settings {
         minIncrementPercent = Math.max(0, c.getDouble("auction.min-increment-percent", 5));
         antiSnipeMs = Math.max(0, (long) (c.getDouble("auction.anti-snipe-minutes", 5) * 60_000L));
         taxPercent = Math.max(0, Math.min(100, c.getDouble("shop.tax-percent", 5)));
+        taxBrackets = new java.util.TreeMap<>();
+        var br = c.getConfigurationSection("shop.tax-brackets");
+        if (br != null) {
+            for (String k : br.getKeys(false)) {
+                try {
+                    taxBrackets.put(Double.parseDouble(k.replace("_", "").replace(" ", "")),
+                            Math.max(0, Math.min(100, br.getDouble(k))));
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        }
         defaultShowcases = Math.max(1, c.getInt("shop.default-showcases", 6));
         maxStock = Math.max(1, c.getInt("shop.max-stock", 3456));
         buyDistance = Math.max(3, c.getDouble("shop.buy-distance", 12));

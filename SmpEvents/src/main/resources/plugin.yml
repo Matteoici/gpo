@@ -1,0 +1,37 @@
+name: SmpEvents
+version: '${version}'
+main: fr.smpevents.SmpEvents
+api-version: '26.2'
+softdepend: [Vault, SmpGuilds, SmpFriends, SmpAdmin, PlaceholderAPI, Essentials]
+description: Quêtes du jour et de la semaine, classements en hologrammes, roi de la colline, primes anti-abus
+commands:
+  quetes:
+    description: Tes quêtes du jour et de la semaine
+    usage: /quetes
+    aliases: [quests, quete, missions, defis]
+  classement:
+    description: Classements du serveur
+    usage: /classement [placer|retirer|liste|scan]
+    aliases: [classements, leaderboard, leaderboards, lb]
+  koth:
+    description: Roi de la colline
+    usage: /koth [creer|supprimer|liste|lancer|stop|tp]
+    aliases: [roi, colline]
+  prime:
+    description: Mettre une prime sur la tête d'un joueur
+    usage: /prime [joueur] [montant]
+    aliases: [primes, bounty, bounties]
+  smpevents:
+    description: Administration de SmpEvents
+    usage: /smpevents reload
+    permission: smpevents.admin
+permissions:
+  smpevents.admin:
+    description: Tout gérer (hologrammes, zones KOTH, reload, quêtes des joueurs)
+    default: op
+  smpevents.quests:
+    description: Avoir des quêtes
+    default: true
+  smpevents.bounty:
+    description: Mettre des primes
+    default: true

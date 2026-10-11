@@ -1,0 +1,323 @@
+# =====================================================================
+#  Liste des quêtes. Chaque jour, chaque joueur en reçoit au hasard
+#  (nombre par difficulté : quests.daily-slots dans config.yml).
+#
+#  type : MINE, HARVEST, PLACE, KILL_MOB, KILL_PLAYER, FISH, SMELT, BREED,
+#         ENCHANT, VILLAGER_TRADE, EAT, WALK, PLAYTIME (minutes), KOTH_TIME (secondes), BOUNTY
+#  targets : blocs / créatures / objets acceptés (noms Minecraft en anglais). Vide = tout.
+#  reward : argent (multiplié par quests.rewards-multiplier)
+#  commands : commandes en plus, lancées par la console (%player%)
+#  name : texte affiché, <amount> = la quantité
+#  Après une modification : /smpevents reload
+# =====================================================================
+
+daily:
+  # ------------------------------------------------------------ faciles
+  pierre:
+    tier: easy
+    type: MINE
+    targets: [STONE, DEEPSLATE, ANDESITE, DIORITE, GRANITE, TUFF, NETHERRACK]
+    amount: 512
+    reward: 15000
+    icon: STONE_PICKAXE
+    name: "<white>Miner <amount> blocs de pierre"
+  bois:
+    tier: easy
+    type: MINE
+    targets: [OAK_LOG, SPRUCE_LOG, BIRCH_LOG, JUNGLE_LOG, ACACIA_LOG, DARK_OAK_LOG, MANGROVE_LOG, CHERRY_LOG, PALE_OAK_LOG, CRIMSON_STEM, WARPED_STEM]
+    amount: 128
+    reward: 18000
+    icon: IRON_AXE
+    name: "<white>Couper <amount> bûches"
+  recoltes:
+    tier: easy
+    type: HARVEST
+    targets: [WHEAT, CARROTS, POTATOES, BEETROOTS]
+    amount: 128
+    reward: 15000
+    icon: WHEAT
+    name: "<white>Récolter <amount> cultures"
+  zombies:
+    tier: easy
+    type: KILL_MOB
+    targets: [ZOMBIE, ZOMBIE_VILLAGER, HUSK, DROWNED]
+    amount: 30
+    reward: 18000
+    icon: ROTTEN_FLESH
+    name: "<white>Tuer <amount> zombies"
+  peche:
+    tier: easy
+    type: FISH
+    targets: []
+    amount: 12
+    reward: 15000
+    icon: FISHING_ROD
+    name: "<white>Pêcher <amount> fois"
+  marche:
+    tier: easy
+    type: WALK
+    targets: []
+    amount: 3000
+    reward: 18000
+    icon: LEATHER_BOOTS
+    name: "<white>Parcourir <amount> blocs à pied"
+  cuisson:
+    tier: easy
+    type: SMELT
+    targets: []
+    amount: 64
+    reward: 15000
+    icon: FURNACE
+    name: "<white>Faire cuire <amount> objets"
+  elevage:
+    tier: easy
+    type: BREED
+    targets: []
+    amount: 15
+    reward: 15000
+    icon: WHEAT_SEEDS
+    name: "<white>Faire naître <amount> animaux"
+  charbon:
+    tier: easy
+    type: MINE
+    targets: [COAL_ORE, DEEPSLATE_COAL_ORE]
+    amount: 48
+    reward: 18000
+    icon: COAL
+    name: "<white>Miner <amount> minerais de charbon"
+  sable:
+    tier: easy
+    type: MINE
+    targets: [SAND, RED_SAND, GRAVEL]
+    amount: 256
+    reward: 15000
+    icon: SAND
+    name: "<white>Creuser <amount> blocs de sable ou gravier"
+
+  # ------------------------------------------------------------ moyennes
+  fer:
+    tier: medium
+    type: MINE
+    targets: [IRON_ORE, DEEPSLATE_IRON_ORE]
+    amount: 48
+    reward: 40000
+    icon: IRON_PICKAXE
+    name: "<yellow>Miner <amount> minerais de fer"
+  or:
+    tier: medium
+    type: MINE
+    targets: [GOLD_ORE, DEEPSLATE_GOLD_ORE, NETHER_GOLD_ORE]
+    amount: 32
+    reward: 45000
+    icon: GOLD_INGOT
+    name: "<yellow>Miner <amount> minerais d'or"
+  quartz:
+    tier: medium
+    type: MINE
+    targets: [NETHER_QUARTZ_ORE]
+    amount: 64
+    reward: 40000
+    icon: QUARTZ
+    name: "<yellow>Miner <amount> minerais de quartz"
+  squelettes:
+    tier: medium
+    type: KILL_MOB
+    targets: [SKELETON, STRAY, BOGGED]
+    amount: 40
+    reward: 35000
+    icon: BONE
+    name: "<yellow>Tuer <amount> squelettes"
+  creepers:
+    tier: medium
+    type: KILL_MOB
+    targets: [CREEPER]
+    amount: 20
+    reward: 40000
+    icon: GUNPOWDER
+    name: "<yellow>Tuer <amount> creepers"
+  araignees:
+    tier: medium
+    type: KILL_MOB
+    targets: [SPIDER, CAVE_SPIDER]
+    amount: 30
+    reward: 35000
+    icon: STRING
+    name: "<yellow>Tuer <amount> araignées"
+  villageois:
+    tier: medium
+    type: VILLAGER_TRADE
+    targets: []
+    amount: 15
+    reward: 40000
+    icon: EMERALD
+    name: "<yellow>Faire <amount> échanges avec des villageois"
+  enchantement:
+    tier: medium
+    type: ENCHANT
+    targets: []
+    amount: 5
+    reward: 40000
+    icon: ENCHANTING_TABLE
+    name: "<yellow>Enchanter <amount> objets"
+  profondeurs:
+    tier: medium
+    type: MINE
+    targets: [DEEPSLATE, TUFF]
+    amount: 768
+    reward: 35000
+    icon: DEEPSLATE
+    name: "<yellow>Miner <amount> blocs d'ardoise des abîmes"
+  temps:
+    tier: medium
+    type: PLAYTIME
+    targets: []
+    amount: 90
+    reward: 35000
+    icon: CLOCK
+    name: "<yellow>Jouer <amount> minutes (sans être AFK)"
+
+  # ------------------------------------------------------------ difficiles
+  diamants:
+    tier: hard
+    type: MINE
+    targets: [DIAMOND_ORE, DEEPSLATE_DIAMOND_ORE]
+    amount: 16
+    reward: 100000
+    icon: DIAMOND
+    name: "<red>Miner <amount> minerais de diamant"
+  debris:
+    tier: hard
+    type: MINE
+    targets: [ANCIENT_DEBRIS]
+    amount: 6
+    reward: 120000
+    icon: ANCIENT_DEBRIS
+    name: "<red>Miner <amount> débris antiques"
+  endermen:
+    tier: hard
+    type: KILL_MOB
+    targets: [ENDERMAN]
+    amount: 25
+    reward: 90000
+    icon: ENDER_PEARL
+    name: "<red>Tuer <amount> endermen"
+  blazes:
+    tier: hard
+    type: KILL_MOB
+    targets: [BLAZE]
+    amount: 30
+    reward: 90000
+    icon: BLAZE_ROD
+    name: "<red>Tuer <amount> blazes"
+  wither-squelettes:
+    tier: hard
+    type: KILL_MOB
+    targets: [WITHER_SKELETON]
+    amount: 15
+    reward: 100000
+    icon: WITHER_SKELETON_SKULL
+    name: "<red>Tuer <amount> wither squelettes"
+  pvp:
+    tier: hard
+    type: KILL_PLAYER
+    targets: []
+    amount: 3
+    reward: 120000
+    icon: NETHERITE_SWORD
+    name: "<red>Tuer <amount> joueurs différents"
+  obsidienne:
+    tier: hard
+    type: MINE
+    targets: [OBSIDIAN]
+    amount: 64
+    reward: 80000
+    icon: OBSIDIAN
+    name: "<red>Miner <amount> blocs d'obsidienne"
+  emeraudes:
+    tier: hard
+    type: MINE
+    targets: [EMERALD_ORE, DEEPSLATE_EMERALD_ORE]
+    amount: 6
+    reward: 100000
+    icon: EMERALD_ORE
+    name: "<red>Miner <amount> minerais d'émeraude"
+  explorateur:
+    tier: hard
+    type: WALK
+    targets: []
+    amount: 10000
+    reward: 80000
+    icon: DIAMOND_BOOTS
+    name: "<red>Parcourir <amount> blocs à pied"
+
+weekly:
+  diamants:
+    type: MINE
+    targets: [DIAMOND_ORE, DEEPSLATE_DIAMOND_ORE]
+    amount: 96
+    reward: 400000
+    icon: DIAMOND_BLOCK
+    name: "<aqua>Miner <amount> minerais de diamant"
+  chasseur:
+    type: KILL_PLAYER
+    targets: []
+    amount: 15
+    reward: 500000
+    icon: NETHERITE_SWORD
+    name: "<aqua>Tuer <amount> joueurs"
+  monstres:
+    type: KILL_MOB
+    targets: []
+    amount: 500
+    reward: 300000
+    icon: ZOMBIE_HEAD
+    name: "<aqua>Tuer <amount> monstres"
+  assidu:
+    type: PLAYTIME
+    targets: []
+    amount: 600
+    reward: 350000
+    icon: CLOCK
+    name: "<aqua>Jouer <amount> minutes (sans être AFK)"
+  roi:
+    type: KOTH_TIME
+    targets: []
+    amount: 300
+    reward: 400000
+    icon: GOLDEN_HELMET
+    name: "<aqua>Passer <amount> secondes dans la zone du roi de la colline"
+  primes:
+    type: BOUNTY
+    targets: []
+    amount: 2
+    reward: 450000
+    icon: TARGET
+    name: "<aqua>Encaisser <amount> primes"
+  marchand:
+    type: VILLAGER_TRADE
+    targets: []
+    amount: 100
+    reward: 300000
+    icon: EMERALD_BLOCK
+    name: "<aqua>Faire <amount> échanges avec des villageois"
+  enchanteur:
+    type: ENCHANT
+    targets: []
+    amount: 30
+    reward: 300000
+    icon: EXPERIENCE_BOTTLE
+    name: "<aqua>Enchanter <amount> objets"
+  netherite:
+    type: MINE
+    targets: [ANCIENT_DEBRIS]
+    amount: 24
+    reward: 500000
+    icon: NETHERITE_INGOT
+    name: "<aqua>Miner <amount> débris antiques"
+  voyageur:
+    type: WALK
+    targets: []
+    amount: 50000
+    reward: 300000
+    icon: ELYTRA
+    name: "<aqua>Parcourir <amount> blocs à pied"

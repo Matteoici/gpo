@@ -104,7 +104,7 @@ showcase:
 # ---------------------------------------------------------------- Achats
 buy:
   done: "<green>Achat : <white><count>x <item></white> pour <gold><price></gold> <gray>chez <white><shop>"
-  seller: "<gold><b>💰</b></gold> <white><player></white> <gray>a acheté <white><count>x <item></white> <gray>(<gold>+<price></gold>)"
+  seller: "<gold><b>💰</b></gold> <white><player></white> <gray>a acheté <white><count>x <item></white> <gray>(<gold>+<price></gold> <dark_gray>après <rate>% d'impôt : -<tax></dark_gray><gray>)"
   seller-empty: "<red>Ta vitrine de <white><item></white> est vide ! <gray>Réapprovisionne-la."
   own: "<red>Tu ne peux pas acheter dans ta propre boutique."
   out-of-stock: "<red>Rupture de stock."

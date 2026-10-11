@@ -1,0 +1,113 @@
+# =====================================================================
+#  SmpEvents - quêtes, classements, roi de la colline (KOTH), primes
+#  Textes : messages.yml   |   Liste des quêtes : quests.yml
+#  Après une modification : /smpevents reload
+# =====================================================================
+
+currency-symbol: "$"
+# true = 1.5M / 250k   |   false = 1,500,000
+compact-money: false
+# fuseau horaire pour les quêtes et les horaires du KOTH
+timezone: "Europe/Paris"
+# heure à laquelle les quêtes du jour changent (0 = minuit)
+reset-hour: 0
+
+# ---------------------------------------------------------------- Quêtes
+quests:
+  enabled: true
+  # multiplie TOUTES les récompenses en argent (quêtes + bonus). 2.0 = deux fois plus.
+  rewards-multiplier: 1.0
+  # nombre de quêtes du jour par difficulté (tiers de quests.yml)
+  daily-slots:
+    easy: 1
+    medium: 1
+    hard: 1
+  # nombre de quêtes de la semaine (changent le lundi)
+  weekly-count: 2
+  # bonus quand on finit TOUTES les quêtes du jour
+  daily-bonus: 50000
+  # série : +X % de bonus par jour d'affilée où on a tout fini (jusqu'à streak-max-days)
+  streak-bonus-percent: 10
+  streak-max-days: 10
+  # commandes en plus du bonus (ex. une clé de caisse). %player% = le joueur
+  daily-bonus-commands: []
+  #  - "crates key give %player% vote 1"
+  # changer une quête du jour qui ne plaît pas (shift + clic dans le menu)
+  rerolls-per-day: 2
+  reroll-cost: 5000
+  # les monstres sortis d'un spawner comptent-ils pour les quêtes "tuer" ?
+  count-spawner-mobs: false
+  # tuer le même joueur ne compte qu'une fois toutes les X heures
+  player-kill-cooldown-hours: 2
+  # annonce dans le chat quand quelqu'un finit une quête de la semaine
+  announce-weekly: true
+  # barre d'avancement au-dessus de la hotbar
+  action-bar: true
+
+# ---------------------------------------------------------------- Classements
+leaderboards:
+  # nombre de joueurs affichés (3 à 15)
+  size: 10
+  # fréquence de mise à jour (secondes)
+  refresh-seconds: 60
+  # un hologramme qui montre plusieurs classements change toutes les X secondes
+  rotate-seconds: 10
+  hologram-scale: 1.0
+  # opacité du fond (0 = transparent, 255 = noir)
+  hologram-background-opacity: 90
+  # relit l'argent des joueurs hors ligne toutes les X minutes (0 = jamais)
+  offline-money-refresh-minutes: 30
+  # joueurs cachés des classements (staff, comptes de test...)
+  exclude: []
+
+# ---------------------------------------------------------------- Roi de la colline
+koth:
+  enabled: true
+  # heures de lancement automatique (fuseau "timezone")
+  schedule:
+    - "18:00"
+    - "21:30"
+  # jours (vide = tous les jours). Ex : [samedi, dimanche]
+  days: []
+  # pas d'événement s'il y a moins de X joueurs connectés
+  min-players: 3
+  # annonces X minutes avant
+  announce-minutes: [10, 5, 1]
+  # temps (cumulé) qu'une équipe doit tenir la colline pour gagner
+  capture-seconds: 300
+  # durée maximale ; à la fin, la meilleure équipe gagne si elle a tenu au moins min-seconds-to-win
+  max-minutes: 20
+  min-seconds-to-win: 60
+  # argent partagé entre les gagnants
+  reward-money: 750000
+  # commandes pour CHAQUE gagnant (%player%)
+  reward-commands: []
+  #  - "crates key give %player% legendaire 1"
+  # temps minimum passé dans la zone pour toucher sa part
+  participant-seconds: 30
+  # hauteur de la zone au-dessus du centre
+  height: 6
+  # tout le monde voit la barre de l'événement (sinon personne)
+  bossbar-everyone: true
+
+# ---------------------------------------------------------------- Primes
+bounties:
+  enabled: true
+  min-amount: 5000
+  # frais retenus quand on pose une prime (l'argent disparaît)
+  fee-percent: 10
+  # une prime pas réclamée est remboursée après X jours
+  expire-days: 7
+  # annonce dans le chat à partir de ce montant
+  announce-min: 50000
+  # la prime n'est PAS versée si le tueur et la victime sont amis, même guilde, guildes alliées
+  # ou même connexion (maintenant ou dans les "memory-days" derniers jours)
+  block-friends-guild-allies-ip: true
+
+# ---------------------------------------------------------------- Anti-abus
+anti-abuse:
+  # pendant combien de jours on se souvient des guildes / alliances / amitiés / connexions
+  memory-days: 14
+  # si tu utilises un AUTRE plugin de guildes que SmpGuilds : son placeholder (PlaceholderAPI)
+  # qui donne le nom de la guilde du joueur, ex. "%guilds_name%"
+  guild-placeholder: ""

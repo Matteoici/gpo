@@ -1,0 +1,296 @@
+# =====================================================================
+#  SmpEvents - textes (format MiniMessage)
+#  Après une modification : /smpevents reload
+# =====================================================================
+
+prefix: "<gradient:#3cff9a:#00c8ff><b>SMP</b></gradient> <dark_gray>»</dark_gray> "
+
+no-permission: "<red>Tu n'as pas la permission."
+players-only: "<red>Commande réservée aux joueurs."
+usage: "<red>Utilisation : <white><usage>"
+unknown-player: "<red>Joueur introuvable : <white><player>"
+reloaded: "<green>SmpEvents rechargé (config, quêtes, textes)."
+help-admin:
+  - "<gradient:#3cff9a:#00c8ff><b>SmpEvents</b></gradient> <gray>- administration"
+  - "<aqua>/classement placer <type></aqua> <dark_gray>- <gray>pose un classement là où tu es"
+  - "<aqua>/classement retirer</aqua> <dark_gray>- <gray>enlève le plus proche · <aqua>/classement liste"
+  - "<aqua>/koth creer <nom> [rayon]</aqua> <dark_gray>- <gray>zone de roi de la colline à tes pieds"
+  - "<aqua>/koth lancer [nom]</aqua> · <aqua>/koth stop</aqua> · <aqua>/koth liste"
+  - "<aqua>/prime retirer <joueur></aqua> <dark_gray>- <gray>annule une prime (remboursée)"
+  - "<aqua>/quetes reset <joueur></aqua> <dark_gray>- <gray>nouvelles quêtes pour ce joueur"
+  - "<aqua>/smpevents reload"
+
+# =====================================================================
+#  Quêtes
+# =====================================================================
+quests:
+  disabled: "<red>Les quêtes sont désactivées."
+  join: "<gray>Tu as <white><count></white> quête(s) du jour à faire. <aqua><click:run_command:'/quetes'>[Voir mes quêtes]</click>"
+  action-bar: "<quest> <dark_gray>| <bar> <white><progress>/<amount>"
+  done: "<green>Quête terminée : <quest> <dark_gray>» <gold>+<money>"
+  done-weekly: "<aqua><b>Quête de la semaine terminée</b> : <quest> <dark_gray>» <gold>+<money>"
+  title: "<green><b>QUÊTE TERMINÉE"
+  title-weekly: "<aqua><b>QUÊTE DE LA SEMAINE"
+  broadcast-weekly: "<white><player></white> <gray>a terminé la quête de la semaine</gray> <quest> <dark_gray>(<gold>+<money></gold>)"
+  bonus: "<gold><b>Toutes les quêtes du jour faites !</b> <gray>Bonus <gold>+<money></gold> <dark_gray>(série de <white><streak></white> jour(s), +<percent>%)"
+  reroll-done: "<red>Cette quête est déjà terminée."
+  reroll-none: "<red>Tu n'as plus de changement de quête aujourd'hui."
+  reroll-empty: "<red>Aucune autre quête de cette difficulté disponible."
+  reroll-money: "<red>Il te faut <white><price></white> pour changer de quête."
+  rerolled: "<green>Nouvelle quête : <quest>"
+  reset: "<green>Quêtes de <white><player></white> renouvelées."
+
+# =====================================================================
+#  Classements (hologrammes)
+# =====================================================================
+hologram:
+  title:
+    argent: "<green><b>✦ TOP ARGENT ✦"
+    kills: "<red><b>⚔ TOP KILLS ⚔"
+    morts: "<gray><b>☠ TOP MORTS ☠"
+    monstres: "<dark_green><b>✦ TOP MONSTRES ✦"
+    temps: "<aqua><b>⌚ TOP TEMPS DE JEU ⌚"
+    quetes: "<yellow><b>✎ TOP QUÊTES ✎"
+    koth: "<gold><b>♛ TOP ROI DE LA COLLINE ♛"
+    chasseurs: "<light_purple><b>✪ TOP CHASSEURS DE PRIMES ✪"
+    primes: "<dark_red><b>☠ LES PLUS RECHERCHÉS ☠"
+  separator: "<dark_gray><st>                              </st>"
+  rank-color:
+    "1": "<#ffd700>"
+    "2": "<#d9d9d9>"
+    "3": "<#cd7f32>"
+    other: "<yellow>"
+  line: "<color><b>#<rank></b> <white><player> <dark_gray>- <green><value>"
+  empty: "<color><b>#<rank></b> <dark_gray>---"
+  dot-on: "<white>●"
+  dot-off: "<dark_gray>●"
+  footer: "<dark_gray>/classement pour voir ta place"
+
+boards:
+  unknown: "<red>Classement inconnu : <white><name></white>. <gray>Disponibles : <white><list>"
+  placed: "<green>Classement <white>#<id></white> posé ! <gray>(/classement retirer pour l'enlever)"
+  none-near: "<red>Aucun classement à moins de 8 blocs (ou numéro inconnu). <gray>/classement liste"
+  removed: "<green>Classement <white>#<id></white> retiré."
+  list-empty: "<gray>Aucun classement posé. <aqua>/classement placer argent"
+  list-line: "<gray>#<white><id></white> <dark_gray>»</dark_gray> <white><boards></white> <dark_gray>(<world> <x> <y> <z>)</dark_gray> <aqua>[TP]"
+  scan: "<green>Lecture de <white><count></white> joueur(s) hors ligne en arrière-plan..."
+  help:
+    - "<gradient:#3cff9a:#00c8ff><b>Classements</b></gradient>"
+    - "<aqua>/classement placer <type></aqua> <dark_gray>- <gray>pose un hologramme 2 blocs au-dessus de toi"
+    - "<gray>  Plusieurs à la suite : <white>/classement placer argent,kills,temps"
+    - "<gray>  Types : <white>argent, kills, morts, monstres, temps, quetes, koth, chasseurs, primes"
+    - "<aqua>/classement retirer [numéro]</aqua> <dark_gray>- <gray>le plus proche ou ce numéro"
+    - "<aqua>/classement liste</aqua> <dark_gray>- <gray>tous les classements posés (clic = TP)"
+    - "<aqua>/classement scan</aqua> <dark_gray>- <gray>relit tous les joueurs hors ligne"
+
+# =====================================================================
+#  Roi de la colline
+# =====================================================================
+koth:
+  nobody: "Personne"
+  soon:
+    - ""
+    - "<gold><b>♛ ROI DE LA COLLINE</b> <gray>dans <white><minutes> min</white> !"
+    - "<gray>Zone : <white><zone></white> <dark_gray>(<world> <x>, <y>, <z>)"
+    - "<gray>Récompense : <gold><money></gold> <gray>+ le titre de roi"
+    - ""
+  started:
+    - ""
+    - "<gold><b>♛ LE ROI DE LA COLLINE COMMENCE !</b>"
+    - "<gray>Zone : <white><zone></white> <dark_gray>(<world> <x>, <y>, <z>)"
+    - "<gray>Tiens la colline <white><capture></white> avec ta guilde (seul dans la zone) pour gagner <gold><money></gold>."
+    - "<gray>Si un ennemi entre dans la zone, elle est <red>contestée</red> : personne ne gagne de temps."
+    - ""
+  not-enough: "<gray>Pas de roi de la colline cette fois : il faut au moins <white><min></white> joueurs connectés."
+  stopped: "<red>Le roi de la colline (<white><zone></white>) a été arrêté."
+  new-king: "<gold>♛ <white><team></white> <gray>prend la colline <white><zone></white> !"
+  no-winner: "<gray>Fin du roi de la colline <white><zone></white> : personne n'a tenu assez longtemps."
+  you-won: "<gold><b>Victoire !</b> <gray>Ta part : <gold><money>"
+  won: "<gold><b>♛ <team> remporte le roi de la colline !</b> <gray>(<white><zone></white>, <white><time></white>) <dark_gray>» <gray>Gagnants : <white><players></white> <dark_gray>- <gold><money> <gray>partagés"
+  boss: "<gold><b>♛ <zone></b> <dark_gray>|</dark_gray> <yellow><king></yellow> <white><time></white><gray>/<capture> <dark_gray>|</dark_gray> <gray>fin dans <white><left>"
+  boss-contested: "<red><b>⚔ <zone> : CONTESTÉ</b> <dark_gray>|</dark_gray> <yellow><king></yellow> <white><time></white><gray>/<capture> <dark_gray>|</dark_gray> <gray>fin dans <white><left>"
+  bar-holding: "<green><b>Tu tiens la colline !</b> <white><time></white><gray>/<capture>"
+  bar-contested: "<red><b>CONTESTÉ</b> <gray>- élimine les ennemis dans la zone !"
+  bar-waiting: "<yellow>Une autre équipe tient la colline <gray>- ton équipe : <white><time></white><gray>/<capture>"
+  label:
+    - "<gold><b>♛ ROI DE LA COLLINE"
+    - "<white><zone>"
+    - "<status>"
+    - "<gray>Roi : <yellow><king></yellow> <white><time></white><gray>/<capture>"
+  label-free: "<white>Libre"
+  label-held: "<green>Tenue"
+  label-contested: "<red><b>CONTESTÉE"
+  worlds:
+    world: "Monde normal"
+    world_nether: "Nether"
+    world_the_end: "End"
+  created: "<green>Zone <white><zone></white> créée ici (rayon <white><radius></white>). <gray>Test : /koth lancer <zone>"
+  unknown: "<red>Zone inconnue. <gray>/koth liste"
+  deleted: "<green>Zone <white><zone></white> supprimée."
+  list-empty: "<gray>Aucune zone. <aqua>/koth creer <nom> [rayon]"
+  list-line: "<gold><zone></gold> <dark_gray>»</dark_gray> <gray><world> <white><x> <y> <z></white> <dark_gray>(rayon <radius>)"
+  already: "<red>Un roi de la colline est déjà en cours."
+  not-running: "<red>Aucun roi de la colline en cours."
+  info-active:
+    - "<gold><b>♛ Roi de la colline en cours</b> <gray>: <white><zone></white> <dark_gray>(<x>, <y>, <z>)"
+    - "<gray>Roi actuel : <yellow><king></yellow> <white><time></white><gray>/<capture>"
+  info-next:
+    - "<gold><b>♛ Roi de la colline</b>"
+    - "<gray>Prochain : <white><when></white> <dark_gray>(dans <in>)"
+    - "<gray>Tiens la zone <white><capture></white> avec ta guilde pour gagner <gold><money>"
+  info-none:
+    - "<gray>Aucun roi de la colline prévu pour le moment."
+  help-admin:
+    - "<dark_gray>Admin : <aqua>/koth creer <nom> [rayon]</aqua>, <aqua>lancer [nom]</aqua>, <aqua>stop</aqua>, <aqua>liste</aqua>, <aqua>supprimer <nom></aqua>, <aqua>tp <nom>"
+
+# =====================================================================
+#  Primes
+# =====================================================================
+bounty:
+  disabled: "<red>Les primes sont désactivées."
+  self: "<red>Tu ne peux pas mettre une prime sur ta propre tête."
+  min: "<red>Prime minimum : <white><min>"
+  no-money: "<red>Tu n'as pas <white><price></white>."
+  placed: "<green>Prime de <gold><amount></gold> mise sur <white><player></white> <dark_gray>(frais <fee>)</dark_gray>. <gray>Total : <gold><total>"
+  on-you: "<red><b>☠ Ta tête est mise à prix :</b> <gold><total></gold>"
+  broadcast-placed: "<red>☠ <white><player></white> <gray>est recherché ! Prime : <gold><total></gold> <dark_gray>(/prime)"
+  link:
+    same_guild: "vous êtes (ou étiez) dans la même guilde"
+    allied: "vos guildes sont (ou étaient) alliées"
+    friends: "vous êtes (ou étiez) amis"
+    same_ip: "vous jouez depuis la même connexion"
+  blocked: "<red>Prime NON versée : <gray><reason>.</gray> <gray>La prime reste sur la tête de <white><player></white>."
+  staff-blocked: "<dark_gray>[Primes] <gray><white><killer></white> a tué <white><player></white> (<gold><total></gold>) : bloqué, <reason>."
+  claimed: "<gold><b>Prime encaissée !</b> <gray>Tu as tué <white><player></white> : <gold>+<total>"
+  broadcast-claimed: "<gold>✪ <white><killer></white> <gray>a encaissé la prime de <gold><total></gold> <gray>sur la tête de <white><player></white> !"
+  expired: "<gray>Ta prime sur <white><player></white> a expiré : <gold><amount></gold> <gray>te sont rendus."
+  cancelled: "<gray>Ta prime sur <white><player></white> a été annulée par le staff : <gold><amount></gold> <gray>te sont rendus."
+  list-empty: "<gray>Aucune prime en cours."
+  list-header: "<red><b>☠ Têtes mises à prix"
+  list-line: "<gray>#<rank> <white><player> <dark_gray>- <gold><total>"
+  none: "<gray>Aucune prime sur <white><player></white>."
+  removed: "<green>Prime sur <white><player></white> annulée et remboursée."
+  info: "<gray>Prime sur <white><player></white> : <gold><total></gold> <dark_gray>(<count> contributeur(s))"
+
+# =====================================================================
+#  Menus
+# =====================================================================
+gui:
+  common:
+    back: {name: "<yellow>← Retour"}
+    close: {name: "<red>Fermer"}
+    previous: {name: "<yellow>← Page <page>/<pages>"}
+    next: {name: "<yellow>Page <page>/<pages> →"}
+
+  quests:
+    title: "<dark_gray>Quêtes"
+    header:
+      name: "<gradient:#3cff9a:#00c8ff><b>Quêtes de <player>"
+      lore:
+        - "<gray>Série : <gold><streak> jour(s)</gold> <dark_gray>(tout finir chaque jour)"
+        - "<gray>Quêtes terminées : <white><done>"
+        - "<gray>Changements restants : <white><rerolls>"
+        - ""
+        - "<gray>Nouvelles quêtes du jour dans <white><reset>"
+        - "<gray>Nouvelles quêtes de la semaine dans <white><week-reset>"
+    tier:
+      easy: "<green>Facile"
+      medium: "<yellow>Moyenne"
+      hard: "<red>Difficile"
+      weekly: "<aqua>Semaine"
+    quest:
+      name: "<quest>"
+      name-done: "<green><b>✔</b> <quest>"
+      lore:
+        - "<gray>Difficulté : <tier>"
+        - ""
+        - "<bar> <white><percent>%"
+        - "<gray>Avancement : <white><progress></white>/<amount>"
+        - ""
+        - "<gray>Récompense : <gold><money>"
+      lore-extra:
+        - "<gray>+ récompense bonus"
+      lore-done:
+        - "<gray>Difficulté : <tier>"
+        - ""
+        - "<green><b>TERMINÉE</b> <dark_gray>(<gold><money></gold> reçus)"
+      reroll:
+        - ""
+        - "<dark_gray>Shift + clic : changer de quête (<price>)"
+      no-reroll:
+        - ""
+        - "<dark_gray>Plus de changement de quête aujourd'hui"
+    bonus:
+      name: "<gold><b>Bonus du jour"
+      lore:
+        - "<gray>Finis toutes les quêtes du jour"
+        - "<gray>pour gagner <gold><money></gold><gray>."
+        - ""
+        - "<bar> <white><done>/<total>"
+        - ""
+        - "<gray>Série : <gold><streak> jour(s)</gold> <dark_gray>(+<percent>%)"
+        - "<dark_gray>Chaque jour d'affilée = +bonus"
+    bonus-done:
+      name: "<green><b>✔ Bonus du jour reçu"
+      lore:
+        - "<gray>Tu as tout fini aujourd'hui !"
+        - "<gray>Série : <gold><streak> jour(s)"
+        - ""
+        - "<gray>Reviens demain pour garder ta série."
+    daily-label:
+      name: "<yellow><b>Quêtes du jour"
+      lore: ["<gray>Nouvelles quêtes dans <white><reset>"]
+    weekly-label:
+      name: "<aqua><b>Quêtes de la semaine"
+      lore: ["<gray>Nouvelles quêtes dans <white><reset>", "<gray>Grosses récompenses !"]
+    to-boards:
+      name: "<gold><b>Classements"
+      lore: ["<gray>Voir ta place dans le serveur"]
+    to-bounties:
+      name: "<red><b>Primes"
+      lore: ["<gray>Les têtes mises à prix"]
+
+  boards:
+    title: "<dark_gray>Classements"
+    header:
+      name: "<gradient:#3cff9a:#00c8ff><b>Classements du serveur"
+      lore: ["<gray>Mis à jour toutes les <white><seconds>s"]
+    line: "<color>#<rank> <white><player> <dark_gray>- <green><value>"
+    empty: "<dark_gray>Personne pour l'instant"
+    you: "<aqua>▶ Ta place : <white>#<rank></white> <dark_gray>(<value>)"
+    you-none: "<dark_gray>Tu n'es pas encore classé"
+    to-quests:
+      name: "<yellow><b>Mes quêtes"
+      lore: ["<gray>/quetes"]
+
+  bounties:
+    title: "<dark_gray>Primes"
+    online: "<green>en ligne"
+    offline: "<gray>hors ligne"
+    mine-none: "aucune"
+    header:
+      name: "<red><b>☠ Têtes mises à prix"
+      lore:
+        - "<gray>Primes en cours : <white><count>"
+        - "<gray>Prime sur ta tête : <gold><mine>"
+        - ""
+        - "<white>/prime <joueur> <montant>"
+        - "<gray>Minimum <white><min></white>, frais <white><fee>%</white>"
+        - "<gray>Remboursée après <white><days></white> jours sans être réclamée."
+        - ""
+        - "<dark_gray>Tuer un ami, un membre de sa guilde ou un allié"
+        - "<dark_gray>ne rapporte PAS la prime."
+    none:
+      name: "<gray>Aucune prime en cours"
+      lore: ["<gray>Sois le premier : /prime <joueur> <montant>"]
+    entry:
+      name: "<red>#<rank> <white><b><player>"
+      lore:
+        - "<gray>Prime : <gold><total>"
+        - "<gray>Statut : <online>"
+        - "<gray>Depuis : <white><since>"
+        - "<gray>Contributeurs : <white><count>"
+      from: "<dark_gray> - <gray><player> <dark_gray>(<amount>)"
+      footer:
+        - ""
+        - "<dark_gray>Ajouter : /prime <player> <montant>"

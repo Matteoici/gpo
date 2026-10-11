@@ -225,7 +225,9 @@ public final class Shops {
             return false;
         }
         if (!eco.take(buyer, total)) return false;
-        double net = total * (1 - s().taxPercent / 100.0);
+        double taxRate = s().taxFor(total);
+        double net = Math.floor(total * (1 - taxRate / 100.0));
+        double tax = total - net;
         OfflinePlayer seller = Bukkit.getOfflinePlayer(st.owner);
         eco.give(seller, net);
 
@@ -245,7 +247,7 @@ public final class Shops {
         Player online = seller.getPlayer();
         if (online != null) {
             t().send(online, "buy.seller", ph("player", buyer.getName()), ph("count", qty), pc("item", item),
-                    ph("price", s().money(net)));
+                    ph("price", s().money(net)), ph("tax", s().money(tax)), ph("rate", (int) Math.round(taxRate)));
             Fx.sound(online, "block.note_block.chime", 1.6f);
             if (c.stock <= 0) t().send(online, "buy.seller-empty", pc("item", item));
         } else {
