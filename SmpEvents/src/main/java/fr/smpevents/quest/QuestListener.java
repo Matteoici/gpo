@@ -16,6 +16,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockFormEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.enchantment.EnchantItemEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
@@ -79,6 +80,12 @@ public final class QuestListener implements Listener {
             }
         }
         if (counts(p)) q().progress(p, QuestType.PLACE, e.getBlockPlaced().getType().name(), 1);
+    }
+
+    /** Pierre / obsidienne créées par lave + eau (générateurs) : ne comptent pas non plus. */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onForm(BlockFormEvent e) {
+        placed.add(key(e.getBlock()));
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
