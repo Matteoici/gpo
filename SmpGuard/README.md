@@ -33,7 +33,7 @@ Minecraft envoie au serveur l'état des touches de déplacement. Si le joueur **
 
 **Limite :** un freecam qui bloque aussi l'envoi des touches est invisible pour le serveur. Contre lui, la protection anti-ESP (couche 1) l'empêche de voir les joueurs à travers les murs.
 
-### Test appât : `/ac bait <joueur>`
+### Test appât : `/anticheat bait <joueur>`
 L'outil de vérification pour le staff :
 1. Un **faux joueur** (tête, armure, épée), **visible uniquement par le suspect**, se déplace pendant 30 s dans la roche autour de lui, toujours caché derrière des blocs pleins.
 2. Un joueur normal ne peut pas le voir. Avec un ESP qui affiche les entités, le suspect le remarque et le regarde.
@@ -44,7 +44,7 @@ Lance-le quand le joueur est sous terre ou dans une base, et ne lui dis rien. Un
 
 ## Prise en compte du lag
 
-Chaque mesure reçoit une **fiabilité de 0 à 100 %**, visible dans `/ac` :
+Chaque mesure reçoit une **fiabilité de 0 à 100 %**, visible dans `/anticheat` :
 
 - **Ping :** fiabilité pleine sous 120 ms, puis elle baisse jusqu'à 350 ms. Au-delà, **rien n'est compté**.
 - **Gigue :** si le ping varie de plus de 120 ms, rien n'est compté.
@@ -60,7 +60,7 @@ Un joueur qui lague peut être *moins bien surveillé*, mais il ne peut pas êtr
 ## Lien avec le panneau admin (SmpAdmin)
 
 - **`/admin` :** nouveau bouton **Anticheat** (bouclier). La fiche de chaque joueur a un bouton **Rapport anticheat**.
-- **Alertes :** chaque alerte a des boutons cliquables **[SPEC]** (spectateur), **[FICHE]** (`/admin`) et **[RAPPORT]** (`/ac check`).
+- **Alertes :** chaque alerte a des boutons cliquables **[SPEC]** (spectateur), **[FICHE]** (`/admin`) et **[RAPPORT]** (`/anticheat check`).
 - **Seuil `sus-vl` :** le joueur est automatiquement **marqué suspect** (`/sus`). Le staff est alors prévenu à chacune de ses connexions.
 - **Joueurs ignorés :** les joueurs gelés (`/freeze`) ou en vanish ne sont pas analysés.
 
@@ -68,12 +68,12 @@ Un joueur qui lague peut être *moins bien surveillé*, mais il ne peut pas êtr
 
 | Commande | Effet |
 |---|---|
-| `/ac` | Panneau : joueurs triés par suspicion, ping, fiabilité, scores |
-| `/ac check <joueur>` | Rapport détaillé + boutons (spec, appât, fiche, suspect) |
-| `/ac bait <joueur> [secondes]` | Test appât |
-| `/ac alerts` | Couper / remettre ses alertes |
-| `/ac status` | État du plugin |
-| `/ac reset <joueur>` · `/ac reload` | Admin |
+| `/anticheat` | Panneau : joueurs triés par suspicion, ping, fiabilité, scores |
+| `/anticheat check <joueur>` | Rapport détaillé + boutons (spec, appât, fiche, suspect) |
+| `/anticheat bait <joueur> [secondes]` | Test appât |
+| `/anticheat alerts` | Couper / remettre ses alertes |
+| `/anticheat status` | État du plugin |
+| `/anticheat reset <joueur>` · `/anticheat reload` | Admin |
 
 Permissions :
 - `smpguard.staff` : panneau, rapports, appât
@@ -91,7 +91,7 @@ Pour tes modos :
 
 ## Protection anti-ESP (joueurs cachés derrière les murs)
 
-Elle est **désactivée par défaut**. Pour l'activer : `anti-esp.hide-players-behind-walls: true` dans `config.yml`, puis `/ac reload`. Teste-la d'abord avec quelques joueurs.
+Elle est **désactivée par défaut**. Pour l'activer : `anti-esp.hide-players-behind-walls: true` dans `config.yml`, puis `/anticheat reload`. Teste-la d'abord avec quelques joueurs.
 
 - Un joueur caché réapparaît dès qu'**un seul** rayon passe. On anticipe le mouvement des deux joueurs selon le ping, et personne n'est caché à moins de 6 blocs ni pendant un combat.
 - **Effets secondaires :**

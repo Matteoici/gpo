@@ -5,9 +5,9 @@
 #  Aucun plugin ne peut les prouver à 100 %. SmpGuard :
 #    1. les rend inutiles (joueurs cachés derrière les murs, voir anti-esp)
 #    2. repère les comportements typiques et donne un score de confiance
-#    3. donne au staff des outils pour vérifier (/ac bait, /spec)
+#    3. donne au staff des outils pour vérifier (/anticheat bait, /spec)
 #  SmpGuard ne bannit jamais tout seul : il alerte et peut marquer le joueur "suspect" dans /admin.
-#  Après une modification : /ac reload
+#  Après une modification : /anticheat reload
 # =====================================================================
 
 # ---------------------------------------------------------------- Lag
@@ -86,7 +86,7 @@ anti-esp:
   # nombre maximum de lancers de rayons par tick (protège les performances)
   budget-per-tick: 400
 
-# ---------------------------------------------------------------- Test appât (/ac bait)
+# ---------------------------------------------------------------- Test appât (/anticheat bait)
 # Un faux joueur, visible UNIQUEMENT par le suspect, se déplace dans la roche autour de lui.
 # Un joueur normal ne peut pas le voir ; avec un ESP, il le voit à travers les murs.
 bait:

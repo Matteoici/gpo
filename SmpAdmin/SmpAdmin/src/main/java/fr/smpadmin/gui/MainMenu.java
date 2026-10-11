@@ -95,7 +95,7 @@ public final class MainMenu extends Menu {
         });
         // lien avec l'anticheat SmpGuard (s'il est installé)
         if (org.bukkit.Bukkit.getPluginManager().isPluginEnabled("SmpGuard") && viewer.hasPermission("smpguard.staff")) {
-            button(51, item(Material.SHIELD, "gui.main.anticheat"), c -> viewer.performCommand("ac"));
+            button(51, item(Material.SHIELD, "gui.main.anticheat"), c -> viewer.performCommand("anticheat"));
         }
         close(49);
     }

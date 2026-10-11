@@ -5,10 +5,10 @@ api-version: '26.2'
 softdepend: [SmpAdmin]
 description: Anticheat ESP / X-ray / Freecam, tolérant au lag, relié au panneau admin
 commands:
-  ac:
+  anticheat:
     description: Panneau anticheat
-    usage: /ac [check|alerts|bait|reset|reload]
-    aliases: [anticheat, guard]
+    usage: /anticheat [check|alerts|bait|reset|reload]
+    aliases: [guard, smpguard]
     permission: smpguard.staff
 permissions:
   smpguard.staff:

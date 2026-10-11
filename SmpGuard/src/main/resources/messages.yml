@@ -1,6 +1,6 @@
 # =====================================================================
 #  SmpGuard - textes (format MiniMessage)
-#  Après une modification : /ac reload
+#  Après une modification : /anticheat reload
 # =====================================================================
 
 prefix: "<gradient:#ff5f6d:#ffc371><b>GUARD</b></gradient> <dark_gray>»</dark_gray> "
@@ -15,11 +15,11 @@ alerts-off: "<yellow>Alertes anticheat coupées (pour toi seulement)."
 
 help:
   - "<gradient:#ff5f6d:#ffc371><b>SmpGuard</b></gradient> <gray>- anticheat ESP / X-ray / Freecam"
-  - "<aqua>/ac</aqua> <dark_gray>- <gray>panneau (joueurs triés par suspicion)"
-  - "<aqua>/ac check <joueur></aqua> <dark_gray>- <gray>rapport détaillé"
-  - "<aqua>/ac bait <joueur> [secondes]</aqua> <dark_gray>- <gray>test appât anti-ESP"
-  - "<aqua>/ac alerts</aqua> <dark_gray>- <gray>couper / remettre les alertes"
-  - "<aqua>/ac status</aqua> · <aqua>/ac reset <joueur></aqua> · <aqua>/ac reload"
+  - "<aqua>/anticheat</aqua> <dark_gray>- <gray>panneau (joueurs triés par suspicion)"
+  - "<aqua>/anticheat check <joueur></aqua> <dark_gray>- <gray>rapport détaillé"
+  - "<aqua>/anticheat bait <joueur> [secondes]</aqua> <dark_gray>- <gray>test appât anti-ESP"
+  - "<aqua>/anticheat alerts</aqua> <dark_gray>- <gray>couper / remettre les alertes"
+  - "<aqua>/anticheat status</aqua> · <aqua>/anticheat reset <joueur></aqua> · <aqua>/anticheat reload"
 
 status:
   - "<gradient:#ff5f6d:#ffc371><b>SmpGuard</b></gradient>"

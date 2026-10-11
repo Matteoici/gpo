@@ -35,13 +35,13 @@ final class GuardCommand implements TabExecutor {
                 else status(sender);
             }
             case "check", "rapport", "report" -> {
-                Player target = target(sender, args, "/ac check <joueur>");
+                Player target = target(sender, args, "/anticheat check <joueur>");
                 if (target == null) return true;
                 if (sender instanceof Player p) new ReportMenu(plugin, p, target).open();
                 else textReport(sender, target);
             }
             case "bait", "appat" -> {
-                Player target = target(sender, args, "/ac bait <joueur> [secondes]");
+                Player target = target(sender, args, "/anticheat bait <joueur> [secondes]");
                 if (target == null) return true;
                 int sec = plugin.settings().baitSeconds;
                 if (args.length > 2) {
@@ -62,7 +62,7 @@ final class GuardCommand implements TabExecutor {
                     t.send(sender, "no-permission");
                     return true;
                 }
-                Player target = target(sender, args, "/ac reset <joueur>");
+                Player target = target(sender, args, "/anticheat reset <joueur>");
                 if (target == null) return true;
                 Profile prof = plugin.profile(target);
                 if (prof != null) {

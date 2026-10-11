@@ -82,7 +82,7 @@ public final class Alerts {
                 .hoverEvent(HoverEvent.showText(t.get("alert.spec-hover")));
         Component sheet = t.get("alert.sheet").clickEvent(ClickEvent.runCommand("/admin " + p.getName()))
                 .hoverEvent(HoverEvent.showText(t.get("alert.sheet-hover")));
-        Component report = t.get("alert.report").clickEvent(ClickEvent.runCommand("/ac check " + p.getName()))
+        Component report = t.get("alert.report").clickEvent(ClickEvent.runCommand("/anticheat check " + p.getName()))
                 .hoverEvent(HoverEvent.showText(t.get("alert.report-hover")));
         TagResolver r = TagResolver.resolver(ph("player", p.getName()), Texts.pp("check", t.raw("checks." + check.key)),
                 ph("detail", detail), ph("confidence", conf), ph("vl", vlText), ph("lag", lag),

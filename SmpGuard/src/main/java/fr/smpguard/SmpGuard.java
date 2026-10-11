@@ -47,7 +47,7 @@ public final class SmpGuard extends JavaPlugin {
         culling = new Culling(this);
 
         getServer().getPluginManager().registerEvents(new GuardListener(this), this);
-        PluginCommand cmd = getCommand("ac");
+        PluginCommand cmd = getCommand("anticheat");
         if (cmd != null) {
             GuardCommand gc = new GuardCommand(this);
             cmd.setExecutor(gc);

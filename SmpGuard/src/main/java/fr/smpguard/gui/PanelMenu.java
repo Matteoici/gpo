@@ -22,7 +22,7 @@ import java.util.Locale;
 import static fr.smpguard.Texts.ph;
 import static fr.smpguard.Texts.pp;
 
-/** /ac : tous les joueurs, les plus suspects en premier. */
+/** /anticheat : tous les joueurs, les plus suspects en premier. */
 public final class PanelMenu extends Menu {
 
     private int page;
