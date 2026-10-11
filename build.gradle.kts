@@ -2,7 +2,7 @@ plugins {
     java
 }
 
-group = "fr.smpguard"
+group = "fr.smpadmin"
 version = "1.0.0"
 
 repositories {

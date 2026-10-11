@@ -1,8 +1,8 @@
-package fr.smpguard.gui;
+package fr.smpadmin.gui;
 
-import fr.smpguard.Items;
-import fr.smpguard.SmpGuard;
-import fr.smpguard.Texts;
+import fr.smpadmin.Items;
+import fr.smpadmin.SmpAdmin;
+import fr.smpadmin.Texts;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
@@ -19,21 +19,17 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import static fr.smpguard.Texts.ph;
+import static fr.smpadmin.Texts.ph;
 
 /** Base des menus : un inventaire + une action par case. */
 public abstract class Menu implements InventoryHolder {
 
-    /** Cases intérieures d'un menu de 6 lignes (28 cases). */
-    protected static final int[] GRID = {10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25,
-            28, 29, 30, 31, 32, 33, 34, 37, 38, 39, 40, 41, 42, 43};
-
-    protected final SmpGuard plugin;
+    protected final SmpAdmin plugin;
     protected final Player viewer;
     private final Inventory inventory;
     private final Map<Integer, Consumer<ClickType>> actions = new HashMap<>();
 
-    protected Menu(SmpGuard plugin, Player viewer, int rows, Component title) {
+    protected Menu(SmpAdmin plugin, Player viewer, int rows, Component title) {
         this.plugin = plugin;
         this.viewer = viewer;
         this.inventory = Bukkit.createInventory(this, rows * 9, title);

@@ -1,158 +1,343 @@
 # =====================================================================
-#  SmpGuard - textes (format MiniMessage)
-#  Après une modification : /ac reload
+#  SmpAdmin - textes (format MiniMessage : https://docs.advntr.dev/minimessage/format.html)
+#  Après une modification : /admin reload
 # =====================================================================
 
-prefix: "<gradient:#ff5f6d:#ffc371><b>GUARD</b></gradient> <dark_gray>»</dark_gray> "
+prefix: "<gradient:#ff4b4b:#ff9a3c><b>ADMIN</b></gradient> <dark_gray>»</dark_gray> "
+alert-prefix: "<dark_red><b>⚑ STAFF</b></dark_red> <dark_gray>»</dark_gray> "
 
-no-permission: "<red>Tu n'as pas la permission."
-usage: "<red>Utilisation : <white><usage>"
-offline: "<red><player> n'est pas connecté."
-reloaded: "<green>Configuration rechargée."
-reset: "<green>Scores de <white><player></white> remis à zéro."
-alerts-on: "<green>Alertes anticheat activées."
-alerts-off: "<yellow>Alertes anticheat coupées (pour toi seulement)."
+error:
+  no-permission: "<red>Tu n'as pas la permission."
+  player-only: "<red>Commande à utiliser en jeu."
+  unknown-player: "<red>Joueur inconnu : <white><player></white> (il doit s'être déjà connecté)."
+  offline: "<red><player> n'est pas connecté."
+  exempt: "<red>Tu ne peux pas sanctionner <white><player></white>."
+  self: "<red>Tu ne peux pas faire ça sur toi-même."
+  perm-ban: "<red>Tu n'as pas le droit de bannir définitivement. Précise une durée (ex. 7d)."
+  usage: "<red>Utilisation : <white><usage>"
+  bad-duration: "<red>Durée invalide : <white><value></white>. Exemples : 30m, 2h, 7d, 1mo, perm."
 
-help:
-  - "<gradient:#ff5f6d:#ffc371><b>SmpGuard</b></gradient> <gray>- anticheat ESP / X-ray / Freecam"
-  - "<aqua>/ac</aqua> <dark_gray>- <gray>panneau (joueurs triés par suspicion)"
-  - "<aqua>/ac check <joueur></aqua> <dark_gray>- <gray>rapport détaillé"
-  - "<aqua>/ac bait <joueur> [secondes]</aqua> <dark_gray>- <gray>test appât anti-ESP"
-  - "<aqua>/ac alerts</aqua> <dark_gray>- <gray>couper / remettre les alertes"
-  - "<aqua>/ac status</aqua> · <aqua>/ac reset <joueur></aqua> · <aqua>/ac reload"
+duration:
+  permanent: "définitif"
 
+# ---------------------------------------------------------------- Ban
+ban:
+  screen:
+    - "<gradient:#ff4b4b:#ff9a3c><b>TU ES BANNI DU SERVEUR</b></gradient>"
+    - ""
+    - "<gray>Raison : <white><reason>"
+    - "<gray>Banni par : <white><staff>"
+    - "<gray>Durée : <white><duration>"
+    - "<gray>Temps restant : <yellow><remaining>"
+    - ""
+    - "<dark_gray>Sanction n°<id> • Tu peux contester sur notre Discord"
+  broadcast: "<red><b>✖</b></red> <white><player></white> <gray>a été banni <dark_gray>(<duration>)</dark_gray> : <white><reason>"
+  alert: "<white><staff></white> <gray>a banni <white><player></white> <dark_gray>(<duration>)</dark_gray> : <white><reason></white> <dark_gray>#<id>"
+  unban-alert: "<white><staff></white> <gray>a débanni <white><player>"
+  not-banned: "<red><player> n'est pas banni."
+
+# ---------------------------------------------------------------- Mute
+mute:
+  notify: "<red>Tu as été rendu muet <gray>(<white><duration></white>)</gray> : <white><reason>"
+  blocked: "<red>Tu es muet <gray>(encore <white><remaining></white>)</gray> : <white><reason>"
+  broadcast: "<gold><b>🔇</b></gold> <white><player></white> <gray>a été rendu muet <dark_gray>(<duration>)</dark_gray> : <white><reason>"
+  alert: "<white><staff></white> <gray>a rendu muet <white><player></white> <dark_gray>(<duration>)</dark_gray> : <white><reason></white> <dark_gray>#<id>"
+  unmute-alert: "<white><staff></white> <gray>a rendu la parole à <white><player>"
+  unmuted: "<green>Tu peux de nouveau parler dans le chat."
+  not-muted: "<red><player> n'est pas muet."
+
+# ---------------------------------------------------------------- Kick
+kick:
+  screen:
+    - "<gradient:#ff4b4b:#ff9a3c><b>TU AS ÉTÉ EXPULSÉ</b></gradient>"
+    - ""
+    - "<gray>Raison : <white><reason>"
+    - "<gray>Par : <white><staff>"
+    - ""
+    - "<dark_gray>Tu peux te reconnecter."
+  broadcast: "<yellow><b>⚠</b></yellow> <white><player></white> <gray>a été expulsé : <white><reason>"
+  alert: "<white><staff></white> <gray>a expulsé <white><player></white> : <white><reason>"
+
+# ---------------------------------------------------------------- Avertissement
+warn:
+  title: "<gold><b>AVERTISSEMENT"
+  subtitle: "<white><reason>"
+  message: "<gold><b>⚠ Avertissement</b></gold> <gray>(n°<count>) : <white><reason></white> <dark_gray>— par <staff>"
+  broadcast: "<gold><b>⚠</b></gold> <white><player></white> <gray>a reçu un avertissement : <white><reason>"
+  alert: "<white><staff></white> <gray>a averti <white><player></white> <dark_gray>(<count> avertissement(s))</dark_gray> : <white><reason>"
+
+# ---------------------------------------------------------------- Freeze
+freeze:
+  title: "<aqua><b>❄ TU ES GELÉ ❄"
+  subtitle: "<white>Un membre du staff va te parler. <red>Ne te déconnecte pas !"
+  chat: "<aqua><b>❄ Tu es gelé.</b></aqua> <gray>Un membre du staff va te contacter. Te déconnecter = <red>bannissement</red>."
+  unfrozen: "<green>Tu n'es plus gelé. Merci de ta patience !"
+  blocked: "<red>Tu es gelé : action impossible."
+  alert-on: "<white><staff></white> <gray>a gelé <white><player>"
+  alert-off: "<white><staff></white> <gray>a dégelé <white><player>"
+  quit-alert: "<red><b><player></b> s'est déconnecté pendant qu'il était gelé !"
+
+# ---------------------------------------------------------------- Suspects
+sus:
+  added: "<white><staff></white> <gray>a marqué <white><player></white> comme <red><b>suspect</b></red> : <white><reason>"
+  removed: "<white><staff></white> <gray>a retiré <white><player></white> des suspects."
+  join: "<red><b>⚠ SUSPECT</b></red> <white><player></white> <gray>vient de se connecter <dark_gray>(<reason>)</dark_gray> <spec> <sheet>"
+  spec-button: "<aqua><b>[SPEC]</b></aqua>"
+  sheet-button: "<yellow><b>[FICHE]</b></yellow>"
+  not-sus: "<red><player> n'est pas suspect."
+  default-reason: "Comportement suspect"
+
+# ---------------------------------------------------------------- Vanish
+vanish:
+  "on": "<green>Tu es maintenant <b>invisible</b>. <gray>Seul le staff peut te voir."
+  "off": "<yellow>Tu es de nouveau <b>visible</b>."
+  other-on: "<green><player> est maintenant invisible."
+  other-off: "<yellow><player> est de nouveau visible."
+  actionbar: "<gradient:#a8a8ff:#6b6bff><b>👻 VANISH</b></gradient> <dark_gray>|</dark_gray> <gray>invisible pour les joueurs"
+  fake-join: "<yellow><player> a rejoint la partie"
+  fake-quit: "<yellow><player> a quitté la partie"
+
+# ---------------------------------------------------------------- Spectateur
+spec:
+  start-auto: "<green>Tour spectateur lancé : <white><count></white> joueur(s), <white><seconds> s</white> chacun. <gray>/spec next, /spec prev, /spec stop"
+  start: "<green>Tu observes <white><player></white>. <gray>/spec stop pour revenir."
+  stop: "<yellow>Mode spectateur terminé, retour à ta position."
+  none: "<red>Aucun joueur à observer."
+  title: "<gray>👁 <white><b><player>"
+  actionbar: "<gray>👁 <white><b><player></b></white> <dark_gray>|</dark_gray> <red>❤ <health></red> <dark_gray>|</dark_gray> <gray><ping> ms <dark_gray>|</dark_gray> <gray><world> <dark_gray>|</dark_gray> <yellow><index>/<count></yellow><next>"
+  next-in: " <dark_gray>|</dark_gray> <gray>suivant <white><seconds>s"
+
+# ---------------------------------------------------------------- Chat
+staffchat:
+  format: "<dark_red><b>STAFF</b></dark_red> <gray><player></gray> <dark_gray>»</dark_gray> <#ffb3b3><message>"
+  toggle-on: "<green>Chat staff activé : tout ce que tu écris va au staff."
+  toggle-off: "<yellow>Chat staff désactivé."
+chat:
+  cleared: "<gray>Le chat a été nettoyé par <white><player></white>."
+  locked: "<red><b>🔒 Le chat est bloqué</b></red> <gray>par <white><player></white>."
+  unlocked: "<green><b>🔓 Le chat est de nouveau ouvert</b></green>."
+  locked-msg: "<red>Le chat est bloqué pour le moment."
+
+invsee:
+  readonly: "<gray>Inventaire de <white><player></white> en lecture seule."
+
+input:
+  reason: "<yellow>Écris la raison dans le chat. <gray>(« annuler » pour annuler)"
+  cancelled: "<gray>Annulé."
+
+history:
+  header: "<gradient:#ff4b4b:#ff9a3c><b>Casier de <player></b></gradient> <gray>(<count> sanction(s))"
+  line: "<dark_gray>#<id></dark_gray> <type> <gray><date></gray> <white><reason></white> <dark_gray>(<duration>, par <staff>)</dark_gray> <status>"
+  empty: "<green><player> n'a aucune sanction."
+
+types:
+  ban: "<red>BAN"
+  mute: "<gold>MUTE"
+  kick: "<yellow>KICK"
+  warn: "<#ffd27f>WARN"
 status:
-  - "<gradient:#ff5f6d:#ffc371><b>SmpGuard</b></gradient>"
-  - "<gray>Joueurs analysés : <white><players>"
-  - "<gray>Alertes depuis le démarrage : <white><alerts>"
-  - "<gray>TPS : <white><tps>"
-  - "<gray>Joueurs cachés derrière les murs : <white><culling>"
+  active: "<red>● active"
+  expired: "<gray>● terminée"
+  revoked: "<green>● levée par <revoker>"
+  none: ""
 
-# Nom des détections
-checks:
-  esp-aim: "<light_purple>ESP (visée à travers les murs)"
-  xray: "<aqua>X-ray (minerais cachés)"
-  freecam: "<yellow>Freecam / blink"
-  bait: "<red>Test appât"
+reloaded: "<green>Configuration rechargée."
 
-# Détail d'une alerte (texte brut)
-detail:
-  esp-aim: "a suivi <target> caché derrière des blocs pendant <seconds>s (écart <angle>°, <distance> blocs)"
-  xray: "<veins> filons pour <stone> blocs minés (<where>), <hidden>% sans aucune ouverture"
-  overworld: "monde normal"
-  nether: "Nether"
-  freecam: "touches de déplacement enfoncées <seconds>s sans que le corps bouge"
-  bait: "a visé l'appât invisible <rate>% du temps (point témoin : <control>%)"
-
-# Explications dans le rapport
-explain:
-  esp-aim: "<gray>Suit avec sa visée des joueurs cachés derrière des blocs."
-  xray: "<gray>Trouve des filons rares enfermés dans la roche bien trop vite."
-  freecam: "<gray>Appuie sur avancer mais son corps ne bouge pas."
-  bait: "<gray>Résultat des tests appât lancés par le staff."
-
-alert:
-  format: "<red><b>⚠</b></red> <white><b><player></b></white> <dark_gray>|</dark_gray> <check> <dark_gray>|</dark_gray> <gray>confiance <white><confidence>%</white> <dark_gray>(VL <vl>)</dark_gray><newline>   <gray><detail> <dark_gray>[<lag>]</dark_gray> <spec> <sheet> <report>"
-  spec: "<aqua><b>[SPEC]"
-  spec-hover: "<gray>L'observer en spectateur (SmpAdmin)"
-  sheet: "<yellow><b>[FICHE]"
-  sheet-hover: "<gray>Sa fiche dans le panneau admin"
-  report: "<light_purple><b>[RAPPORT]"
-  report-hover: "<gray>Rapport anticheat détaillé"
-
-bait:
-  started: "<green>Test appât lancé sur <white><player></white> pendant <white><seconds>s</white>. <gray>Un faux joueur, visible par lui seul, tourne dans la roche autour de lui. Ne lui dis rien."
-  no-path: "<red>Impossible de cacher l'appât autour de <white><player></white> (il est à découvert : ciel, océan...). Réessaie quand il est sous terre ou dans une base."
-  already: "<red>Un test est déjà en cours sur <white><player></white>."
-  aborted: "<yellow>Test appât sur <white><player></white> interrompu (déconnexion, changement de monde...)."
-  not-enough: "<yellow>Test appât sur <white><player></white> : pas assez de mesures fiables (<samples>). Connexion trop instable ? Relance-le."
-  result: "<white><b>Test appât - <player></b></white><newline>   <gray>Visée sur l'appât : <white><rate>%</white> <dark_gray>|</dark_gray> <gray>sur le point témoin : <white><control>%</white> <dark_gray>(<samples> mesures, <lag>)</dark_gray><newline>   <verdict>"
-  verdict-strong: "<red><b>TRÈS SUSPECT</b> <gray>: il voit les entités à travers les murs (ESP probable)."
-  verdict-medium: "<gold><b>SUSPECT</b> <gray>: intérêt anormal pour l'appât. Relance un test ou observe-le avec /spec."
-  verdict-clean: "<green><b>RIEN D'ANORMAL</b> <gray>: il ne semble pas voir l'appât. (Un ESP réglé sur « joueurs uniquement » peut l'ignorer.)"
-
+# =====================================================================
+#  Menus
+# =====================================================================
 gui:
-  "on": "<green>activée"
-  "off": "<red>désactivée"
   common:
     back: {name: "<yellow>← Retour"}
     close: {name: "<red>Fermer"}
     previous: {name: "<yellow>← Page <page>/<pages>"}
     next: {name: "<yellow>Page <page>/<pages> →"}
-  score-line: "<check> <bar> <white><confidence>%"
 
-  panel:
-    title: "<dark_gray>Anticheat"
+  main:
+    title: "<dark_gray>Panneau d'administration"
     header:
-      name: "<gradient:#ff5f6d:#ffc371><b>SmpGuard"
+      name: "<gradient:#ff4b4b:#ff9a3c><b>Panneau admin"
       lore:
-        - "<gray>Joueurs analysés : <white><online>"
-        - "<gray>Alertes : <white><alerts>"
-        - "<gray>TPS : <white><tps>"
-        - "<gray>Joueurs cachés (anti-ESP) : <white><culling>"
-        - ""
-        - "<dark_gray>Les scores tiennent compte du lag :"
-        - "<dark_gray>un joueur qui lague n'est pas compté."
+        - "<gray>Joueurs connectés : <white><online>"
+        - "<gray>Staff connecté : <white><staff>"
+        - "<gray>Bannis actifs : <white><bans>"
+        - "<gray>Suspects : <white><sus>"
+    vanish:
+      name: "<b>Vanish : <state>"
+      lore: ["<gray>Invisible pour les joueurs.", "", "<yellow>▶ Clic pour changer"]
+    spec:
+      name: "<aqua><b>Spectateur : tour de tous les joueurs"
+      lore: ["<gray>Passe d'un joueur à l'autre", "<gray>toutes les <white><seconds> s</white>.", "", "<yellow>▶ Clic pour lancer / arrêter"]
+    suspects:
+      name: "<red><b>Suspects <gray>(<count>)"
+      lore: ["<gray>Joueurs à surveiller.", "", "<yellow>▶ Clic pour voir la liste"]
+    bans:
+      name: "<dark_red><b>Bannis <gray>(<count>)"
+      lore: ["<gray>Liste des bannissements actifs.", "", "<yellow>▶ Clic pour voir / débannir"]
+    staffchat:
+      name: "<b>Chat staff : <state>"
+      lore: ["<gray>Tout ce que tu écris va au staff.", "<gray>Raccourci : <white>#message", "", "<yellow>▶ Clic pour changer"]
+    chatlock:
+      name: "<b>Chat du serveur : <state>"
+      lore: ["<gray>Bloque le chat pour les joueurs.", "", "<yellow>▶ Clic pour changer"]
+    clearchat:
+      name: "<white><b>Nettoyer le chat"
+      lore: ["<gray>Efface le chat de tous les joueurs.", "", "<yellow>▶ Clic"]
+    anticheat:
+      name: "<gradient:#ff5f6d:#ffc371><b>Anticheat"
+      lore: ["<gray>Joueurs triés par suspicion,", "<gray>alertes, test appât (SmpGuard).", "", "<yellow>▶ Clic"]
+    "on": "<green>activé"
+    "off": "<red>désactivé"
+    locked: "<red>bloqué"
+    open: "<green>ouvert"
     player:
-      name: "<white><b><player>"
-      lore-top:
-        - "<gray>Ping : <white><ping> ms</white> <dark_gray>±<jitter>"
-        - "<gray>Fiabilité des mesures : <white><weight>%"
+      name: "<white><b><player></b> <flags>"
+      lore:
+        - "<gray>Monde : <white><world>"
+        - "<gray>Mode : <white><gamemode>"
+        - "<gray>Vie : <red><health> ❤"
+        - "<gray>Ping : <white><ping> ms"
+        - "<gray>Sanctions : <white><sanctions>"
         - ""
-      lore-bottom:
-        - ""
-        - "<gray>Alertes : <white><alerts>"
-        - "<yellow>▶ Clic gauche : rapport"
+        - "<yellow>▶ Clic gauche : fiche du joueur"
         - "<yellow>▶ Clic droit : spectateur"
-    alerts:
-      name: "<white><b>Mes alertes"
-      lore: ["<gray>Couper / remettre les alertes", "<gray>dans ton chat."]
-    anti-esp:
-      name: "<white><b>Anti-ESP : <state>"
-      lore: ["<gray>Cache les joueurs derrière les murs.", "<gray>Réglage : anti-esp dans config.yml"]
-    admin:
-      name: "<gold><b>Panneau admin"
-      lore: ["<gray>Ouvrir /admin"]
+        - "<yellow>▶ Shift + clic : se téléporter"
+    flag-sus: "<red>⚠"
+    flag-frozen: "<aqua>❄"
+    flag-muted: "<gold>🔇"
+    flag-vanish: "<light_purple>👻"
 
-  report:
-    title: "<dark_gray>Rapport : <player>"
+  player:
+    title: "<dark_gray>Fiche : <player>"
     header:
       name: "<white><b><player>"
       lore:
-        - "<gray>Ping : <white><ping> ms</white> <dark_gray>±<jitter>"
-        - "<gray>Fiabilité des mesures : <white><weight>%"
-        - "<gray>Mode : <white><gamemode>"
-        - "<gray>Alertes : <white><alerts>"
-    check:
-      name: "<check>"
-      lore:
-        - "<explain>"
-        - ""
-        - "<gray>Score : <bar> <white><vl></white> <dark_gray>(alerte à <alert>)"
-        - "<gray>Confiance : <white><confidence>%"
-        - "<gray>Maximum atteint : <white><peak>"
+        - "<gray>Statut : <status>"
+        - "<gray>Temps de jeu : <white><playtime>"
+        - "<gray>Première connexion : <white><first>"
+        - "<gray>Sanctions : <white><sanctions></white> <dark_gray>(<warns> avert.)"
+        - "<sus>"
+    online: "<green>en ligne"
+    offline: "<gray>hors ligne"
+    sus-line: "<red>⚠ Suspect : <white><reason> <dark_gray>(par <staff>)"
+    tp:
+      name: "<aqua><b>Se téléporter"
+      lore: ["<gray>Aller jusqu'au joueur."]
+    tphere:
+      name: "<aqua><b>Téléporter ici"
+      lore: ["<gray>Amener le joueur à toi."]
     spec:
       name: "<aqua><b>Observer"
-      lore: ["<gray>Spectateur à la 1re personne (SmpAdmin)."]
-    bait:
-      name: "<red><b>Test appât (<seconds>s)"
-      lore:
-        - "<gray>Un faux joueur, visible par lui seul,"
-        - "<gray>tourne dans la roche autour de lui."
-        - "<gray>S'il le regarde, il voit à travers les murs."
-        - ""
-        - "<yellow>▶ Clic pour lancer"
-    bait-running:
-      name: "<gold><b>Test appât en cours..."
-    sheet:
-      name: "<gold><b>Fiche admin"
-      lore: ["<gray>Sanctions, freeze, inventaire... (/admin)"]
+      lore: ["<gray>Mode spectateur, vue à la 1re personne."]
+    invsee:
+      name: "<white><b>Inventaire"
+      lore: ["<gray>Voir son inventaire."]
+    ecsee:
+      name: "<light_purple><b>Coffre de l'Ender"
+      lore: ["<gray>Voir son coffre de l'Ender."]
+    freeze:
+      name: "<aqua><b>Geler : <state>"
+      lore: ["<gray>Le joueur ne peut plus bouger.", "<gray>S'il se déconnecte, il est banni.", "", "<yellow>▶ Clic pour changer"]
     sus:
-      name: "<red><b>Marquer suspect"
-      lore: ["<gray>Le staff sera alerté à chaque connexion."]
+      name: "<red><b>Suspect : <state>"
+      lore: ["<gray>Le staff est alerté à chaque connexion.", "", "<yellow>▶ Clic gauche : changer", "<yellow>▶ Clic droit : avec une raison"]
+    warn:
+      name: "<gold><b>Avertir"
+      lore: ["<gray>Avertissements : <white><count>"]
+    mute:
+      name: "<gold><b>Rendre muet"
+      lore: ["<gray>Choisir une durée et une raison."]
+    unmute:
+      name: "<green><b>Rendre la parole"
+      lore: ["<gray>Muet encore <white><remaining>", "<gray>Raison : <white><reason>"]
+    kick:
+      name: "<yellow><b>Expulser"
+      lore: ["<gray>Le joueur peut revenir."]
+    ban:
+      name: "<red><b>Bannir"
+      lore: ["<gray>Choisir une durée et une raison."]
+    unban:
+      name: "<green><b>Débannir"
+      lore: ["<gray>Banni encore <white><remaining>", "<gray>Raison : <white><reason>"]
+    anticheat:
+      name: "<gradient:#ff5f6d:#ffc371><b>Rapport anticheat"
+      lore: ["<gray>Scores ESP / X-ray / Freecam,", "<gray>test appât (SmpGuard)."]
     history:
-      name: "<white><b>Dernières alertes"
-    no-history: "<gray>Aucune alerte."
-    reset:
-      name: "<red><b>Remettre les scores à zéro"
-      lore: ["<red>▶ Shift + clic"]
+      name: "<white><b>Casier judiciaire"
+      lore: ["<gray>Toutes ses sanctions."]
+    "on": "<green>oui"
+    "off": "<red>non"
+
+  sanction:
+    title: "<dark_gray><type> : <player>"
+    header:
+      name: "<white><b><player>"
+      lore:
+        - "<gray>1. Choisis une durée (facultatif)"
+        - "<gray>2. Clique sur une raison"
+        - ""
+        - "<gray>Durée choisie : <white><duration>"
+    duration:
+      name: "<white><b><duration>"
+      lore: ["<yellow>▶ Clic pour choisir"]
+      selected: "<green>✔ Sélectionnée"
+    reason:
+      name: "<white><b><reason>"
+      lore: ["<gray>Durée : <white><duration>"]
+    custom:
+      name: "<yellow><b>Autre raison..."
+      lore: ["<gray>Écrire la raison dans le chat."]
+    confirm:
+      name: "<green><b>CONFIRMER"
+      lore:
+        - "<gray>Joueur : <white><player>"
+        - "<gray>Sanction : <type>"
+        - "<gray>Durée : <white><duration>"
+        - "<gray>Raison : <white><reason>"
+    cancel:
+      name: "<red><b>Annuler"
+    silent:
+      name: "<b>Discret : <state>"
+      lore: ["<gray>Discret = pas d'annonce publique."]
+
+  bans:
+    title: "<dark_gray>Bannis (<count>)"
+    item:
+      name: "<white><b><player>"
+      lore:
+        - "<gray>Raison : <white><reason>"
+        - "<gray>Par : <white><staff>"
+        - "<gray>Le : <white><date>"
+        - "<gray>Reste : <yellow><remaining>"
+        - "<dark_gray>#<id>"
+        - ""
+        - "<yellow>▶ Clic gauche : fiche"
+        - "<red>▶ Clic droit : débannir"
+    empty: {name: "<green>Aucun joueur banni"}
+
+  suspects:
+    title: "<dark_gray>Suspects (<count>)"
+    item:
+      name: "<white><b><player></b> <status>"
+      lore:
+        - "<gray>Raison : <white><reason>"
+        - "<gray>Signalé par : <white><staff>"
+        - "<gray>Le : <white><date>"
+        - ""
+        - "<yellow>▶ Clic gauche : fiche"
+        - "<aqua>▶ Shift + clic : observer"
+        - "<red>▶ Clic droit : retirer"
+    empty: {name: "<green>Aucun suspect"}
+
+  history:
+    title: "<dark_gray>Casier : <player>"
+    item:
+      name: "<type> <dark_gray>#<id>"
+      lore:
+        - "<gray>Raison : <white><reason>"
+        - "<gray>Par : <white><staff>"
+        - "<gray>Le : <white><date>"
+        - "<gray>Durée : <white><duration>"
+        - "<status>"
+    revoke: "<red>▶ Clic droit : lever la sanction"
+    empty: {name: "<green>Casier vierge"}

@@ -1,102 +1,105 @@
-package fr.smpguard;
+package fr.smpadmin;
 
 import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
 
+import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.EnumMap;
-import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /** Lecture de config.yml. */
 public final class Settings {
 
-    /** Seuils d'une détection. */
-    public record Limits(boolean enabled, double alertVl, double susVl, double decayPerMinute) {
+    /** Raison proposée dans le menu. duration : -1 = pas de durée par défaut. */
+    public record Reason(String name, long duration, Material icon) {
     }
 
-    // lag
-    public final int goodPing, maxPing, maxJitter;
-    public final double minTps;
-    public final long graceJoin, graceTeleport, graceRespawn, graceWorld;
-    // alertes
-    public final long alertCooldownMs;
-    public final boolean logToFile, autoSus;
-    public final Map<Check, Limits> limits = new EnumMap<>(Check.class);
-    // esp-aim
-    public final double aimMinDist, aimMaxDist, aimAngle, aimMinMove;
-    public final int aimTrackSamples;
-    public final long aimHiddenBeforeMs;
-    // xray
-    public final int xrayMaxY, xrayMinVeins;
-    public final long xrayWindowMs;
-    public final double xrayBlocksOverworld, xrayBlocksNether, xrayHiddenRatio;
-    public final Map<Material, Double> xrayOres = new HashMap<>();
-    // freecam
-    public final double freecamMinSeconds;
-    // anti-esp
-    public final boolean hideBehindWalls;
-    public final double hideDistance;
-    public final int raysPerTick;
-    // appât
-    public final int baitSeconds;
-    public final double baitRadius;
+    public final ZoneId zone;
+    public final boolean broadcastBan, broadcastMute, broadcastKick, broadcastWarn;
+    public final boolean fakeMessages, nightVision, vanishGod, noPickup;
+    public final boolean banOnFreezeQuit;
+    public final long freezeBanDuration;
+    public final String freezeBanReason;
+    public final Set<String> freezeAllowed = new HashSet<>();
+    public final long muteDefault, banDefault;
+    public final Set<String> muteBlocked = new HashSet<>();
+    public final int specInterval;
+    public final boolean specAutoVanish;
+    public final String staffChatShortcut;
+    public final List<Long> durations = new ArrayList<>();
+    public final Map<Punishment.Type, List<Reason>> reasons = new EnumMap<>(Punishment.Type.class);
 
     Settings(FileConfiguration c, Logger log) {
-        goodPing = c.getInt("lag.good-ping", 120);
-        maxPing = Math.max(goodPing + 10, c.getInt("lag.max-ping", 350));
-        maxJitter = Math.max(10, c.getInt("lag.max-jitter", 120));
-        minTps = c.getDouble("lag.min-tps", 17.0);
-        graceJoin = c.getLong("lag.grace-seconds.join", 15) * 1000;
-        graceTeleport = c.getLong("lag.grace-seconds.teleport", 4) * 1000;
-        graceRespawn = c.getLong("lag.grace-seconds.respawn", 5) * 1000;
-        graceWorld = c.getLong("lag.grace-seconds.world-change", 6) * 1000;
-
-        alertCooldownMs = c.getLong("alerts.cooldown-seconds", 30) * 1000;
-        logToFile = c.getBoolean("alerts.log-to-file", true);
-        autoSus = c.getBoolean("alerts.smpadmin-auto-sus", true);
-
-        for (Check ch : Check.values()) {
-            String b = "checks." + ch.key + ".";
-            limits.put(ch, new Limits(c.getBoolean(b + "enabled", true), c.getDouble(b + "alert-vl", 3),
-                    c.getDouble(b + "sus-vl", 6), c.getDouble(b + "decay-per-minute", 0.1)));
+        ZoneId z;
+        try {
+            z = ZoneId.of(c.getString("timezone", "Europe/Paris"));
+        } catch (Exception e) {
+            z = ZoneId.systemDefault();
         }
-        // le test appât est lancé à la main : ses seuils sont fixes
-        limits.put(Check.BAIT, new Limits(true, 1, 2, 0.02));
+        zone = z;
+        broadcastBan = c.getBoolean("broadcast.ban", true);
+        broadcastMute = c.getBoolean("broadcast.mute", false);
+        broadcastKick = c.getBoolean("broadcast.kick", true);
+        broadcastWarn = c.getBoolean("broadcast.warn", false);
 
-        aimMinDist = c.getDouble("checks.esp-aim.min-distance", 6);
-        aimMaxDist = c.getDouble("checks.esp-aim.max-distance", 40);
-        aimAngle = c.getDouble("checks.esp-aim.angle", 3.5);
-        aimTrackSamples = Math.max(3, c.getInt("checks.esp-aim.track-samples", 6));
-        aimMinMove = c.getDouble("checks.esp-aim.min-target-move", 1.5);
-        aimHiddenBeforeMs = (long) (c.getDouble("checks.esp-aim.hidden-before-seconds", 1.5) * 1000);
+        fakeMessages = c.getBoolean("vanish.fake-messages", true);
+        nightVision = c.getBoolean("vanish.night-vision", true);
+        vanishGod = c.getBoolean("vanish.god", true);
+        noPickup = c.getBoolean("vanish.no-pickup", true);
 
-        xrayMaxY = c.getInt("checks.xray.max-y", 40);
-        xrayWindowMs = (long) (c.getDouble("checks.xray.window-minutes", 20) * 60_000);
-        xrayMinVeins = Math.max(2, c.getInt("checks.xray.min-veins", 4));
-        xrayBlocksOverworld = c.getDouble("checks.xray.blocks-per-vein.overworld", 70);
-        xrayBlocksNether = c.getDouble("checks.xray.blocks-per-vein.nether", 90);
-        xrayHiddenRatio = c.getDouble("checks.xray.hidden-ratio", 0.6);
-        var ores = c.getConfigurationSection("checks.xray.ores");
-        if (ores != null) {
-            for (String k : ores.getKeys(false)) {
-                Material m = Material.matchMaterial(k);
-                if (m == null) log.warning("Minerai inconnu dans checks.xray.ores : " + k);
-                else xrayOres.put(m, ores.getDouble(k, 1));
+        banOnFreezeQuit = c.getBoolean("freeze.ban-on-quit", true);
+        long fd = Durations.parse(c.getString("freeze.ban-duration", "30d"));
+        freezeBanDuration = fd == Durations.INVALID ? 30L * 86_400_000L : fd;
+        freezeBanReason = c.getString("freeze.ban-reason", "Déconnexion pendant une vérification");
+        for (String s : c.getStringList("freeze.allowed-commands")) freezeAllowed.add(s.toLowerCase(Locale.ROOT));
+
+        long md = Durations.parse(c.getString("mute.default-duration", "1h"));
+        muteDefault = md == Durations.INVALID ? 3_600_000L : md;
+        long bd = Durations.parse(c.getString("ban.default-duration", "perm"));
+        banDefault = bd == Durations.INVALID ? Durations.PERMANENT : bd;
+        for (String s : c.getStringList("mute.blocked-commands")) muteBlocked.add(s.toLowerCase(Locale.ROOT));
+
+        specInterval = Math.max(3, c.getInt("spec.interval-seconds", 12));
+        specAutoVanish = c.getBoolean("spec.auto-vanish", true);
+        staffChatShortcut = c.getString("staffchat.shortcut", "#");
+
+        for (String s : c.getStringList("durations")) {
+            long d = Durations.parse(s);
+            if (d == Durations.INVALID) log.warning("Durée invalide dans durations : " + s);
+            else if (durations.size() < 9) durations.add(d);
+        }
+        if (durations.isEmpty()) durations.addAll(List.of(3_600_000L, 86_400_000L, 7 * 86_400_000L, 0L));
+
+        for (Punishment.Type type : Punishment.Type.values()) {
+            List<Reason> list = new ArrayList<>();
+            for (Map<?, ?> m : c.getMapList("reasons." + type.name().toLowerCase(Locale.ROOT))) {
+                Object name = m.get("name");
+                if (name == null) continue;
+                long d = -1;
+                if (m.get("duration") != null) {
+                    d = Durations.parse(String.valueOf(m.get("duration")));
+                    if (d == Durations.INVALID) d = -1;
+                }
+                Material icon = m.get("icon") == null ? null : Material.matchMaterial(String.valueOf(m.get("icon")));
+                if (icon == null || !icon.isItem()) icon = Material.PAPER;
+                if (list.size() < 9) list.add(new Reason(String.valueOf(name), d, icon));
             }
+            reasons.put(type, list);
         }
-
-        freecamMinSeconds = Math.max(2, c.getDouble("checks.freecam.min-seconds", 4));
-
-        hideBehindWalls = c.getBoolean("anti-esp.hide-players-behind-walls", false);
-        hideDistance = Math.max(8, c.getDouble("anti-esp.distance", 48));
-        raysPerTick = Math.max(50, c.getInt("anti-esp.budget-per-tick", 400));
-
-        baitSeconds = Math.max(10, c.getInt("bait.default-seconds", 30));
-        baitRadius = Math.max(6, c.getDouble("bait.radius", 12));
     }
 
-    public Limits limits(Check c) {
-        return limits.get(c);
+    public boolean broadcast(Punishment.Type t) {
+        return switch (t) {
+            case BAN -> broadcastBan;
+            case MUTE -> broadcastMute;
+            case KICK -> broadcastKick;
+            case WARN -> broadcastWarn;
+        };
     }
 }

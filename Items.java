@@ -1,4 +1,4 @@
-package fr.smpguard;
+package fr.smpadmin;
 
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;

@@ -1,117 +1,87 @@
-# SmpGuard : anticheat ESP / X-ray / Freecam
+# SmpAdmin : panneau d'administration
 
-## À lire d'abord : ce qui est possible et ce qui ne l'est pas
+Tout pour modérer le serveur : panneau en menu, vanish, bans temporaires avec écran de ban, mute, kick, avertissements, freeze pour les vérifications, liste de suspects, spectateur qui fait le tour des joueurs, invsee, casier judiciaire et chat staff.
 
-L'**ESP** (voir les joueurs à travers les murs) et le **freecam** (caméra libre) sont des triches **d'affichage**. Elles tournent sur l'ordinateur du tricheur et n'envoient presque rien d'anormal au serveur. **Aucun plugin ne peut les prouver à 100 %.** C'est vrai aussi pour les anticheats payants.
+## Installation
 
-SmpGuard travaille donc en trois couches :
+1. Mets `SmpAdmin-1.0.0.jar` dans `plugins/` et redémarre.
+2. Donne les permissions à ton staff avec LuckPerms (voir plus bas). Les OP ont tout par défaut.
 
-| Couche | Ce qu'elle fait |
-|---|---|
-| 1. **Rendre la triche inutile** | Les joueurs derrière un mur ne sont plus envoyés au client : l'ESP et le freecam n'ont rien à afficher. Pour les minerais, l'**anti-xray de Paper** remplace ceux qui sont cachés par de faux blocs (configuration plus bas). |
-| 2. **Repérer les comportements typiques** | Scores de suspicion avec un % de confiance, **pondérés par le lag** |
-| 3. **Vérifier** | Test appât, `/spec`, fiche `/admin` : c'est le staff qui décide |
+**EssentialsX** possède aussi `/ban`, `/mute`, `/vanish`, `/kick`, `/invsee`… Par défaut, Essentials laisse la priorité aux autres plugins, donc ce sont les commandes de SmpAdmin qui s'exécutent. Les anciennes restent accessibles avec `/essentials:ban`. Les **anciens bans Essentials ne sont pas importés**.
 
-SmpGuard **ne bannit jamais tout seul**. Il alerte le staff et peut marquer le joueur *suspect* dans `/admin`.
+## Le panneau `/admin`
 
-## Les détections
+- **Barre du haut** : vanish, tour spectateur, suspects, nombre de joueurs / staff / bannis, liste des bannis, chat staff, blocage du chat.
+- **Tous les joueurs connectés** (les suspects en premier, en surbrillance), avec monde, mode, vie, ping et nombre de sanctions. Des symboles indiquent l'état du joueur : ⚠ suspect, ❄ gelé, 🔇 muet, 👻 vanish.
+  - Clic gauche : fiche du joueur
+  - Clic droit : l'observer en spectateur
+  - Shift + clic : se téléporter à lui
+- **Fiche joueur** : se téléporter, le téléporter à soi, observer, inventaire, coffre de l'Ender, geler, suspect, avertir, mute/unmute, kick, ban/unban, casier.
+- **Menu de sanction** : choisis une durée (30 min → définitif), puis une raison prédéfinie (chacune a sa durée par défaut) ou « Autre raison… » à écrire dans le chat. Un écran de confirmation suit. Un bouton « Discret » évite l'annonce publique.
 
-### ESP : visée à travers les murs
-Regarder par hasard vers un joueur caché, ça arrive à tout le monde. **Le suivre** pendant qu'il bouge derrière la roche, non. Une « poursuite » n'est comptée que si **toutes** ces conditions sont réunies :
-- la visée reste sur la cible (à ~3,5° près) pendant au moins 1,5 s ;
-- la cible est cachée (aucun des 7 points de son corps n'est visible) **et l'était déjà 1,5 s avant**, sinon le joueur l'a vue passer et anticipe ;
-- la cible bouge, et le joueur a tourné la tête pour la suivre. Une cible qui passe dans l'axe d'un joueur immobile ne compte pas ;
-- les deux joueurs ne sont pas dans la même guilde (SmpGuilds).
+`/ban Pseudo`, `/mute Pseudo`, `/kick Pseudo` et `/warn Pseudo` tapés seuls ouvrent directement ce menu.
 
-Les blocs transparents (verre, feuilles, barrières, dalles…) ne bloquent pas la vue : on préfère rater un tricheur que d'accuser quelqu'un qui voyait à travers une vitre.
-
-### X-ray : minerais cachés
-Sur une fenêtre de 20 minutes : combien de blocs le joueur mine pour trouver chaque filon rare (diamant, émeraude, débris antiques), et quelle part de ces filons était **totalement enfermée dans la roche** (sans grotte, eau ou lave autour, seulement des trous creusés par le joueur). Il faut au moins 4 filons pour conclure. Les filons dégagés par une explosion (TNT, lits dans le Nether) comptent comme visibles, donc pas de faux positif pour les mineurs de netherite à la TNT.
-
-### Freecam / blink
-Minecraft envoie au serveur l'état des touches de déplacement. Si le joueur **appuie sur avancer pendant plus de 4 secondes sans que son corps bouge d'un millimètre**, alors qu'il n'y a ni mur devant, ni véhicule, ni échelle, ni bord de bloc en étant accroupi, ni freeze du staff, c'est très probablement une caméra détachée (freecam) ou un « blink ».
-
-**Limite :** un freecam qui bloque aussi l'envoi des touches est invisible pour le serveur. Contre lui, la protection anti-ESP (couche 1) l'empêche de voir les joueurs à travers les murs.
-
-### Test appât : `/ac bait <joueur>`
-L'outil de vérification pour le staff :
-1. Un **faux joueur** (tête, armure, épée), **visible uniquement par le suspect**, se déplace pendant 30 s dans la roche autour de lui, toujours caché derrière des blocs pleins.
-2. Un joueur normal ne peut pas le voir. Avec un ESP qui affiche les entités, le suspect le remarque et le regarde.
-3. SmpGuard compare le temps passé à viser l'appât avec le temps passé à viser un **point témoin** (la position symétrique, où il n'y a rien). Le hasard touche les deux pareil, l'ESP seulement l'appât.
-4. Résultat : « TRÈS SUSPECT », « SUSPECT » ou « RIEN D'ANORMAL ».
-
-Lance-le quand le joueur est sous terre ou dans une base, et ne lui dis rien. Un ESP réglé sur « joueurs uniquement » peut ignorer l'appât, donc un résultat « rien d'anormal » n'innocente pas à 100 %.
-
-## Prise en compte du lag
-
-Chaque mesure reçoit une **fiabilité de 0 à 100 %**, visible dans `/ac` :
-
-- **Ping :** fiabilité pleine sous 120 ms, puis elle baisse jusqu'à 350 ms. Au-delà, **rien n'est compté**.
-- **Gigue :** si le ping varie de plus de 120 ms, rien n'est compté.
-- **Serveur :** sous 17 TPS, rien n'est compté pour personne.
-- **Pauses :** rien n'est compté pendant 15 s après la connexion, 4 à 6 s après une téléportation, une mort, un changement de monde ou de mode de jeu.
-- **Position comparée :** on utilise celle que **le client voyait vraiment** (position d'il y a ping + 150 ms), pas la position actuelle du serveur.
-- **Tolérance de visée :** elle s'élargit selon la vitesse de la cible, la distance et l'instabilité du ping.
-- **Freecam :** le temps minimum augmente avec le ping et la gigue.
-- **Points :** les points de suspicion sont multipliés par la fiabilité, et les scores baissent tout seuls avec le temps.
-
-Un joueur qui lague peut être *moins bien surveillé*, mais il ne peut pas être *accusé à tort* à cause de son lag.
-
-## Lien avec le panneau admin (SmpAdmin)
-
-- **`/admin` :** nouveau bouton **Anticheat** (bouclier). La fiche de chaque joueur a un bouton **Rapport anticheat**.
-- **Alertes :** chaque alerte a des boutons cliquables **[SPEC]** (spectateur), **[FICHE]** (`/admin`) et **[RAPPORT]** (`/ac check`).
-- **Seuil `sus-vl` :** le joueur est automatiquement **marqué suspect** (`/sus`). Le staff est alors prévenu à chacune de ses connexions.
-- **Joueurs ignorés :** les joueurs gelés (`/freeze`) ou en vanish ne sont pas analysés.
-
-## Commandes et permissions
+## Commandes
 
 | Commande | Effet |
 |---|---|
-| `/ac` | Panneau : joueurs triés par suspicion, ping, fiabilité, scores |
-| `/ac check <joueur>` | Rapport détaillé + boutons (spec, appât, fiche, suspect) |
-| `/ac bait <joueur> [secondes]` | Test appât |
-| `/ac alerts` | Couper / remettre ses alertes |
-| `/ac status` | État du plugin |
-| `/ac reset <joueur>` · `/ac reload` | Admin |
+| `/admin [joueur]` (`/panel`, `/ap`) | Panneau, ou fiche d'un joueur |
+| `/vanish [joueur]` (`/v`) | Invisible pour les joueurs (et absent du TAB). Faux message de déconnexion, vision nocturne, invincible, pas de ramassage, les monstres t'ignorent, les plaques de pression ne s'activent pas. |
+| `/ban <joueur> [durée] [raison] [-s]` | Ban (fonctionne aussi hors ligne). `-s` = discret. |
+| `/unban <joueur>` · `/banlist` | Débannir · liste des bannis en menu |
+| `/mute <joueur> [durée] [raison]` · `/unmute` | Bloque le chat et les `/msg`, `/r`… |
+| `/kick <joueur> [raison]` | Expulser avec un bel écran |
+| `/warn <joueur> <raison>` | Titre à l'écran + compteur d'avertissements |
+| `/history <joueur>` (`/casier`) | Toutes les sanctions. Clic droit pour lever un ban ou un mute. |
+| `/freeze <joueur>` (`/ss`) | Gèle le joueur : il ne peut plus bouger, casser, frapper ni taper de commande. S'il se déconnecte : **ban automatique 30 jours**. |
+| `/sus <joueur> [raison]` | Marque comme suspect. Le staff reçoit une alerte avec des boutons **[SPEC] [FICHE]** à chaque connexion du joueur. `/sus list`, `/sus remove <joueur>`. |
+| `/spec` | **Tour de tous les joueurs** en vue 1re personne, 12 s chacun, avec vie, ping et monde affichés. Te met en vanish, et te ramène à ta position à la fin. |
+| `/spec <joueur>` · `/spec next` · `/spec prev` · `/spec stop` | Observer un joueur précis, passer au suivant / précédent, arrêter |
+| `/invsee <joueur>` · `/ecsee <joueur>` | Inventaire / coffre de l'Ender (lecture seule sans `smpadmin.invsee.modify`) |
+| `/sc [message]` | Chat staff (`/sc` seul = bascule). Raccourci : écrire `#message`. |
+| `/clearchat` · `/chatlock` | Nettoyer / bloquer le chat |
+| `/admin reload` | Recharger config et messages |
 
-Permissions :
-- `smpguard.staff` : panneau, rapports, appât
-- `smpguard.alerts` : recevoir les alertes
-- `smpguard.admin` : reset, reload
-- `smpguard.see-all` : voit tout le monde même avec l'anti-ESP
-- `smpguard.bypass` : jamais analysé
+**Durées** : `30m`, `2h`, `7d` (ou `7j`), `2w`, `1mo`, `1y`, combinables (`1d12h`), ou `perm`. Un nombre seul comme `10` est refusé, pour éviter un ban définitif par erreur.
 
-Pour tes modos :
+## Permissions (LuckPerms)
+
+Exemple pour un groupe `mod` :
+
 ```
-/lp group mod permission set smpguard.staff true
-/lp group mod permission set smpguard.alerts true
-/lp group mod permission set smpguard.see-all true
+/lp group mod permission set smpadmin.panel true
+/lp group mod permission set smpadmin.vanish true
+/lp group mod permission set smpadmin.vanish.see true
+/lp group mod permission set smpadmin.ban true
+/lp group mod permission set smpadmin.unban true
+/lp group mod permission set smpadmin.mute true
+/lp group mod permission set smpadmin.kick true
+/lp group mod permission set smpadmin.warn true
+/lp group mod permission set smpadmin.history true
+/lp group mod permission set smpadmin.freeze true
+/lp group mod permission set smpadmin.sus true
+/lp group mod permission set smpadmin.spec true
+/lp group mod permission set smpadmin.invsee true
+/lp group mod permission set smpadmin.staffchat true
+/lp group mod permission set smpadmin.alerts true
+/lp group mod permission set smpadmin.chat true
 ```
 
-## Protection anti-ESP (joueurs cachés derrière les murs)
+Réservé aux admins : `smpadmin.ban.perm` (ban définitif), `smpadmin.invsee.modify`, `smpadmin.vanish.others`, `smpadmin.reload`, `smpadmin.exempt` (ne peut pas être sanctionné par un modo). Pour tout donner : `smpadmin.*`.
 
-Elle est **désactivée par défaut**. Pour l'activer : `anti-esp.hide-players-behind-walls: true` dans `config.yml`, puis `/ac reload`. Teste-la d'abord avec quelques joueurs.
+Les OP ne peuvent pas être sanctionnés par un modo, même hors ligne.
 
-- Un joueur caché réapparaît dès qu'**un seul** rayon passe. On anticipe le mouvement des deux joueurs selon le ping, et personne n'est caché à moins de 6 blocs ni pendant un combat.
-- **Effets secondaires :**
-  - un joueur caché disparaît aussi de la **liste TAB** de celui qui ne le voit pas, tant qu'il est derrière un mur ;
-  - on n'entend plus ses pas à travers les murs.
-- **Performances :** les calculs sont limités à `budget-per-tick` rayons par tick (400 par défaut).
+## Fichiers
 
-## Anti-xray de Paper (fortement conseillé)
+- `config.yml` : annonces publiques, vanish, freeze, durées et raisons des menus, durée du tour spectateur.
+- `messages.yml` : tous les textes, y compris l'écran de ban (ajoute le lien de ton Discord).
+- `sanctions.yml` : toutes les sanctions, numérotées.
+- `data.yml` : joueurs en vanish, gelés, suspects, état du chat. Tout est conservé après un redémarrage.
 
-C'est la meilleure protection contre le x-ray : les minerais cachés sont remplacés par de faux minerais partout, donc le tricheur ne sait plus où creuser. Dans `config/paper-world-defaults.yml`, section `anticheat` :
+## Tester
 
-```yaml
-anticheat:
-  anti-xray:
-    enabled: true
-    engine-mode: 2
-```
-
-Pour le Nether, ajoute dans `world_nether/paper-world.yml` les débris antiques à `hidden-blocks`. Vérifie le nom exact des options dans la documentation Paper de ta version, car elles changent parfois. Ensuite, redémarre.
-
-## Réglages (`config.yml`)
-
-Tous les seuils sont réglables : précision de visée, nombre de filons, durées, seuils d'alerte (`alert-vl`) et de suspect (`sus-vl`), vitesse de baisse des scores. Si tu as trop d'alertes, augmente `alert-vl`. Si tu n'en as jamais, baisse-le. Les alertes sont aussi écrites dans `plugins/SmpGuard/logs/`.
+1. `/admin` : le panneau s'ouvre.
+2. `/vanish` : avec un compte non-OP, vérifie que tu disparais du jeu et de la liste TAB.
+3. `/ban <compte test> 1m test` : le compte voit l'écran de ban, peut revenir après 1 minute.
+4. `/freeze <compte test>`, puis déconnecte ce compte : il est banni automatiquement.
+5. `/spec` avec 2 joueurs ou plus connectés : la caméra passe de l'un à l'autre.

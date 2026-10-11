@@ -1,4 +1,4 @@
-package fr.smpguard;
+package fr.smpadmin;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -19,10 +19,10 @@ import java.util.List;
 public final class Texts {
 
     public static final MiniMessage MM = MiniMessage.miniMessage();
-    private final SmpGuard plugin;
+    private final SmpAdmin plugin;
     private YamlConfiguration yml;
 
-    Texts(SmpGuard plugin) {
+    Texts(SmpAdmin plugin) {
         this.plugin = plugin;
     }
 

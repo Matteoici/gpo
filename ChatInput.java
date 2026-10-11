@@ -1,4 +1,4 @@
-package fr.smpmarket;
+package fr.smpadmin;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -8,24 +8,23 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
-/** Demande au joueur d'écrire une valeur dans le chat (prix, nom, montant...). */
+/** Demande au staff d'écrire une raison dans le chat. */
 public final class ChatInput {
 
     private record Pending(Consumer<String> callback, long expires) {
     }
 
-    private final SmpMarket plugin;
+    private final SmpAdmin plugin;
     private final Map<UUID, Pending> pending = new ConcurrentHashMap<>();
 
-    ChatInput(SmpMarket plugin) {
+    ChatInput(SmpAdmin plugin) {
         this.plugin = plugin;
     }
 
-    public void ask(Player p, String promptKey, Consumer<String> callback) {
+    public void ask(Player p, Consumer<String> callback) {
         p.closeInventory();
         pending.put(p.getUniqueId(), new Pending(callback, System.currentTimeMillis() + 120_000));
-        plugin.texts().send(p, promptKey);
-        plugin.texts().send(p, "input.cancel-hint");
+        plugin.texts().send(p, "input.reason");
     }
 
     /** Appelé depuis le chat (thread asynchrone). true = message utilisé. */
