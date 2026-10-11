@@ -85,7 +85,8 @@ auction:
 # ---------------------------------------------------------------- Vitrines
 showcase:
   created: "<green>Vitrine créée : <white><item></white> à <gold><price></gold> pièce <gray>(stock <white><stock></white>)."
-  not-your-stall: "<red>Vise un bloc de <b>ton</b> stand. <gray>(/marche encheres pour en louer un)"
+  not-your-stall: "<red>Ce stand n'est pas à toi. <gray>(/marche gerer pour voir ta boutique, /marche encheres pour en louer un)"
+  outside-stall: "<red>Ce bloc n'est dans aucun stand. <gray>Vise un bloc à l'intérieur de la zone de ton stand (pas le sol extérieur ni le toit)."
   already: "<red>Il y a déjà une vitrine sur ce bloc."
   limit: "<red>Ton stand ne peut avoir que <white><max></white> vitrines."
   no-space: "<red>Il faut un espace libre au-dessus du bloc, à l'intérieur du stand."
@@ -159,6 +160,7 @@ admin:
   no-selection: "<red>Sélectionne d'abord les deux coins avec <white>/marche admin wand</white>."
   exists: "<red>Le stand <white><stall></white> existe déjà."
   overlap: "<red>Cette zone touche le stand <white><stall></white>."
+  raised: "<yellow>Ta sélection était plate (coins au sol) : la zone a été montée à 6 blocs de haut automatiquement."
   created: "<green>Stand <white><stall></white> créé <gray>(<size>, mise à prix <gold><price></gold>). <gray>Le panneau apparaît au-dessus de ta position."
   deleted: "<yellow>Stand <white><stall></white> supprimé."
   reset: "<yellow>Stand <white><stall></white> libéré."

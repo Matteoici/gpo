@@ -244,6 +244,12 @@ public final class MarketCommand implements TabExecutor {
                     return;
                 }
                 Cuboid region = Cuboid.of(sel[0], sel[1]);
+                // sélection trop plate (deux coins au sol) : on monte automatiquement la zone de 5 blocs
+                if (region.maxY() - region.minY() < 3) {
+                    region = new Cuboid(region.world(), region.minX(), region.minY(), region.minZ(),
+                            region.maxX(), region.minY() + 5, region.maxZ());
+                    t().send(p, "admin.raised");
+                }
                 for (Stall o : store.stalls()) {
                     if (o.region.overlaps(region)) {
                         t().send(p, "admin.overlap", ph("stall", o.id));

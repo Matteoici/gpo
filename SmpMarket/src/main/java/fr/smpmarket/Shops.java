@@ -52,7 +52,11 @@ public final class Shops {
     /** /marche vitrine <prix> : l'objet en main est exposé sur le bloc visé. */
     public void create(Player p, Block block, double price) {
         Stall st = stallAt(block);
-        if (st == null || !st.isOwner(p.getUniqueId())) {
+        if (st == null) {
+            t().send(p, "showcase.outside-stall");
+            return;
+        }
+        if (!st.isOwner(p.getUniqueId())) {
             t().send(p, "showcase.not-your-stall");
             return;
         }
