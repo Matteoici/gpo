@@ -1,75 +1,102 @@
-package fr.smpmarket;
+package fr.smpguard;
 
+import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
 
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.util.Locale;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Logger;
 
 /** Lecture de config.yml. */
 public final class Settings {
 
-    private static final long H = 3_600_000L;
-
-    public final String currency;
-    public final long leaseMs, renewWindowMs;
-    public final int maxPerPlayer;
-    public final long auctionMs, antiSnipeMs;
-    public final double minIncrement, minIncrementPercent;
-    public final double taxPercent;
-    public final int defaultShowcases, maxStock;
-    public final double buyDistance, minPrice, maxPrice;
-    public final boolean protectStalls, overrideProtections;
-    public final double signHeight;
-    public final float itemScale;
-    public final boolean spin;
-
-    Settings(FileConfiguration c) {
-        currency = c.getString("currency-symbol", "$");
-        leaseMs = Math.max(1, (long) (c.getDouble("lease.days", 7) * 24 * H));
-        renewWindowMs = Math.max(H, (long) (c.getDouble("lease.renew-window-hours", 24) * H));
-        maxPerPlayer = Math.max(1, c.getInt("lease.max-per-player", 1));
-        auctionMs = Math.max(60_000L, (long) (c.getDouble("auction.duration-hours", 12) * H));
-        minIncrement = Math.max(1, c.getDouble("auction.min-increment", 100));
-        minIncrementPercent = Math.max(0, c.getDouble("auction.min-increment-percent", 5));
-        antiSnipeMs = Math.max(0, (long) (c.getDouble("auction.anti-snipe-minutes", 5) * 60_000L));
-        taxPercent = Math.max(0, Math.min(100, c.getDouble("shop.tax-percent", 5)));
-        defaultShowcases = Math.max(1, c.getInt("shop.default-showcases", 6));
-        maxStock = Math.max(1, c.getInt("shop.max-stock", 3456));
-        buyDistance = Math.max(3, c.getDouble("shop.buy-distance", 12));
-        minPrice = Math.max(0.01, c.getDouble("shop.min-price", 1));
-        maxPrice = Math.max(minPrice, c.getDouble("shop.max-price", 100_000_000));
-        protectStalls = c.getBoolean("protection.protect-stalls", true);
-        overrideProtections = c.getBoolean("protection.override-other-protections", true);
-        signHeight = c.getDouble("visuals.sign-height", 2.6);
-        itemScale = (float) Math.max(0.2, Math.min(2, c.getDouble("visuals.item-scale", 0.55)));
-        spin = c.getBoolean("visuals.spin", true);
+    /** Seuils d'une détection. */
+    public record Limits(boolean enabled, double alertVl, double susVl, double decayPerMinute) {
     }
 
-    /** "12 500 $" ou "12 500,50 $". */
-    public String money(double v) {
-        DecimalFormatSymbols sym = DecimalFormatSymbols.getInstance(Locale.FRANCE);
-        sym.setGroupingSeparator(' ');
-        DecimalFormat f = new DecimalFormat(Math.abs(v - Math.rint(v)) < 0.005 ? "#,##0" : "#,##0.00", sym);
-        return f.format(v) + " " + currency;
+    // lag
+    public final int goodPing, maxPing, maxJitter;
+    public final double minTps;
+    public final long graceJoin, graceTeleport, graceRespawn, graceWorld;
+    // alertes
+    public final long alertCooldownMs;
+    public final boolean logToFile, autoSus;
+    public final Map<Check, Limits> limits = new EnumMap<>(Check.class);
+    // esp-aim
+    public final double aimMinDist, aimMaxDist, aimAngle, aimMinMove;
+    public final int aimTrackSamples;
+    public final long aimHiddenBeforeMs;
+    // xray
+    public final int xrayMaxY, xrayMinVeins;
+    public final long xrayWindowMs;
+    public final double xrayBlocksOverworld, xrayBlocksNether, xrayHiddenRatio;
+    public final Map<Material, Double> xrayOres = new HashMap<>();
+    // freecam
+    public final double freecamMinSeconds;
+    // anti-esp
+    public final boolean hideBehindWalls;
+    public final double hideDistance;
+    public final int raysPerTick;
+    // appât
+    public final int baitSeconds;
+    public final double baitRadius;
+
+    Settings(FileConfiguration c, Logger log) {
+        goodPing = c.getInt("lag.good-ping", 120);
+        maxPing = Math.max(goodPing + 10, c.getInt("lag.max-ping", 350));
+        maxJitter = Math.max(10, c.getInt("lag.max-jitter", 120));
+        minTps = c.getDouble("lag.min-tps", 17.0);
+        graceJoin = c.getLong("lag.grace-seconds.join", 15) * 1000;
+        graceTeleport = c.getLong("lag.grace-seconds.teleport", 4) * 1000;
+        graceRespawn = c.getLong("lag.grace-seconds.respawn", 5) * 1000;
+        graceWorld = c.getLong("lag.grace-seconds.world-change", 6) * 1000;
+
+        alertCooldownMs = c.getLong("alerts.cooldown-seconds", 30) * 1000;
+        logToFile = c.getBoolean("alerts.log-to-file", true);
+        autoSus = c.getBoolean("alerts.smpadmin-auto-sus", true);
+
+        for (Check ch : Check.values()) {
+            String b = "checks." + ch.key + ".";
+            limits.put(ch, new Limits(c.getBoolean(b + "enabled", true), c.getDouble(b + "alert-vl", 3),
+                    c.getDouble(b + "sus-vl", 6), c.getDouble(b + "decay-per-minute", 0.1)));
+        }
+        // le test appât est lancé à la main : ses seuils sont fixes
+        limits.put(Check.BAIT, new Limits(true, 1, 2, 0.02));
+
+        aimMinDist = c.getDouble("checks.esp-aim.min-distance", 6);
+        aimMaxDist = c.getDouble("checks.esp-aim.max-distance", 40);
+        aimAngle = c.getDouble("checks.esp-aim.angle", 3.5);
+        aimTrackSamples = Math.max(3, c.getInt("checks.esp-aim.track-samples", 6));
+        aimMinMove = c.getDouble("checks.esp-aim.min-target-move", 1.5);
+        aimHiddenBeforeMs = (long) (c.getDouble("checks.esp-aim.hidden-before-seconds", 1.5) * 1000);
+
+        xrayMaxY = c.getInt("checks.xray.max-y", 40);
+        xrayWindowMs = (long) (c.getDouble("checks.xray.window-minutes", 20) * 60_000);
+        xrayMinVeins = Math.max(2, c.getInt("checks.xray.min-veins", 4));
+        xrayBlocksOverworld = c.getDouble("checks.xray.blocks-per-vein.overworld", 70);
+        xrayBlocksNether = c.getDouble("checks.xray.blocks-per-vein.nether", 90);
+        xrayHiddenRatio = c.getDouble("checks.xray.hidden-ratio", 0.6);
+        var ores = c.getConfigurationSection("checks.xray.ores");
+        if (ores != null) {
+            for (String k : ores.getKeys(false)) {
+                Material m = Material.matchMaterial(k);
+                if (m == null) log.warning("Minerai inconnu dans checks.xray.ores : " + k);
+                else xrayOres.put(m, ores.getDouble(k, 1));
+            }
+        }
+
+        freecamMinSeconds = Math.max(2, c.getDouble("checks.freecam.min-seconds", 4));
+
+        hideBehindWalls = c.getBoolean("anti-esp.hide-players-behind-walls", false);
+        hideDistance = Math.max(8, c.getDouble("anti-esp.distance", 48));
+        raysPerTick = Math.max(50, c.getInt("anti-esp.budget-per-tick", 400));
+
+        baitSeconds = Math.max(10, c.getInt("bait.default-seconds", 30));
+        baitRadius = Math.max(6, c.getDouble("bait.radius", 12));
     }
 
-    /** Offre minimale pour une enchère. */
-    public double minBid(Stall s) {
-        Auction a = s.auction;
-        if (a == null || !a.hasBid()) return s.startPrice;
-        double inc = Math.max(minIncrement, a.bid * minIncrementPercent / 100.0);
-        return Math.ceil(a.bid + inc);
-    }
-
-    /** "2j 4h", "3h 12min", "45s". */
-    public static String time(long ms) {
-        if (ms <= 0) return "0s";
-        long sec = (ms + 999) / 1000;
-        long d = sec / 86400, h = (sec % 86400) / 3600, m = (sec % 3600) / 60, s = sec % 60;
-        if (d > 0) return h > 0 ? d + "j " + h + "h" : d + "j";
-        if (h > 0) return m > 0 ? h + "h " + m + "min" : h + "h";
-        if (m > 0) return m < 10 && s > 0 ? m + "min " + s + "s" : m + "min";
-        return s + "s";
+    public Limits limits(Check c) {
+        return limits.get(c);
     }
 }

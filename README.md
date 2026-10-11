@@ -1,97 +1,117 @@
-# SmpMarket : le marché des joueurs
+# SmpGuard : anticheat ESP / X-ray / Freecam
 
-Les joueurs louent un **stand** aux enchères, le décorent comme ils veulent et exposent leurs objets dans des **vitrines**. Chaque vitrine est un objet qui tourne sur lui-même avec un panneau flottant indiquant le prix et le stock. Les autres joueurs achètent en un clic droit, **même quand le vendeur n'est pas connecté**.
+## À lire d'abord : ce qui est possible et ce qui ne l'est pas
 
-Dépendance : **Vault** (avec EssentialsX pour l'argent, comme sur ton serveur).
+L'**ESP** (voir les joueurs à travers les murs) et le **freecam** (caméra libre) sont des triches **d'affichage**. Elles tournent sur l'ordinateur du tricheur et n'envoient presque rien d'anormal au serveur. **Aucun plugin ne peut les prouver à 100 %.** C'est vrai aussi pour les anticheats payants.
 
-## 1. Construire le marché (admin)
+SmpGuard travaille donc en trois couches :
 
-1. Construis une rue avec des stands, par exemple 5x5 blocs chacun : sol, poteaux, toit. C'est toi qui choisis le style.
-2. `/marche admin wand` : tu reçois la **Baguette du marché**.
-3. Pour chaque stand :
-   - **Clic gauche** sur un coin au **sol**, puis **clic droit** sur le coin opposé **en haut**. Toute la hauteur doit être incluse : c'est la zone que le locataire pourra modifier.
-   - Place-toi **devant l'entrée** du stand, regarde vers lui, et tape `/marche admin create a1 2000`.
-     - `a1` est le nom du stand.
-     - `2000` est la mise à prix.
-   - Le panneau flottant **« ★ STAND À LOUER ★ »** apparaît au-dessus de toi.
-4. Recommence pour `a2`, `a3`… Les stands bien placés (entrée du marché, angles) peuvent avoir une mise à prix plus élevée.
+| Couche | Ce qu'elle fait |
+|---|---|
+| 1. **Rendre la triche inutile** | Les joueurs derrière un mur ne sont plus envoyés au client : l'ESP et le freecam n'ont rien à afficher. Pour les minerais, l'**anti-xray de Paper** remplace ceux qui sont cachés par de faux blocs (configuration plus bas). |
+| 2. **Repérer les comportements typiques** | Scores de suspicion avec un % de confiance, **pondérés par le lag** |
+| 3. **Vérifier** | Test appât, `/spec`, fiche `/admin` : c'est le staff qui décide |
 
-En créatif, un admin peut construire partout dans les stands.
+SmpGuard **ne bannit jamais tout seul**. Il alerte le staff et peut marquer le joueur *suspect* dans `/admin`.
 
-## 2. Les enchères
+## Les détections
 
-- **Stand libre** : l'enchère est ouverte en permanence. Le compte à rebours (**12 h**) démarre à la **première offre**.
-- **Retenue de l'argent** : l'offre est retirée tout de suite du compte. Si quelqu'un surenchérit, l'argent est **rendu automatiquement** et le joueur est prévenu, même s'il est hors ligne.
-- **Surenchère minimale** : +100 $ ou +5 %.
-- **Anti-dernière seconde** : une offre dans les 5 dernières minutes prolonge l'enchère de 5 minutes.
-- **Durée de location** : le gagnant obtient le stand pour **7 jours**.
-- **Fin de location** : **24 h avant la fin**, une enchère s'ouvre pour la semaine suivante.
-  - Le locataire peut surenchérir pour garder son stand. Il est prévenu si quelqu'un tente de le lui prendre.
-  - Si personne n'enchérit, le stand est **renouvelé automatiquement** à la mise à prix. Le locataire peut désactiver cette option.
-  - S'il perd son stand, tout son stock part dans **`/marche colis`**. Rien n'est jamais perdu.
-- **Limite** : 1 stand par joueur, réglable dans la config.
+### ESP : visée à travers les murs
+Regarder par hasard vers un joueur caché, ça arrive à tout le monde. **Le suivre** pendant qu'il bouge derrière la roche, non. Une « poursuite » n'est comptée que si **toutes** ces conditions sont réunies :
+- la visée reste sur la cible (à ~3,5° près) pendant au moins 1,5 s ;
+- la cible est cachée (aucun des 7 points de son corps n'est visible) **et l'était déjà 1,5 s avant**, sinon le joueur l'a vue passer et anticipe ;
+- la cible bouge, et le joueur a tourné la tête pour la suivre. Une cible qui passe dans l'axe d'un joueur immobile ne compte pas ;
+- les deux joueurs ne sont pas dans la même guilde (SmpGuilds).
 
-## 3. Vendre (locataire)
+Les blocs transparents (verre, feuilles, barrières, dalles…) ne bloquent pas la vue : on préfère rater un tricheur que d'accuser quelqu'un qui voyait à travers une vitre.
 
-1. Prends l'objet à vendre en main, avec toute la quantité à mettre en stock.
-2. Vise un bloc **dans ton stand** (tonneau, dalle, bloc décoratif…).
-3. Tape `/marche vitrine 250`, où `250` est le prix **à l'unité**. Tu peux écrire `2.5k` ou `1m`.
-4. L'objet apparaît au-dessus du bloc et tourne lentement, avec son prix et son stock.
+### X-ray : minerais cachés
+Sur une fenêtre de 20 minutes : combien de blocs le joueur mine pour trouver chaque filon rare (diamant, émeraude, débris antiques), et quelle part de ces filons était **totalement enfermée dans la roche** (sans grotte, eau ou lave autour, seulement des trous creusés par le joueur). Il faut au moins 4 filons pour conclure. Les filons dégagés par une explosion (TNT, lits dans le Nether) comptent comme visibles, donc pas de faux positif pour les mineurs de netherite à la TNT.
 
-**Clic droit sur ta propre vitrine** : ajouter du stock depuis ton inventaire, retirer une pile ou tout, changer le prix, supprimer la vitrine.
+### Freecam / blink
+Minecraft envoie au serveur l'état des touches de déplacement. Si le joueur **appuie sur avancer pendant plus de 4 secondes sans que son corps bouge d'un millimètre**, alors qu'il n'y a ni mur devant, ni véhicule, ni échelle, ni bord de bloc en étant accroupi, ni freeze du staff, c'est très probablement une caméra détachée (freecam) ou un « blink ».
 
-**Clic droit sur ton panneau** (ou `/marche gerer`) :
-- liste des vitrines avec leurs ventes et recettes
-- renommer la boutique (le panneau affiche « 🏪 Le Bazar de Kev »)
-- amis autorisés à construire
-- renouvellement automatique
-- enchère en cours pour garder le stand
+**Limite :** un freecam qui bloque aussi l'envoi des touches est invisible pour le serveur. Contre lui, la protection anti-ESP (couche 1) l'empêche de voir les joueurs à travers les murs.
 
-L'argent des ventes arrive directement sur ton compte, moins une **taxe de 5 %**. Cette taxe disparaît de l'économie, ce qui limite l'inflation. Quand tu te reconnectes, un message résume tes ventes pendant ton absence.
+### Test appât : `/ac bait <joueur>`
+L'outil de vérification pour le staff :
+1. Un **faux joueur** (tête, armure, épée), **visible uniquement par le suspect**, se déplace pendant 30 s dans la roche autour de lui, toujours caché derrière des blocs pleins.
+2. Un joueur normal ne peut pas le voir. Avec un ESP qui affiche les entités, le suspect le remarque et le regarde.
+3. SmpGuard compare le temps passé à viser l'appât avec le temps passé à viser un **point témoin** (la position symétrique, où il n'y a rien). Le hasard touche les deux pareil, l'ESP seulement l'appât.
+4. Résultat : « TRÈS SUSPECT », « SUSPECT » ou « RIEN D'ANORMAL ».
 
-## 4. Acheter
+Lance-le quand le joueur est sous terre ou dans une base, et ne lui dis rien. Un ESP réglé sur « joueurs uniquement » peut ignorer l'appât, donc un résultat « rien d'anormal » n'innocente pas à 100 %.
 
-- **Clic droit sur une vitrine** : choix de la quantité (x1, x4, x8, x16, x32, x64 ou **le maximum** possible selon ton argent, ta place et le stock).
-- **Clic droit sur le panneau d'une boutique** : son catalogue complet.
-- **`/marche chercher diamant`** : toutes les vitrines qui vendent des diamants, **de la moins chère à la plus chère**, avec téléportation au stand. La recherche comprend le français : *épée, pioche, bûche de chêne, pomme dorée, lingot de fer, laine rouge, élytres…*
+## Prise en compte du lag
 
-## Commandes
+Chaque mesure reçoit une **fiabilité de 0 à 100 %**, visible dans `/ac` :
+
+- **Ping :** fiabilité pleine sous 120 ms, puis elle baisse jusqu'à 350 ms. Au-delà, **rien n'est compté**.
+- **Gigue :** si le ping varie de plus de 120 ms, rien n'est compté.
+- **Serveur :** sous 17 TPS, rien n'est compté pour personne.
+- **Pauses :** rien n'est compté pendant 15 s après la connexion, 4 à 6 s après une téléportation, une mort, un changement de monde ou de mode de jeu.
+- **Position comparée :** on utilise celle que **le client voyait vraiment** (position d'il y a ping + 150 ms), pas la position actuelle du serveur.
+- **Tolérance de visée :** elle s'élargit selon la vitesse de la cible, la distance et l'instabilité du ping.
+- **Freecam :** le temps minimum augmente avec le ping et la gigue.
+- **Points :** les points de suspicion sont multipliés par la fiabilité, et les scores baissent tout seuls avec le temps.
+
+Un joueur qui lague peut être *moins bien surveillé*, mais il ne peut pas être *accusé à tort* à cause de son lag.
+
+## Lien avec le panneau admin (SmpAdmin)
+
+- **`/admin` :** nouveau bouton **Anticheat** (bouclier). La fiche de chaque joueur a un bouton **Rapport anticheat**.
+- **Alertes :** chaque alerte a des boutons cliquables **[SPEC]** (spectateur), **[FICHE]** (`/admin`) et **[RAPPORT]** (`/ac check`).
+- **Seuil `sus-vl` :** le joueur est automatiquement **marqué suspect** (`/sus`). Le staff est alors prévenu à chacune de ses connexions.
+- **Joueurs ignorés :** les joueurs gelés (`/freeze`) ou en vanish ne sont pas analysés.
+
+## Commandes et permissions
 
 | Commande | Effet |
 |---|---|
-| `/marche` (`/mk`, `/stand`) | Menu du marché |
-| `/marche chercher <objet>` | Meilleurs prix |
-| `/marche encheres` | Stands à louer et enchères en cours |
-| `/marche encherir <stand> <montant>` | Enchérir sans passer par le menu |
-| `/marche vitrine <prix>` | Exposer l'objet en main sur le bloc visé |
-| `/marche gerer` | Gérer sa boutique |
-| `/marche nom <nom>` | Renommer sa boutique |
-| `/marche ami <joueur>` · `/marche retirer-ami <joueur>` | Autoriser / retirer un constructeur |
-| `/marche tp <stand ou joueur>` | Aller à un stand |
-| `/marche colis` | Récupérer ses objets rendus |
-| `/marche admin ...` | `wand`, `create`, `setentrance`, `price`, `showcases`, `give`, `end`, `reset`, `delete`, `list`, `reload` |
+| `/ac` | Panneau : joueurs triés par suspicion, ping, fiabilité, scores |
+| `/ac check <joueur>` | Rapport détaillé + boutons (spec, appât, fiche, suspect) |
+| `/ac bait <joueur> [secondes]` | Test appât |
+| `/ac alerts` | Couper / remettre ses alertes |
+| `/ac status` | État du plugin |
+| `/ac reset <joueur>` · `/ac reload` | Admin |
 
-`/market` n'est **pas** utilisé, pour ne pas entrer en conflit avec PlayerMarketGUI.
+Permissions :
+- `smpguard.staff` : panneau, rapports, appât
+- `smpguard.alerts` : recevoir les alertes
+- `smpguard.admin` : reset, reload
+- `smpguard.see-all` : voit tout le monde même avec l'anti-ESP
+- `smpguard.bypass` : jamais analysé
 
-## Protection
+Pour tes modos :
+```
+/lp group mod permission set smpguard.staff true
+/lp group mod permission set smpguard.alerts true
+/lp group mod permission set smpguard.see-all true
+```
 
-- Seuls le locataire et ses amis peuvent construire, casser ou ouvrir les coffres dans le stand. Les explosions ne l'abîment pas.
-- Le bloc qui porte une vitrine ne peut pas être cassé tant que la vitrine existe.
-- Si ton spawn est protégé (WorldGuard ou spawn-protection), le locataire peut quand même construire dans **son** stand. Désactivable avec `override-other-protections`.
+## Protection anti-ESP (joueurs cachés derrière les murs)
 
-## Pour tester seul
+Elle est **désactivée par défaut**. Pour l'activer : `anti-esp.hide-players-behind-walls: true` dans `config.yml`, puis `/ac reload`. Teste-la d'abord avec quelques joueurs.
 
-1. Construis un petit stand, `/marche admin wand`, sélectionne les 2 coins, place-toi devant et tape `/marche admin create test 100`.
-2. `/marche admin give test <ton pseudo>` : le stand est à toi sans enchère.
-3. Prends 64 diamants en main, vise un bloc du stand et tape `/marche vitrine 50`.
-4. Avec un deuxième compte, fais un clic droit sur la vitrine et achète.
-5. Pour tester l'enchère : `/marche admin reset test`, enchéris avec un compte, puis `/marche admin end test` pour la terminer tout de suite.
+- Un joueur caché réapparaît dès qu'**un seul** rayon passe. On anticipe le mouvement des deux joueurs selon le ping, et personne n'est caché à moins de 6 blocs ni pendant un combat.
+- **Effets secondaires :**
+  - un joueur caché disparaît aussi de la **liste TAB** de celui qui ne le voit pas, tant qu'il est derrière un mur ;
+  - on n'entend plus ses pas à travers les murs.
+- **Performances :** les calculs sont limités à `budget-per-tick` rayons par tick (400 par défaut).
 
-## Fichiers
+## Anti-xray de Paper (fortement conseillé)
 
-- `config.yml` : durées, taxe, nombre de vitrines, protection, visuels.
-- `messages.yml` : tous les textes (panneaux, menus, annonces).
-- `stalls.yml` : les stands, leurs vitrines et leur stock. Les objets sont enregistrés avec leurs enchantements et leurs noms.
-- `mailbox.yml` : colis et messages en attente des joueurs hors ligne.
+C'est la meilleure protection contre le x-ray : les minerais cachés sont remplacés par de faux minerais partout, donc le tricheur ne sait plus où creuser. Dans `config/paper-world-defaults.yml`, section `anticheat` :
 
-Les panneaux et objets exposés ne sont pas sauvegardés dans le monde : ils sont recréés à chaque chargement de chunk. Si tu retires le plugin, il ne reste aucune entité orpheline.
+```yaml
+anticheat:
+  anti-xray:
+    enabled: true
+    engine-mode: 2
+```
+
+Pour le Nether, ajoute dans `world_nether/paper-world.yml` les débris antiques à `hidden-blocks`. Vérifie le nom exact des options dans la documentation Paper de ta version, car elles changent parfois. Ensuite, redémarre.
+
+## Réglages (`config.yml`)
+
+Tous les seuils sont réglables : précision de visée, nombre de filons, durées, seuils d'alerte (`alert-vl`) et de suspect (`sus-vl`), vitesse de baisse des scores. Si tu as trop d'alertes, augmente `alert-vl`. Si tu n'en as jamais, baisse-le. Les alertes sont aussi écrites dans `plugins/SmpGuard/logs/`.

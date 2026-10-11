@@ -1,8 +1,8 @@
-package fr.smpmarket.gui;
+package fr.smpguard.gui;
 
-import fr.smpmarket.Items;
-import fr.smpmarket.SmpMarket;
-import fr.smpmarket.Texts;
+import fr.smpguard.Items;
+import fr.smpguard.SmpGuard;
+import fr.smpguard.Texts;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
@@ -19,7 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import static fr.smpmarket.Texts.ph;
+import static fr.smpguard.Texts.ph;
 
 /** Base des menus : un inventaire + une action par case. */
 public abstract class Menu implements InventoryHolder {
@@ -28,12 +28,12 @@ public abstract class Menu implements InventoryHolder {
     protected static final int[] GRID = {10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25,
             28, 29, 30, 31, 32, 33, 34, 37, 38, 39, 40, 41, 42, 43};
 
-    protected final SmpMarket plugin;
+    protected final SmpGuard plugin;
     protected final Player viewer;
     private final Inventory inventory;
     private final Map<Integer, Consumer<ClickType>> actions = new HashMap<>();
 
-    protected Menu(SmpMarket plugin, Player viewer, int rows, Component title) {
+    protected Menu(SmpGuard plugin, Player viewer, int rows, Component title) {
         this.plugin = plugin;
         this.viewer = viewer;
         this.inventory = Bukkit.createInventory(this, rows * 9, title);
@@ -66,14 +66,6 @@ public abstract class Menu implements InventoryHolder {
     }
 
     // ------------------------------------------------------------ helpers
-
-    protected fr.smpmarket.Settings s() {
-        return plugin.settings();
-    }
-
-    protected String money(double v) {
-        return plugin.settings().money(v);
-    }
 
     protected Texts t() {
         return plugin.texts();

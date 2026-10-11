@@ -1,20 +1,28 @@
-name: SmpMarket
+name: SmpGuard
 version: '${version}'
-main: fr.smpmarket.SmpMarket
+main: fr.smpguard.SmpGuard
 api-version: '26.2'
-depend: [Vault]
-softdepend: [Essentials, WorldGuard]
-description: Marché de joueurs - stands loués aux enchères, vitrines et achats
+softdepend: [SmpAdmin]
+description: Anticheat ESP / X-ray / Freecam, tolérant au lag, relié au panneau admin
 commands:
-  marche:
-    description: Ouvrir le marché
-    usage: /marche [chercher|vitrine|gerer|colis|encheres|tp|ami|nom|admin]
-    aliases: [mk, stand, stands, stalls]
-    permission: smpmarket.use
+  ac:
+    description: Panneau anticheat
+    usage: /ac [check|alerts|bait|reset|reload]
+    aliases: [anticheat, guard]
+    permission: smpguard.staff
 permissions:
-  smpmarket.use:
-    description: Utiliser le marché
-    default: true
-  smpmarket.admin:
-    description: Créer et gérer les stands
+  smpguard.staff:
+    description: Panneau anticheat, rapports, test appât
+    default: op
+  smpguard.alerts:
+    description: Recevoir les alertes anticheat
+    default: op
+  smpguard.admin:
+    description: Reset des scores, reload
+    default: op
+  smpguard.bypass:
+    description: Jamais analysé (staff)
+    default: false
+  smpguard.see-all:
+    description: Voit tous les joueurs même derrière les murs (staff)
     default: op

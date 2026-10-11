@@ -1,4 +1,4 @@
-package fr.smpmarket;
+package fr.smpguard;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -19,10 +19,10 @@ import java.util.List;
 public final class Texts {
 
     public static final MiniMessage MM = MiniMessage.miniMessage();
-    private final SmpMarket plugin;
+    private final SmpGuard plugin;
     private YamlConfiguration yml;
 
-    Texts(SmpMarket plugin) {
+    Texts(SmpGuard plugin) {
         this.plugin = plugin;
     }
 
@@ -56,19 +56,6 @@ public final class Texts {
     public List<Component> list(String key, TagResolver... r) {
         List<Component> out = new ArrayList<>();
         for (String s : yml.getStringList(key)) out.add(parse(s, r));
-        return out;
-    }
-
-    /**
-     * Comme list(), mais une ligne qui vaut exactement "<nom>" est remplacée par plusieurs lignes
-     * (ex. la liste des meilleurs objets d'une boutique dans une description d'objet).
-     */
-    public List<Component> listWith(String key, String marker, List<Component> insert, TagResolver... r) {
-        List<Component> out = new ArrayList<>();
-        for (String s : yml.getStringList(key)) {
-            if (s.trim().equals("<" + marker + ">")) out.addAll(insert);
-            else out.add(parse(s, r));
-        }
         return out;
     }
 
