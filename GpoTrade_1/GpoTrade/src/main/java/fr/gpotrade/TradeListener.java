@@ -66,6 +66,7 @@ final class TradeListener implements Listener {
                     case SHIFT_LEFT -> s.adjustMoney(me, step * 10, false);
                     case SHIFT_RIGHT -> s.adjustMoney(me, -step * 10, false);
                     case DROP, CONTROL_DROP -> s.adjustMoney(me, 0, true);
+                    case MIDDLE, SWAP_OFFHAND -> s.openMoneyInput(me);
                     default -> { }
                 }
             } else if (TradeSession.isOwn(slot)) {

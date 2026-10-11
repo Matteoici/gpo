@@ -50,6 +50,15 @@ final class TradeCommand implements TabExecutor {
                 if (s == null) p.sendMessage(TradePlugin.msg("Tu n'es dans aucun échange.", NamedTextColor.RED));
                 else s.cancel(p.getName() + " a annulé l'échange.");
             }
+            case "argent", "montant", "money" -> {
+                if (s == null) {
+                    p.sendMessage(TradePlugin.msg("Tu n'es dans aucun échange.", NamedTextColor.RED));
+                } else if (args.length < 2 || TradeSession.parseAmount(String.join("", java.util.Arrays.copyOfRange(args, 1, args.length))) < 0) {
+                    p.sendMessage(TradePlugin.msg("Utilisation : /trade argent <montant> (ex. 1500, 2.5k)", NamedTextColor.RED));
+                } else {
+                    s.setMoney(s.indexOf(p), TradeSession.parseAmount(String.join("", java.util.Arrays.copyOfRange(args, 1, args.length))));
+                }
+            }
             case "rate" -> {
                 if (args.length != 3) return true;
                 try {

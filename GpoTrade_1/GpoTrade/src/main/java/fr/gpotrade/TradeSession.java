@@ -67,6 +67,8 @@ final class TradeSession {
     private final Inventory[] invs = new Inventory[2];
     private final boolean[] accepted = new boolean[2];
     private final boolean[] chatting = new boolean[2];
+    /** Le joueur est en train d'écrire un montant (et pas un message). */
+    private final boolean[] typingMoney = new boolean[2];
     private final long[] money = new long[2];
     /** Moment où chaque joueur a fermé sa fenêtre (0 = ouverte). */
     private final long[] closedSince = new long[2];
@@ -221,6 +223,7 @@ final class TradeSession {
                     plain("Clic gauche : +" + fmt(step), NamedTextColor.GRAY),
                     plain("Clic droit : -" + fmt(step), NamedTextColor.GRAY),
                     plain("Shift + clic : x10", NamedTextColor.GRAY),
+                    plain("Clic molette ou touche F : écrire un montant", NamedTextColor.YELLOW),
                     plain("Touche Q : remettre à 0", NamedTextColor.GRAY));
         }
         return item(Material.GOLD_INGOT, plain(plugin.symbol() + " : " + fmt(amount), NamedTextColor.GOLD), lore);
@@ -350,13 +353,61 @@ final class TradeSession {
         Bukkit.getScheduler().runTask(plugin, () -> p.closeInventory());
     }
 
+    /** Clic molette / touche F sur le lingot : le joueur écrit le montant exact dans le chat. */
+    void openMoneyInput(int i) {
+        if (finished || !plugin.moneyEnabled()) return;
+        typingMoney[i] = true;
+        chatting[i] = true;
+        Player p = players[i];
+        Bukkit.getScheduler().runTask(plugin, () -> p.closeInventory());
+    }
+
+    /** Fixe le montant exact offert par le joueur i (ramené à son solde si besoin). */
+    void setMoney(int i, long amount) {
+        if (finished || !plugin.moneyEnabled()) return;
+        long balance = (long) Math.floor(plugin.vault().balance(players[i]));
+        long next = Math.max(0, Math.min(balance, amount));
+        if (next < amount) {
+            players[i].sendMessage(Component.text("Solde insuffisant : montant ramené à " + fmt(next) + " " + plugin.symbol() + ".",
+                    NamedTextColor.RED));
+        }
+        if (next != money[i]) {
+            money[i] = next;
+            players[i].playSound(players[i].getLocation(), Sound.BLOCK_CHAIN_PLACE, 0.6f, 1.6f);
+            touch(i);
+        }
+    }
+
+    /** "1500", "1 500", "2,5k", "1m". -1 si ce n'est pas un montant. */
+    static long parseAmount(String text) {
+        String v = text.trim().toLowerCase().replace(" ", "").replace(",", ".").replace("$", "").replace("₲", "");
+        double mult = 1;
+        if (v.endsWith("k")) {
+            mult = 1_000;
+            v = v.substring(0, v.length() - 1);
+        } else if (v.endsWith("m")) {
+            mult = 1_000_000;
+            v = v.substring(0, v.length() - 1);
+        }
+        try {
+            double d = Double.parseDouble(v) * mult;
+            if (!Double.isFinite(d) || d < 0 || d > 1e15) return -1;
+            return (long) Math.floor(d);
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
+
     /** Fenêtre fermée (Échap ou chat) : l'échange est mis en pause, pas annulé. */
     void onClosed(int i) {
         if (finished) return;
         resetAccept();
         closedSince[i] = System.currentTimeMillis();
         Player p = players[i];
-        if (chatting[i]) {
+        if (typingMoney[i]) {
+            p.sendMessage(Component.text("✎ Écris le montant à donner dans le chat (ex. 1500, 2.5k, 1m). "
+                    + "« annuler » pour revenir.", NamedTextColor.GOLD));
+        } else if (chatting[i]) {
             p.sendMessage(Component.text("✎ Écris ton message à " + players[1 - i].getName()
                     + " dans le chat, la fenêtre se rouvrira.", NamedTextColor.AQUA));
         } else {
@@ -373,6 +424,7 @@ final class TradeSession {
         if (closedSince[i] == 0) return;
         closedSince[i] = 0;
         chatting[i] = false;
+        typingMoney[i] = false;
         players[i].openInventory(invs[i]);
         render();
     }
@@ -381,6 +433,19 @@ final class TradeSession {
     void chat(Player from, String text) {
         if (finished) return;
         int i = indexOf(from);
+        if (typingMoney[i]) {
+            // saisie d'un montant : rien n'est envoyé au partenaire
+            if (!text.trim().equalsIgnoreCase("annuler")) {
+                long amount = parseAmount(text);
+                if (amount < 0) {
+                    from.sendMessage(Component.text("Montant invalide : " + text + " (ex. 1500, 2.5k, 1m).", NamedTextColor.RED));
+                } else {
+                    setMoney(i, amount);
+                }
+            }
+            reopen(i);
+            return;
+        }
         String clean = text.length() > 100 ? text.substring(0, 100) : text;
         Component line = Component.text("[Trade] ", NamedTextColor.GOLD)
                 .append(Component.text(from.getName() + " : ", NamedTextColor.YELLOW))
