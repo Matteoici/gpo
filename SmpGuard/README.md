@@ -33,6 +33,19 @@ Minecraft envoie au serveur l'état des touches de déplacement. Si le joueur **
 
 **Limite :** un freecam qui bloque aussi l'envoi des touches est invisible pour le serveur. Contre lui, la protection anti-ESP (couche 1) l'empêche de voir les joueurs à travers les murs.
 
+### Auto-totem
+Quand un totem s'active, le serveur mesure le temps avant qu'un nouveau totem soit remis en seconde main. Ce délai contient le ping aller-retour : on le **retire**, en supposant même le ping le plus bas possible à cet instant, et on ajoute 50 ms de marge d'arrondi. Il ne reste que le temps de réaction. Un très bon joueur, totem déjà en main et touche F, met **150 ms ou plus**. Seules les réactions **sous 90 ms** comptent.
+Deuxième indice : déplacer un totem dans l'inventaire **en gardant les touches de déplacement enfoncées**. En jeu normal, ouvrir son inventaire relâche ces touches, alors que l'auto-totem, lui, n'ouvre jamais l'inventaire.
+**Blocage :** un totem remis dans le **même tick** que l'activation est annulé, car le client ne pouvait pas encore savoir que son totem avait sauté.
+
+### Crystal aura
+- **Réaction :** même principe, ping retiré. Une aura casse presque **tous** ses cristaux en moins de 40 ms de réaction. Un bon joueur qui spam-clique en casse parfois un très vite, mais pas **9 sur 12** d'affilée.
+- **Cadence :** plus de **12 cristaux cassés par seconde pendant 3 secondes de suite** (un excellent joueur tourne autour de 6 à 9). Les rafales qui suivent un pic de lag ne comptent pas.
+- **Visée :** 4 cristaux sur 10 posés ou cassés **hors du champ de vision**, à plus de 75°.
+- **Blocage :** un cristal cassé dans le **même tick** que son apparition (« prédiction d'identifiant » des auras) est annulé.
+
+Les joueurs Bedrock (Geyser) sont exclus des analyses basées sur les touches, car leurs commandes sont traduites différemment.
+
 ### Test appât : `/anticheat bait <joueur>`
 L'outil de vérification pour le staff :
 1. Un **faux joueur** (tête, armure, épée), **visible uniquement par le suspect**, se déplace pendant 30 s dans la roche autour de lui, toujours caché derrière des blocs pleins.
