@@ -194,7 +194,14 @@ public final class SmpNpc extends JavaPlugin implements Listener {
             List<Walker> list = walkers.computeIfAbsent(z.name().toLowerCase(Locale.ROOT), k -> new ArrayList<>());
             list.removeIf(w -> w.entity == null || !w.entity.isValid());
             while (list.size() < z.count()) {
-                Walker w = spawn(z);
+                Walker w;
+                try {
+                    w = spawn(z);
+                } catch (Throwable t) {
+                    getLogger().warning("Impossible de faire apparaître un PNJ dans la zone " + z.name() + " : " + t);
+                    t.printStackTrace();
+                    break;
+                }
                 if (w == null) break;
                 list.add(w);
             }
@@ -382,22 +389,23 @@ public final class SmpNpc extends JavaPlugin implements Listener {
         Location c = z.center();
         if (c == null) return null;
         ThreadLocalRandom r = ThreadLocalRandom.current();
-        for (int tries = 0; tries < 12; tries++) {
+        for (int tries = 0; tries < 20; tries++) {
             double a = r.nextDouble() * Math.PI * 2, d = Math.sqrt(r.nextDouble()) * z.radius();
             double x = z.x() + Math.cos(a) * d, zz = z.z() + Math.sin(a) * d;
             int bx = (int) Math.floor(x), bz = (int) Math.floor(zz);
             if (!c.getWorld().isChunkLoaded(bx >> 4, bz >> 4)) continue;
-            for (int fy = (int) z.y() + 6; fy >= (int) z.y() - 6; fy--) {
+            // du haut vers le bas, on garde le premier sol avec 2 blocs libres (on ignore toits et feuillages)
+            for (int fy = (int) Math.floor(z.y()) + 4; fy >= (int) Math.floor(z.y()) - 8; fy--) {
                 Block b = c.getWorld().getBlockAt(bx, fy, bz);
                 if (b.isLiquid()) break;
                 if (b.isPassable() || b.getBoundingBox().getVolume() <= 0) continue;
                 double top = b.getBoundingBox().getMaxY();
                 if (b.getRelative(BlockFace.UP).isLiquid()) break;
                 if (free(c.getWorld(), bx, top, bz)) return new Location(c.getWorld(), x, top, zz);
-                break;
             }
         }
-        return null;
+        // en dernier recours : là où la zone a été créée (l'admin y était debout)
+        return c.clone();
     }
 
     // ================================================================= clic droit : une phrase
@@ -440,6 +448,8 @@ public final class SmpNpc extends JavaPlugin implements Listener {
                     zones.put(z.name().toLowerCase(Locale.ROOT), z);
                     saveZones();
                     ensureAll();
+                    int alive = walkers.getOrDefault(z.name().toLowerCase(Locale.ROOT), List.of()).size();
+                    if (alive == 0) sender.sendMessage(parse("<red>Aucun PNJ n'a pu apparaître : regarde la console du serveur (erreur SmpNpc)."));
                     sender.sendMessage(parse("<green>Zone <white>" + MM.escapeTags(z.name()) + "</white> créée : <white>"
                             + z.count() + "</white> PNJ sur <white>" + (int) z.radius() + "</white> blocs autour de toi."));
                     return true;
