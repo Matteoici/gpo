@@ -46,6 +46,7 @@ categories:
       - {material: TERRACOTTA, price: 8}
       - {material: SEA_LANTERN, price: 100}
       - {material: LANTERN, price: 30}
+      - {material: ENDER_CHEST, price: 1500, max: 64}
 
   nether:
     slot: 12
