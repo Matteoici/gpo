@@ -1,0 +1,14 @@
+name: SmpGojo
+version: '${version}'
+main: fr.smpgojo.SmpGojo
+api-version: '26.2'
+description: Techniques de Gojo pour les admins (troll)
+commands:
+  gojo:
+    description: Techniques de l'infini
+    usage: /gojo [kit|infini|bleu|rouge|violet|nuke|domaine]
+    permission: smpgojo.use
+permissions:
+  smpgojo.use:
+    description: Utiliser les techniques
+    default: op

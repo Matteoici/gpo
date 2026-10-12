@@ -1,0 +1,31 @@
+# =====================================================================
+#  SmpGojo - techniques de l'infini (admins seulement : smpgojo.use)
+#  /gojo kit = les 6 techniques en objets (clic droit pour lancer)
+# =====================================================================
+
+# temps de recharge (secondes)
+cooldowns:
+  bleu: 3
+  rouge: 3
+  violet: 8
+  nuke: 30
+  domaine: 40
+
+damage:
+  bleu: 4
+  rouge: 8
+  violet: 30
+  nuke: 40
+
+# Violet creux et Nuke peuvent creuser le terrain (false = aucun bloc touché)
+destroy-blocks: false
+# si oui, le terrain se reconstruit tout seul après X secondes
+restore-seconds: 20
+
+domain:
+  radius: 12
+  seconds: 10
+
+nuke:
+  radius: 22
+  distance: 30
