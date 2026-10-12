@@ -1,0 +1,263 @@
+# =====================================================================
+#  SmpBoss - le Roi Citrouille
+#  1) /boss autel en regardant le bloc de ton arène qui sert d'autel
+#  2) les joueurs farment des Graines maudites (zombies, squelettes...)
+#  3) 8 graines + 1 citrouille taillée (établi) = Citrouille sacrificielle
+#  4) la nuit, clic droit sur l'autel avec la citrouille = le boss apparaît
+#  Après une modification : /boss reload
+# =====================================================================
+
+# ---------------------------------------------------------------- Graines maudites
+seeds:
+  enabled: true
+  # chance (%) qu'un de ces monstres lâche une graine quand un joueur le tue
+  chance: 4
+  mobs: [ZOMBIE, SKELETON, HUSK, STRAY, DROWNED, ZOMBIE_VILLAGER, BOGGED]
+  # les monstres de spawners en lâchent aussi ?
+  from-spawners: false
+
+# ---------------------------------------------------------------- Le boss
+boss:
+  # vie de base, + par joueur présent en plus au moment de l'invocation
+  health: 1500
+  health-per-extra-player: 600
+  # taille (1 = taille normale) puis à chaque phase
+  scale: 3.0
+  scale-phase-2: 3.6
+  scale-phase-3: 4.2
+  phase-2-at: 0.66
+  phase-3-at: 0.33
+  speed: 0.24
+  melee-damage: 9
+  # pause entre deux attaques spéciales (ticks : 20 = 1 seconde)
+  attack-interval:
+    "1": 110
+    "2": 90
+    "3": 70
+  orbit-count: 4
+  minions: 4
+  seed-rain-count: 14
+  # rayon de l'arène autour de l'autel (il ne peut pas en sortir)
+  arena-radius: 18
+  night-only: true
+  cooldown-minutes: 30
+  max-minutes: 20
+  damage:
+    multiplier: 1.0
+    barrage: 8
+    vines: 4
+    flame-wave: 7
+    minion: 6
+    seed-rain: 6
+    slam: 12
+
+# ---------------------------------------------------------------- Butin
+loot:
+  # il faut avoir fait au moins X % des dégâts pour être récompensé
+  min-damage-percent: 3
+  # chances en %, tirées dans cet ordre (secret, puis légendaire...)
+  chances:
+    secret: 0.5
+    legendary: 1
+    epic: 5
+    rare: 20
+  # garantie : au bout de X victoires sans en avoir eu, c'est sûr
+  pity:
+    legendary: 150
+    secret: 300
+  # pour tout le monde à chaque victoire (%player%)
+  always-commands:
+    - "tokens give %player% 15"
+    - "eco give %player% 25000"
+  # graines rendues (min, max)
+  always-seeds: [1, 3]
+  pools:
+    rare:
+      - {relic: trainee_flammes}
+      - {item: CARVED_PUMPKIN, name: "Chapeau du Roi", lore: ["<gray>Un souvenir du Roi Citrouille."]}
+    epic:
+      - {relic: amulette_recolte}
+      - {relic: lanterne_mineure}
+    legendary:
+      - {relic: couronne}
+      - {relic: lanterne_eternelle}
+      - {relic: bottes_recolte}
+    secret:
+      - {relic: sac_recolte, title: "Celui qui a dévoré la Récolte"}
+      - {sickle: true, title: "Faucheur du Néant"}
+
+# ---------------------------------------------------------------- Reliques
+# health = cœurs en plus · speed = % de vitesse · regen = demi-cœurs toutes les 4 s hors combat (8 s sans dégâts)
+# trail = particules sous les pieds · backpack = le sac (27 cases, visible sur le dos)
+# item-model = modèle du pack de textures (plus tard, ex. "monserveur:couronne")
+relics:
+  max-equipped: 2
+  list:
+    trainee_flammes:
+      name: "Traînée de Flammes"
+      rarity: rare
+      icon: BLAZE_POWDER
+      lore: ["<gray>Tes pas laissent des braises."]
+      trail: FLAME
+    amulette_recolte:
+      name: "Amulette de la Récolte"
+      rarity: epic
+      icon: GOLDEN_CARROT
+      lore: ["<gray>Bénie par les champs."]
+      speed: 2
+    lanterne_mineure:
+      name: "Lanterne Mineure"
+      rarity: epic
+      icon: LANTERN
+      lore: ["<gray>Une petite flamme réconfortante."]
+      regen: 0.5
+    couronne:
+      name: "Couronne du Roi Citrouille"
+      rarity: legendary
+      icon: GOLDEN_HELMET
+      lore: ["<gray>Arrachée au Roi en personne."]
+      health: 1
+    lanterne_eternelle:
+      name: "Lanterne Éternelle"
+      rarity: legendary
+      icon: SOUL_LANTERN
+      lore: ["<gray>Sa flamme ne s'éteint jamais."]
+      regen: 1
+    bottes_recolte:
+      name: "Bottes de la Récolte"
+      rarity: legendary
+      icon: GOLDEN_BOOTS
+      lore: ["<gray>On ne rattrape pas le vent d'automne."]
+      speed: 5
+    sac_recolte:
+      name: "Sac de la Récolte"
+      rarity: secret
+      icon: BUNDLE
+      lore: ["<gray>Il a appartenu au Roi... et il est toujours chaud."]
+      backpack: true
+
+# ---------------------------------------------------------------- Sac (relique secrète)
+backpack:
+  # objet affiché sur le dos (sans pack de textures)
+  display-item: WHITE_SHULKER_BOX
+  show-on-back: true
+  scale: 0.45
+  offset-back: 0.3
+  height: 1.05
+  # % des objets du sac qui tombent à la mort (au hasard)
+  drop-percent-on-death: 70
+
+# ---------------------------------------------------------------- Faucille (arme secrète)
+sickle:
+  damage: 8
+  attack-speed: 1.6
+  lifesteal-mobs: 10
+  lifesteal-players: 4
+  cooldown-seconds: 20
+  harvest-range: 4.5
+  harvest-damage: 9
+  harvest-damage-players: 5
+
+# ---------------------------------------------------------------- Modèles du pack de textures (plus tard)
+# ex. backpack: "monserveur:sac"   (laisser vide = apparence de base)
+models:
+  backpack: ""
+  sickle: ""
+  seed: ""
+  sacrifice: ""
+
+# ---------------------------------------------------------------- Textes
+messages:
+  items:
+    seed:
+      name: "<#c0392b><b>Graine maudite"
+      lore:
+        - "<gray>Elle pulse faiblement..."
+        - ""
+        - "<yellow>8 graines + 1 citrouille taillée"
+        - "<yellow>= Citrouille sacrificielle (établi)"
+    sacrifice:
+      name: "<gradient:#ff7a00:#7a1fa2><b>Citrouille sacrificielle"
+      lore:
+        - "<gray>Pose-la sur l'autel, la nuit..."
+        - "<gray>et le <#ff7a00>Roi Citrouille</#ff7a00> se réveillera."
+        - ""
+        - "<red>⚠ Venez nombreux."
+    relic:
+      claim: "<yellow>▶ Clic droit : ajouter à mes reliques <gray>(/reliques)"
+      health: "<red>❤ +<n> cœur(s)"
+      speed: "<aqua>⚡ +<n>% de vitesse"
+      regen: "<green>✚ Régénère <n> cœur(s) toutes les 4 s <dark_gray>(hors combat)"
+      trail: "<gold>✦ Laisse une traînée"
+      backpack: "<white>▣ Sac de 27 cases <dark_gray>(/sac) <gray>· 70 % tombe à la mort"
+    sickle:
+      name: "Faucille du Néant"
+      lore:
+        - "<gray>Elle a fauché le Roi lui-même."
+        - ""
+        - "<white>Clic droit : <b>Moisson</b> <gray>(balayage en arc, 20 s)"
+        - "<white>Vol de vie <gray>à chaque coup"
+  summon:
+    already: "<red>Le Roi Citrouille est déjà réveillé !"
+    cooldown: "<red>Le Roi se repose encore... reviens dans <white><minutes> min</white>."
+    day: "<red>Le Roi ne se réveille que la <white>nuit</white>."
+  boss:
+    name: "<gradient:#ff7a00:#ffd36b><b>♛ Roi Citrouille ♛"
+    minion-name: "<#ff7a00>Citrouille Kamikaze"
+    summoning: "<#ff7a00><b>♛</b> <white><player></white> <gray>a réveillé le <gradient:#ff7a00:#ffd36b><b>Roi Citrouille</b></gradient><gray> ! La terre tremble à l'autel..."
+    bar-1: "<gradient:#ff7a00:#ffd36b><b>♛ Roi Citrouille</b></gradient> <dark_gray>|</dark_gray> <yellow>La Récolte"
+    bar-2: "<gradient:#ff4b1f:#ff9068><b>♛ Roi Citrouille</b></gradient> <dark_gray>|</dark_gray> <red>La Lanterne"
+    bar-3: "<gradient:#7a1fa2:#c471f5><b>♛ Roi Citrouille</b></gradient> <dark_gray>|</dark_gray> <light_purple>Le Festin"
+    title-start: "<gradient:#ff7a00:#ffd36b><b>LE ROI CITROUILLE"
+    subtitle-start: "<gray>Phase 1 · La Récolte"
+    title-phase-2: "<red><b>PHASE 2"
+    subtitle-phase-2: "<gray>La Lanterne s'embrase..."
+    title-phase-3: "<light_purple><b>PHASE 3"
+    subtitle-phase-3: "<gray>Le Festin commence."
+    title-defeat: "<gold><b>VICTOIRE"
+    subtitle-defeat: "<gray>Le Roi Citrouille est tombé !"
+    defeated: "<#ff7a00><b>♛ Le Roi Citrouille est vaincu !</b> <gray>Meilleurs combattants :"
+    top-line: "<gray>  <white>#<rank></white> <yellow><player></yellow> <dark_gray>(<percent>% des dégâts)"
+    left: "<gray>Personne ne combat... le <#ff7a00>Roi Citrouille</#ff7a00> retourne sous terre."
+    timeout: "<gray>Trop tard ! Le <#ff7a00>Roi Citrouille</#ff7a00> s'enfonce dans la nuit."
+    vanished: "<gray>Le <#ff7a00>Roi Citrouille</#ff7a00> a disparu."
+    stopped: "<gray>Le Roi Citrouille a été renvoyé par le staff."
+  loot:
+    common: "<gray>Tu reçois ta part du butin. <dark_gray>(pas d'objet rare cette fois)"
+    new-item: "<white>Nouvel objet <dark_gray>‹</dark_gray><item><dark_gray>›"
+    new-title: "<white>Nouveau titre débloqué : <dark_gray>‹</dark_gray><title><dark_gray>›"
+    broadcast-legendary: "<rainbow><b>✦</b></rainbow> <white><player></white> <gray>a obtenu</gray> <item> <gray>sur le Roi Citrouille !"
+    broadcast-secret: "<gradient:#ffffff:#4a4a4a:#ffffff><b>✧ SECRET ✧</b></gradient> <white><player></white> <gray>a obtenu</gray> <item> <gray>!!!"
+  relics:
+    claimed: "<green>Relique ajoutée : <relic> <gray>(/reliques)"
+    already-owned: "<red>Tu as déjà cette relique. <gray>Tu peux l'échanger ou la vendre."
+    equipped: "<green>Équipée : <relic>"
+    unequipped: "<yellow>Retirée : <relic>"
+    full: "<red>Tu as déjà <max> reliques équipées. Retires-en une d'abord."
+    not-owned: "<red>Tu n'as pas cette relique."
+  backpack:
+    title: "<gradient:#ffffff:#6b2f84><b>Sac de la Récolte"
+    none: "<red>Il te faut la relique <white>Sac de la Récolte</white> équipée (/reliques)."
+    lost: "<red>Ton sac s'est déchiré : <white><n></white> objet(s) sont tombés au sol."
+  sickle:
+    cooldown: "<gray>Moisson prête dans <white><s>s"
+  menu:
+    title: "<dark_gray>Reliques"
+    info-name: "<gold><b>Mes reliques"
+    info-equipped: "<gray>Équipées : <white><n>/<max>"
+    info-owned: "<gray>Possédées : <white><n>"
+    info-kills: "<gray>Rois Citrouille vaincus : <white><n>"
+    info-pity-legendary: "<gray>Légendaire garanti dans : <rainbow><n></rainbow> <gray>victoires"
+    info-pity-secret: "<gray>Secret garanti dans : <white><n></white> <gray>victoires"
+    info-titles: "<gray>Titres :"
+    click-equip: "<yellow>▶ Clic : équiper"
+    click-unequip: "<yellow>▶ Clic : retirer"
+    click-inspect: "<aqua>▶ Shift + clic : inspecter"
+    empty-slot:
+      name: "<gray>Emplacement libre"
+      lore: ["<dark_gray>Choisis une relique en bas."]
+    open-backpack:
+      name: "<white><b>Ouvrir mon sac"
+      lore: ["<gray>/sac"]
+    close:
+      name: "<red>Fermer"

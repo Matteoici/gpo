@@ -374,3 +374,38 @@ jobs:
         with:
           name: SmpNpc-jar
           path: ${{ steps.find.outputs.dir }}/build/libs/*.jar
+
+  smpboss:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Trouver le dossier du plugin
+        id: find
+        run: |
+          f=$(grep -rl --include=build.gradle.kts 'fr.smpboss' . | head -n1)
+          echo "dir=$(dirname "$f")" >> "$GITHUB_OUTPUT"
+      - name: Build SmpBoss
+        working-directory: ${{ steps.find.outputs.dir }}
+        run: |
+          set -o pipefail
+          gradle build --console=plain 2>&1 | tee build.log || {
+            grep -E "error:|Could not|What went wrong" -A3 build.log | head -40 | while IFS= read -r l; do echo "::error::$l"; done
+            exit 1
+          }
+      - name: Vérifier que le jar contient bien le plugin
+        working-directory: ${{ steps.find.outputs.dir }}
+        run: |
+          jar=$(ls build/libs/*.jar | head -n1)
+          if ! unzip -l "$jar" | grep -q "plugin.yml"; then
+            echo "::error::Le jar est VIDE : le dossier src/ n'est pas à côté de build.gradle.kts dans le repo. Ré-uploade le dossier src."
+            exit 1
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmpBoss-jar
+          path: ${{ steps.find.outputs.dir }}/build/libs/*.jar
