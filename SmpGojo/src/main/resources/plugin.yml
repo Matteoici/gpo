@@ -32,6 +32,10 @@ commands:
     description: Techniques de Kento Nanami
     usage: /nanami [kit|ratio|heures-sup|effondrement]
     permission: smpgojo.use
+  bombe:
+    description: Bombes atomiques (Tsar Bomba, RS-28 Satan)
+    usage: /bombe [kit|tsar|satan]
+    permission: smpgojo.use
   hakari:
     description: Techniques de Kinji Hakari
     usage: /hakari [kit|pachinko|portes]

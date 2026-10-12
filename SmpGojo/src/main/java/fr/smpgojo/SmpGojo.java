@@ -117,6 +117,10 @@ public final class SmpGojo extends JavaPlugin implements Listener {
                 "Le ratio appliqué au décor : tout s'écroule");
         tech("hakari", "pachinko", Material.EMERALD, "<gradient:#ffd700:#00ff7f><b>Extension du territoire",
                 "Jeu de la mort oisive : jackpot = immortel");
+        tech("bombe", "tsar", Material.TNT, "<gradient:#ff4000:#ffd000><b>☢ Tsar Bomba",
+                "Larguée en parachute : la plus grosse bombe de l'histoire");
+        tech("bombe", "satan", Material.FIREWORK_ROCKET, "<gradient:#40c040:#ff2020><b>☢ RS-28 Satan",
+                "Un missile qui se divise en ogives au-dessus de la cible");
         tech("hakari", "portes", Material.IRON_DOOR, "<gradient:#c0c0c0:#ffd700><b>Portes du train", "Deux portes claquent sur la cible");
     }
 
@@ -131,6 +135,7 @@ public final class SmpGojo extends JavaPlugin implements Listener {
     Todo todo;
     Nanami nanami;
     Hakari hakari;
+    Bombes bombes;
     private final Map<String, Long> cooldowns = new HashMap<>();
     final Set<UUID> noFall = new HashSet<>();
     /** pendant un coup de technique : laquelle (pour l'adaptation de Mahoraga) */
@@ -161,6 +166,7 @@ public final class SmpGojo extends JavaPlugin implements Listener {
         todo = new Todo(this);
         nanami = new Nanami(this);
         hakari = new Hakari(this);
+        bombes = new Bombes(this);
         getServer().getPluginManager().registerEvents(this, this);
         Bukkit.getScheduler().runTaskTimer(this, () -> {
             cine.tick();
@@ -218,6 +224,7 @@ public final class SmpGojo extends JavaPlugin implements Listener {
             case "todo" -> "<gradient:#ffd040:#4f9bff>Aoi Todo";
             case "nanami" -> "<gradient:#ffd040:#ffffff>Kento Nanami";
             case "hakari" -> "<gradient:#ffd700:#00ff7f>Kinji Hakari";
+            case "bombe" -> "<gradient:#ff4000:#ffd000>l'arsenal nucléaire";
             default -> "<gradient:#ff7a7a:#4f9bff>Yuji Itadori";
         };
         p.sendMessage(mm("<gray>Techniques de " + who + "</gray> <gray>dans ton inventaire. <dark_gray>Clic droit pour lancer."));
@@ -351,6 +358,8 @@ public final class SmpGojo extends JavaPlugin implements Listener {
             case "effondrement" -> nanami.collapse(p);
             case "pachinko" -> hakari.domain(p);
             case "portes" -> hakari.doors(p);
+            case "tsar" -> bombes.tsar(p);
+            case "satan" -> bombes.satan(p);
             default -> {
             }
         }

@@ -62,6 +62,8 @@ cooldowns:
   effondrement: 12
   pachinko: 90
   portes: 8
+  tsar: 60
+  satan: 60
 
 # ------------------------------------------------------------ dégâts
 damage:
@@ -100,6 +102,8 @@ damage:
   effondrement: 18
   billes: 1.5
   portes: 14
+  # bombes : au cœur de la boule de feu
+  bombe: 1000
 
 # ------------------------------------------------------------ Gojo
 bleu:
@@ -207,3 +211,27 @@ hakari:
   jackpot-chance: 0.35
   # durée de l'immortalité
   jackpot-seconds: 60
+
+# ------------------------------------------------------------ Bombes atomiques (/bombe kit)
+# Boule de feu qui efface tout (budget de temps : pas de lag), onde de choc, sol brûlé,
+# champignon atomique. Tout se reconstruit après "restore-seconds".
+bombes:
+  # distance max de visée
+  range: 400
+  restore-seconds: 360
+  tsar:
+    # rayon de la boule de feu (le cratère)
+    radius: 60
+    drop-height: 140
+    fall-seconds: 8
+    # explose à cette hauteur au-dessus du sol
+    burst-height: 4
+    cloud-seconds: 40
+  satan:
+    # nombre d'ogives et leur rayon
+    warheads: 6
+    radius: 22
+    # écart entre les ogives autour de la cible
+    spread: 45
+    flight-ticks: 120
+    cloud-seconds: 20
