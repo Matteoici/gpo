@@ -691,9 +691,8 @@ public final class DropEvent {
         int percent = (int) Math.floor(clamp(progress / (float) s.openTicks) * 100);
         Location c = center(ground.getY());
         for (Player p : Bukkit.getOnlinePlayers()) {
-            // barre et flèche : seulement ceux qui suivent le largage, ou qui sont déjà tout près
-            boolean near = p.getWorld() == world && p.getLocation().distanceSquared(c) < 80 * 80;
-            if (!follows(p) && !near) {
+            // barre et flèche : seulement ceux qui ont cliqué sur [Suivre] ou [Toujours me prévenir]
+            if (!follows(p)) {
                 BossBar old = bars.remove(p.getUniqueId());
                 if (old != null) p.hideBossBar(old);
                 continue;

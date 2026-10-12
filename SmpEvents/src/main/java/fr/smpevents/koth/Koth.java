@@ -668,8 +668,8 @@ public final class Koth {
         BossBar.Color color = contested ? BossBar.Color.RED : king == null ? BossBar.Color.WHITE : BossBar.Color.YELLOW;
         Location c = active.center();
         for (Player p : Bukkit.getOnlinePlayers()) {
-            boolean near = c != null && p.getWorld() == c.getWorld() && p.getLocation().distanceSquared(c) < 80 * 80;
-            if (!follows(p) && !near) {
+            // barre et flèche : seulement ceux qui ont cliqué sur [Suivre] ou [Toujours me prévenir]
+            if (!follows(p)) {
                 BossBar old = bars.remove(p.getUniqueId());
                 if (old != null) p.hideBossBar(old);
                 continue;
