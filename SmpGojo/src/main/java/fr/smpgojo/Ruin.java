@@ -161,6 +161,42 @@ final class Ruin {
         return carve(c, r, 0, debrisChance, null, null, 60);
     }
 
+    /**
+     * Efface une tranche horizontale d'un cylindre (tout, liquides compris : "réduit à néant").
+     * Les coffres et blocs à contenu restent (rien n'est perdu).
+     */
+    int carveLayer(World w, double cx, double cz, int y, double r, double debrisChance) {
+        if (!enabled() || y < w.getMinHeight() || y >= w.getMaxHeight()) return 0;
+        if (!allowedWorld(w, new Location(w, cx, y, cz))) return 0;
+        int ri = (int) Math.ceil(r);
+        int bx = (int) Math.floor(cx), bz = (int) Math.floor(cz);
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        Deque<Location> list = new ArrayDeque<>();
+        double r2 = r * r;
+        for (int x = -ri; x <= ri; x++) {
+            for (int z = -ri; z <= ri; z++) {
+                double dx = bx + x + 0.5 - cx, dz = bz + z + 0.5 - cz;
+                if (dx * dx + dz * dz > r2) continue;
+                Block b = w.getBlockAt(bx + x, y, bz + z);
+                Material m = b.getType();
+                if (m.isAir()) continue;
+                if (!b.isLiquid() && !breakable(b)) continue;
+                Location key = b.getLocation();
+                BlockData data = b.getBlockData();
+                saved.putIfAbsent(key, new Saved(data, Material.AIR));
+                b.setType(Material.AIR, false);
+                list.add(key);
+                if (!b.isLiquid() && rnd.nextDouble() < debrisChance) {
+                    Vector out = new Vector(dx, 0, dz);
+                    if (out.lengthSquared() < 0.01) out = new Vector(1, 0, 0);
+                    spawnDebris(data, key.clone().add(0.5, 0.5, 0.5), out.normalize().multiply(0.6).setY(0.8 + rnd.nextDouble()), null, 50);
+                }
+            }
+        }
+        schedule(list);
+        return list.size();
+    }
+
     /** Une entaille fine le long d'un segment (coupures de Sukuna). */
     void gash(Location c, Vector u, double half, double width) {
         if (!enabled()) return;

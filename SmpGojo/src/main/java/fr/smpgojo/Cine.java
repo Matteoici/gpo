@@ -184,34 +184,8 @@ final class Cine {
         }
     }
 
-    /** Bandes noires de cinéma en haut et en bas de l'écran. */
+    /** (bandes noires retirées) */
     void letterbox(Collection<Player> viewers, int ticks) {
-        if (!pl.getConfig().getBoolean("cinematic.letterbox", true)) return;
-        for (Player p : viewers) {
-            BlockDisplay[] b = bars.get(p.getUniqueId());
-            if (b == null) {
-                b = new BlockDisplay[]{bar(p, true), bar(p, false)};
-                bars.put(p.getUniqueId(), b);
-            }
-            barsEnd.merge(p.getUniqueId(), now + ticks, Math::max);
-        }
-    }
-
-    private BlockDisplay bar(Player p, boolean top) {
-        float y = top ? 0.34f : -4.34f;
-        BlockDisplay d = p.getWorld().spawn(front(p, 0.6), BlockDisplay.class, e -> {
-            e.setPersistent(false);
-            e.setVisibleByDefault(false);
-            e.getPersistentDataContainer().set(pl.tagKey, PersistentDataType.STRING, "overlay");
-            e.setBlock(Material.BLACK_CONCRETE.createBlockData());
-            e.setBillboard(Display.Billboard.CENTER);
-            e.setBrightness(new Display.Brightness(0, 0));
-            e.setTeleportDuration(1);
-            e.setTransformation(new Transformation(new Vector3f(-4f, y, -0.01f), new Quaternionf(), new Vector3f(8f, 4f, 0.02f),
-                    new Quaternionf()));
-        });
-        p.showEntity(pl, d);
-        return d;
     }
 
     /** Tremblement de caméra. */

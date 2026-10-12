@@ -322,7 +322,7 @@ final class Gojo {
 
     void nuke(Player p) {
         Location target = pl.aimPoint(p, pl.cfg("nuke.range", 140));
-        List<Player> vs = pl.viewers(p.getLocation(), 160);
+        List<Player> vs = pl.viewers(p.getLocation(), 250);
         UUID id = p.getUniqueId();
         pl.noFall.add(id);
         boolean couldFly = p.getAllowFlight();
@@ -350,7 +350,6 @@ final class Gojo {
         int per = 12, chant = lines.size() * per, merge = 16;
         pl.later(10, () -> pl.cine.chant(p, 160, lines, per, "block.beacon.ambient", () -> {
         }));
-        double maxR = pl.cfg("nuke.radius", 20);
         pl.repeat(1, 10 + chant + merge, i -> {
             if (i < 10) return;
             int k = i - 10;
@@ -372,78 +371,168 @@ final class Gojo {
             }
             if (k % 6 == 0) SmpGojo.sound(above, "block.beacon.ambient", 4f, 0.5f + k / 120f);
             if (k % 15 == 0) pl.cine.shake(vs, 1, 1);
-        }, () -> {
-            Location from = p.getLocation().add(0, 4.5, 0);
-            pl.cine.impact(vs, null, Cine.PURPLE);
-            pl.cine.shake(vs, 4, 2);
-            SmpGojo.sound(from, "entity.warden.sonic_boom", 5f, 0.4f);
-            SmpGojo.sound(from, "entity.wither.spawn", 3f, 1.4f);
-            Location orb = from.clone();
-            Vector to = target.toVector().subtract(orb.toVector());
-            int steps = Math.max(10, (int) (to.length() / 2.2));
-            Vector step = to.multiply(1.0 / steps);
-            double dmg = pl.cfg("damage.nuke", 50);
-            Set<UUID> hit = new HashSet<>();
-            pl.repeat(1, steps, i -> {
-                orb.add(step);
-                Draw.sphere(orb, 4.5, Draw.PURPLE, 4f, 90);
-                Draw.ball(orb, 2, Draw.WHITE, 2.5f, 30);
-                Draw.fx(orb, Particle.REVERSE_PORTAL, 40, 2, 0.1);
-                for (LivingEntity le : pl.targets(p, orb, 5)) {
-                    if (hit.add(le.getUniqueId())) pl.hit(p, le, dmg, "nuke");
+        }, () -> skyBeam(p, target, vs, land));
+    }
+
+    /**
+     * Le vrai 200 % : la sphère monte dans le ciel, un vortex violet se forme au-dessus de la cible,
+     * puis une colonne de lumière géante tombe et réduit tout à néant. Il ne reste qu'un trou parfaitement rond.
+     */
+    private void skyBeam(Player p, Location aimed, List<Player> vs0, Runnable land) {
+        World w = aimed.getWorld();
+        Block g = Ruin.surface(w, aimed.getBlockX(), aimed.getBlockY(), aimed.getBlockZ());
+        Location ground = g != null ? g.getLocation().add(0.5, 1, 0.5) : aimed.clone();
+        double R = pl.cfg("nuke.radius", 18);
+        int skyH = pl.cfgi("nuke.sky-height", 70), depth = pl.cfgi("nuke.depth", 30);
+        double dmg = pl.cfg("damage.nuke", 80);
+        Location sky = ground.clone().add(0, skyH, 0);
+        List<Player> vs = pl.viewers(ground, 320);
+        for (Player v : vs0) if (!vs.contains(v) && v.isOnline()) vs.add(v);
+
+        // 1) la sphère violette part dans le ciel
+        Location from = p.getLocation().add(0, 4.5, 0);
+        pl.cine.impact(vs, null, Cine.PURPLE);
+        pl.cine.shake(vs, 3, 2);
+        SmpGojo.sound(from, "entity.warden.sonic_boom", 5f, 0.4f);
+        SmpGojo.sound(from, "entity.wither.spawn", 3f, 1.4f);
+        Location orb = from.clone();
+        int travel = 16;
+        Vector step = sky.toVector().subtract(orb.toVector()).multiply(1.0 / travel);
+        pl.repeat(1, travel, i -> {
+            orb.add(step);
+            Draw.sphere(orb, 3.5, Draw.PURPLE, 4f, 70);
+            Draw.ball(orb, 1.6, Draw.WHITE, 2.5f, 25);
+            Draw.fx(orb, Particle.REVERSE_PORTAL, 30, 1.5, 0.1);
+            if (i % 3 == 0) SmpGojo.sound(orb, "entity.ender_dragon.flap", 5f, 0.4f);
+        }, () -> vortex(p, ground, sky, R, skyH, depth, dmg, vs, land));
+    }
+
+    /** 2) Le vortex dans les nuages. */
+    private void vortex(Player p, Location ground, Location sky, double R, int skyH, int depth, double dmg, List<Player> vs, Runnable land) {
+        SmpGojo.sound(sky, "block.end_portal.spawn", 8f, 0.5f);
+        SmpGojo.sound(ground, "entity.lightning_bolt.thunder", 8f, 0.5f);
+        int ticks = 40;
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        pl.repeat(1, ticks, i -> {
+            double grow = (i + 1) / (double) ticks;
+            double outer = R * (0.8 + grow * 1.4);
+            for (int arm = 0; arm < 5; arm++) {
+                for (double t = 0.08; t <= 1; t += 0.06) {
+                    double a = arm * Math.PI * 2 / 5 + i * 0.16 + t * 3.2;
+                    double rr = outer * t;
+                    Location l = sky.clone().add(Math.cos(a) * rr, -t * 2 + rnd.nextDouble(-0.6, 0.6), Math.sin(a) * rr);
+                    Draw.dust(l, t < 0.35 ? Draw.WHITE : t < 0.65 ? Draw.PINK : Draw.PURPLE, (float) (3.5 - t * 1.5));
+                    if (rnd.nextInt(5) == 0) Draw.fx(l, Particle.CLOUD, 1, 0.5, 0.02);
                 }
-                pl.ruin.carve(orb, 4.5, 0, 0.03, null, orb, 10);
-                if (i % 3 == 0) SmpGojo.sound(orb, "entity.ender_dragon.flap", 4f, 0.4f);
-            }, () -> detonate(p, target, maxR, hit, vs, land));
+            }
+            Draw.ball(sky, 1 + grow * R * 0.35, Draw.WHITE, 4f, 40);
+            Draw.sphere(sky, 1.5 + grow * R * 0.45, Draw.PINK, 3.5f, 40);
+            Draw.fx(sky, Particle.END_ROD, 20, R * 0.5 * grow, 0.1);
+            // la zone visée s'éclaire, le sol tremble
+            if (i % 2 == 0) Draw.ring(ground.clone().add(0, 0.3, 0), R, Draw.PURPLE, 2.5f, (int) (R * 4));
+            if (i % 8 == 0) {
+                SmpGojo.sound(sky, "entity.lightning_bolt.thunder", 6f, 0.4f + rnd.nextFloat() * 0.3f);
+                pl.cine.shake(vs, 1, 1);
+                pl.ruin.pop(ground, R, 16, 0.4);
+            }
+            if (i == ticks / 2) pl.cine.impact(vs, null, Cine.FLASH);
+        }, () -> fall(p, ground, sky, R, skyH, depth, dmg, vs, land));
+    }
+
+    /** 3) La colonne tombe, 4) écran blanc, 5) elle reste, 6) elle s'éteint : un trou parfait. */
+    private void fall(Player p, Location ground, Location sky, double R, int skyH, int depth, double dmg, List<Player> vs, Runnable land) {
+        World w = ground.getWorld();
+        Beam beam = new Beam(pl, sky);
+        Runnable[] clean = new Runnable[1];
+        clean[0] = () -> {
+            beam.remove();
+            pl.pending.remove(clean[0]);
+            land.run();
+            pl.pending.remove(land);
+        };
+        pl.pending.add(clean[0]);
+        Set<UUID> hit = new HashSet<>();
+        int total = skyH + depth;
+        int descend = 14;
+        int[] erased = {sky.getBlockY() + 1};
+        SmpGojo.sound(sky, "entity.warden.sonic_boom", 8f, 0.4f);
+        SmpGojo.sound(sky, "item.trident.thunder", 8f, 0.5f);
+        pl.repeat(1, descend, i -> {
+            double prog = Math.pow((i + 1) / (double) descend, 1.4);
+            double h = total * prog;
+            double r = R * (0.55 + 0.45 * prog);
+            beam.shape(r, h, 1);
+            int bottom = (int) Math.floor(sky.getY() - h);
+            for (int y = erased[0] - 1; y >= bottom; y--) pl.ruin.carveLayer(w, ground.getX(), ground.getZ(), y, R, 0.003);
+            erased[0] = Math.min(erased[0], bottom);
+            zap(p, ground, R, bottom, sky.getY(), dmg, hit);
+            Draw.fx(sky.clone().add(0, -h, 0), Particle.END_ROD, 40, r * 0.5, 0.3);
+        }, () -> {
+            // impact : tout devient blanc
+            List<Player> all = pl.viewers(ground, 400);
+            for (Player v : vs) if (!all.contains(v) && v.isOnline()) all.add(v);
+            pl.cine.impact(all, null, new Cine.Frame[]{Cine.f(255, Draw.WHITE, 6), Cine.f(235, Draw.WHITE, 3), Cine.f(210, Draw.PINK, 2),
+                    Cine.f(200, Draw.WHITE, 3), Cine.f(160, Draw.WHITE, 3), Cine.f(120, Draw.PINK, 3), Cine.f(80, Draw.WHITE, 3),
+                    Cine.f(40, Draw.WHITE, 3)});
+            pl.cine.shake(all, 20, 2);
+            SmpGojo.sound(ground, "entity.generic.explode", 10f, 0.4f);
+            SmpGojo.sound(ground, "entity.wither.death", 8f, 0.5f);
+            SmpGojo.sound(ground, "block.beacon.power_select", 8f, 0.5f);
+            beam.shape(R, total, 4);
+            pl.ruin.shockwave(ground, R + 16, 18, 0.9);
+            int hold = pl.cfgi("nuke.hold-ticks", 60);
+            ThreadLocalRandom rnd = ThreadLocalRandom.current();
+            pl.repeat(1, hold, i -> {
+                double r = R * (1 + 0.05 * Math.sin(i * 0.7));
+                if (i % 2 == 0) beam.shape(r, total, 2);
+                zap(p, ground, R + 0.5, ground.getBlockY() - depth, sky.getY(), dmg, hit);
+                // traînées de lumière qui tombent dans la colonne
+                for (int k = 0; k < 14; k++) {
+                    double a = rnd.nextDouble() * Math.PI * 2, rr = Math.sqrt(rnd.nextDouble()) * R;
+                    Location l = ground.clone().add(Math.cos(a) * rr, rnd.nextDouble(0, skyH), Math.sin(a) * rr);
+                    w.spawnParticle(Particle.END_ROD, l, 0, 0, -1, 0, 1.6, null, true);
+                }
+                // anneau lumineux au sol et vent vers l'extérieur
+                Draw.ring(ground.clone().add(0, 0.4, 0), R + 0.6, Draw.PINK, 3f, (int) (R * 5));
+                Draw.ring(ground.clone().add(0, 1.5, 0), R + 1.2, Draw.PURPLE, 2.5f, (int) (R * 3));
+                for (LivingEntity le : pl.targets(p, ground, R + 10)) {
+                    Vector out = le.getLocation().toVector().subtract(ground.toVector()).setY(0);
+                    if (out.lengthSquared() > 0.01) le.setVelocity(le.getVelocity().add(out.normalize().multiply(0.15)));
+                }
+                if (i % 10 == 0) SmpGojo.sound(ground, "block.beacon.ambient", 8f, 0.5f);
+                if (i % 15 == 0) pl.cine.shake(all, 1, 1);
+            }, () -> {
+                // la colonne s'amincit et disparaît
+                beam.shape(0.01, total, 18);
+                SmpGojo.sound(ground, "block.beacon.deactivate", 8f, 0.5f);
+                pl.repeat(2, 12, i -> Draw.fx(ground.clone().add(0, 1, 0), Particle.CAMPFIRE_SIGNAL_SMOKE, 12, R * 0.6, 0.03), null);
+                pl.later(20, () -> {
+                    if (pl.pending.contains(clean[0])) clean[0].run();
+                });
+            });
         });
     }
 
-    private void detonate(Player p, Location at, double maxR, Set<UUID> hit, List<Player> vs0, Runnable land) {
-        List<Player> vs = pl.viewers(at, 200);
-        for (Player v : vs0) if (!vs.contains(v) && v.isOnline()) vs.add(v);
-        List<LivingEntity> victims = pl.targets(p, at, maxR + 4);
-        double dmg = pl.cfg("damage.nuke", 50);
-        pl.cine.hitStop(victims, 8);
-        pl.cine.impact(vs, victims, Cine.NUKE);
-        pl.cine.letterbox(vs, 70);
-        Draw.ball(at, 3, Draw.WHITE, 4f, 120);
-        SmpGojo.sound(at, "entity.lightning_bolt.thunder", 5f, 0.5f);
-        SmpGojo.sound(at, "block.end_portal.spawn", 5f, 0.6f);
-        int grow = 28;
-        double[] prev = {0};
-        pl.later(8, () -> {
-            SmpGojo.sound(at, "entity.generic.explode", 6f, 0.4f);
-            SmpGojo.sound(at, "entity.wither.death", 4f, 0.6f);
-            pl.cine.shake(vs, 14, 3);
-            pl.repeat(1, grow + 24, i -> {
-                if (i < grow) {
-                    double r = maxR * Math.sqrt((i + 1) / (double) grow);
-                    Draw.sphere(at, r, Draw.PURPLE, 4.5f, (int) Math.min(300, 50 + r * 10));
-                    Draw.sphere(at, r * 0.9, Draw.PINK, 3f, (int) Math.min(120, 20 + r * 4));
-                    Draw.ball(at, r * 0.5, Draw.WHITE, 3f, 40);
-                    Draw.fx(at, Particle.END_ROD, 40, r * 0.5, 0.25);
-                    pl.ruin.carve(at, r, prev[0], 0.004, null, null, 70);
-                    prev[0] = Math.max(0, r - 0.5);
-                    for (LivingEntity le : pl.targets(p, at, r)) {
-                        if (!hit.add(le.getUniqueId())) continue;
-                        pl.hit(p, le, dmg, "nuke");
-                        Vector push = le.getLocation().toVector().subtract(at.toVector());
-                        if (push.lengthSquared() < 0.01) push = new Vector(0, 1, 0);
-                        le.setVelocity(push.normalize().multiply(3).setY(1.4));
-                    }
-                    if (i % 5 == 0) SmpGojo.sound(at, "entity.generic.explode", 5f, 0.4f + i / 50f);
-                } else {
-                    int k = i - grow;
-                    double r = maxR * (1 - k / 24.0);
-                    if (r > 1) Draw.sphere(at, r, Draw.PURPLE, 3f, (int) Math.min(200, 30 + r * 6));
-                    Draw.fx(at, Particle.CAMPFIRE_SIGNAL_SMOKE, 8, maxR * 0.4, 0.05);
-                }
-            }, () -> {
-                pl.ruin.shockwave(at, maxR + 14, 16, 0.8);
-                land.run();
-                pl.pending.remove(land);
-            });
-        });
+    /** Tout ce qui est dans la colonne est touché ; les objets au sol disparaissent. */
+    private void zap(Player p, Location ground, double r, double bottomY, double topY, double dmg, Set<UUID> hit) {
+        double cy = (bottomY + topY) / 2, half = (topY - bottomY) / 2 + 2;
+        Location c = new Location(ground.getWorld(), ground.getX(), cy, ground.getZ());
+        for (Entity e : ground.getWorld().getNearbyEntities(c, r, half, r)) {
+            double dx = e.getLocation().getX() - ground.getX(), dz = e.getLocation().getZ() - ground.getZ();
+            if (dx * dx + dz * dz > r * r) continue;
+            if (e instanceof Item) {
+                e.remove();
+                continue;
+            }
+            if (!(e instanceof LivingEntity le) || !pl.valid(p, le)) continue;
+            if (hit.add(le.getUniqueId())) {
+                pl.hit(p, le, dmg, "nuke");
+                Draw.fx(le.getLocation().add(0, 1, 0), Particle.REVERSE_PORTAL, 60, 0.5, 0.5);
+            } else if (pl.cine.now() % 10 == 0) {
+                pl.hit(p, le, dmg * 0.25, "nuke");
+            }
+            le.setVelocity(new Vector(0, -0.6, 0));
+        }
     }
 
     // ================================================================= Sphère de l'infini

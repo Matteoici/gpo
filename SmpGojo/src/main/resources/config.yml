@@ -8,8 +8,6 @@
 cinematic:
   # images d'impact plein écran (flashs noir / blanc / couleur)
   impact-frames: true
-  # bandes noires de cinéma pendant les incantations
-  letterbox: true
   # tremblements de caméra
   shake: true
 
@@ -57,7 +55,7 @@ damage:
   bleu: 5
   rouge: 14
   violet: 35
-  nuke: 50
+  nuke: 80
   demantelement: 8
   # Clivage : base + (pourcentage x vie max de la cible)
   clivage-base: 8
@@ -90,8 +88,16 @@ rouge:
 violet:
   radius: 3.6
   ticks: 50
+# Violet creux 200 % : une colonne de lumière tombe du ciel et efface tout
 nuke:
-  radius: 20
+  # rayon de la colonne (le trou fera cette taille)
+  radius: 18
+  # hauteur du vortex au-dessus du sol
+  sky-height: 70
+  # profondeur du trou sous le sol
+  depth: 30
+  # durée de la colonne (ticks, 20 = 1 s)
+  hold-ticks: 60
   range: 140
 domain:
   radius: 13
