@@ -148,7 +148,7 @@ stall:
   private-off: "<yellow>Ton stand est maintenant ouvert au public."
   mannequin-outside: "<red>Mets-toi à l'intérieur de ton stand, là où ton mannequin doit se tenir."
   mannequin-off: "<yellow>Mannequin désactivé. <gray>(/marche mannequin pour le remettre)"
-  mannequin-placed: "<green>Ton mannequin se tiendra ici quand tu n'es pas dans ton stand. <gray>(clic droit dessus = ton catalogue)"
+  mannequin-placed: "<green>Ton mannequin se tiendra ici quand tu es déconnecté ou loin de ton stand (100 blocs). <gray>(clic droit dessus = ton catalogue)"
   trusted: "<green><white><player></white> peut maintenant construire dans ton stand."
   untrusted: "<yellow><white><player></white> ne peut plus construire dans ton stand."
   auto-renew-on: "<green>Renouvellement automatique activé."

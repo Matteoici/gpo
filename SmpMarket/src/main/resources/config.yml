@@ -85,6 +85,8 @@ upgrades:
 # Mannequin du locataire (son skin) quand il n'est pas dans son stand
 mannequins:
   enabled: true
+  # le mannequin apparaît quand le locataire est déconnecté ou à plus de X blocs de son stand
+  owner-distance: 100
 
 # ---------------------------------------------------------------- Personnalisation des stands (par le locataire)
 # Menu : /marche -> Ma boutique -> Personnaliser

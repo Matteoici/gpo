@@ -38,6 +38,7 @@ public final class Settings {
     public final double showcaseBasePrice, showcasePriceGrowth, catalogBasePrice, catalogPriceGrowth;
     public final int maxExtraShowcases, maxCatalogSlots;
     public final boolean mannequins, privateAllowed;
+    public final double mannequinDistance;
 
     Settings(FileConfiguration c) {
         currency = c.getString("currency-symbol", "$");
@@ -81,6 +82,7 @@ public final class Settings {
         catalogPriceGrowth = Math.max(1, c.getDouble("upgrades.catalog.price-growth", 1.4));
         maxCatalogSlots = Math.max(0, c.getInt("upgrades.catalog.max-slots", 21));
         mannequins = c.getBoolean("mannequins.enabled", true);
+        mannequinDistance = Math.max(0, c.getDouble("mannequins.owner-distance", 100));
         privateAllowed = c.getBoolean("protection.allow-private-stalls", true);
     }
 

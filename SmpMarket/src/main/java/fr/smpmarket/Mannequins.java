@@ -29,7 +29,13 @@ public final class Mannequins {
     private boolean wanted(Stall st) {
         if (!plugin.settings().mannequins || !st.isRented() || !st.mannequin || st.npcSpot == null) return false;
         Player owner = Bukkit.getPlayer(st.owner);
-        return owner == null || !st.region.contains(owner.getLocation());
+        if (owner == null) return true;
+        // le locataire est loin de son stand (ou dans un autre monde) : son mannequin le remplace
+        World w = st.region.bukkitWorld();
+        if (w == null || owner.getWorld() != w) return true;
+        double dx = owner.getLocation().getX() - st.npcSpot[0], dz = owner.getLocation().getZ() - st.npcSpot[2];
+        double d = plugin.settings().mannequinDistance;
+        return dx * dx + dz * dz > d * d;
     }
 
     /**
