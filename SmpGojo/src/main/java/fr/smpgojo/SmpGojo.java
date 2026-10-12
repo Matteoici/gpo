@@ -566,9 +566,9 @@ public final class SmpGojo extends JavaPlugin implements Listener {
     /** Envoie le pack de sons (si configuré) à chaque connexion. */
     @EventHandler
     public void onJoin(org.bukkit.event.player.PlayerJoinEvent e) {
-        String url = getConfig().getString("resource-pack.url", "");
+        String url = getConfig().getString("resource-pack.url", "https://download.mc-packs.net/pack/9e1c331857ad36a02660314a7f8e898fc64dcc23.zip");
         if (url == null || url.isBlank()) return;
-        String sha = getConfig().getString("resource-pack.sha1", "");
+        String sha = getConfig().getString("resource-pack.sha1", "9e1c331857ad36a02660314a7f8e898fc64dcc23");
         byte[] hash = null;
         if (sha != null && sha.matches("[0-9a-fA-F]{40}")) {
             hash = new byte[20];

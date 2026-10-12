@@ -243,7 +243,7 @@ bombes:
 # Mets ce zip en ligne (par ex. sur mc-packs.net), colle le lien direct et son SHA-1 ici :
 # le plugin l'envoie à chaque joueur qui se connecte.
 resource-pack:
-  url: ""
-  sha1: ""
+  url: "https://download.mc-packs.net/pack/9e1c331857ad36a02660314a7f8e898fc64dcc23.zip"
+  sha1: "9e1c331857ad36a02660314a7f8e898fc64dcc23"
   # true = les joueurs qui refusent le pack sont déconnectés
   required: false
