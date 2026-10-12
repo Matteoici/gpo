@@ -328,8 +328,8 @@ final class Gojo {
     // ================================================================= Violet creux 200 %
 
     void nuke(Player p) {
-        Location target = pl.aimPoint(p, pl.cfg("nuke.range", 140));
-        List<Player> vs = pl.viewers(p.getLocation(), 250);
+        Location target = pl.aimPoint(p, pl.cfg("nuke.range", 300));
+        List<Player> vs = pl.viewers(p.getLocation(), 700);
         UUID id = p.getUniqueId();
         pl.noFall.add(id);
         boolean couldFly = p.getAllowFlight();
@@ -382,18 +382,20 @@ final class Gojo {
     }
 
     /**
-     * Le vrai 200 % : la sphère monte dans le ciel, un vortex violet se forme au-dessus de la cible,
-     * puis une colonne de lumière géante tombe et réduit tout à néant. Il ne reste qu'un trou parfaitement rond.
+     * Le vrai 200 % : la sphère monte dans le ciel, un vortex violet géant se forme au-dessus de la cible,
+     * puis une colonne de lumière de plusieurs centaines de blocs tombe et réduit tout à néant.
+     * Il ne reste qu'un trou parfaitement rond, qui se reconstruit tout seul plus tard.
      */
     private void skyBeam(Player p, Location aimed, List<Player> vs0, Runnable land) {
         World w = aimed.getWorld();
         Block g = Ruin.surface(w, aimed.getBlockX(), aimed.getBlockY(), aimed.getBlockZ());
         Location ground = g != null ? g.getLocation().add(0.5, 1, 0.5) : aimed.clone();
-        double R = pl.cfg("nuke.radius", 22);
-        int skyH = pl.cfgi("nuke.sky-height", 70), depth = pl.cfgi("nuke.depth", 40);
-        double dmg = pl.cfg("damage.nuke", 80);
+        double R = pl.cfg("nuke.radius", 220);
+        int depth = pl.cfgi("nuke.depth", 40);
+        int skyH = Math.max(40, Math.min(pl.cfgi("nuke.sky-height", 200), w.getMaxHeight() - 4 - ground.getBlockY()));
+        double dmg = pl.cfg("damage.nuke", 200);
         Location sky = ground.clone().add(0, skyH, 0);
-        List<Player> vs = pl.viewers(ground, 320);
+        List<Player> vs = pl.viewers(ground, R + 400);
         for (Player v : vs0) if (!vs.contains(v) && v.isOnline()) vs.add(v);
 
         // 1) la sphère violette part dans le ciel
@@ -403,53 +405,62 @@ final class Gojo {
         SmpGojo.sound(from, "entity.warden.sonic_boom", 5f, 0.4f);
         SmpGojo.sound(from, "entity.wither.spawn", 3f, 1.4f);
         Location orb = from.clone();
-        int travel = 16;
+        int travel = Math.max(16, (int) (from.distance(sky) / 7));
         Vector step = sky.toVector().subtract(orb.toVector()).multiply(1.0 / travel);
         pl.repeat(1, travel, i -> {
             orb.add(step);
-            Draw.sphere(orb, 3.5, Draw.PURPLE, 4f, 70);
-            Draw.ball(orb, 1.6, Draw.WHITE, 2.5f, 25);
-            Draw.fx(orb, Particle.REVERSE_PORTAL, 30, 1.5, 0.1);
-            if (i % 3 == 0) SmpGojo.sound(orb, "entity.ender_dragon.flap", 5f, 0.4f);
+            Draw.sphere(orb, 4, Draw.PURPLE, 4f, 80);
+            Draw.ball(orb, 2, Draw.WHITE, 3f, 30);
+            Draw.fx(orb, Particle.REVERSE_PORTAL, 40, 2, 0.1);
+            if (i % 3 == 0) SmpGojo.sound(orb, "entity.ender_dragon.flap", 6f, 0.4f);
         }, () -> vortex(p, ground, sky, R, skyH, depth, dmg, vs, land));
     }
 
-    /** 2) Le vortex dans les nuages. */
+    /** 2) Le vortex dans les nuages : il s'étend sur des centaines de blocs. */
     private void vortex(Player p, Location ground, Location sky, double R, int skyH, int depth, double dmg, List<Player> vs, Runnable land) {
-        SmpGojo.sound(sky, "block.end_portal.spawn", 8f, 0.5f);
-        SmpGojo.sound(ground, "entity.lightning_bolt.thunder", 8f, 0.5f);
-        int ticks = 40;
+        SmpGojo.sound(sky, "block.end_portal.spawn", 10f, 0.5f);
+        SmpGojo.sound(ground, "entity.lightning_bolt.thunder", 10f, 0.5f);
+        int ticks = pl.cfgi("nuke.vortex-ticks", 60);
         ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        double maxOuter = Math.min(R * 1.8, 360);
         pl.repeat(1, ticks, i -> {
             double grow = (i + 1) / (double) ticks;
-            double outer = R * (0.8 + grow * 1.4);
-            for (int arm = 0; arm < 5; arm++) {
-                for (double t = 0.08; t <= 1; t += 0.06) {
-                    double a = arm * Math.PI * 2 / 5 + i * 0.16 + t * 3.2;
+            double outer = Math.max(20, maxOuter * (0.3 + 0.7 * grow));
+            double stepT = Math.max(0.004, 2.5 / outer);
+            for (int arm = 0; arm < 6; arm++) {
+                for (double t = 0.04; t <= 1; t += stepT) {
+                    double a = arm * Math.PI * 2 / 6 + i * 0.09 + t * 4;
                     double rr = outer * t;
-                    Location l = sky.clone().add(Math.cos(a) * rr, -t * 2 + rnd.nextDouble(-0.6, 0.6), Math.sin(a) * rr);
-                    Draw.dust(l, t < 0.35 ? Draw.WHITE : t < 0.65 ? Draw.PINK : Draw.PURPLE, (float) (3.5 - t * 1.5));
-                    if (rnd.nextInt(5) == 0) Draw.fx(l, Particle.CLOUD, 1, 0.5, 0.02);
+                    Location l = sky.clone().add(Math.cos(a) * rr, -t * outer * 0.04 + rnd.nextDouble(-1, 1), Math.sin(a) * rr);
+                    Draw.dust(l, t < 0.25 ? Draw.WHITE : t < 0.55 ? Draw.PINK : Draw.PURPLE, (float) (4 - t * 1.5));
+                    if (rnd.nextInt(8) == 0) Draw.fx(l, Particle.CLOUD, 1, 1, 0.02);
                 }
             }
-            Draw.ball(sky, 1 + grow * R * 0.35, Draw.WHITE, 4f, 40);
-            Draw.sphere(sky, 1.5 + grow * R * 0.45, Draw.PINK, 3.5f, 40);
-            Draw.fx(sky, Particle.END_ROD, 20, R * 0.5 * grow, 0.1);
+            Draw.ball(sky, 2 + grow * Math.min(40, R * 0.18), Draw.WHITE, 4f, 120);
+            Draw.sphere(sky, 3 + grow * Math.min(55, R * 0.25), Draw.PINK, 4f, 120);
+            Draw.fx(sky, Particle.END_ROD, 40, Math.min(40, R * 0.2) * grow, 0.2);
             // la zone visée s'éclaire, le sol tremble
-            if (i % 2 == 0) Draw.ring(ground.clone().add(0, 0.3, 0), R, Draw.PURPLE, 2.5f, (int) (R * 4));
+            if (i % 2 == 0) Draw.ring(ground.clone().add(0, 0.5, 0), R, Draw.PURPLE, 4f, (int) Math.min(700, R * 4));
             if (i % 8 == 0) {
-                SmpGojo.sound(sky, "entity.lightning_bolt.thunder", 6f, 0.4f + rnd.nextFloat() * 0.3f);
+                SmpGojo.sound(sky, "entity.lightning_bolt.thunder", 10f, 0.4f + rnd.nextFloat() * 0.3f);
                 pl.cine.shake(vs, 1, 1);
-                pl.ruin.pop(ground, R, 16, 0.4);
+                for (int k = 0; k < 4; k++) {
+                    double a = rnd.nextDouble() * Math.PI * 2, rr = rnd.nextDouble() * R;
+                    pl.ruin.pop(ground.clone().add(Math.cos(a) * rr, 0, Math.sin(a) * rr), 3, 8, 0.5);
+                }
+            }
+            if (i % 12 == 0 && i > 0) {
+                double a = rnd.nextDouble() * Math.PI * 2, rr = rnd.nextDouble() * R;
+                ground.getWorld().strikeLightningEffect(ground.clone().add(Math.cos(a) * rr, 0, Math.sin(a) * rr));
             }
             if (i == ticks / 2) pl.cine.impact(vs, null, Cine.FLASH);
         }, () -> fall(p, ground, sky, R, skyH, depth, dmg, vs, land));
     }
 
-    /** 3) La colonne tombe, 4) écran blanc, 5) elle reste, 6) elle s'éteint : un trou parfait. */
+    /** 3) La colonne tombe, 4) écran blanc, 5) tout est effacé, 6) elle s'éteint : un trou parfait. */
     private void fall(Player p, Location ground, Location sky, double R, int skyH, int depth, double dmg, List<Player> vs, Runnable land) {
         World w = ground.getWorld();
-        Beam beam = new Beam(pl, sky);
+        Beam beam = new Beam(pl, sky, R);
         Runnable[] clean = new Runnable[1];
         clean[0] = () -> {
             beam.remove();
@@ -459,75 +470,92 @@ final class Gojo {
         };
         pl.pending.add(clean[0]);
         Set<UUID> hit = new HashSet<>();
-        int total = skyH + depth;
-        int descend = 14;
-        int[] erased = {sky.getBlockY() + 1};
-        SmpGojo.sound(sky, "entity.warden.sonic_boom", 8f, 0.4f);
-        SmpGojo.sound(sky, "item.trident.thunder", 8f, 0.5f);
+        int bottomY = ground.getBlockY() - depth;
+        double total = sky.getY() - bottomY;
+        int descend = 20;
+        SmpGojo.sound(sky, "entity.warden.sonic_boom", 10f, 0.4f);
+        SmpGojo.sound(sky, "item.trident.thunder", 10f, 0.5f);
         pl.repeat(1, descend, i -> {
-            double prog = Math.pow((i + 1) / (double) descend, 1.4);
+            double prog = Math.pow((i + 1) / (double) descend, 1.5);
             double h = total * prog;
-            double r = R * (0.55 + 0.45 * prog);
+            double r = R * (0.35 + 0.65 * prog);
             beam.shape(r, h, 1);
-            int bottom = (int) Math.floor(sky.getY() - h);
-            for (int y = erased[0] - 1; y >= bottom; y--) pl.ruin.carveLayer(w, ground.getX(), ground.getZ(), y, R, 0.003);
-            erased[0] = Math.min(erased[0], bottom);
-            zap(p, ground, R, bottom, sky.getY(), dmg, hit);
-            Draw.fx(sky.clone().add(0, -h, 0), Particle.END_ROD, 40, r * 0.5, 0.3);
+            if (i % 2 == 0) zap(p, ground, r, sky.getY() - h, sky.getY(), dmg, hit);
+            Draw.fx(sky.clone().add(0, -h, 0), Particle.END_ROD, 60, Math.min(40, r * 0.4), 0.4);
         }, () -> {
-            // impact : tout devient blanc
-            List<Player> all = pl.viewers(ground, 400);
+            // impact : tout devient blanc, très loin
+            List<Player> all = pl.viewers(ground, R + 500);
             for (Player v : vs) if (!all.contains(v) && v.isOnline()) all.add(v);
-            pl.cine.impact(all, null, new Cine.Frame[]{Cine.f(255, Draw.WHITE, 6), Cine.f(235, Draw.WHITE, 3), Cine.f(210, Draw.PINK, 2),
-                    Cine.f(200, Draw.WHITE, 3), Cine.f(160, Draw.WHITE, 3), Cine.f(120, Draw.PINK, 3), Cine.f(80, Draw.WHITE, 3),
-                    Cine.f(40, Draw.WHITE, 3)});
-            pl.cine.shake(all, 20, 2);
-            SmpGojo.sound(ground, "entity.generic.explode", 10f, 0.4f);
-            SmpGojo.sound(ground, "entity.wither.death", 8f, 0.5f);
-            SmpGojo.sound(ground, "block.beacon.power_select", 8f, 0.5f);
+            pl.cine.impact(all, null, new Cine.Frame[]{Cine.f(255, Draw.WHITE, 10), Cine.f(240, Draw.WHITE, 4), Cine.f(220, Draw.PINK, 3),
+                    Cine.f(210, Draw.WHITE, 4), Cine.f(180, Draw.WHITE, 4), Cine.f(150, Draw.PINK, 4), Cine.f(110, Draw.WHITE, 4),
+                    Cine.f(70, Draw.WHITE, 4), Cine.f(35, Draw.WHITE, 4)});
+            pl.cine.shake(all, 40, 2);
+            for (int k = 0; k < 4; k++) {
+                int kk = k;
+                pl.later(k * 6L, () -> {
+                    SmpGojo.sound(ground, "entity.generic.explode", 10f, 0.4f + kk * 0.05f);
+                    SmpGojo.sound(ground, "entity.lightning_bolt.thunder", 10f, 0.5f);
+                });
+            }
+            SmpGojo.sound(ground, "entity.wither.death", 10f, 0.5f);
+            SmpGojo.sound(ground, "block.beacon.power_select", 10f, 0.5f);
             beam.shape(R, total, 4);
-            pl.ruin.shockwave(ground, R + 24, 22, 1.0);
-            pl.ruin.shatter(ground, Math.min(30, R + 12));
+            // le néant : le cylindre entier est effacé, chunk par chunk depuis le centre
+            MegaHole hole = pl.ruin.mega(w, ground.getX(), ground.getZ(), R, bottomY, pl.cfgi("nuke.restore-seconds", 180));
+            int cpt = Math.max(1, pl.cfgi("nuke.chunks-per-tick", 4));
+            int eraseTicks = hole == null ? 0 : hole.chunkCount() / cpt + 20;
+            int hold = Math.max(pl.cfgi("nuke.hold-ticks", 60), eraseTicks);
+            pl.ruin.shockwave(ground, R + 40, 30, 1.0);
             ThreadLocalRandom r0 = ThreadLocalRandom.current();
-            int cracks = pl.cfgi("nuke.cracks", 12);
-            for (int k = 0; k < cracks; k++) {
-                double a = k * Math.PI * 2 / cracks + r0.nextDouble(-0.2, 0.2);
-                pl.later(k, () -> pl.ruin.crack(ground, a, R, R * (1.2 + r0.nextDouble()), false));
-            }
-            // le bord du trou est arraché de façon irrégulière
-            for (int k = 0; k < 10; k++) {
-                double a = r0.nextDouble() * Math.PI * 2;
-                Location edge = ground.clone().add(Math.cos(a) * R, -1, Math.sin(a) * R);
-                pl.later(4 + k, () -> pl.ruin.crater(edge, 3 + r0.nextDouble() * 3, 0.15, 0, false));
-            }
-            pl.ruin.smoke(ground.clone().add(0, 2, 0), R * 0.8, 200);
-            int hold = pl.cfgi("nuke.hold-ticks", 60);
+            // fissures géantes autour du trou, et un bord arraché de façon irrégulière (une fois le trou creusé)
+            pl.later(eraseTicks, () -> {
+                int cracks = pl.cfgi("nuke.cracks", 16);
+                for (int k = 0; k < cracks; k++) {
+                    double a = k * Math.PI * 2 / cracks + r0.nextDouble(-0.15, 0.15);
+                    pl.later(k * 2L, () -> pl.ruin.crack(ground, a, R, Math.min(160, R * (0.3 + r0.nextDouble() * 0.5)), false));
+                }
+                int bites = (int) Math.min(24, 6 + R / 15);
+                for (int k = 0; k < bites; k++) {
+                    double a = r0.nextDouble() * Math.PI * 2;
+                    double br = Math.max(3, Math.min(20, R * (0.04 + r0.nextDouble() * 0.05)));
+                    Location edge = ground.clone().add(Math.cos(a) * R, -1, Math.sin(a) * R);
+                    pl.later(4L + k * 3L, () -> pl.ruin.crater(edge, br, 0.12, 2, false));
+                }
+                if (R <= 30) pl.ruin.shatter(ground, R + 12);
+            });
+            pl.ruin.smoke(ground.clone().add(0, 4, 0), Math.min(R * 0.6, 80), hold + 200);
             ThreadLocalRandom rnd = ThreadLocalRandom.current();
+            int streaks = (int) Math.min(80, 14 + R / 4);
             pl.repeat(1, hold, i -> {
-                double r = R * (1 + 0.05 * Math.sin(i * 0.7));
-                if (i % 2 == 0) beam.shape(r, total, 2);
-                zap(p, ground, R + 0.5, ground.getBlockY() - depth, sky.getY(), dmg, hit);
+                double r = R * (1 + 0.03 * Math.sin(i * 0.6));
+                if (i % 3 == 0) beam.shape(r, total, 3);
+                if (i % 4 == 0) zap(p, ground, R + 0.5, bottomY, sky.getY(), dmg, hit);
                 // traînées de lumière qui tombent dans la colonne
-                for (int k = 0; k < 14; k++) {
+                for (int k = 0; k < streaks; k++) {
                     double a = rnd.nextDouble() * Math.PI * 2, rr = Math.sqrt(rnd.nextDouble()) * R;
                     Location l = ground.clone().add(Math.cos(a) * rr, rnd.nextDouble(0, skyH), Math.sin(a) * rr);
-                    w.spawnParticle(Particle.END_ROD, l, 0, 0, -1, 0, 1.6, null, true);
+                    w.spawnParticle(Particle.END_ROD, l, 0, 0, -1, 0, 2.5, null, true);
                 }
-                // anneau lumineux au sol et vent vers l'extérieur
-                Draw.ring(ground.clone().add(0, 0.4, 0), R + 0.6, Draw.PINK, 3f, (int) (R * 5));
-                Draw.ring(ground.clone().add(0, 1.5, 0), R + 1.2, Draw.PURPLE, 2.5f, (int) (R * 3));
-                for (LivingEntity le : pl.targets(p, ground, R + 10)) {
-                    Vector out = le.getLocation().toVector().subtract(ground.toVector()).setY(0);
-                    if (out.lengthSquared() > 0.01) le.setVelocity(le.getVelocity().add(out.normalize().multiply(0.15)));
+                // anneau lumineux au sol
+                if (i % 2 == 0) {
+                    Draw.ring(ground.clone().add(0, 0.5, 0), R + 0.6, Draw.PINK, 4f, (int) Math.min(800, R * 5));
+                    Draw.ring(ground.clone().add(0, 2, 0), R + 1.5, Draw.PURPLE, 3f, (int) Math.min(500, R * 3));
                 }
-                if (i % 10 == 0) SmpGojo.sound(ground, "block.beacon.ambient", 8f, 0.5f);
+                // le souffle repousse tout autour
+                if (i % 5 == 0) {
+                    for (LivingEntity le : pl.targets(p, ground, R + 40)) {
+                        Vector out = le.getLocation().toVector().subtract(ground.toVector()).setY(0);
+                        if (out.lengthSquared() > 0.01) le.setVelocity(le.getVelocity().add(out.normalize().multiply(0.5).setY(0.1)));
+                    }
+                }
+                if (i % 10 == 0) SmpGojo.sound(ground, "block.beacon.ambient", 10f, 0.5f);
+                if (i % 20 == 0) SmpGojo.sound(ground, "entity.generic.explode", 10f, 0.4f);
                 if (i % 15 == 0) pl.cine.shake(all, 1, 1);
             }, () -> {
                 // la colonne s'amincit et disparaît
-                beam.shape(0.01, total, 18);
-                SmpGojo.sound(ground, "block.beacon.deactivate", 8f, 0.5f);
-                pl.repeat(2, 12, i -> Draw.fx(ground.clone().add(0, 1, 0), Particle.CAMPFIRE_SIGNAL_SMOKE, 12, R * 0.6, 0.03), null);
-                pl.later(20, () -> {
+                beam.shape(0.01, total, 25);
+                SmpGojo.sound(ground, "block.beacon.deactivate", 10f, 0.5f);
+                pl.later(30, () -> {
                     if (pl.pending.contains(clean[0])) clean[0].run();
                 });
             });
@@ -549,7 +577,7 @@ final class Gojo {
             if (hit.add(le.getUniqueId())) {
                 pl.hit(p, le, dmg, "nuke");
                 Draw.fx(le.getLocation().add(0, 1, 0), Particle.REVERSE_PORTAL, 60, 0.5, 0.5);
-            } else if (pl.cine.now() % 10 == 0) {
+            } else {
                 pl.hit(p, le, dmg * 0.25, "nuke");
             }
             le.setVelocity(new Vector(0, -0.6, 0));

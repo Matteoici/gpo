@@ -61,6 +61,8 @@ final class Ruin {
     private final Map<Location, Saved> saved = new HashMap<>();
     private final List<Batch> batches = new ArrayList<>();
     private final List<Debris> debris = new ArrayList<>();
+    private final List<MegaHole> megas = new ArrayList<>();
+    private int megaSeq;
     private int now;
     private boolean dirty;
 
@@ -82,7 +84,7 @@ final class Ruin {
         return spawnR <= 0 || w.getSpawnLocation().distanceSquared(at) > (double) spawnR * spawnR;
     }
 
-    private static boolean breakable(Block b) {
+    static boolean breakable(Block b) {
         Material m = b.getType();
         if (m.isAir() || b.isLiquid() || m.getHardness() < 0) return false;
         switch (m) {
@@ -477,9 +479,25 @@ final class Ruin {
 
     // ================================================================= tick
 
+    /** Commence un trou géant (cylindre). Il s'efface chunk par chunk, puis se reconstruit après "restoreSeconds". */
+    MegaHole mega(World w, double cx, double cz, double r, int bottom, int restoreSeconds) {
+        if (!enabled() || !allowedWorld(w, new Location(w, cx, bottom, cz))) return null;
+        MegaHole h = new MegaHole(pl, w, cx, cz, r, bottom, new java.io.File(pl.getDataFolder(), "mega-" + System.currentTimeMillis() + "-" + (megaSeq++) + ".bin"));
+        h.scheduleRestore(now, Math.max(5, restoreSeconds) * 20);
+        megas.add(h);
+        return h;
+    }
+
     void tick() {
         now++;
         tickDebris();
+        int cpt = pl.getConfig().getInt("nuke.chunks-per-tick", 4);
+        for (java.util.Iterator<MegaHole> it = megas.iterator(); it.hasNext(); ) {
+            MegaHole h = it.next();
+            if (h.erasing()) h.eraseTick(cpt);
+            else h.restoreTick(now, pl.getConfig().getInt("nuke.restore-blocks-per-tick", 40000));
+            if (h.done) it.remove();
+        }
         int budget = pl.getConfig().getInt("restore-blocks-per-tick", 500);
         for (Iterator<Batch> it = batches.iterator(); it.hasNext() && budget > 0; ) {
             Batch b = it.next();
@@ -579,6 +597,7 @@ final class Ruin {
         Hanging h = e.getEntity();
         Block behind = h.getLocation().getBlock().getRelative(h.getAttachedFace());
         if (saved.containsKey(behind.getLocation()) || saved.containsKey(h.getLocation().getBlock().getLocation())) e.setCancelled(true);
+        for (MegaHole m : megas) if (m.contains(h.getLocation())) e.setCancelled(true);
     }
 
     boolean isSaved(Location blockLoc) {
@@ -588,6 +607,8 @@ final class Ruin {
     /** Remet tout de suite tout le terrain. */
     int restoreAll() {
         int n = 0;
+        for (MegaHole m : megas) m.restoreAll();
+        megas.clear();
         List<Location> keys = new ArrayList<>(saved.keySet());
         keys.sort(Comparator.comparingDouble(Location::getY));
         for (Location l : keys) {
@@ -641,6 +662,8 @@ final class Ruin {
 
     /** Au démarrage : remet ce qui n'a pas pu l'être (crash). */
     void recover() {
+        int mega = MegaHole.recover(pl);
+        if (mega > 0) pl.getLogger().info(mega + " blocs d'un trou géant remis en place après un arrêt brutal.");
         File f = file();
         if (!f.exists()) return;
         int n = 0;
