@@ -26,19 +26,19 @@ final class PriceDisplay {
     private PriceDisplay() {
     }
 
-    static void register(SmpShop plugin) {
-        ProtocolLibrary.getProtocolManager().addPacketListener(new PacketAdapter(plugin, ListenerPriority.HIGHEST,
+    static void register(SmpShop shop) {
+        ProtocolLibrary.getProtocolManager().addPacketListener(new PacketAdapter(shop, ListenerPriority.HIGHEST,
                 PacketType.Play.Server.SET_SLOT, PacketType.Play.Server.WINDOW_ITEMS) {
             @Override
             public void onPacketSending(PacketEvent event) {
-                if (!plugin.displayEnabled()) return;
+                if (!shop.displayEnabled()) return;
                 Player p = event.getPlayer();
                 if (p == null || p.getGameMode() == GameMode.CREATIVE) return;
                 try {
                     PacketContainer packet = event.getPacket();
                     if (event.getPacketType() == PacketType.Play.Server.SET_SLOT) {
                         ItemStack it = packet.getItemModifier().read(0);
-                        ItemStack out = decorate(plugin, it);
+                        ItemStack out = decorate(shop, it);
                         if (out != it) {
                             PacketContainer copy = packet.shallowClone();
                             copy.getItemModifier().write(0, out);
@@ -49,7 +49,7 @@ final class PriceDisplay {
                         List<ItemStack> outList = new ArrayList<>(list.size());
                         boolean changed = false;
                         for (ItemStack it : list) {
-                            ItemStack out = decorate(plugin, it);
+                            ItemStack out = decorate(shop, it);
                             if (out != it) changed = true;
                             outList.add(out);
                         }
