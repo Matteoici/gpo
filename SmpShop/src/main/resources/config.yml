@@ -25,8 +25,8 @@ auto-price:
   enabled: true
   craft-factor: 0.9
   smelt-factor: 1.0
-  default: 1
-  # objets qui ne se vendent jamais (créatif, technique). * = n'importe quelle fin / début
+  default: 0.5
+  # objets qui ne se vendent jamais (créatif, technique, villageois...). * = n'importe quelle fin / début
   never-sell:
     - "COMMAND_BLOCK*"
     - "*COMMAND_BLOCK"
@@ -49,11 +49,18 @@ auto-price:
     - DIRT_PATH
     - "TEST_*"
     - PLAYER_HEAD
+    # string infinie + échanges villageois infinis : familles entières à 0
+    - "*_WOOL"
+    - "*_CARPET"
+    - "*_BED"
+    - "*_BANNER"
+    - "*_TERRACOTTA"
+    - "*_HORSE_ARMOR"
 
 # ---------------------------------------------------------------- Vente
 sell:
-  # objets vendus dans /shop : prix de revente = prix d'achat × ce ratio (0.3 = 30 %).
-  # Ainsi /sell reste toujours proportionnel à la boutique. 0 = utiliser worth.yml.
+  # objets vendus dans /shop : la revente ne dépasse jamais prix d'achat × ce ratio (0.3 = 30 %).
+  # Acheter pour revendre ne rapporte donc jamais rien.
   shop-items-ratio: 0.3
   # les objets renommés (clés de caisse, objets spéciaux...) ne se vendent pas
   ignore-named-items: true

@@ -89,7 +89,10 @@ public final class Worth {
         for (var e : buyUnit.entrySet()) {
             Material m = e.getKey();
             if (ratio > 0) {
-                if (p.containsKey(m) || !explicit.contains(m)) p.put(m, Math.floor(e.getValue() * ratio * 100) / 100.0);
+                // plafond : jamais plus de ratio × prix d'achat (un prix plus bas dans worth.yml est gardé)
+                Double cur = p.get(m);
+                double cap = Math.floor(e.getValue() * ratio * 100) / 100.0;
+                if (cur != null && cur > cap) p.put(m, cap);
                 continue;
             }
             Double v = p.get(m);

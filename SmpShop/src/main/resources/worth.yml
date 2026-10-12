@@ -1,152 +1,257 @@
 # =====================================================================
 #  Prix de vente (pour UN objet).
-#  Les objets qui ne sont PAS dans cette liste ont quand même un prix, calculé tout seul
-#  (voir auto-price dans config.yml) : un objet fabriqué vaut un peu moins que ses ingrédients.
-#  Mettre 0 = cet objet ne se vend jamais.
-#  Garde-les toujours PLUS BAS que les prix d'achat de shop.yml (sinon argent infini :
-#  le plugin te prévient dans la console au démarrage).
-#  Après une modification : /shopadmin reload
+#
+#  Règle d'équilibre : plus un objet se farme en AFK, moins il vaut.
+#  Objectif : environ 1 h 30 de vrai jeu (minage, Nether) = un kit PvP (~40 000 $).
+#
+#  ⚠ Ce serveur a les échanges villageois infinis (InstantRestock) et la string infinie
+#  (StringDupersReturn) : les émeraudes sont donc gratuites (le fletcher achète la string).
+#  Tout ce que vendent les villageois / le marchand ambulant vaut 0 ici (ne se vend pas),
+#  sinon ce serait de l'argent infini.
+#
+#  Les objets absents de cette liste ont un prix calculé tout seul (voir auto-price dans config.yml).
+#  0 = ne se vend jamais.   Après une modification : /shopadmin reload
 # =====================================================================
 prices:
-  # ---------------- cultures
-  WHEAT: 5
-  CARROT: 4
-  POTATO: 4
-  BEETROOT: 4
-  SUGAR_CANE: 6
-  MELON_SLICE: 2
-  PUMPKIN: 12
-  CACTUS: 5
-  NETHER_WART: 8
-  COCOA_BEANS: 5
-  SWEET_BERRIES: 2
-  APPLE: 5
-  BAMBOO: 1
-  KELP: 1
-  BROWN_MUSHROOM: 4
-  RED_MUSHROOM: 4
-  CHORUS_FRUIT: 6
-  HONEYCOMB: 20
-  # ---------------- animaux
-  EGG: 2
-  FEATHER: 3
-  LEATHER: 10
-  RABBIT_HIDE: 6
-  WHITE_WOOL: 6
-  BEEF: 2
-  PORKCHOP: 2
-  CHICKEN: 1.5
-  MUTTON: 1.5
-  INK_SAC: 5
-  GLOW_INK_SAC: 15
-  # ---------------- monstres
-  ROTTEN_FLESH: 2
-  BONE: 6
-  STRING: 5
-  SPIDER_EYE: 6
-  GUNPOWDER: 12
-  ENDER_PEARL: 50
-  BLAZE_ROD: 70
-  SLIME_BALL: 15
-  MAGMA_CREAM: 20
-  GHAST_TEAR: 250
-  PHANTOM_MEMBRANE: 40
-  PRISMARINE_SHARD: 8
-  PRISMARINE_CRYSTALS: 10
-  SHULKER_SHELL: 300
-  # ---------------- minerais
-  COAL: 8
-  RAW_COPPER: 6
-  COPPER_INGOT: 8
-  RAW_IRON: 30
-  IRON_INGOT: 35
-  RAW_GOLD: 45
-  GOLD_INGOT: 50
-  GOLD_NUGGET: 5
-  REDSTONE: 4
-  LAPIS_LAZULI: 8
-  QUARTZ: 15
-  AMETHYST_SHARD: 10
-  EMERALD: 150
-  DIAMOND: 500
-  ANCIENT_DEBRIS: 4000
-  NETHERITE_SCRAP: 4000
-  NETHERITE_INGOT: 18000
-  # ---------------- blocs de minerais (= 9 fois le minerai)
-  COAL_BLOCK: 72
-  COPPER_BLOCK: 72
-  IRON_BLOCK: 315
-  GOLD_BLOCK: 450
-  REDSTONE_BLOCK: 36
-  LAPIS_BLOCK: 72
-  EMERALD_BLOCK: 1350
-  DIAMOND_BLOCK: 4500
-  NETHERITE_BLOCK: 162000
-  # ---------------- bois
-  OAK_LOG: 3
-  SPRUCE_LOG: 3
-  BIRCH_LOG: 3
-  JUNGLE_LOG: 3
-  ACACIA_LOG: 3
-  DARK_OAK_LOG: 3
-  MANGROVE_LOG: 3
-  CHERRY_LOG: 3
-  # ---------------- blocs courants (prix bas : ils sont faciles à farmer)
-  STONE: 1
-  COBBLESTONE: 0.5
-  COBBLED_DEEPSLATE: 0.5
-  DEEPSLATE: 1
-  DIRT: 0.5
-  GRASS_BLOCK: 1
-  NETHERRACK: 0.5
-  SAND: 1
-  RED_SAND: 1
-  GRAVEL: 1
-  ANDESITE: 1
-  DIORITE: 1
-  GRANITE: 1
-  TUFF: 1
-  BLACKSTONE: 1
-  BASALT: 1
-  END_STONE: 2
-  ICE: 1
-  SNOWBALL: 0.5
-  CLAY_BALL: 2
-  FLINT: 2
-  OBSIDIAN: 15
-  CRYING_OBSIDIAN: 30
-  GLOWSTONE_DUST: 8
-  SOUL_SAND: 2
-  # ---------------- objets rares (pas fabricables)
-  TOTEM_OF_UNDYING: 2000
-  ELYTRA: 10000
-  NETHER_STAR: 25000
+  # ================================================================ MINAGE ACTIF (ce qui rapporte)
+  DIAMOND: 350
+  DIAMOND_BLOCK: 3150
+  ANCIENT_DEBRIS: 2500
+  NETHERITE_SCRAP: 2500
+  NETHERITE_INGOT: 9000
+  NETHERITE_BLOCK: 81000
+  COAL: 3
+  COAL_BLOCK: 27
+  RAW_COPPER: 1
+  COPPER_INGOT: 1
+  COPPER_BLOCK: 9
+  QUARTZ: 2
+  AMETHYST_SHARD: 1
+
+  # ================================================================ FERMES AFK (très bas)
+  RAW_IRON: 4
+  IRON_INGOT: 5
+  IRON_BLOCK: 45
+  IRON_NUGGET: 0.5
+  RAW_GOLD: 5
+  GOLD_INGOT: 6
+  GOLD_BLOCK: 54
+  GOLD_NUGGET: 0.6
+  SUGAR_CANE: 1
+  KELP: 0.2
+  BAMBOO: 0.2
+  CACTUS: 1
+  BONE: 1
+  BONE_MEAL: 0.3
+  ROTTEN_FLESH: 0.5
+  SPIDER_EYE: 1
+  GUNPOWDER: 2
+  ARROW: 0
+  SLIME_BALL: 2
+  MAGMA_CREAM: 3
+  BLAZE_ROD: 8
+  PHANTOM_MEMBRANE: 5
+  PRISMARINE_SHARD: 1
+  PRISMARINE_CRYSTALS: 2
+  INK_SAC: 1
+  GLOW_INK_SAC: 3
+  FEATHER: 1
+  EGG: 0.5
+  LEATHER: 2
+  RABBIT_HIDE: 1
+  BEEF: 1
+  PORKCHOP: 1
+  CHICKEN: 0.5
+  MUTTON: 0.5
+  SHULKER_SHELL: 30
+  GHAST_TEAR: 50
+
+  # ================================================================ CULTURES (bas)
+  WHEAT: 2
+  CARROT: 1
+  POTATO: 1
+  BEETROOT: 1
+  MELON_SLICE: 0.5
+  PUMPKIN: 3
+  NETHER_WART: 1
+  COCOA_BEANS: 1
+  SWEET_BERRIES: 0.5
+  BROWN_MUSHROOM: 1
+  RED_MUSHROOM: 1
+  CHORUS_FRUIT: 2
+  HONEYCOMB: 5
+
+  # ================================================================ BOIS ET BLOCS COURANTS (presque rien)
+  OAK_LOG: 1
+  SPRUCE_LOG: 1
+  BIRCH_LOG: 1
+  JUNGLE_LOG: 1
+  ACACIA_LOG: 1
+  DARK_OAK_LOG: 1
+  MANGROVE_LOG: 1
+  CHERRY_LOG: 1
+  PALE_OAK_LOG: 1
+  CRIMSON_STEM: 1
+  WARPED_STEM: 1
+  STONE: 0.2
+  DEEPSLATE: 0.2
+  ANDESITE: 0.2
+  DIORITE: 0.2
+  GRANITE: 0.2
+  TUFF: 0.2
+  BLACKSTONE: 0.2
+  SAND: 0.3
+  RED_SAND: 0.3
+  GRAVEL: 0.3
+  END_STONE: 0.5
+  SOUL_SAND: 0.5
+  SOUL_SOIL: 0.5
+  CLAY_BALL: 0.5
+  ICE: 0.2
+  OBSIDIAN: 2
+  CRYING_OBSIDIAN: 3
+  # générateurs infinis : rien
+  COBBLESTONE: 0
+  COBBLED_DEEPSLATE: 0
+  BASALT: 0
+  NETHERRACK: 0
+  DIRT: 0
+  SNOWBALL: 0
+  FLINT: 0
+
+  # ================================================================ RARES (boss, structures)
+  NETHER_STAR: 20000
   DRAGON_EGG: 100000
-  DRAGON_HEAD: 5000
-  TRIDENT: 3000
-  HEART_OF_THE_SEA: 2000
-  NAUTILUS_SHELL: 300
-  ENCHANTED_GOLDEN_APPLE: 5000
-  HEAVY_CORE: 5000
-  ECHO_SHARD: 100
-  SADDLE: 200
-  NAME_TAG: 150
-  ENCHANTED_BOOK: 50
-  EXPERIENCE_BOTTLE: 20
-  DRAGON_BREATH: 50
-  WITHER_SKELETON_SKULL: 1500
-  SKELETON_SKULL: 100
-  ZOMBIE_HEAD: 100
-  CREEPER_HEAD: 300
-  PIGLIN_HEAD: 300
-  SNIFFER_EGG: 2000
-  TURTLE_SCUTE: 50
-  ARMADILLO_SCUTE: 20
-  BREEZE_ROD: 80
-  TRIAL_KEY: 200
-  OMINOUS_TRIAL_KEY: 1000
-  NETHERITE_UPGRADE_SMITHING_TEMPLATE: 3000
-  # ---------------- jamais vendus (0)
+  DRAGON_HEAD: 3000
+  ELYTRA: 8000
+  HEART_OF_THE_SEA: 1500
+  HEAVY_CORE: 3000
+  NETHERITE_UPGRADE_SMITHING_TEMPLATE: 2500
+  ENCHANTED_GOLDEN_APPLE: 2000
+  WITHER_SKELETON_SKULL: 800
+  CREEPER_HEAD: 100
+  PIGLIN_HEAD: 100
+  SKELETON_SKULL: 20
+  ZOMBIE_HEAD: 20
+  SNIFFER_EGG: 500
+  OMINOUS_TRIAL_KEY: 300
+  TRIAL_KEY: 50
+  BREEZE_ROD: 20
+  ECHO_SHARD: 50
+  DRAGON_BREATH: 20
+  TURTLE_SCUTE: 10
+  ARMADILLO_SCUTE: 5
+  # fermes à raid / noyés : bas
+  TOTEM_OF_UNDYING: 300
+  TRIDENT: 500
+
+  # ================================================================ JAMAIS : string infinie (StringDupersReturn)
+  STRING: 0
+  WHITE_WOOL: 0
+  ORANGE_WOOL: 0
+  MAGENTA_WOOL: 0
+  LIGHT_BLUE_WOOL: 0
+  YELLOW_WOOL: 0
+  LIME_WOOL: 0
+  PINK_WOOL: 0
+  GRAY_WOOL: 0
+  LIGHT_GRAY_WOOL: 0
+  CYAN_WOOL: 0
+  PURPLE_WOOL: 0
+  BLUE_WOOL: 0
+  BROWN_WOOL: 0
+  GREEN_WOOL: 0
+  RED_WOOL: 0
+  BLACK_WOOL: 0
+  COBWEB: 0
+  LEAD: 0
+  SCAFFOLDING: 0
+
+  # ================================================================ JAMAIS : vendu par les villageois (échanges infinis)
+  EMERALD: 0
+  EMERALD_BLOCK: 0
+  ENDER_PEARL: 0
+  ENDER_EYE: 0
+  REDSTONE: 0
+  REDSTONE_BLOCK: 0
+  LAPIS_LAZULI: 0
+  LAPIS_BLOCK: 0
+  GLOWSTONE_DUST: 0
+  GLOWSTONE: 0
+  EXPERIENCE_BOTTLE: 0
+  ENCHANTED_BOOK: 0
+  BOOKSHELF: 0
+  BOOK: 0
+  NAME_TAG: 0
+  SADDLE: 0
+  BELL: 0
+  LANTERN: 0
+  GLASS: 0
+  COMPASS: 0
+  CLOCK: 0
+  MAP: 0
+  ITEM_FRAME: 0
+  PAINTING: 0
+  SHEARS: 0
+  SHIELD: 0
+  BOW: 0
+  CROSSBOW: 0
+  TIPPED_ARROW: 0
+  NAUTILUS_SHELL: 0
+  QUARTZ_BLOCK: 0
+  QUARTZ_PILLAR: 0
+  DRIPSTONE_BLOCK: 0
+  POLISHED_ANDESITE: 0
+  POLISHED_DIORITE: 0
+  POLISHED_GRANITE: 0
+  BRICK: 0
+  TERRACOTTA: 0
+  BREAD: 0
+  APPLE: 0
+  COOKIE: 0
+  CAKE: 0
+  PUMPKIN_PIE: 0
+  GOLDEN_CARROT: 0
+  GLISTERING_MELON_SLICE: 0
+  RABBIT_STEW: 0
+  SUSPICIOUS_STEW: 0
+  COOKED_PORKCHOP: 0
+  COOKED_CHICKEN: 0
+  COOKED_BEEF: 0
+  COOKED_MUTTON: 0
+  COOKED_COD: 0
+  COOKED_SALMON: 0
+  BLUE_ICE: 0
+  PACKED_ICE: 0
+  # stuff vendu par l'armurier / l'outilleur / le forgeron d'armes
+  DIAMOND_SWORD: 0
+  DIAMOND_AXE: 0
+  DIAMOND_PICKAXE: 0
+  DIAMOND_SHOVEL: 0
+  DIAMOND_HOE: 0
+  DIAMOND_HELMET: 0
+  DIAMOND_CHESTPLATE: 0
+  DIAMOND_LEGGINGS: 0
+  DIAMOND_BOOTS: 0
+  IRON_SWORD: 0
+  IRON_AXE: 0
+  IRON_PICKAXE: 0
+  IRON_SHOVEL: 0
+  IRON_HOE: 0
+  IRON_HELMET: 0
+  IRON_CHESTPLATE: 0
+  IRON_LEGGINGS: 0
+  IRON_BOOTS: 0
+  CHAINMAIL_HELMET: 0
+  CHAINMAIL_CHESTPLATE: 0
+  CHAINMAIL_LEGGINGS: 0
+  CHAINMAIL_BOOTS: 0
+  LEATHER_HELMET: 0
+  LEATHER_CHESTPLATE: 0
+  LEATHER_LEGGINGS: 0
+  LEATHER_BOOTS: 0
+  LEATHER_HORSE_ARMOR: 0
+  # objets personnels
   PLAYER_HEAD: 0
   WRITTEN_BOOK: 0
   FILLED_MAP: 0
