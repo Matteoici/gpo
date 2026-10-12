@@ -18,10 +18,16 @@ import static fr.smpmarket.Texts.ph;
 public final class StallMenu extends Menu {
 
     private final Stall stall;
+    private final int page;
 
     public StallMenu(SmpMarket plugin, Player viewer, Stall stall) {
+        this(plugin, viewer, stall, 0);
+    }
+
+    public StallMenu(SmpMarket plugin, Player viewer, Stall stall, int page) {
         super(plugin, viewer, 6, plugin.texts().get("gui.stall.title"));
         this.stall = stall;
+        this.page = page;
     }
 
     @Override
@@ -34,14 +40,24 @@ public final class StallMenu extends Menu {
         TagResolver tags = plugin.auctions().stallTags(stall);
         set(4, Items.glow(item(Material.EMERALD, "gui.stall.header", tags, ph("time", Settings.time(stall.leaseEnd - now)),
                 ph("sold", stall.totalSold), ph("revenue", money(stall.totalRevenue)),
-                ph("used", stall.showcases.size()), ph("max", stall.maxShowcases))));
+                ph("used", stall.physicalCount()), ph("max", stall.showcaseLimit()),
+                ph("catalog", stall.virtualCount()), ph("catalog-max", stall.catalogSlots))));
 
-        for (int i = 0; i < Math.min(stall.showcases.size(), 21); i++) {
-            Showcase c = stall.showcases.get(i);
-            button(GRID[i], CatalogMenu.display(this, c, "gui.stall.showcase-lore", ph("price", money(c.price)),
-                    ph("stock", c.stock), ph("sold", c.sold), ph("revenue", money(c.revenue))),
+        int per = 21;
+        int pages = Math.max(1, (stall.showcases.size() + per - 1) / per);
+        int pg = Math.max(0, Math.min(page, pages - 1));
+        for (int i = 0; i < per; i++) {
+            int idx = pg * per + i;
+            if (idx >= stall.showcases.size()) break;
+            Showcase c = stall.showcases.get(idx);
+            button(GRID[i], CatalogMenu.display(this, c, c.virtual ? "gui.stall.catalog-lore" : "gui.stall.showcase-lore",
+                    ph("price", money(c.price)), ph("stock", c.stock), ph("sold", c.sold), ph("revenue", money(c.revenue))),
                     click -> new ShowcaseMenu(plugin, viewer, stall, c).open());
         }
+        if (pg > 0) button(36, item(Material.SPECTRAL_ARROW, "gui.common.previous", ph("page", pg), ph("pages", pages)),
+                c -> new StallMenu(plugin, viewer, stall, pg - 1).open());
+        if (pg < pages - 1) button(44, item(Material.SPECTRAL_ARROW, "gui.common.next", ph("page", pg + 2), ph("pages", pages)),
+                c -> new StallMenu(plugin, viewer, stall, pg + 1).open());
 
         button(46, item(Material.NAME_TAG, "gui.stall.rename", tags), c -> plugin.input().ask(viewer, "input.name", name -> {
             MarketCommand.rename(plugin, viewer, stall, name);
@@ -61,6 +77,76 @@ public final class StallMenu extends Menu {
             MarketCommand.teleport(plugin, viewer, stall);
         });
         set(50, item(Material.BOOK, "gui.stall.howto"));
+
+        // ---- améliorations et options (ligne du bas de la grille)
+        var shops = plugin.shops();
+        var set = plugin.settings();
+        if (stall.extraShowcases < set.maxExtraShowcases) {
+            button(37, item(Material.ITEM_FRAME, "gui.stall.buy-showcase", ph("price", money(shops.nextShowcasePrice(stall))),
+                    ph("max", stall.showcaseLimit()), ph("next", stall.showcaseLimit() + 1)), c -> {
+                shops.buyShowcase(viewer, stall);
+                redraw();
+            });
+        } else {
+            set(37, item(Material.ITEM_FRAME, "gui.stall.showcase-maxed", ph("max", stall.showcaseLimit())));
+        }
+        if (stall.catalogSlots < set.maxCatalogSlots) {
+            button(38, item(Material.WRITABLE_BOOK, "gui.stall.buy-catalog", ph("price", money(shops.nextCatalogPrice(stall))),
+                    ph("max", stall.catalogSlots), ph("next", stall.catalogSlots + 1)), c -> {
+                shops.buyCatalogSlot(viewer, stall);
+                redraw();
+            });
+        } else {
+            set(38, item(Material.WRITABLE_BOOK, "gui.stall.catalog-maxed", ph("max", stall.catalogSlots)));
+        }
+        button(39, item(Material.HOPPER, "gui.stall.add-catalog", ph("used", stall.virtualCount()), ph("max", stall.catalogSlots)),
+                c -> {
+                    if (viewer.getInventory().getItemInMainHand().getType().isAir()) {
+                        t().send(viewer, "showcase.empty-hand");
+                        return;
+                    }
+                    if (stall.virtualCount() >= stall.catalogSlots) {
+                        t().send(viewer, "catalog.no-slot");
+                        return;
+                    }
+                    plugin.input().ask(viewer, "input.catalog-price", text -> {
+                        double price = MarketCommand.parseMoney(text);
+                        if (price > 0) shops.createVirtual(viewer, stall, price);
+                        else t().send(viewer, "error.usage", ph("usage", "un prix, ex. 1500 ou 2k"));
+                        open();
+                    });
+                });
+        if (set.privateAllowed) {
+            button(41, item(stall.privateStall ? Material.IRON_DOOR : Material.OAK_DOOR, "gui.stall.private",
+                    pc("state", t().get(stall.privateStall ? "gui.stall.on" : "gui.stall.off"))), c -> {
+                stall.privateStall = !stall.privateStall;
+                plugin.store().markDirty();
+                t().send(viewer, stall.privateStall ? "stall.private-on" : "stall.private-off");
+                redraw();
+            });
+        }
+        if (set.mannequins) {
+            button(42, item(Material.ARMOR_STAND, "gui.stall.mannequin-spot"), c -> {
+                if (!stall.region.contains(viewer.getLocation().getBlock())) {
+                    t().send(viewer, "stall.mannequin-outside");
+                    return;
+                }
+                var l = viewer.getLocation();
+                stall.npcSpot = new double[]{l.getX(), l.getY(), l.getZ(), l.getYaw()};
+                stall.mannequin = true;
+                plugin.store().markDirty();
+                plugin.mannequins().refresh(stall);
+                t().send(viewer, "stall.mannequin-placed");
+                redraw();
+            });
+            button(43, item(stall.mannequin ? Material.LIME_DYE : Material.GRAY_DYE, "gui.stall.mannequin-toggle",
+                    pc("state", t().get(stall.mannequin ? "gui.stall.on" : "gui.stall.off"))), c -> {
+                stall.mannequin = !stall.mannequin;
+                plugin.store().markDirty();
+                plugin.mannequins().refresh(stall);
+                redraw();
+            });
+        }
         button(52, Items.glow(item(Material.PAINTING, "gui.stall.style")), c -> new StyleMenu(plugin, viewer, stall).open());
         Auction a = stall.auction;
         if (a != null && a.renewal) {

@@ -64,8 +64,8 @@ public final class Shops {
             t().send(p, "showcase.already");
             return;
         }
-        if (st.showcases.size() >= st.maxShowcases) {
-            t().send(p, "showcase.limit", ph("max", st.maxShowcases));
+        if (st.physicalCount() >= st.showcaseLimit()) {
+            t().send(p, "showcase.limit", ph("max", st.showcaseLimit()));
             return;
         }
         Block above = block.getRelative(0, 1, 0);
@@ -94,6 +94,80 @@ public final class Shops {
         plugin.visuals().ensure(st);
         t().send(p, "showcase.created", pc("item", itemName(template)), ph("price", s().money(price)), ph("stock", stock));
         Fx.sound(p, "block.amethyst_block.chime", 1.2f);
+    }
+
+    /** Met l'objet en main en vente au catalogue du stand (sans vitrine dans le monde). */
+    public void createVirtual(Player p, Stall st, double price) {
+        if (!st.isOwner(p.getUniqueId())) {
+            t().send(p, "showcase.not-your-stall");
+            return;
+        }
+        if (st.virtualCount() >= st.catalogSlots) {
+            t().send(p, "catalog.no-slot");
+            return;
+        }
+        if (price < s().minPrice || price > s().maxPrice) {
+            t().send(p, "showcase.bad-price", ph("min", s().money(s().minPrice)), ph("max", s().money(s().maxPrice)));
+            return;
+        }
+        ItemStack hand = p.getInventory().getItemInMainHand();
+        if (hand.getType().isAir()) {
+            t().send(p, "showcase.empty-hand");
+            return;
+        }
+        ItemStack template = hand.clone();
+        template.setAmount(1);
+        int stock = Math.min(hand.getAmount(), s().maxStock);
+        hand.setAmount(hand.getAmount() - stock);
+        p.getInventory().setItemInMainHand(hand.getAmount() <= 0 ? null : hand);
+        Showcase c = Showcase.virtual(UUID.randomUUID(), template, price, stock);
+        st.showcases.add(c);
+        plugin.store().markDirty();
+        plugin.visuals().refreshSign(st);
+        t().send(p, "catalog.created", pc("item", itemName(template)), ph("price", s().money(price)), ph("stock", stock));
+        Fx.sound(p, "block.amethyst_block.chime", 1.2f);
+    }
+
+    // ================================================================= achats d'emplacements
+
+    public double nextShowcasePrice(Stall st) {
+        return Math.round(s().showcaseBasePrice * Math.pow(s().showcasePriceGrowth, st.extraShowcases));
+    }
+
+    public double nextCatalogPrice(Stall st) {
+        return Math.round(s().catalogBasePrice * Math.pow(s().catalogPriceGrowth, st.catalogSlots));
+    }
+
+    public void buyShowcase(Player p, Stall st) {
+        if (st.extraShowcases >= s().maxExtraShowcases) {
+            t().send(p, "upgrade.showcase-max", ph("max", st.showcaseLimit()));
+            return;
+        }
+        double price = nextShowcasePrice(st);
+        if (!plugin.economy().has(p, price) || !plugin.economy().take(p, price)) {
+            t().send(p, "upgrade.no-money", ph("price", s().money(price)));
+            return;
+        }
+        st.extraShowcases++;
+        plugin.store().markDirty();
+        t().send(p, "upgrade.showcase-bought", ph("max", st.showcaseLimit()), ph("price", s().money(price)));
+        Fx.sound(p, "entity.player.levelup", 1.4f);
+    }
+
+    public void buyCatalogSlot(Player p, Stall st) {
+        if (st.catalogSlots >= s().maxCatalogSlots) {
+            t().send(p, "upgrade.catalog-max", ph("max", st.catalogSlots));
+            return;
+        }
+        double price = nextCatalogPrice(st);
+        if (!plugin.economy().has(p, price) || !plugin.economy().take(p, price)) {
+            t().send(p, "upgrade.no-money", ph("price", s().money(price)));
+            return;
+        }
+        st.catalogSlots++;
+        plugin.store().markDirty();
+        t().send(p, "upgrade.catalog-bought", ph("max", st.catalogSlots), ph("price", s().money(price)));
+        Fx.sound(p, "entity.player.levelup", 1.4f);
     }
 
     // ================================================================= stock

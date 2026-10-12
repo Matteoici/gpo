@@ -196,6 +196,11 @@ public final class Auctions {
         st.background = null;
         st.symbol = null;
         st.slogan = null;
+        st.extraShowcases = 0;
+        st.catalogSlots = 0;
+        st.privateStall = false;
+        st.mannequin = true;
+        st.npcSpot = null;
         st.trusted.clear();
         st.totalSold = 0;
         st.totalRevenue = 0;
@@ -224,6 +229,11 @@ public final class Auctions {
         st.background = null;
         st.symbol = null;
         st.slogan = null;
+        st.extraShowcases = 0;
+        st.catalogSlots = 0;
+        st.privateStall = false;
+        st.mannequin = true;
+        st.npcSpot = null;
         st.trusted.clear();
         plugin.store().markDirty();
     }

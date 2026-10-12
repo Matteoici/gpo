@@ -32,6 +32,27 @@ public final class Stall {
     public String background;                              // fond du panneau et des étiquettes
     public String symbol;                                  // symbole devant le nom
     public String slogan;                                  // petite phrase sous le nom
+    public int extraShowcases;                             // vitrines achetées en plus (pour cette location)
+    public int catalogSlots;                               // places de catalogue achetées (pour cette location)
+    public boolean privateStall;                           // seuls le locataire et ses amis peuvent entrer
+    public boolean mannequin = true;                       // afficher son mannequin quand on est absent
+    public double[] npcSpot;                               // x, y, z, yaw du mannequin (null = pas placé)
+
+    public int showcaseLimit() {
+        return maxShowcases + extraShowcases;
+    }
+
+    public int physicalCount() {
+        int n = 0;
+        for (Showcase c : showcases) if (!c.virtual) n++;
+        return n;
+    }
+
+    public int virtualCount() {
+        int n = 0;
+        for (Showcase c : showcases) if (c.virtual) n++;
+        return n;
+    }
     public final Map<UUID, String> trusted = new LinkedHashMap<>();
     public final List<Showcase> showcases = new ArrayList<>();
     public Auction auction;

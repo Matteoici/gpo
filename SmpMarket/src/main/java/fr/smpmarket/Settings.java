@@ -35,6 +35,9 @@ public final class Settings {
     public final int labelWidth;
     public final boolean labelStagger;
     public final boolean labelShortPrices;
+    public final double showcaseBasePrice, showcasePriceGrowth, catalogBasePrice, catalogPriceGrowth;
+    public final int maxExtraShowcases, maxCatalogSlots;
+    public final boolean mannequins, privateAllowed;
 
     Settings(FileConfiguration c) {
         currency = c.getString("currency-symbol", "$");
@@ -71,6 +74,14 @@ public final class Settings {
         labelWidth = Math.max(40, c.getInt("visuals.label-width", 70));
         labelStagger = c.getBoolean("visuals.label-stagger", true);
         labelShortPrices = c.getBoolean("visuals.label-short-prices", true);
+        showcaseBasePrice = Math.max(0, c.getDouble("upgrades.showcase.base-price", 25000));
+        showcasePriceGrowth = Math.max(1, c.getDouble("upgrades.showcase.price-growth", 1.5));
+        maxExtraShowcases = Math.max(0, c.getInt("upgrades.showcase.max-extra", 12));
+        catalogBasePrice = Math.max(0, c.getDouble("upgrades.catalog.base-price", 15000));
+        catalogPriceGrowth = Math.max(1, c.getDouble("upgrades.catalog.price-growth", 1.4));
+        maxCatalogSlots = Math.max(0, c.getInt("upgrades.catalog.max-slots", 21));
+        mannequins = c.getBoolean("mannequins.enabled", true);
+        privateAllowed = c.getBoolean("protection.allow-private-stalls", true);
     }
 
     /** "12 500 $" ou "12 500,50 $". */

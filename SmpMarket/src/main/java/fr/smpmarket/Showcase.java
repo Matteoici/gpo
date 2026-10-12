@@ -16,6 +16,15 @@ public final class Showcase {
     public final int x, y, z;      // bloc support (l'objet flotte au-dessus)
     public long sold;
     public double revenue;
+    /** true = article du catalogue : vendu dans le menu du stand, sans vitrine dans le monde. */
+    public boolean virtual;
+
+    /** Article du catalogue (pas de bloc). */
+    public static Showcase virtual(UUID id, ItemStack template, double price, int stock) {
+        Showcase s = new Showcase(id, template, price, stock, Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE);
+        s.virtual = true;
+        return s;
+    }
 
     public Showcase(UUID id, ItemStack template, double price, int stock, int x, int y, int z) {
         this.id = id;
@@ -32,6 +41,6 @@ public final class Showcase {
     }
 
     public boolean isAt(int bx, int by, int bz) {
-        return x == bx && y == by && z == bz;
+        return !virtual && x == bx && y == by && z == bz;
     }
 }

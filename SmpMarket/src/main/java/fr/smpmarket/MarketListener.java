@@ -158,6 +158,55 @@ final class MarketListener implements Listener {
         e.blockList().removeIf(b -> plugin.shops().stallAt(b) != null);
     }
 
+    // ================================================================= stand privé
+
+    private final java.util.Map<java.util.UUID, Long> privateMsg = new java.util.HashMap<>();
+
+    private boolean blockedFrom(Player p, Stall st) {
+        return st != null && st.privateStall && st.isRented() && !st.canBuild(p.getUniqueId()) && !plugin.isAdminBypass(p);
+    }
+
+    private void warnPrivate(Player p, Stall st) {
+        long now = System.currentTimeMillis();
+        Long last = privateMsg.get(p.getUniqueId());
+        if (last != null && now - last < 3000) return;
+        privateMsg.put(p.getUniqueId(), now);
+        plugin.texts().send(p, "protection.private", ph("shop", st.displayName()));
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onMove(org.bukkit.event.player.PlayerMoveEvent e) {
+        Location to = e.getTo(), from = e.getFrom();
+        if (to.getBlockX() == from.getBlockX() && to.getBlockY() == from.getBlockY() && to.getBlockZ() == from.getBlockZ()) return;
+        if (!plugin.settings().privateAllowed) return;
+        Player p = e.getPlayer();
+        Stall st = plugin.shops().stallAt(to.getBlock());
+        if (!blockedFrom(p, st)) return;
+        if (st.region.contains(from.getBlock())) {
+            // déjà dedans (le stand vient de passer en privé) : on le sort par l'entrée
+            Location ent = st.entrance();
+            if (ent != null) p.teleport(ent);
+        } else {
+            e.setTo(from);
+            org.bukkit.util.Vector back = from.toVector().subtract(to.toVector()).setY(0);
+            if (back.lengthSquared() > 1e-4) p.setVelocity(back.normalize().multiply(0.35).setY(0.1));
+        }
+        warnPrivate(p, st);
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onTeleport(org.bukkit.event.player.PlayerTeleportEvent e) {
+        if (!plugin.settings().privateAllowed) return;
+        var cause = e.getCause();
+        String c = cause.name();
+        if (!c.equals("ENDER_PEARL") && !c.equals("CHORUS_FRUIT") && !c.equals("CONSUMABLE_EFFECT")) return;
+        Stall st = plugin.shops().stallAt(e.getTo().getBlock());
+        if (blockedFrom(e.getPlayer(), st)) {
+            e.setCancelled(true);
+            warnPrivate(e.getPlayer(), st);
+        }
+    }
+
     // ================================================================= chunks
 
     @EventHandler

@@ -22,6 +22,7 @@ public final class SmpMarket extends JavaPlugin {
     private Auctions auctions;
     private Shops shops;
     private Visuals visuals;
+    private Mannequins mannequins;
     private ChatInput input;
     private NamespacedKey key, wandKey;
     /** Sélection de zone des admins : [coin 1, coin 2]. */
@@ -43,6 +44,7 @@ public final class SmpMarket extends JavaPlugin {
         auctions = new Auctions(this);
         shops = new Shops(this);
         visuals = new Visuals(this);
+        mannequins = new Mannequins(this);
         input = new ChatInput(this);
 
         getServer().getPluginManager().registerEvents(new MarketListener(this), this);
@@ -59,6 +61,7 @@ public final class SmpMarket extends JavaPlugin {
         }, 40L, 20L);
         Bukkit.getScheduler().runTaskTimer(this, () -> visuals.spin(40), 40L, 40L);
         Bukkit.getScheduler().runTaskTimer(this, () -> visuals.ensureAll(), 20L, 100L);
+        Bukkit.getScheduler().runTaskTimer(this, () -> mannequins.tick(), 60L, 40L);
         Bukkit.getScheduler().runTaskTimer(this, () -> {
             store.saveIfDirty();
             visuals.prune();
@@ -69,6 +72,7 @@ public final class SmpMarket extends JavaPlugin {
     @Override
     public void onDisable() {
         if (visuals != null) visuals.removeAll();
+        if (mannequins != null) mannequins.removeAll();
         if (store != null) store.save();
     }
 
@@ -124,6 +128,10 @@ public final class SmpMarket extends JavaPlugin {
 
     public Shops shops() {
         return shops;
+    }
+
+    public Mannequins mannequins() {
+        return mannequins;
     }
 
     public Visuals visuals() {

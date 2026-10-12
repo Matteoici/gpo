@@ -89,6 +89,7 @@ public final class Visuals {
             }
         }
         for (Showcase c : st.showcases) {
+            if (c.virtual) continue;
             ShowParts p = shows.get(c.id);
             Location top = c.top(w);
             if ((p == null || !valid(p.item) || !valid(p.label) || !valid(p.hit)) && loaded(top)) {
@@ -113,6 +114,11 @@ public final class Visuals {
 
     private static boolean loaded(Location l) {
         return l.getWorld() != null && l.getWorld().isChunkLoaded(l.getBlockX() >> 4, l.getBlockZ() >> 4);
+    }
+
+    /** Marque une entité comme "cliquer = ouvrir ce stand" (mannequin du locataire). */
+    public void tagTarget(Entity e, String stallId) {
+        tag(e, new Target(stallId, null));
     }
 
     private void tag(Entity e, Target t) {

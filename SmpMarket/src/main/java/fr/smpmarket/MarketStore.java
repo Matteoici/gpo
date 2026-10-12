@@ -140,6 +140,11 @@ public final class MarketStore {
             if (s.background != null) y.set(b + "style.background", s.background);
             if (s.symbol != null) y.set(b + "style.symbol", s.symbol);
             if (s.slogan != null) y.set(b + "style.slogan", s.slogan);
+            if (s.extraShowcases > 0) y.set(b + "extra-showcases", s.extraShowcases);
+            if (s.catalogSlots > 0) y.set(b + "catalog-slots", s.catalogSlots);
+            if (s.privateStall) y.set(b + "private", true);
+            if (!s.mannequin) y.set(b + "mannequin", false);
+            if (s.npcSpot != null) y.set(b + "npc-spot", List.of(s.npcSpot[0], s.npcSpot[1], s.npcSpot[2], s.npcSpot[3]));
             for (Map.Entry<UUID, String> t : s.trusted.entrySet()) y.set(b + "trusted." + t.getKey(), t.getValue());
             y.set(b + "total-sold", s.totalSold);
             y.set(b + "total-revenue", s.totalRevenue);
@@ -148,7 +153,8 @@ public final class MarketStore {
                 y.set(cb + "item", Items.encode(c.template));
                 y.set(cb + "price", c.price);
                 y.set(cb + "stock", c.stock);
-                y.set(cb + "pos", List.of(c.x, c.y, c.z));
+                if (c.virtual) y.set(cb + "virtual", true);
+                else y.set(cb + "pos", List.of(c.x, c.y, c.z));
                 y.set(cb + "sold", c.sold);
                 y.set(cb + "revenue", c.revenue);
             }
@@ -246,6 +252,12 @@ public final class MarketStore {
         s.background = c.getString("style.background");
         s.symbol = c.getString("style.symbol");
         s.slogan = c.getString("style.slogan");
+        s.extraShowcases = c.getInt("extra-showcases");
+        s.catalogSlots = c.getInt("catalog-slots");
+        s.privateStall = c.getBoolean("private");
+        s.mannequin = c.getBoolean("mannequin", true);
+        List<Double> spot = c.getDoubleList("npc-spot");
+        s.npcSpot = spot.size() == 4 ? new double[]{spot.get(0), spot.get(1), spot.get(2), spot.get(3)} : null;
         ConfigurationSection t = c.getConfigurationSection("trusted");
         if (t != null) for (String k : t.getKeys(false)) s.trusted.put(UUID.fromString(k), t.getString(k, "?"));
         s.totalSold = c.getLong("total-sold");
@@ -258,9 +270,14 @@ public final class MarketStore {
                 plugin.getLogger().warning("Vitrine " + k + " du stand " + id + " : objet illisible, ignorée.");
                 continue;
             }
-            List<Integer> pos = x.getIntegerList("pos");
-            Showcase show = new Showcase(UUID.fromString(k), item, x.getDouble("price"), x.getInt("stock"),
-                    pos.get(0), pos.get(1), pos.get(2));
+            Showcase show;
+            if (x.getBoolean("virtual")) {
+                show = Showcase.virtual(UUID.fromString(k), item, x.getDouble("price"), x.getInt("stock"));
+            } else {
+                List<Integer> pos = x.getIntegerList("pos");
+                show = new Showcase(UUID.fromString(k), item, x.getDouble("price"), x.getInt("stock"),
+                        pos.get(0), pos.get(1), pos.get(2));
+            }
             show.sold = x.getLong("sold");
             show.revenue = x.getDouble("revenue");
             s.showcases.add(show);

@@ -46,6 +46,8 @@ shop:
 protection:
   # seul le locataire (et ses amis) peut construire / casser / ouvrir les coffres dans son stand
   protect-stalls: true
+  # le locataire peut rendre son stand privé (personne n'entre à part lui et ses amis)
+  allow-private-stalls: true
   # autorise le locataire à construire dans son stand même si le spawn est protégé (WorldGuard, spawn-protection...)
   override-other-protections: true
 
@@ -65,6 +67,24 @@ visuals:
   label-stagger: true
   # prix courts : 1M $ au lieu de 1 000 000 $
   label-short-prices: true
+
+# ---------------------------------------------------------------- Améliorations achetables par le locataire
+# (valables pour la location en cours, remises à zéro quand le stand change de main)
+upgrades:
+  showcase:
+    # prix de la 1re vitrine en plus, puis × price-growth à chaque achat
+    base-price: 25000
+    price-growth: 1.5
+    max-extra: 12
+  catalog:
+    # objets en vente SANS vitrine (dans le catalogue du stand)
+    base-price: 15000
+    price-growth: 1.4
+    max-slots: 21
+
+# Mannequin du locataire (son skin) quand il n'est pas dans son stand
+mannequins:
+  enabled: true
 
 # ---------------------------------------------------------------- Personnalisation des stands (par le locataire)
 # Menu : /marche -> Ma boutique -> Personnaliser

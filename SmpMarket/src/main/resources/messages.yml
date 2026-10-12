@@ -19,6 +19,7 @@ input:
   bid: "<yellow>Écris le montant de ton offre dans le chat. <gray>(ex. 2500 ou 3k)"
   name: "<yellow>Écris le nom de ta boutique dans le chat (28 caractères max)."
   trust: "<yellow>Écris le pseudo du joueur à ajouter."
+  catalog-price: "<yellow>Écris le prix à l'unité de l'objet que tu as en main. <gray>(ex. 1500 ou 2k)"
   slogan: "<yellow>Écris le slogan de ta boutique dans le chat (32 caractères max). <gray>Ex. : Les meilleurs prix du spawn !"
   search: "<yellow>Écris ce que tu cherches dans le chat (ex. diamant, épée, bûche)."
 
@@ -143,12 +144,17 @@ stall:
   bad-name: "<red>Nom invalide (1 à 28 caractères)."
   bad-slogan: "<red>Slogan trop long (32 caractères max)."
   slogan-set: "<green>Slogan mis à jour."
+  private-on: "<green>Ton stand est maintenant <white>privé</white> : seuls toi et tes amis peuvent y entrer. <gray>Les clients achètent depuis le panneau, ton mannequin ou /marche."
+  private-off: "<yellow>Ton stand est maintenant ouvert au public."
+  mannequin-outside: "<red>Mets-toi à l'intérieur de ton stand, là où ton mannequin doit se tenir."
+  mannequin-placed: "<green>Ton mannequin se tiendra ici quand tu n'es pas dans ton stand. <gray>(clic droit dessus = ton catalogue)"
   trusted: "<green><white><player></white> peut maintenant construire dans ton stand."
   untrusted: "<yellow><white><player></white> ne peut plus construire dans ton stand."
   auto-renew-on: "<green>Renouvellement automatique activé."
   auto-renew-off: "<yellow>Renouvellement automatique désactivé."
 
 protection:
+  private: "<red>Le stand <white><shop></white> est privé. <gray>Achète depuis son panneau ou son mannequin (clic droit)."
   not-yours: "<red>Ce stand ne t'appartient pas."
   container: "<red>Ce coffre appartient au stand de quelqu'un d'autre."
   showcase-block: "<red>Ce bloc porte une vitrine. Retire d'abord la vitrine (clic droit sur l'objet exposé)."
@@ -371,6 +377,7 @@ gui:
         - "<gray>Objets vendus : <white><sold>"
         - "<gray>Recettes : <gold><revenue>"
         - "<gray>Vitrines : <white><used>/<max>"
+        - "<gray>Catalogue : <white><catalog>/<catalog-max>"
     showcase-lore:
       - ""
       - "<gray>Prix : <gold><price>"
@@ -399,6 +406,59 @@ gui:
         - "<gray>3. Vise un bloc (tonneau, dalle...)"
         - "<gray>4. Tape <aqua>/marche vitrine <prix>"
         - "<gray>Le stock = la quantité en main."
+    catalog-lore:
+      - "<light_purple>Catalogue <dark_gray>(sans vitrine)"
+      - "<gray>Prix : <gold><price>"
+      - "<gray>Stock : <white><stock>"
+      - "<gray>Vendus : <white><sold></white> <dark_gray>(<revenue>)"
+      - ""
+      - "<yellow>▶ Clic pour gérer"
+    buy-showcase:
+      name: "<green><b>+1 vitrine <gray>(<next>)"
+      lore:
+        - "<gray>Vitrines actuelles : <white><max>"
+        - "<gray>Prix : <gold><price>"
+        - "<dark_gray>Valable pour cette location."
+        - ""
+        - "<yellow>▶ Clic pour acheter"
+    showcase-maxed:
+      name: "<gray>Vitrines au maximum (<max>)"
+    buy-catalog:
+      name: "<light_purple><b>+1 place de catalogue <gray>(<next>)"
+      lore:
+        - "<gray>Vends des objets sans vitrine :"
+        - "<gray>ils apparaissent dans le catalogue."
+        - "<gray>Places actuelles : <white><max>"
+        - "<gray>Prix : <gold><price>"
+        - ""
+        - "<yellow>▶ Clic pour acheter"
+    catalog-maxed:
+      name: "<gray>Catalogue au maximum (<max>)"
+    add-catalog:
+      name: "<light_purple><b>Mettre l'objet en main au catalogue"
+      lore:
+        - "<gray>Places utilisées : <white><used>/<max>"
+        - "<gray>Le stock = la quantité en main."
+        - "<gray>Aussi : <white>/marche catalogue <prix>"
+        - ""
+        - "<yellow>▶ Clic puis écris le prix"
+    private:
+      name: "<white><b>Stand privé : <state>"
+      lore:
+        - "<gray>Personne d'autre que toi et tes amis"
+        - "<gray>ne peut entrer dans ton stand."
+        - "<gray>Les clients achètent depuis le panneau"
+        - "<gray>ou ton mannequin."
+    mannequin-spot:
+      name: "<white><b>Placer mon mannequin ici"
+      lore:
+        - "<gray>Quand tu n'es pas dans ton stand,"
+        - "<gray>un mannequin avec ton skin le tient"
+        - "<gray>à cet endroit (clic droit = catalogue)."
+        - ""
+        - "<yellow>▶ Mets-toi dans ton stand puis clique"
+    mannequin-toggle:
+      name: "<white><b>Mannequin : <state>"
     style:
       name: "<light_purple><b>✎ Personnaliser mon stand"
       lore:
@@ -487,3 +547,18 @@ gui:
       name: "<green><b>Tout récupérer"
     item-lore: ["", "<yellow>▶ Clic pour récupérer"]
     empty: {name: "<gray>Aucun colis"}
+
+# =====================================================================
+#  Catalogue (objets en vente sans vitrine) et achats d'emplacements
+# =====================================================================
+catalog:
+  no-slot: "<red>Plus de place dans ton catalogue. <gray>Achète une place dans /marche → Ma boutique."
+  created: "<green>Ajouté au catalogue : <white><stock>x <item></white> à <gold><price></gold> pièce. <gray>(visible dans le catalogue du stand, sans vitrine)"
+upgrade:
+  no-money: "<red>Il te faut <white><price></white>."
+  showcase-bought: "<green>Vitrine achetée pour <gold><price></gold> ! <gray>Tu peux maintenant en poser <white><max></white>."
+  showcase-max: "<red>Tu as déjà le maximum de vitrines (<white><max></white>)."
+  catalog-bought: "<green>Place de catalogue achetée pour <gold><price></gold> ! <gray>Places : <white><max></white>."
+  catalog-max: "<red>Ton catalogue est déjà au maximum (<white><max></white> places)."
+mannequin:
+  description: "<gray>Absent · <yellow>clic droit : catalogue"

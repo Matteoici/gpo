@@ -108,6 +108,15 @@ public final class MarketCommand implements TabExecutor {
                 }
                 plugin.shops().create(p, b, price);
             }
+            case "catalogue", "catalog" -> {
+                double price = args.length > 1 ? parseMoney(args[1]) : -1;
+                if (price <= 0) {
+                    t().send(p, "error.usage", ph("usage", "/marche catalogue <prix à l'unité>  (objet en main)"));
+                    return true;
+                }
+                Stall st = myStall(p);
+                if (st != null) plugin.shops().createVirtual(p, st, price);
+            }
             case "gerer", "manage", "boutique" -> {
                 Stall st = myStall(p);
                 if (st != null) new StallMenu(plugin, p, st).open();
