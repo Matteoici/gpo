@@ -157,9 +157,9 @@ final class Yuji {
             Draw.fx(at, Particle.SQUID_INK, 8, 0.3, 0.1);
         }, () -> {
             if (!t.isValid()) return;
-            Vector dir = t.getLocation().toVector().subtract(p.getLocation().toVector()).setY(0);
-            if (dir.lengthSquared() < 0.01) dir = p.getLocation().getDirection().setY(0);
-            dir.normalize();
+            Vector raw = t.getLocation().toVector().subtract(p.getLocation().toVector()).setY(0);
+            if (raw.lengthSquared() < 0.01) raw = p.getLocation().getDirection().setY(0);
+            final Vector dir = raw.lengthSquared() < 0.001 ? new Vector(1, 0, 0) : raw.normalize();
             strike(p, t, pl.cfg("damage.blackflash", 30), "blackflash");
             Draw.fx(at, Particle.EXPLOSION_EMITTER, 1, 0, 0);
             Draw.fx(at, Particle.SONIC_BOOM, 2, 0.3, 0);
