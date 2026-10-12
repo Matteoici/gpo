@@ -367,33 +367,30 @@ final class Gojo {
     }
 
     /**
-     * Le 200 % : une boule violette géante part droit devant, à l'horizontale.
-     * Elle avance au rythme où le serveur efface (budget de temps par tick : pas de lag),
-     * donc tout ce qu'elle touche disparaît au moment où elle passe.
+     * Le 200 % : une boule violette part droit devant, à l'horizontale, sans rien casser.
+     * Au premier contact (un bloc ou quelqu'un), elle explose : une sphère géante qui grandit
+     * au rythme où le serveur efface (budget de temps par tick : pas de lag). Tout disparaît dedans.
      */
     private void launch200(Player p) {
-        double R = pl.cfg("nuke.radius", 55), length = pl.cfg("nuke.length", 150);
+        double R = pl.cfg("nuke.radius", 55), range = pl.cfg("nuke.range", 250);
+        double bR = pl.cfg("nuke.ball-radius", 5), speed = pl.cfg("nuke.ball-speed", 2.5);
         double dmg = pl.cfg("damage.nuke", 200);
         Location eye = p.getEyeLocation();
         Vector d = flat(eye.getDirection());
-        Location from = eye.clone().add(d.clone().multiply(R + 3));
-        Location to = from.clone().add(d.clone().multiply(length));
-        World w = from.getWorld();
-        List<Player> all = pl.viewers(from, length + 300);
+        World w = eye.getWorld();
+        Location pos = eye.clone().add(d.clone().multiply(bR + 3));
 
-        // la boule : des cubes de verre lumineux qui tournent les uns dans les autres
         List<BlockDisplay> orb = new ArrayList<>();
         Material[] mats = {Material.PURPLE_STAINED_GLASS, Material.MAGENTA_STAINED_GLASS, Material.PINK_STAINED_GLASS, Material.WHITE_CONCRETE};
         double[] scales = {1.75, 1.6, 1.4, 0.8};
-        Location start = eye.clone().add(d.clone().multiply(5));
         for (Material m : mats) {
-            orb.add(w.spawn(start, BlockDisplay.class, e -> {
+            orb.add(w.spawn(pos, BlockDisplay.class, e -> {
                 e.setPersistent(false);
                 e.getPersistentDataContainer().set(pl.tagKey, PersistentDataType.STRING, "prop");
                 e.setBlock(m.createBlockData());
                 e.setBrightness(new org.bukkit.entity.Display.Brightness(15, 15));
                 e.setViewRange(16f);
-                e.setTeleportDuration(2);
+                e.setTeleportDuration(1);
             }));
         }
         Runnable[] clean = new Runnable[1];
@@ -415,23 +412,15 @@ final class Gojo {
                 o.setTransformation(new Transformation(t, new Quaternionf(q), new Vector3f(s, s, s), new Quaternionf()));
             }
         };
-        shapeOrb.accept(1.0, 0);
-        pl.later(1, () -> shapeOrb.accept(R, 14));
+        shapeOrb.accept(0.5, 0);
+        pl.later(1, () -> shapeOrb.accept(bR, 6));
+        List<Player> vs = pl.viewers(pos, range + 200);
+        pl.cine.shake(vs, 3, 2);
+        SmpGojo.sound(pos, "entity.warden.sonic_boom", 8f, 0.5f);
+        SmpGojo.sound(pos, "block.end_portal.spawn", 6f, 0.7f);
 
-        pl.cine.impact(all, null, Cine.PURPLE);
-        pl.cine.shake(all, 4, 2);
-        SmpGojo.sound(start, "entity.warden.sonic_boom", 10f, 0.4f);
-        SmpGojo.sound(start, "entity.wither.spawn", 6f, 1.4f);
-        SmpGojo.sound(start, "block.end_portal.spawn", 8f, 0.6f);
-
-        MegaHole hole = pl.ruin.mega(from, d, length, R, pl.cfgi("nuke.restore-seconds", 360));
-        if (hole != null) hole.trigger();
-        Set<UUID> hit = new HashSet<>();
-        double minSpeed = pl.cfg("nuke.min-speed", 0.6), maxSpeed = pl.cfg("nuke.max-speed", 4);
-        int maxTicks = pl.cfgi("nuke.max-ticks", 1200);
-        double[] at = {-(R + 3) + 5};
+        double[] travelled = {0};
         int[] tick = {0};
-        Location pos = start.clone();
         org.bukkit.scheduler.BukkitTask[] loop = new org.bukkit.scheduler.BukkitTask[1];
         loop[0] = Bukkit.getScheduler().runTaskTimer(pl, () -> {
             int i = tick[0]++;
@@ -439,42 +428,101 @@ final class Gojo {
                 loop[0].cancel();
                 return;
             }
-            // la boule suit le néant : elle ne dépasse jamais ce qui a été effacé
-            double target = hole == null ? length : hole.progress();
-            double next = Math.min(length, Math.min(at[0] + maxSpeed, Math.max(at[0] + (i < 15 ? 0.3 : 0), target)));
-            if (hole == null || !hole.erasing()) next = Math.min(length, at[0] + maxSpeed);
-            else if (next < at[0] + minSpeed && target >= at[0] + minSpeed) next = at[0] + minSpeed;
-            at[0] = Math.max(at[0], next);
-            pos.setX(from.getX() + d.getX() * at[0]);
-            pos.setY(from.getY());
-            pos.setZ(from.getZ() + d.getZ() * at[0]);
-            for (BlockDisplay o : orb) o.teleport(pos);
-            if (i % 3 == 0) {
-                for (int k = 0; k < spin.length; k++) spin[k].rotateY(0.3f + k * 0.08f).rotateX(0.15f);
-                shapeOrb.accept(R * (1 + 0.04 * Math.sin(i * 0.5)), 3);
+            // avance bloc par bloc et cherche un contact
+            boolean contact = false;
+            for (double s = 0; s < speed && !contact; s += 0.5) {
+                pos.add(d.clone().multiply(0.5));
+                travelled[0] += 0.5;
+                contact = touches(p, pos, d, bR) || travelled[0] >= range || pos.getY() < w.getMinHeight() || pos.getY() > w.getMaxHeight();
             }
-            Draw.sphere(pos, R * 1.05, Draw.PURPLE, 4f, 50);
-            Draw.fx(pos, Particle.END_ROD, 25, R * 0.5, 0.4);
-            Draw.fx(pos, Particle.REVERSE_PORTAL, 30, R * 0.4, 0.2);
-            if (i % 4 == 0) SmpGojo.sound(pos, "entity.ender_dragon.flap", 10f, 0.4f);
-            if (i % 10 == 0) SmpGojo.sound(pos, "block.beacon.ambient", 10f, 0.5f);
-            if (i % 20 == 0) pl.cine.shake(pl.viewers(pos, R + 60), 1, 1);
-            // tout ce que la boule touche
-            if (i % 4 == 0) capsuleZap(p, from, d, Math.max(0, at[0]), R + 1, dmg, hit);
-            boolean finished = at[0] >= length && (hole == null || !hole.erasing());
+            for (BlockDisplay o : orb) o.teleport(pos);
+            if (i % 2 == 0) {
+                for (int k = 0; k < spin.length; k++) spin[k].rotateY(0.4f + k * 0.1f).rotateX(0.2f);
+                shapeOrb.accept(bR, 2);
+            }
+            Draw.sphere(pos, bR * 1.1, Draw.PURPLE, 3f, 40);
+            Draw.fx(pos, Particle.REVERSE_PORTAL, 25, bR * 0.4, 0.15);
+            Draw.fx(pos.clone().subtract(d.clone().multiply(bR)), Particle.END_ROD, 10, bR * 0.3, 0.05);
+            if (i % 4 == 0) SmpGojo.sound(pos, "entity.ender_dragon.flap", 5f, 0.6f);
+            if (contact) {
+                loop[0].cancel();
+                explode200(p, pos.clone(), d, R, dmg, orb, spin, shapeOrb, clean);
+            }
+        }, 1L, 1L);
+    }
+
+    /** La boule touche-t-elle un bloc ou quelqu'un ? */
+    private boolean touches(Player p, Location c, Vector d, double bR) {
+        World w = c.getWorld();
+        Vector side = Draw.perpendicular(d, 0);
+        double[][] pts = {{0, 0, 0}, {1, 0, 0}, {0.7, 0.5, 0}, {0.7, -0.5, 0}, {0.7, 0, 0.5}, {0.7, 0, -0.5}, {0, -0.9, 0}};
+        for (double[] q : pts) {
+            Location l = c.clone().add(d.clone().multiply(q[0] * bR)).add(0, q[1] * bR, 0).add(side.clone().multiply(q[2] * bR));
+            if (l.getY() < w.getMinHeight() || l.getY() >= w.getMaxHeight()) continue;
+            if (!l.getBlock().isPassable()) return true;
+        }
+        return !pl.targets(p, c, bR).isEmpty();
+    }
+
+    /** L'explosion : une sphère géante qui grandit en effaçant tout. */
+    private void explode200(Player p, Location c, Vector d, double R, double dmg, List<BlockDisplay> orb, Quaternionf[] spin,
+                            java.util.function.BiConsumer<Double, Integer> shapeOrb, Runnable[] clean) {
+        List<Player> all = pl.viewers(c, R + 300);
+        pl.cine.impact(all, null, new Cine.Frame[]{Cine.f(220, Draw.PURPLE, 2), Cine.f(150, Draw.PINK, 2), Cine.f(70, Draw.PURPLE, 2)});
+        pl.cine.shake(all, 30, 2);
+        SmpGojo.sound(c, "entity.generic.explode", 10f, 0.4f);
+        SmpGojo.sound(c, "entity.warden.sonic_boom", 10f, 0.4f);
+        SmpGojo.sound(c, "entity.lightning_bolt.thunder", 10f, 0.5f);
+        SmpGojo.sound(c, "entity.wither.death", 8f, 0.5f);
+        Draw.fx(c, Particle.EXPLOSION_EMITTER, 6, 3, 0);
+        MegaHole hole = pl.ruin.mega(c, d, 0.01, R, pl.cfgi("nuke.restore-seconds", 360));
+        if (hole != null) hole.trigger();
+        Set<UUID> hit = new HashSet<>();
+        double[] cur = {orb.isEmpty() ? 1 : 5};
+        int maxTicks = pl.cfgi("nuke.max-ticks", 1200);
+        int[] tick = {0};
+        org.bukkit.scheduler.BukkitTask[] loop = new org.bukkit.scheduler.BukkitTask[1];
+        loop[0] = Bukkit.getScheduler().runTaskTimer(pl, () -> {
+            int i = tick[0]++;
+            if (!pl.pending.contains(clean[0])) {
+                loop[0].cancel();
+                return;
+            }
+            // la sphère suit le néant : elle grandit au rythme où tout disparaît
+            double target = hole == null ? R : hole.radiusProgress();
+            if (hole == null || !hole.erasing()) target = R;
+            cur[0] = Math.min(R, Math.max(cur[0] + 0.15, Math.min(target, cur[0] + 3)));
+            if (i % 2 == 0) {
+                for (int k = 0; k < spin.length; k++) spin[k].rotateY(0.15f + k * 0.05f).rotateX(0.08f);
+                shapeOrb.accept(cur[0], 2);
+            }
+            Draw.sphere(c, cur[0] * 1.02, Draw.PURPLE, 4f, (int) Math.min(250, 40 + cur[0] * 3));
+            Draw.fx(c, Particle.END_ROD, 30, cur[0] * 0.5, 0.4);
+            if (i % 5 == 0) {
+                for (LivingEntity le : pl.targets(p, c, cur[0] + 1)) {
+                    if (hit.add(le.getUniqueId())) {
+                        pl.hit(p, le, dmg, "nuke");
+                        Draw.fx(le.getLocation().add(0, 1, 0), Particle.REVERSE_PORTAL, 60, 0.5, 0.5);
+                    } else {
+                        pl.hit(p, le, dmg * 0.25, "nuke");
+                    }
+                }
+                for (Entity e : c.getWorld().getNearbyEntities(c, cur[0], cur[0], cur[0])) {
+                    if (e instanceof Item && e.getLocation().distanceSquared(c) <= cur[0] * cur[0]) e.remove();
+                }
+            }
+            if (i % 8 == 0) SmpGojo.sound(c, "entity.generic.explode", 10f, 0.4f + (i % 24) * 0.01f);
+            if (i % 10 == 0) SmpGojo.sound(c, "block.beacon.ambient", 10f, 0.5f);
+            if (i % 20 == 0) pl.cine.shake(pl.viewers(c, R + 100), 1, 1);
+            boolean finished = cur[0] >= R && (hole == null || !hole.erasing());
             if (finished || i >= maxTicks) {
                 loop[0].cancel();
-                shapeOrb.accept(0.01, 20);
-                Draw.sphere(to, R * 1.2, Draw.PURPLE, 4f, 200);
-                Draw.fx(to, Particle.EXPLOSION_EMITTER, 4, R * 0.3, 0);
-                SmpGojo.sound(to, "entity.generic.explode", 10f, 0.4f);
-                SmpGojo.sound(to, "block.beacon.deactivate", 10f, 0.5f);
-                pl.ruin.shockwave(to.clone().add(0, -R * 0.5, 0), Math.min(80, R * 1.5), 20, 0.9);
-                for (int k = 0; k <= 5; k++) {
-                    Location sm = from.clone().add(d.clone().multiply(length * k / 5.0)).add(0, -R * 0.7, 0);
-                    pl.ruin.smoke(sm, Math.min(20, R * 0.4), 160);
-                }
-                pl.later(22, () -> {
+                shapeOrb.accept(0.01, 25);
+                Draw.sphere(c, R * 1.1, Draw.PURPLE, 4f, 250);
+                SmpGojo.sound(c, "block.beacon.deactivate", 10f, 0.5f);
+                pl.ruin.shockwave(c.clone().add(0, -R * 0.6, 0), Math.min(90, R * 1.6), 22, 0.9);
+                pl.ruin.smoke(c.clone().add(0, -R * 0.5, 0), Math.min(30, R * 0.5), 200);
+                pl.later(26, () -> {
                     if (pl.pending.contains(clean[0])) clean[0].run();
                 });
             }

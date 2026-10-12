@@ -94,8 +94,9 @@ final class MegaHole {
                 along.put(c, (cx - ax) * dx + (cz - az) * dz);
             }
         }
-        // dans l'ordre du trajet de la boule
-        chunks.sort((a, b) -> Double.compare(along.get(a), along.get(b)));
+        // dans l'ordre du trajet de la boule (ou du centre vers l'extérieur pour une explosion)
+        if (len < 1) chunks.sort((a, b) -> Double.compare(flatDist2(a[0] * 16 + 8, a[1] * 16 + 8), flatDist2(b[0] * 16 + 8, b[1] * 16 + 8)));
+        else chunks.sort((a, b) -> Double.compare(along.get(a), along.get(b)));
     }
 
     /** Distance² horizontale entre une colonne et le trajet (pour trier / filtrer les chunks). */
@@ -124,6 +125,14 @@ final class MegaHole {
         double hl = Math.sqrt(dx * dx + dz * dz);
         double v = a == null ? 0 : a / Math.max(0.2, hl) - 12;
         return Math.max(0, Math.min(len, v));
+    }
+
+    /** Pour une explosion : jusqu'à quelle distance du centre tout a déjà disparu. */
+    double radiusProgress() {
+        if (!full) return 0;
+        if (chunkIdx >= chunks.size()) return r;
+        int[] c = chunks.get(chunkIdx);
+        return Math.max(0, Math.min(r, Math.sqrt(flatDist2(c[0] * 16 + 8, c[1] * 16 + 8)) - 12));
     }
 
     double length() {
