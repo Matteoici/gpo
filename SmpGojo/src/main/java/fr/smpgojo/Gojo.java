@@ -436,7 +436,7 @@ final class Gojo {
                     int k = i - grow;
                     double r = maxR * (1 - k / 24.0);
                     if (r > 1) Draw.sphere(at, r, Draw.PURPLE, 3f, (int) Math.min(200, 30 + r * 6));
-                    Draw.fx(at, Particle.CAMPFIRE_COSIGNAL_SMOKE, 8, maxR * 0.4, 0.05);
+                    Draw.fx(at, Particle.CAMPFIRE_SIGNAL_SMOKE, 8, maxR * 0.4, 0.05);
                 }
             }, () -> {
                 pl.ruin.shockwave(at, maxR + 14, 16, 0.8);
