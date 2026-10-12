@@ -578,7 +578,7 @@ public final class SmpGojo extends JavaPlugin implements Listener {
         byte[] h = hash;
         Bukkit.getScheduler().runTaskLater(this, () -> {
             if (!p.isOnline()) return;
-            p.addResourcePack(java.util.UUID.nameUUIDFromBytes(url.getBytes(java.nio.charset.StandardCharsets.UTF_8)), url, h,
+            p.setResourcePack(java.util.UUID.nameUUIDFromBytes(url.getBytes(java.nio.charset.StandardCharsets.UTF_8)), url, h,
                     mm("<gray>Sons des techniques (Black Flash...)"), getConfig().getBoolean("resource-pack.required", false));
         }, 40L);
     }
