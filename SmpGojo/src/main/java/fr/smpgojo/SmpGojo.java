@@ -563,6 +563,26 @@ public final class SmpGojo extends JavaPlugin implements Listener {
         }
     }
 
+    /** Envoie le pack de sons (si configuré) à chaque connexion. */
+    @EventHandler
+    public void onJoin(org.bukkit.event.player.PlayerJoinEvent e) {
+        String url = getConfig().getString("resource-pack.url", "");
+        if (url == null || url.isBlank()) return;
+        String sha = getConfig().getString("resource-pack.sha1", "");
+        byte[] hash = null;
+        if (sha != null && sha.matches("[0-9a-fA-F]{40}")) {
+            hash = new byte[20];
+            for (int i = 0; i < 20; i++) hash[i] = (byte) Integer.parseInt(sha.substring(i * 2, i * 2 + 2), 16);
+        }
+        Player p = e.getPlayer();
+        byte[] h = hash;
+        Bukkit.getScheduler().runTaskLater(this, () -> {
+            if (!p.isOnline()) return;
+            p.addResourcePack(java.util.UUID.nameUUIDFromBytes(url.getBytes(java.nio.charset.StandardCharsets.UTF_8)), url, h,
+                    mm("<gray>Sons des techniques (Black Flash...)"), getConfig().getBoolean("resource-pack.required", false));
+        }, 40L);
+    }
+
     @EventHandler
     public void onQuit(PlayerQuitEvent e) {
         gojo.quit(e.getPlayer());

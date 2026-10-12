@@ -216,95 +216,113 @@ final class Yuji {
             pl.resetCooldown(p, "flash8");
             return;
         }
+        // minutage calé sur le clip (en ticks, 20 = 1 s)
+        final int chargeEnd = 32, blackEnd = 38, firstHit = 40, lastHit = 262, calmEnd = 330, ringEnd = 349, finalAt = 362;
         int n = Math.max(2, pl.cfgi("yuji.flurry-hits", 8));
-        int gap = Math.max(4, pl.cfgi("yuji.flurry-gap-ticks", 12));
         double per = pl.cfg("damage.flurry", 10);
         UUID id = p.getUniqueId();
         pl.noFall.add(id);
-        List<Player> vs = pl.viewers(t.getLocation(), 50);
-        int charge = 20, black = 4, first = charge + black;
-        int finalAt = first + (n - 1) * gap + 22;
+        List<Player> vs = pl.viewers(t.getLocation(), 60);
         pl.cine.hold(t, finalAt + 4);
         pl.cine.lock(p, finalAt + 2);
-
+        // le son du clip (pack de ressources), sinon des sons du jeu
+        String custom = pl.getConfig().getString("yuji.flurry-sound", "smpgojo:yuji.blackflash8");
+        boolean useCustom = custom != null && !custom.isBlank();
+        if (useCustom) {
+            net.kyori.adventure.sound.Sound snd = net.kyori.adventure.sound.Sound.sound(net.kyori.adventure.key.Key.key(custom),
+                    net.kyori.adventure.sound.Sound.Source.MASTER, 1f, 1f);
+            for (Player v : vs) v.playSound(snd);
+        }
         // 1) la charge : anneau rouge, puis arc blanc qui tourne autour de la cible
-        SmpGojo.sound(t.getLocation(), "block.beacon.power_select", 2f, 1.6f);
-        SmpGojo.sound(t.getLocation(), "entity.warden.heartbeat", 3f, 1.2f);
-        pl.repeat(1, charge, i -> {
+        pl.repeat(1, chargeEnd, i -> {
             if (!t.isValid()) return;
             Location c = t.getLocation().add(0, t.getHeight() * 0.5, 0);
-            if (i < 10) {
-                Draw.ring(c.clone().add(0, -0.3, 0), 1.6 - i * 0.05, CRIMSON, 1.6f, 36);
+            if (i < 16) {
+                Draw.ring(c.clone().add(0, -0.3, 0), 1.7 - i * 0.04, CRIMSON, 1.6f, 36);
                 Draw.ring(c.clone().add(0, 0.3, 0), 1.4, DARK_RED, 1f, 24);
             } else {
                 Draw.orbit(c, 1.4, i * 0.9, 1.1, Draw.WHITE, 1.4f, 24);
                 Draw.orbit(c, 1.2, -i * 0.9, -0.9, Draw.WHITE, 0.9f, 16);
             }
             Draw.converge(c, 3, CRIMSON, 1f, 6);
-            if (i % 4 == 0) SmpGojo.sound(c, "block.respawn_anchor.charge", 1.5f, 0.8f + i * 0.05f);
+            if (!useCustom && i % 6 == 0) SmpGojo.sound(c, "block.respawn_anchor.charge", 1.5f, 0.8f + i * 0.04f);
         }, null);
-
-        // 2) écran noir, la cible en silhouette
-        pl.later(charge, () -> {
-            if (!t.isValid()) return;
-            pl.cine.impact(vs, List.of(t, p), new Cine.Frame[]{Cine.f(255, Draw.BLACK, black)});
-            SmpGojo.sound(t.getLocation(), "block.beacon.deactivate", 2f, 2f);
+        // 2) écran noir
+        pl.later(chargeEnd, () -> {
+            if (t.isValid()) pl.cine.impact(vs, List.of(t, p), new Cine.Frame[]{Cine.f(255, Draw.BLACK, blackEnd - chargeEnd)});
         });
-
-        // 3) la rafale
-        for (int k = 0; k < n - 1; k++) {
+        // 3) la rafale : les gros coups, et entre eux des explosions plus petites en continu
+        int hits = n - 1;
+        java.util.Set<Integer> hitTicks = new java.util.HashSet<>();
+        for (int k = 0; k < hits; k++) {
+            int at = firstHit + (hits == 1 ? 0 : (lastHit - firstHit) * k / (hits - 1));
+            hitTicks.add(at);
             int hitN = k + 1;
-            pl.later((long) first + (long) k * gap, () -> {
+            pl.later(at, () -> {
                 if (!t.isValid() || !p.isOnline()) return;
                 Location c = t.getLocation().add(0, t.getHeight() * 0.55, 0);
-                // Yuji alterne les côtés
                 Location to = c.clone().add(SmpGojo.right(p).multiply(hitN % 2 == 0 ? 1.3 : -1.3)).add(0, -0.9, 0)
                         .subtract(p.getLocation().getDirection().setY(0).normalize().multiply(1.2));
                 to.setDirection(c.toVector().subtract(to.toVector()));
-                p.teleport(to);
                 pl.cine.release(p);
-                pl.cine.lock(p, finalAt - (first + (hitN - 1) * gap));
-                burst(c, 1.0, hitN, n);
+                p.teleport(to);
+                pl.cine.lock(p, finalAt - at + 2);
+                burst(c, 1.1, hitN, n);
                 pl.cine.impact(vs, List.of(t), new Cine.Frame[]{Cine.f(230, Draw.BLACK, 1), Cine.f(170, CRIMSON, 2), Cine.f(110, CRIMSON, 2)});
                 pl.cine.shake(vs, 2, 1);
-                pl.cine.title(List.of(p), "<black><b>黒閃", "<dark_red><b>×" + hitN, gap);
-                if (t instanceof Player tp) pl.cine.title(List.of(tp), "<black><b>黒閃", "<dark_red><b>×" + hitN, gap);
-                flashSound(c, hitN, n);
+                pl.cine.title(List.of(p), "<black><b>黒閃", "<dark_red><b>×" + hitN, 30);
+                if (t instanceof Player tp) pl.cine.title(List.of(tp), "<black><b>黒閃", "<dark_red><b>×" + hitN, 30);
+                if (!useCustom) flashSound(c, hitN, n);
                 strike(p, t, per, "blackflash");
                 Draw.blood(t, 25);
             });
-            // entre deux coups, l'écran reste rouge
-            for (int g = 5; g < gap; g += 2) {
-                pl.later((long) first + (long) k * gap + g, () -> {
-                    for (Player v : vs) if (v.isOnline() && v.getLocation().distanceSquared(t.getLocation()) < 400) {
-                        pl.cine.tint(v, Cine.argb(70, CRIMSON), 2);
-                    }
-                });
-            }
         }
-
-        // 4) pause, re-noir, puis le dernier Black Flash énorme
-        int lastHit = first + (n - 2) * gap;
-        pl.repeat(2, Math.max(1, (finalAt - lastHit - 6) / 2), i -> {
+        for (int at = firstHit + 3; at < lastHit + 8; at += 4) {
+            if (hitTicks.contains(at) || hitTicks.contains(at - 1) || hitTicks.contains(at + 1)) continue;
+            int tick = at;
+            pl.later(at, () -> {
+                if (!t.isValid()) return;
+                Location c = t.getLocation().add(0, t.getHeight() * 0.55, 0);
+                burst(c, 0.55, 1, n);
+                for (Player v : vs) if (v.isOnline() && v.getLocation().distanceSquared(t.getLocation()) < 400) {
+                    pl.cine.tint(v, Cine.argb(tick % 8 == 0 ? 90 : 60, CRIMSON), 4);
+                }
+            });
+        }
+        // 4) accalmie : braises et fumée noire
+        pl.repeat(3, (calmEnd - lastHit - 8) / 3, i -> {
             if (!t.isValid()) return;
             Location c = t.getLocation().add(0, t.getHeight() * 0.55, 0);
-            Draw.converge(c, 4, DARK_RED, 1.4f, 10);
-            Draw.fx(c, Particle.SQUID_INK, 4, 0.4, 0.05);
+            Draw.fx(c, Particle.SQUID_INK, 4, 0.5, 0.03);
+            Draw.fx(c, Particle.LAVA, 1, 0.4, 0);
+            Draw.converge(c, 3, DARK_RED, 1f, 6);
         }, null);
-        pl.later(finalAt - 6, () -> {
-            pl.cine.impact(vs, List.of(t, p), new Cine.Frame[]{Cine.f(255, Draw.BLACK, 6)});
-            SmpGojo.sound(t.getLocation(), "entity.warden.sonic_charge", 3f, 1.4f);
+        pl.later(lastHit + 8, () -> {
+            for (Player v : vs) if (v.isOnline()) pl.cine.tint(v, Cine.argb(40, CRIMSON), 10);
         });
+        // 5) l'anneau rouge revient autour de la cible
+        pl.repeat(1, ringEnd - calmEnd, i -> {
+            if (!t.isValid()) return;
+            Location c = t.getLocation().add(0, t.getHeight() * 0.5, 0);
+            Draw.ring(c, 2.2 - i * 0.06, CRIMSON, 1.8f, 40);
+            Draw.orbit(c, 1.8, i * 0.7, 1.2, DARK_RED, 1.2f, 20);
+        }, null);
+        // 6) re-noir
+        pl.later(ringEnd, () -> {
+            pl.cine.impact(vs, List.of(t, p), new Cine.Frame[]{Cine.f(255, Draw.BLACK, finalAt - ringEnd)});
+            if (!useCustom) SmpGojo.sound(t.getLocation(), "entity.warden.sonic_charge", 3f, 1.4f);
+        });
+        // 7) le dernier Black Flash, énorme
         pl.later(finalAt, () -> {
             if (!t.isValid() || !p.isOnline()) return;
             pl.cine.release(p);
             pl.cine.release(t);
             Location c = t.getLocation().add(0, t.getHeight() * 0.55, 0);
-            burst(c, 2.2, n, n);
+            burst(c, 2.4, n, n);
             speedLines(c);
-            pl.cine.impact(vs, List.of(t, p), new Cine.Frame[]{Cine.f(210, CRIMSON, 2), Cine.f(255, Draw.BLACK, 1), Cine.f(190, CRIMSON, 3),
-                    Cine.f(120, CRIMSON, 3), Cine.f(60, CRIMSON, 3)});
-            flashSound(c, n, n);
+            pl.cine.impact(vs, List.of(t, p), new Cine.Frame[]{Cine.f(220, CRIMSON, 2), Cine.f(255, Draw.BLACK, 1), Cine.f(190, CRIMSON, 3),
+                    Cine.f(130, CRIMSON, 4), Cine.f(70, CRIMSON, 4)});
+            if (!useCustom) flashSound(c, n, n);
             blackFlash(p, t);
             for (Player v : vs) {
                 if (v.isOnline()) v.sendMessage(SmpGojo.mm("<black>■</black> <dark_red><b>" + n + " BLACK FLASH CONSÉCUTIFS</b></dark_red> <gray>"

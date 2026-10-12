@@ -178,8 +178,8 @@ yuji:
   black-flash-knockback: 3.2
   divergent-ratio: 0.8
   flurry-hits: 8
-  # ticks entre deux Black Flash (20 = 1 s)
-  flurry-gap-ticks: 12
+  # son joué pendant les 8 Black Flash (celui du clip, dans le pack de ressources). Vide = sons du jeu.
+  flurry-sound: "smpgojo:yuji.blackflash8"
   dash-range: 14
 rafale:
   hits: 14
@@ -237,3 +237,13 @@ bombes:
     spread: 45
     flight-ticks: 120
     cloud-seconds: 20
+
+# ------------------------------------------------------------ Pack de sons
+# Le son du clip des 8 Black Flash est dans SmpGojo-sons.zip.
+# Mets ce zip en ligne (par ex. sur mc-packs.net), colle le lien direct et son SHA-1 ici :
+# le plugin l'envoie à chaque joueur qui se connecte.
+resource-pack:
+  url: ""
+  sha1: ""
+  # true = les joueurs qui refusent le pack sont déconnectés
+  required: false
