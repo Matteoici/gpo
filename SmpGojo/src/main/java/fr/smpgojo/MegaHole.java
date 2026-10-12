@@ -232,6 +232,10 @@ final class MegaHole {
 
     // ================================================================= reconstruction
 
+    boolean restoreDue(int now) {
+        return !erasing() && restoreAt >= 0 && now >= restoreAt;
+    }
+
     void scheduleRestore(int now, int delayTicks) {
         restoreAt = now + delayTicks;
     }

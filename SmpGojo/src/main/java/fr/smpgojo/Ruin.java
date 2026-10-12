@@ -500,12 +500,20 @@ final class Ruin {
         now++;
         tickDebris();
         long megaBudget = (long) (pl.getConfig().getDouble("nuke.max-ms-per-tick", 30) * 1_000_000L);
+        // tous les trous en cours se creusent (budget partagé) ; un seul se reconstruit à la fois
+        int digging = 0;
+        for (MegaHole h : megas) if (h.erasing()) digging++;
+        long each = digging == 0 ? 0 : megaBudget / digging;
+        boolean restoring = false;
         for (java.util.Iterator<MegaHole> it = megas.iterator(); it.hasNext(); ) {
             MegaHole h = it.next();
-            if (h.erasing()) h.eraseTick(megaBudget);
-            else h.restoreTick(now, megaBudget);
+            if (h.erasing()) {
+                h.eraseTick(each);
+            } else if (!restoring && h.restoreDue(now)) {
+                restoring = true;
+                h.restoreTick(now, megaBudget);
+            }
             if (h.done) it.remove();
-            break; // un seul trou travaille par tick
         }
         int budget = pl.getConfig().getInt("restore-blocks-per-tick", 500);
         for (Iterator<Batch> it = batches.iterator(); it.hasNext() && budget > 0; ) {

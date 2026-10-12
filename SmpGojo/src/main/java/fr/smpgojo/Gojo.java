@@ -389,7 +389,9 @@ final class Gojo {
     private void skyBeam(Player p, Location aimed, List<Player> vs0, Runnable land) {
         World w = aimed.getWorld();
         Block g = Ruin.surface(w, aimed.getBlockX(), aimed.getBlockY(), aimed.getBlockZ());
-        Location ground = g != null ? g.getLocation().add(0.5, 1, 0.5) : aimed.clone();
+        // visé dans le vide ou trop loin : on prend le vrai sol à cet endroit
+        if (g == null) g = w.getHighestBlockAt(aimed.getBlockX(), aimed.getBlockZ());
+        Location ground = g.getLocation().add(0.5, 1, 0.5);
         double R = pl.cfg("nuke.radius", 55);
         int depth = pl.cfgi("nuke.depth", 40);
         int skyH = Math.max(40, Math.min(pl.cfgi("nuke.sky-height", 200), w.getMaxHeight() - 4 - ground.getBlockY()));
