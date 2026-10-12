@@ -1,0 +1,99 @@
+# =====================================================================
+#  SmpShop - textes (format MiniMessage)
+#  Après une modification : /shopadmin reload
+# =====================================================================
+
+prefix: "<gradient:#3cff9a:#00c8ff><b>SHOP</b></gradient> <dark_gray>»</dark_gray> "
+no-permission: "<red>Tu n'as pas la permission."
+players-only: "<red>Commande réservée aux joueurs."
+usage: "<red>Utilisation : <white><usage>"
+unknown-player: "<red>Joueur introuvable : <white><player>"
+reloaded: "<green>Rechargé : <white><prices></white> prix de vente, <white><categories></white> catégories."
+cleaned: "<green><white><count></white> pile(s) d'objets réparée(s) chez les joueurs connectés."
+admin-help:
+  - "<gradient:#3cff9a:#00c8ff><b>SmpShop</b></gradient>"
+  - "<aqua>/shopadmin reload</aqua> <dark_gray>- <gray>recharge shop.yml, worth.yml, config, textes"
+  - "<aqua>/shopadmin inspect</aqua> <dark_gray>- <gray>montre la description et les données cachées de l'objet en main"
+  - "<aqua>/shopadmin clean</aqua> <dark_gray>- <gray>répare tout de suite les objets des joueurs connectés"
+  - "<aqua>/tokens give|take|set <joueur> <nombre></aqua> <dark_gray>- <gray>jetons d'événement"
+
+# prix affiché sous les objets (seulement à l'écran)
+display:
+  line: "<gray>Vente : <green><price>"
+  stack: "<dark_gray>x<amount> : <green><price>"
+
+shop:
+  open-category: "<yellow>▶ Clic pour ouvrir"
+  your-tokens: "<gray>Tes jetons : <#ff7a00><tokens>"
+  entry-name: "<white><item>"
+  entry-lore:
+    - "<gray>Prix : <green><price></green> <dark_gray>(x<amount>)"
+    - "<gray>Un stack : <green><stack></green> <dark_gray>(x<stack-count>)"
+    - ""
+    - "<yellow>▶ Clic gauche : choisir la quantité"
+    - "<yellow>▶ Clic droit : acheter 1"
+    - "<yellow>▶ Shift + clic : acheter un stack"
+  balance:
+    name: "<gold><b>Ton solde"
+    lore: ["<white><balance>"]
+  sell-button:
+    name: "<green><b>Vendre mes objets"
+    lore: ["<gray>Ouvre /sell", "<gray>Solde : <white><balance>"]
+  quantity-title: "<dark_gray>Quantité"
+  quantity-item: "<white><item> <gray>x<count>"
+  quantity-lore: ["<gray>Total : <green><price>"]
+  minus: "<red>- <n>"
+  plus: "<green>+ <n>"
+  confirm:
+    name: "<green><b>Acheter x<count>"
+    lore: ["<gray>Total : <green><price>"]
+  bought: "<green>Acheté <white><count>x <item></white> pour <gold><price></gold>."
+  no-money: "<red>Il te faut <white><price></white>."
+  no-tokens: "<red>Il te faut <white><price></white>. <gray>(/tokens)"
+  no-space: "<red>Pas assez de place dans ton inventaire."
+
+sell:
+  title: "<dark_gray>Vendre - dépose tes objets"
+  nothing: "<red>Rien à vendre ici. <gray>(/worth pour voir le prix d'un objet)"
+  done: "<green>Vendu <white><count></white> objet(s) pour <gold><money></gold>."
+  done-bonus: "<green>Vendu <white><count></white> objet(s) pour <gold><money></gold> <dark_gray>(+<bonus>% de bonus)"
+  returned: "<gray><white><count></white> objet(s) invendable(s) rendu(s)."
+  info:
+    name: "<gold><b>Total : <money>"
+    lore:
+      - "<gray>Dépose tes objets au-dessus."
+      - "<gray>Objets invendables : <white><unsellable>"
+      - ""
+      - "<dark_gray>Ferme le menu ou clique sur Vendre."
+    lore-bonus:
+      - "<gray>Dépose tes objets au-dessus."
+      - "<gray>Objets invendables : <white><unsellable>"
+      - "<light_purple>Bonus de grade : +<bonus>%"
+      - ""
+      - "<dark_gray>Ferme le menu ou clique sur Vendre."
+  confirm:
+    name: "<green><b>Vendre pour <money>"
+    lore: ["<gray>Les objets invendables te sont rendus."]
+  cancel:
+    name: "<red><b>Annuler"
+    lore: ["<gray>Tout t'est rendu, rien n'est vendu."]
+
+worth:
+  empty: "<red>Prends un objet en main."
+  none: "<gray><item> <red>ne se vend pas."
+  special: "<gray><item> <red>ne se vend pas</red> <gray>(objet renommé, abîmé ou rempli)."
+  price: "<white><item></white> <gray>: <green><price></green> l'unité <dark_gray>|</dark_gray> <gray>tes <white><amount></white> : <green><total></green> <dark_gray>|</dark_gray> <gray>un stack : <green><stack>"
+
+tokens:
+  balance: "<gray>Tu as <#ff7a00><b><tokens></b></#ff7a00>."
+  other: "<white><player></white> <gray>a <#ff7a00><tokens></#ff7a00>."
+  admin: "<green><white><player></white> a maintenant <#ff7a00><tokens></#ff7a00>."
+  received: "<#ff7a00>+<amount> jetons !</#ff7a00> <gray>Total : <white><tokens>"
+  drop: "<#ff7a00>+<amount> jeton(s) <dark_gray>| <gray>total : <white><tokens>"
+
+gui:
+  common:
+    back: {name: "<yellow>← Retour"}
+    close: {name: "<red>Fermer"}
+    previous: {name: "<yellow>← Page <page>/<pages>"}
+    next: {name: "<yellow>Page <page>/<pages> →"}

@@ -1,0 +1,90 @@
+# =====================================================================
+#  Prix de vente (pour UN objet). Un objet absent de la liste ne se vend pas.
+#  Garde-les toujours PLUS BAS que les prix d'achat de shop.yml (sinon argent infini :
+#  le plugin te prévient dans la console au démarrage).
+#  Après une modification : /shopadmin reload
+# =====================================================================
+prices:
+  # ---------------- cultures
+  WHEAT: 5
+  CARROT: 4
+  POTATO: 4
+  BEETROOT: 4
+  SUGAR_CANE: 6
+  MELON_SLICE: 2
+  PUMPKIN: 12
+  CACTUS: 5
+  NETHER_WART: 8
+  COCOA_BEANS: 5
+  SWEET_BERRIES: 2
+  APPLE: 5
+  BAMBOO: 1
+  KELP: 1
+  BROWN_MUSHROOM: 4
+  RED_MUSHROOM: 4
+  CHORUS_FRUIT: 6
+  HONEYCOMB: 20
+  # ---------------- animaux
+  EGG: 2
+  FEATHER: 3
+  LEATHER: 10
+  RABBIT_HIDE: 6
+  WHITE_WOOL: 6
+  BEEF: 6
+  PORKCHOP: 6
+  CHICKEN: 5
+  MUTTON: 5
+  INK_SAC: 5
+  GLOW_INK_SAC: 15
+  # ---------------- monstres
+  ROTTEN_FLESH: 2
+  BONE: 6
+  STRING: 5
+  SPIDER_EYE: 6
+  GUNPOWDER: 12
+  ENDER_PEARL: 50
+  BLAZE_ROD: 70
+  SLIME_BALL: 15
+  MAGMA_CREAM: 20
+  GHAST_TEAR: 250
+  PHANTOM_MEMBRANE: 40
+  PRISMARINE_SHARD: 8
+  PRISMARINE_CRYSTALS: 10
+  SHULKER_SHELL: 300
+  # ---------------- minerais
+  COAL: 8
+  RAW_COPPER: 6
+  COPPER_INGOT: 8
+  RAW_IRON: 30
+  IRON_INGOT: 35
+  RAW_GOLD: 45
+  GOLD_INGOT: 50
+  GOLD_NUGGET: 5
+  REDSTONE: 4
+  LAPIS_LAZULI: 8
+  QUARTZ: 15
+  AMETHYST_SHARD: 10
+  EMERALD: 150
+  DIAMOND: 500
+  ANCIENT_DEBRIS: 4000
+  NETHERITE_SCRAP: 4000
+  NETHERITE_INGOT: 18000
+  # ---------------- blocs de minerais (= 9 fois le minerai)
+  COAL_BLOCK: 72
+  COPPER_BLOCK: 72
+  IRON_BLOCK: 315
+  GOLD_BLOCK: 450
+  REDSTONE_BLOCK: 36
+  LAPIS_BLOCK: 72
+  EMERALD_BLOCK: 1350
+  DIAMOND_BLOCK: 4500
+  NETHERITE_BLOCK: 162000
+  # ---------------- bois
+  OAK_LOG: 3
+  SPRUCE_LOG: 3
+  BIRCH_LOG: 3
+  JUNGLE_LOG: 3
+  ACACIA_LOG: 3
+  DARK_OAK_LOG: 3
+  MANGROVE_LOG: 3
+  CHERRY_LOG: 3

@@ -1,0 +1,33 @@
+name: SmpShop
+version: '${version}'
+main: fr.smpshop.SmpShop
+api-version: '26.2'
+depend: [Vault]
+softdepend: [ProtocolLib, Essentials]
+loadbefore: [DonutSell, DonutShop]
+description: Boutique, vente et prix affichés sur les objets sans les modifier
+commands:
+  shop:
+    description: Ouvrir la boutique
+    usage: /shop [catégorie]
+    aliases: [boutique, magasin]
+  sell:
+    description: Vendre ses objets
+    usage: /sell [main|tout]
+    aliases: [vendre]
+  worth:
+    description: Prix de vente de l'objet en main
+    usage: /worth
+    aliases: [prix, valeur]
+  tokens:
+    description: Tes jetons d'événement
+    usage: /tokens [joueur]
+    aliases: [jetons, token]
+  shopadmin:
+    description: Administration de la boutique
+    usage: /shopadmin <reload|inspect|clean>
+    permission: smpshop.admin
+permissions:
+  smpshop.admin:
+    description: Recharger, inspecter, donner des jetons
+    default: op

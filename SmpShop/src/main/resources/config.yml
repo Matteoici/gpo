@@ -1,0 +1,60 @@
+# =====================================================================
+#  SmpShop - boutique (/shop), vente (/sell), prix sur les objets
+#  Articles de la boutique : shop.yml   |   Prix de vente : worth.yml
+#  Textes : messages.yml   |   Après une modification : /shopadmin reload
+# =====================================================================
+
+currency-symbol: "$"
+
+# ---------------------------------------------------------------- Prix affiché sur les objets
+display:
+  # affiche "Vente : $X" sous chaque objet qui se vend.
+  # C'est seulement un AFFICHAGE à l'écran du joueur : l'objet n'est jamais modifié
+  # (il reste identique et s'empile normalement). Nécessite ProtocolLib.
+  enabled: true
+  # ajoute aussi le prix de la pile entière ("x64 : $Y")
+  show-stack-total: true
+
+# ---------------------------------------------------------------- Vente
+sell:
+  # les objets renommés (clés de caisse, objets spéciaux...) ne se vendent pas
+  ignore-named-items: true
+  # les outils / armures abîmés ne se vendent pas
+  ignore-damaged-items: true
+  # bonus de vente par grade : permission smpshop.multiplier.<nom>  (le plus grand compte)
+  multipliers:
+    vip: 1.10
+    mvp: 1.25
+
+# ---------------------------------------------------------------- Réparation des objets abîmés par DonutSell
+# L'ancien plugin écrivait le prix DANS les objets. On retire ces lignes automatiquement
+# (connexion, ouverture de coffre, ramassage). Une ligne est retirée seulement si elle contient
+# un de ces mots ET un chiffre ou un symbole d'argent.
+# Pour voir ce qu'il y a sur un objet : /shopadmin inspect (objet en main)
+cleanup:
+  enabled: true
+  lore-patterns:
+    - "(?i)worth"
+    - "(?i)sell ?(price|value|for)"
+    - "(?i)prix de vente"
+    - "(?i)vente ?:"
+    - "(?i)value ?:"
+  # données cachées à retirer (namespace des clés, voir /shopadmin inspect)
+  pdc-namespaces:
+    - donutsell
+
+# ---------------------------------------------------------------- Jetons d'événement (Halloween...)
+tokens:
+  # nom affiché
+  name: "jetons"
+  # les monstres lâchent des jetons (activer pendant l'événement)
+  mob-drops:
+    enabled: false
+    mobs:
+      ZOMBIE: {chance: 4, amount: 1}
+      SKELETON: {chance: 4, amount: 1}
+      SPIDER: {chance: 3, amount: 1}
+      CREEPER: {chance: 5, amount: 1}
+      WITCH: {chance: 25, amount: 3}
+      ENDERMAN: {chance: 10, amount: 2}
+      WITHER_SKELETON: {chance: 15, amount: 3}

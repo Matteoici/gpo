@@ -1,0 +1,145 @@
+# =====================================================================
+#  Boutique. Chaque catégorie : slot (case dans le menu principal), icon, name, lore,
+#  title, rows (2 à 6), currency (money = argent, tokens = jetons) et items.
+#
+#  Un article :
+#    material: objet donné        price: prix (pour "amount" objets)      amount: 1 par défaut
+#    slot: case (sinon placé automatiquement)
+#    potion: STRENGTH / STRONG_HEALING / LONG_SWIFTNESS... (pour POTION, SPLASH_POTION)
+#    name / lore: objet spécial renommé
+#    commands: au lieu d'un objet, lance ces commandes (%player%). icon: l'objet affiché
+#  Clic gauche = choisir la quantité, clic droit = acheter 1, shift + clic = un stack.
+# =====================================================================
+
+main:
+  title: "<dark_gray>Boutique"
+  rows: 3
+
+categories:
+  blocs:
+    slot: 11
+    icon: GRASS_BLOCK
+    name: "<green><b>Blocs"
+    lore: ["<gray>Pour construire ta base."]
+    title: "<dark_gray>Boutique - Blocs"
+    rows: 5
+    currency: money
+    items:
+      - {material: STONE, price: 8}
+      - {material: COBBLESTONE, price: 4}
+      - {material: DIRT, price: 3}
+      - {material: GRASS_BLOCK, price: 10}
+      - {material: SAND, price: 8}
+      - {material: GRAVEL, price: 8}
+      - {material: GLASS, price: 20}
+      - {material: OAK_LOG, price: 25}
+      - {material: SPRUCE_LOG, price: 25}
+      - {material: BIRCH_LOG, price: 25}
+      - {material: DARK_OAK_LOG, price: 25}
+      - {material: DEEPSLATE, price: 10}
+      - {material: STONE_BRICKS, price: 15}
+      - {material: BRICKS, price: 30}
+      - {material: SMOOTH_STONE, price: 15}
+      - {material: QUARTZ_BLOCK, price: 120}
+      - {material: WHITE_CONCRETE, price: 25}
+      - {material: BLACK_CONCRETE, price: 25}
+      - {material: TERRACOTTA, price: 20}
+      - {material: SEA_LANTERN, price: 300}
+      - {material: LANTERN, price: 80}
+
+  nether:
+    slot: 12
+    icon: NETHERRACK
+    name: "<red><b>Nether"
+    lore: ["<gray>Blocs et ressources du Nether."]
+    title: "<dark_gray>Boutique - Nether"
+    rows: 4
+    currency: money
+    items:
+      - {material: NETHERRACK, price: 5}
+      - {material: SOUL_SAND, price: 40}
+      - {material: SOUL_SOIL, price: 40}
+      - {material: NETHER_BRICKS, price: 40}
+      - {material: RED_NETHER_BRICKS, price: 60}
+      - {material: MAGMA_BLOCK, price: 60}
+      - {material: BLACKSTONE, price: 10}
+      - {material: BASALT, price: 10}
+      - {material: GLOWSTONE, price: 250}
+      - {material: SHROOMLIGHT, price: 250}
+      - {material: CRIMSON_STEM, price: 30}
+      - {material: WARPED_STEM, price: 30}
+      - {material: NETHER_WART, price: 60}
+      - {material: CRYING_OBSIDIAN, price: 500}
+
+  pvp:
+    slot: 13
+    icon: TOTEM_OF_UNDYING
+    name: "<gold><b>PvP"
+    lore: ["<gray>Tout pour le combat."]
+    title: "<dark_gray>Boutique - PvP"
+    rows: 4
+    currency: money
+    items:
+      - {material: OBSIDIAN, price: 150}
+      - {material: END_CRYSTAL, price: 2500}
+      - {material: RESPAWN_ANCHOR, price: 6000}
+      - {material: GLOWSTONE, price: 250}
+      - {material: TOTEM_OF_UNDYING, price: 60000}
+      - {material: ENDER_PEARL, price: 800}
+      - {material: GOLDEN_APPLE, price: 2000}
+      - {material: ENCHANTED_GOLDEN_APPLE, price: 150000, max: 64}
+      - {material: EXPERIENCE_BOTTLE, price: 400}
+      - {material: ARROW, amount: 16, price: 300}
+      - {material: COBWEB, price: 300}
+      - {material: SHIELD, price: 2000, max: 16}
+      - {material: SPLASH_POTION, potion: STRONG_HEALING, price: 1500}
+      - {material: POTION, potion: STRONG_STRENGTH, price: 3000}
+      - {material: POTION, potion: STRONG_SWIFTNESS, price: 2000}
+      - {material: POTION, potion: LONG_FIRE_RESISTANCE, price: 1500}
+
+  nourriture:
+    slot: 14
+    icon: COOKED_BEEF
+    name: "<yellow><b>Nourriture"
+    lore: ["<gray>De quoi tenir toute la journée."]
+    title: "<dark_gray>Boutique - Nourriture"
+    rows: 3
+    currency: money
+    items:
+      - {material: COOKED_BEEF, price: 40}
+      - {material: COOKED_PORKCHOP, price: 40}
+      - {material: COOKED_CHICKEN, price: 30}
+      - {material: COOKED_MUTTON, price: 30}
+      - {material: BREAD, price: 20}
+      - {material: GOLDEN_CARROT, price: 150}
+      - {material: CAKE, price: 400, max: 64}
+
+  halloween:
+    slot: 15
+    icon: JACK_O_LANTERN
+    name: "<#ff7a00><b>Halloween"
+    lore:
+      - "<gray>Boutique de l'événement."
+      - "<gray>Paye avec tes <#ff7a00>jetons<gray> !"
+    title: "<dark_gray>Boutique - Halloween"
+    rows: 4
+    currency: tokens
+    items:
+      - {material: CARVED_PUMPKIN, price: 5}
+      - {material: JACK_O_LANTERN, price: 8}
+      - material: CARVED_PUMPKIN
+        price: 60
+        max: 16
+        name: "<#ff7a00><b>Chapeau citrouille maudit"
+        lore: ["<gray>Édition Halloween", "<dark_gray>Objet de collection"]
+      - {material: SKELETON_SKULL, price: 15}
+      - {material: WITHER_SKELETON_SKULL, price: 80}
+      - {material: TOTEM_OF_UNDYING, price: 25}
+      - {material: ENCHANTED_GOLDEN_APPLE, price: 40}
+      - {material: NETHERITE_INGOT, price: 120}
+      - {material: ELYTRA, price: 400, max: 4}
+      # Exemple d'article "commande" (clé de caisse) : vérifie d'abord la commande de CoreCrates en console
+      # - icon: TRIPWIRE_HOOK
+      #   name: "<#ff7a00>Clé Halloween"
+      #   price: 30
+      #   commands: ["crates key give %player% halloween 1"]
