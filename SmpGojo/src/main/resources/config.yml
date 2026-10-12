@@ -93,12 +93,12 @@ violet:
 # À l'impact l'écran devient blanc ; pendant ce temps tout est effacé, sans lag
 # (le travail ne prend jamais plus de "max-ms-per-tick" par tick). Quand le blanc
 # s'estompe, tout a disparu d'un coup : il reste un trou parfaitement rond.
-# Réglé pour un serveur 6 cœurs / 16 Go : rayon 55 = environ 400 000 blocs.
+# Réglé pour un serveur 6 cœurs / 16 Go : rayon 38 = environ 150 000 blocs (flash blanc court).
 nuke:
   # rayon de la colonne (le trou fera cette taille)
-  radius: 55
+  radius: 38
   # profondeur du trou sous le sol
-  depth: 40
+  depth: 28
   # hauteur du vortex au-dessus du sol
   sky-height: 120
   vortex-ticks: 60

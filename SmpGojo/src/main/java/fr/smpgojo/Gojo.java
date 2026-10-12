@@ -390,8 +390,8 @@ final class Gojo {
         World w = aimed.getWorld();
         Block g = Ruin.surface(w, aimed.getBlockX(), aimed.getBlockY(), aimed.getBlockZ());
         Location ground = g != null ? g.getLocation().add(0.5, 1, 0.5) : aimed.clone();
-        double R = pl.cfg("nuke.radius", 55);
-        int depth = pl.cfgi("nuke.depth", 40);
+        double R = pl.cfg("nuke.radius", 38);
+        int depth = pl.cfgi("nuke.depth", 28);
         int skyH = Math.max(40, Math.min(pl.cfgi("nuke.sky-height", 200), w.getMaxHeight() - 4 - ground.getBlockY()));
         double dmg = pl.cfg("damage.nuke", 200);
         Location sky = ground.clone().add(0, skyH, 0);
