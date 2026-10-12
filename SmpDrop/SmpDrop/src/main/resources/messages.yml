@@ -11,6 +11,8 @@ not-enough-players: "<gray>Pas assez de joueurs pour un largage. Nouvel essai da
 
 # ---------------------------------------------------------------- Annonce
 announce:
+  # boutons sous l'annonce (les titres, sons et la flèche ne vont qu'à ceux qui suivent)
+  follow-button: "  <aqua><b><click:run_command:'/largage suivre'><hover:show_text:'<gray>Titre, sons, flèche et distance jusqu''à la caisse'>[Suivre ce largage]</hover></click></b></aqua>  <dark_gray>·</dark_gray>  <gray><click:run_command:'/largage notif'><hover:show_text:'<gray>Être prévenu automatiquement à chaque largage'>[Toujours me prévenir]</hover></click>"
   title: "<gradient:#4fd6ff:#2a7bff><b>📦 LARGAGE AÉRIEN"
   subtitle: "<gray>Chute dans <white><time></white> <dark_gray>•</dark_gray> <white>X <x> Z <z>"
   message:
@@ -124,3 +126,11 @@ admin:
   usage: "<red>Utilisation : <white><usage>"
 player-only: "<red>Commande à utiliser en jeu."
 no-permission: "<red>Tu n'as pas la permission."
+
+follow:
+  "on": "<aqua>Tu suis ce largage : flèche et distance en haut de l'écran. <gray>(re-clique pour arrêter)"
+  "off": "<gray>Tu ne suis plus ce largage."
+  none: "<gray>Aucun largage en cours."
+notify:
+  "on": "<green>Tu seras prévenu à chaque largage (titre, sons, flèche). <gray>/largage notif pour désactiver."
+  "off": "<yellow>Tu ne seras plus prévenu automatiquement. <gray>Tu peux toujours cliquer sur [Suivre] dans le chat."

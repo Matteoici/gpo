@@ -31,6 +31,20 @@ public final class DropManager {
     private final Set<Integer> warned = new HashSet<>();
     private final Map<UUID, Integer> wins = new HashMap<>();
     private final Map<UUID, String> names = new HashMap<>();
+    /** joueurs qui veulent toujours être prévenus (titre, sons, flèche) */
+    private final Set<UUID> alwaysNotify = new HashSet<>();
+
+    public boolean alwaysNotify(UUID id) {
+        return alwaysNotify.contains(id);
+    }
+
+    /** true = activé */
+    public boolean toggleNotify(UUID id) {
+        boolean on = !alwaysNotify.remove(id);
+        if (on) alwaysNotify.add(id);
+        save();
+        return on;
+    }
 
     DropManager(SmpDrop plugin) {
         this.plugin = plugin;
@@ -55,11 +69,18 @@ public final class DropManager {
                 }
             }
         }
+        for (String s : data.getStringList("notify")) {
+            try {
+                alwaysNotify.add(UUID.fromString(s));
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
         cleanLeftoverBarrier();
     }
 
     void save() {
         data.set("next-drop", nextDrop);
+        data.set("notify", alwaysNotify.stream().map(UUID::toString).toList());
         for (Map.Entry<UUID, Integer> e : wins.entrySet()) {
             data.set("stats." + e.getKey() + ".opened", e.getValue());
             data.set("stats." + e.getKey() + ".name", names.get(e.getKey()));

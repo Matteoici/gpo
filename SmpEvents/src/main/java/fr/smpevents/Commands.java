@@ -176,6 +176,15 @@ final class Commands implements CommandExecutor, TabCompleter {
 
     private void koth(CommandSender sender, String[] a) {
         Koth k = plugin.koth();
+        if (a.length > 0 && sender instanceof Player pl && (a[0].equalsIgnoreCase("suivre") || a[0].equalsIgnoreCase("follow"))) {
+            t().send(pl, k.toggleFollow(pl) ? "koth.follow-on" : "koth.follow-off");
+            return;
+        }
+        if (a.length > 0 && sender instanceof Player pl && (a[0].equalsIgnoreCase("notif") || a[0].equalsIgnoreCase("notify"))) {
+            boolean on = k.toggleNotify(pl);
+            t().send(pl, on ? "koth.notify-on" : "koth.notify-off");
+            return;
+        }
         if (a.length == 0 || !admin(sender) && !a[0].equalsIgnoreCase("info")) {
             info(sender, k);
             return;
@@ -360,7 +369,7 @@ final class Commands implements CommandExecutor, TabCompleter {
                     if (adm) out.addAll(List.of("placer", "retirer", "liste", "scan"));
                 }
                 case "koth" -> {
-                    out.add("info");
+                    out.addAll(List.of("info", "suivre", "notif"));
                     if (adm) out.addAll(List.of("creer", "supprimer", "liste", "lancer", "stop", "tp"));
                 }
                 case "prime" -> {

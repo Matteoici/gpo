@@ -89,6 +89,16 @@ boards:
 # =====================================================================
 koth:
   nobody: "Personne"
+  here: "tu y es !"
+  follow-button: "  <gold><b><click:run_command:'/koth suivre'><hover:show_text:'<gray>Flèche, distance et barre jusqu''à la colline'>[♛ Suivre ce KOTH]</hover></click></b></gold>  <dark_gray>·</dark_gray>  <gray><click:run_command:'/koth notif'><hover:show_text:'<gray>Être prévenu automatiquement à chaque KOTH'>[Toujours me prévenir]</hover></click>"
+  follow-on: "<gold>♛ Tu suis le roi de la colline : flèche et distance en haut de l'écran. <gray>(re-clique pour arrêter)"
+  follow-off: "<gray>Tu ne suis plus le roi de la colline."
+  notify-on: "<green>Tu seras prévenu à chaque roi de la colline. <gray>/koth notif pour désactiver."
+  notify-off: "<yellow>Tu ne seras plus prévenu automatiquement."
+  title: "<gold><b>♛ ROI DE LA COLLINE"
+  subtitle: "<gray><zone> <dark_gray>·</dark_gray> <white>X <x> Z <z>"
+  bar2: "<gold><b>♛ <zone></b> <dark_gray>|</dark_gray> <yellow><king></yellow> <white><time></white><gray>/<capture> <dark_gray>|</dark_gray> <aqua><b><arrow></b> <distance></aqua> <dark_gray>(X <x> Z <z>)"
+  bar2-contested: "<red><b>⚔ CONTESTÉ</b> <dark_gray>|</dark_gray> <yellow><king></yellow> <white><time></white><gray>/<capture> <dark_gray>|</dark_gray> <aqua><b><arrow></b> <distance></aqua> <dark_gray>(X <x> Z <z>)"
   auto-name: "Colline sauvage"
   searching: "<gray>Recherche d'un endroit au hasard pour la colline..."
   not-found: "<red>Aucun endroit valable trouvé (eau, terrains de guilde...). Réessaie ou crée une zone : /koth creer <nom>"

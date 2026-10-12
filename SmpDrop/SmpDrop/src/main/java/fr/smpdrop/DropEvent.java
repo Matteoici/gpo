@@ -136,6 +136,36 @@ public final class DropEvent {
         plugin.manager().ended(this);
     }
 
+    // ================================================================= abonnés (titre, sons, flèche)
+
+    private final java.util.Set<UUID> followers = new java.util.HashSet<>();
+
+    /** Ce joueur veut-il les titres, sons et la flèche ? */
+    boolean follows(Player p) {
+        return followers.contains(p.getUniqueId()) || plugin.manager().alwaysNotify(p.getUniqueId());
+    }
+
+    boolean active() {
+        return phase != Phase.SEARCHING && phase != Phase.ENDED;
+    }
+
+    /** Clic sur [Suivre ce largage]. true = suivi activé. */
+    boolean toggleFollow(Player p) {
+        if (followers.remove(p.getUniqueId())) {
+            BossBar b = bars.remove(p.getUniqueId());
+            if (b != null) p.hideBossBar(b);
+            return false;
+        }
+        followers.add(p.getUniqueId());
+        pointCompass(p);
+        play(p, "block.note_block.bell", 1f, 1.4f);
+        TagResolver[] r = {coords(), ph("time", time(Math.max(0, fallAt - System.currentTimeMillis()))), ph("seconds", s.openTicks / 20)};
+        p.showTitle(Title.title(t.get("announce.title", r), t.get("announce.subtitle", r),
+                Title.Times.times(Duration.ofMillis(200), Duration.ofSeconds(2), Duration.ofMillis(500))));
+        updateBars();
+        return true;
+    }
+
     private void announce(Location block, int seconds) {
         ground = block.getBlock().getLocation();
         world = ground.getWorld();
@@ -148,8 +178,11 @@ public final class DropEvent {
         TagResolver[] r = {coords(), ph("time", time(announceMs)), ph("seconds", s.openTicks / 20)};
         Title title = Title.title(t.get("announce.title", r), t.get("announce.subtitle", r),
                 Title.Times.times(Duration.ofMillis(300), Duration.ofSeconds(4), Duration.ofSeconds(1)));
+        Component follow = t.get("announce.follow-button");
         for (Player p : Bukkit.getOnlinePlayers()) {
             t.sendLines(p, "announce.message", r);
+            p.sendMessage(follow);
+            if (!follows(p)) continue;
             p.showTitle(title);
             play(p, "event.raid.horn", 1f, 1f);
             play(p, "block.beacon.activate", 0.8f, 1.2f);
@@ -196,13 +229,19 @@ public final class DropEvent {
             Title title = Title.title(t.get("countdown.title", r), t.get("countdown.subtitle", r),
                     Title.Times.times(Duration.ZERO, Duration.ofMillis(900), Duration.ofMillis(200)));
             for (Player p : Bukkit.getOnlinePlayers()) {
+                if (!follows(p)) continue;
                 p.showTitle(title);
                 play(p, "block.note_block.pling", 1f, 0.6f + (10 - sec) * 0.1f);
             }
         } else {
             for (Player p : Bukkit.getOnlinePlayers()) {
-                t.send(p, "countdown.chat", r);
-                play(p, "block.note_block.pling", 0.7f, 1.2f);
+                if (follows(p)) {
+                    t.send(p, "countdown.chat", r);
+                    play(p, "block.note_block.pling", 0.7f, 1.2f);
+                } else if (sec == 60) {
+                    // les autres : un seul rappel discret, sans son
+                    t.send(p, "countdown.chat", r);
+                }
             }
         }
     }
@@ -221,6 +260,7 @@ public final class DropEvent {
                 Title.Times.times(Duration.ofMillis(200), Duration.ofSeconds(2), Duration.ofMillis(500)));
         for (Player p : Bukkit.getOnlinePlayers()) {
             t.send(p, "fall.chat", r);
+            if (!follows(p)) continue;
             p.showTitle(title);
             play(p, "entity.firework_rocket.launch", 1f, 0.6f);
             play(p, "item.elytra.flying", 0.35f, 1.4f);
@@ -651,6 +691,13 @@ public final class DropEvent {
         int percent = (int) Math.floor(clamp(progress / (float) s.openTicks) * 100);
         Location c = center(ground.getY());
         for (Player p : Bukkit.getOnlinePlayers()) {
+            // barre et flèche : seulement ceux qui suivent le largage, ou qui sont déjà tout près
+            boolean near = p.getWorld() == world && p.getLocation().distanceSquared(c) < 80 * 80;
+            if (!follows(p) && !near) {
+                BossBar old = bars.remove(p.getUniqueId());
+                if (old != null) p.hideBossBar(old);
+                continue;
+            }
             Component name = t.get(key, coords(), ph("time", time), ph("player", who == null ? "?" : who),
                     ph("percent", percent), direction(p, c));
             BossBar bar = bars.get(p.getUniqueId());

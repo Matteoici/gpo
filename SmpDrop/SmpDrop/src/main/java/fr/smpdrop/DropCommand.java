@@ -20,7 +20,7 @@ import static fr.smpdrop.Texts.pp;
 
 final class DropCommand implements TabExecutor {
 
-    private static final List<String> PLAYER = List.of("chances", "top");
+    private static final List<String> PLAYER = List.of("chances", "top", "suivre", "notif");
     private static final List<String> ADMIN = List.of("start", "here", "stop", "tp", "next", "loot", "reload");
 
     private final SmpDrop plugin;
@@ -42,6 +42,22 @@ final class DropCommand implements TabExecutor {
         switch (sub) {
             case "" -> info(sender);
             case "chances" -> chances(sender);
+            case "suivre", "follow" -> {
+                if (!(sender instanceof org.bukkit.entity.Player p)) return true;
+                DropEvent ev = m.current();
+                if (ev == null || !ev.active()) {
+                    t.send(p, "follow.none");
+                    return true;
+                }
+                t.send(p, ev.toggleFollow(p) ? "follow.on" : "follow.off");
+            }
+            case "notif", "notify", "notifications" -> {
+                if (!(sender instanceof org.bukkit.entity.Player p)) return true;
+                boolean on = m.toggleNotify(p.getUniqueId());
+                t.send(p, on ? "notify.on" : "notify.off");
+                DropEvent ev = m.current();
+                if (on && ev != null && ev.active() && !ev.follows(p)) ev.toggleFollow(p);
+            }
             case "top" -> top(sender);
             case "start" -> {
                 boolean instant = args.length > 1 && args[1].equalsIgnoreCase("now");

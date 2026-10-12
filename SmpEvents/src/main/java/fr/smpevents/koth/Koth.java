@@ -103,7 +103,12 @@ public final class Koth {
     private final Map<String, String> teamNames = new HashMap<>();
     private final Map<UUID, Integer> personal = new HashMap<>();
     private final Map<UUID, String> playerTeam = new HashMap<>();
-    private BossBar bar;
+    private final Map<UUID, BossBar> bars = new HashMap<>();
+    private BossBar bar; // conservé pour la compatibilité (null = pas d'événement)
+    /** joueurs qui suivent l'événement en cours / prévu, et ceux qui veulent toujours être prévenus */
+    private final Set<UUID> followers = new HashSet<>();
+    private final Set<UUID> alwaysNotify = new HashSet<>();
+    private static final String[] ARROWS = {"⬆", "⬈", "➡", "⬊", "⬇", "⬋", "⬅", "⬉"};
     private TextDisplay label;
     private BlockDisplay pillar;
     private boolean searching;
@@ -190,6 +195,13 @@ public final class Koth {
             }
         }
         lastZone = y.getString("last-zone");
+        alwaysNotify.clear();
+        for (String s : y.getStringList("notify")) {
+            try {
+                alwaysNotify.add(UUID.fromString(s));
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
     }
 
     public void save() {
@@ -203,6 +215,7 @@ public final class Koth {
             y.set(p + "radius", z.radius);
         }
         if (lastZone != null) y.set("last-zone", lastZone);
+        y.set("notify", alwaysNotify.stream().map(UUID::toString).toList());
         DataStore.write(file, y.saveToString());
     }
 
@@ -273,7 +286,14 @@ public final class Koth {
                     String k = date + t + "-" + m;
                     if (sent.add(k) && active == null && Bukkit.getOnlinePlayers().size() >= minPlayers) {
                         upcoming(z -> {
-                            if (z != null && active == null) broadcast("koth.soon", z, ph("minutes", m));
+                            if (z != null && active == null) {
+                                broadcast("koth.soon", z, ph("minutes", m));
+                                Bukkit.broadcast(plugin.texts().get("koth.follow-button"));
+                                for (Player p : Bukkit.getOnlinePlayers()) {
+                                    if (follows(p)) p.playSound(Sound.sound(Key.key("minecraft", "block.note_block.bell"),
+                                            Sound.Source.MASTER, 1f, 1f));
+                                }
+                            }
                         });
                     }
                 }
@@ -415,7 +435,6 @@ public final class Koth {
         c.getChunk().addPluginChunkTicket(plugin);
         bar = BossBar.bossBar(Component.empty(), 0f, BossBar.Color.YELLOW, BossBar.Overlay.NOTCHED_10);
         updateBar();
-        for (Player p : Bukkit.getOnlinePlayers()) if (bossbarEveryone) p.showBossBar(bar);
         label = c.getWorld().spawn(c.clone().add(0, height - 1, 0), TextDisplay.class, d -> {
             d.setPersistent(false);
             d.getPersistentDataContainer().set(plugin.key(), PersistentDataType.BYTE, (byte) 1);
@@ -440,8 +459,12 @@ public final class Koth {
         }
         updateLabel();
         broadcast("koth.started", z);
+        Bukkit.broadcast(plugin.texts().get("koth.follow-button"));
         for (Player p : Bukkit.getOnlinePlayers()) {
+            if (!follows(p)) continue;
             p.playSound(Sound.sound(Key.key("minecraft", "event.raid.horn"), Sound.Source.MASTER, 0.7f, 1f));
+            p.showTitle(net.kyori.adventure.title.Title.title(plugin.texts().get("koth.title"),
+                    plugin.texts().get("koth.subtitle", ph("zone", z.name), ph("x", (int) z.x), ph("z", (int) z.z))));
         }
         return true;
     }
@@ -453,8 +476,13 @@ public final class Koth {
     }
 
     private void cleanup() {
-        if (bar != null) for (Player p : Bukkit.getOnlinePlayers()) p.hideBossBar(bar);
+        for (var e : bars.entrySet()) {
+            Player p = Bukkit.getPlayer(e.getKey());
+            if (p != null) p.hideBossBar(e.getValue());
+        }
+        bars.clear();
         bar = null;
+        followers.clear();
         if (label != null) label.remove();
         label = null;
         if (pillar != null) pillar.remove();
@@ -636,10 +664,72 @@ public final class Koth {
         String kingName = king == null ? plugin.texts().raw("koth.nobody") : teamNames.getOrDefault(king, "?");
         String status = contested ? "koth.boss-contested" : "koth.boss";
         int left = maxMinutes * 60 - elapsed;
-        bar.name(plugin.texts().get(status, ph("zone", active.name), ph("king", kingName), ph("time", fmt(kt)),
-                ph("capture", fmt(captureSeconds)), ph("left", fmt(Math.max(0, left)))));
-        bar.progress(Math.max(0f, Math.min(1f, kt / (float) captureSeconds)));
-        bar.color(contested ? BossBar.Color.RED : king == null ? BossBar.Color.WHITE : BossBar.Color.YELLOW);
+        float progress = Math.max(0f, Math.min(1f, kt / (float) captureSeconds));
+        BossBar.Color color = contested ? BossBar.Color.RED : king == null ? BossBar.Color.WHITE : BossBar.Color.YELLOW;
+        Location c = active.center();
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            boolean near = c != null && p.getWorld() == c.getWorld() && p.getLocation().distanceSquared(c) < 80 * 80;
+            if (!follows(p) && !near) {
+                BossBar old = bars.remove(p.getUniqueId());
+                if (old != null) p.hideBossBar(old);
+                continue;
+            }
+            Component name = plugin.texts().get(contested ? "koth.bar2-contested" : "koth.bar2", ph("zone", active.name),
+                    ph("king", kingName), ph("time", fmt(kt)), ph("capture", fmt(captureSeconds)), ph("left", fmt(Math.max(0, left))),
+                    ph("x", (int) active.x), ph("y", (int) active.y), ph("z", (int) active.z), direction(p, c));
+            BossBar b = bars.get(p.getUniqueId());
+            if (b == null) {
+                b = BossBar.bossBar(name, progress, color, BossBar.Overlay.NOTCHED_10);
+                bars.put(p.getUniqueId(), b);
+                p.showBossBar(b);
+            } else {
+                b.name(name);
+                b.progress(progress);
+                b.color(color);
+            }
+        }
+    }
+
+    /** Flèche et distance vers la colline, pour ce joueur. */
+    private TagResolver direction(Player p, Location c) {
+        if (c == null || p.getWorld() != c.getWorld()) {
+            return TagResolver.resolver(ph("arrow", "✖"), ph("distance", worldName(active.world)));
+        }
+        double dx = c.getX() - p.getLocation().getX(), dz = c.getZ() - p.getLocation().getZ();
+        double dist = Math.sqrt(dx * dx + dz * dz);
+        if (dist <= active.radius) return TagResolver.resolver(ph("arrow", "●"), ph("distance", plugin.texts().raw("koth.here")));
+        double rel = Math.toDegrees(Math.atan2(-dx, dz)) - p.getLocation().getYaw();
+        rel = ((rel % 360) + 540) % 360 - 180;
+        int idx = ((int) Math.round(rel / 45.0) % 8 + 8) % 8;
+        String d = dist >= 1000 ? String.format(Locale.FRANCE, "%.1f km", dist / 1000) : (int) dist + " m";
+        return TagResolver.resolver(ph("arrow", ARROWS[idx]), ph("distance", d));
+    }
+
+    // ================================================================= suivre l'événement
+
+    public boolean follows(Player p) {
+        return followers.contains(p.getUniqueId()) || alwaysNotify.contains(p.getUniqueId());
+    }
+
+    /** [Suivre ce KOTH] : true = suivi. */
+    public boolean toggleFollow(Player p) {
+        if (followers.remove(p.getUniqueId())) {
+            BossBar b = bars.remove(p.getUniqueId());
+            if (b != null) p.hideBossBar(b);
+            return false;
+        }
+        followers.add(p.getUniqueId());
+        p.playSound(Sound.sound(Key.key("minecraft", "block.note_block.bell"), Sound.Source.MASTER, 1f, 1.4f));
+        updateBar();
+        return true;
+    }
+
+    public boolean toggleNotify(Player p) {
+        boolean on = !alwaysNotify.remove(p.getUniqueId());
+        if (on) alwaysNotify.add(p.getUniqueId());
+        save();
+        if (active != null) updateBar();
+        return on;
     }
 
     private void updateLabel() {
@@ -693,7 +783,7 @@ public final class Koth {
 
     /** Un joueur qui se connecte pendant l'événement voit la barre. */
     public void onJoin(Player p) {
-        if (bar != null && bossbarEveryone) p.showBossBar(bar);
+        if (active != null) updateBar();
     }
 
     public int elapsed() {
