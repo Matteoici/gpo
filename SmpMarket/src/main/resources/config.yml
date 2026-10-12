@@ -57,3 +57,42 @@ visuals:
   item-scale: 0.55
   # les objets exposés tournent sur eux-mêmes
   spin: true
+  # étiquettes au-dessus des vitrines
+  label-scale: 0.5
+  # largeur max d'une ligne (les noms longs passent à la ligne au lieu de déborder sur la vitrine d'à côté)
+  label-width: 70
+  # une étiquette sur deux un peu plus haut (vitrines collées)
+  label-stagger: true
+  # prix courts : 1M $ au lieu de 1 000 000 $
+  label-short-prices: true
+
+# ---------------------------------------------------------------- Personnalisation des stands (par le locataire)
+# Menu : /marche -> Ma boutique -> Personnaliser
+customization:
+  # couleur du nom (MiniMessage). Le nom du joueur est ajouté à la fin.
+  themes:
+    or: {name: "Or", icon: YELLOW_DYE, format: "<gradient:#ffd36b:#ff8a3d>"}
+    feu: {name: "Feu", icon: ORANGE_DYE, format: "<gradient:#ff4b1f:#ff9068>"}
+    rubis: {name: "Rubis", icon: RED_DYE, format: "<gradient:#ff416c:#ff4b2b>"}
+    rose: {name: "Rose", icon: PINK_DYE, format: "<gradient:#ff9a9e:#fecfef>"}
+    violet: {name: "Améthyste", icon: PURPLE_DYE, format: "<gradient:#a18cd1:#fbc2eb>"}
+    magie: {name: "Magie", icon: MAGENTA_DYE, format: "<gradient:#c471f5:#fa71cd>"}
+    ocean: {name: "Océan", icon: BLUE_DYE, format: "<gradient:#2193b0:#6dd5ed>"}
+    glace: {name: "Glace", icon: LIGHT_BLUE_DYE, format: "<gradient:#a1c4fd:#c2e9fb>"}
+    cyan: {name: "Turquoise", icon: CYAN_DYE, format: "<gradient:#00c9ff:#92fe9d>"}
+    emeraude: {name: "Émeraude", icon: LIME_DYE, format: "<gradient:#3cff9a:#00b36b>"}
+    foret: {name: "Forêt", icon: GREEN_DYE, format: "<gradient:#56ab2f:#a8e063>"}
+    neige: {name: "Neige", icon: WHITE_DYE, format: "<white>"}
+    ombre: {name: "Ombre", icon: GRAY_DYE, format: "<gradient:#bdc3c7:#6c7a89>"}
+    arcenciel: {name: "Arc-en-ciel", icon: GLOW_INK_SAC, format: "<rainbow>"}
+  # fond du panneau et des étiquettes (opacity : 0 = transparent, 255 = opaque)
+  backgrounds:
+    sombre: {name: "Sombre", icon: BLACK_STAINED_GLASS_PANE, color: "#0a0a14", opacity: 150}
+    transparent: {name: "Transparent", icon: GLASS_PANE, color: "#000000", opacity: 0}
+    nuit: {name: "Bleu nuit", icon: BLUE_STAINED_GLASS_PANE, color: "#0b1d3a", opacity: 170}
+    bordeaux: {name: "Bordeaux", icon: RED_STAINED_GLASS_PANE, color: "#3a0b12", opacity: 170}
+    sapin: {name: "Sapin", icon: GREEN_STAINED_GLASS_PANE, color: "#0b2a17", opacity: 170}
+    prune: {name: "Prune", icon: PURPLE_STAINED_GLASS_PANE, color: "#26103a", opacity: 170}
+    ambre: {name: "Ambre", icon: ORANGE_STAINED_GLASS_PANE, color: "#3a250b", opacity: 170}
+  # symboles devant le nom ("aucun" = rien)
+  symbols: ["aucun", "★", "✦", "♛", "⚔", "⛏", "✿"]

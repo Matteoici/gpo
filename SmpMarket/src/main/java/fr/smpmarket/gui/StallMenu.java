@@ -61,6 +61,7 @@ public final class StallMenu extends Menu {
             MarketCommand.teleport(plugin, viewer, stall);
         });
         set(50, item(Material.BOOK, "gui.stall.howto"));
+        button(52, Items.glow(item(Material.PAINTING, "gui.stall.style")), c -> new StyleMenu(plugin, viewer, stall).open());
         Auction a = stall.auction;
         if (a != null && a.renewal) {
             button(51, Items.glow(item(Material.BELL, "gui.stall.renewal",

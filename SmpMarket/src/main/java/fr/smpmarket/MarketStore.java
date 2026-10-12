@@ -136,6 +136,10 @@ public final class MarketStore {
             }
             y.set(b + "auto-renew", s.autoRenew);
             if (s.name != null) y.set(b + "name", s.name);
+            if (s.theme != null) y.set(b + "style.theme", s.theme);
+            if (s.background != null) y.set(b + "style.background", s.background);
+            if (s.symbol != null) y.set(b + "style.symbol", s.symbol);
+            if (s.slogan != null) y.set(b + "style.slogan", s.slogan);
             for (Map.Entry<UUID, String> t : s.trusted.entrySet()) y.set(b + "trusted." + t.getKey(), t.getValue());
             y.set(b + "total-sold", s.totalSold);
             y.set(b + "total-revenue", s.totalRevenue);
@@ -238,6 +242,10 @@ public final class MarketStore {
         }
         s.autoRenew = c.getBoolean("auto-renew", true);
         s.name = c.getString("name");
+        s.theme = c.getString("style.theme");
+        s.background = c.getString("style.background");
+        s.symbol = c.getString("style.symbol");
+        s.slogan = c.getString("style.slogan");
         ConfigurationSection t = c.getConfigurationSection("trusted");
         if (t != null) for (String k : t.getKeys(false)) s.trusted.put(UUID.fromString(k), t.getString(k, "?"));
         s.totalSold = c.getLong("total-sold");

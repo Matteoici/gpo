@@ -19,6 +19,7 @@ input:
   bid: "<yellow>Écris le montant de ton offre dans le chat. <gray>(ex. 2500 ou 3k)"
   name: "<yellow>Écris le nom de ta boutique dans le chat (28 caractères max)."
   trust: "<yellow>Écris le pseudo du joueur à ajouter."
+  slogan: "<yellow>Écris le slogan de ta boutique dans le chat (32 caractères max). <gray>Ex. : Les meilleurs prix du spawn !"
   search: "<yellow>Écris ce que tu cherches dans le chat (ex. diamant, épée, bûche)."
 
 help:
@@ -41,6 +42,18 @@ sign:
     - "<yellow><count></yellow> <gray>article(s) en vente"
     - "<dark_gray>Clic droit : catalogue"
   renewal: "<red>⚑ Enchère en cours : <gold><bid></gold> <gray>(<time>)"
+  # panneau d'un stand loué : <name> = nom avec la couleur, le fond et le symbole choisis par le locataire
+  styled:
+    - "<name>"
+    - "<gray>tenue par <white><owner>"
+    - "<yellow><count></yellow> <gray>article(s) en vente"
+    - "<dark_gray>Clic droit : catalogue"
+  styled-slogan:
+    - "<name>"
+    - "<slogan>"
+    - "<gray>tenue par <white><owner></white> <dark_gray>·</dark_gray> <yellow><count></yellow> <gray>article(s)"
+    - "<dark_gray>Clic droit : catalogue"
+  slogan: "<white><i>« <slogan> »"
   free:
     - "<green><b>★ STAND À LOUER ★</b></green>"
     - "<gray>Stand <white><stall></white> <dark_gray>(<size>)"
@@ -53,6 +66,15 @@ sign:
   free-waiting: "<dark_gray>En attente de la première offre"
 
 showcase-label:
+  # étiquettes au-dessus des vitrines (courtes pour ne pas se chevaucher). <price> prend la couleur du stand.
+  v2:
+    in-stock:
+      - "<white><item>"
+      - "<price>"
+      - "<gray>x<stock>"
+    out-of-stock:
+      - "<gray><item>"
+      - "<red><b>ÉPUISÉ"
   in-stock:
     - "<white><item>"
     - "<gold><b><price></b> <gray>/ pièce"
@@ -119,6 +141,8 @@ stall:
   teleported: "<gray>Bienvenue au stand <white><shop></white> !"
   renamed: "<green>Ta boutique s'appelle maintenant <white><shop></white>."
   bad-name: "<red>Nom invalide (1 à 28 caractères)."
+  bad-slogan: "<red>Slogan trop long (32 caractères max)."
+  slogan-set: "<green>Slogan mis à jour."
   trusted: "<green><white><player></white> peut maintenant construire dans ton stand."
   untrusted: "<yellow><white><player></white> ne peut plus construire dans ton stand."
   auto-renew-on: "<green>Renouvellement automatique activé."
@@ -375,9 +399,43 @@ gui:
         - "<gray>3. Vise un bloc (tonneau, dalle...)"
         - "<gray>4. Tape <aqua>/marche vitrine <prix>"
         - "<gray>Le stock = la quantité en main."
+    style:
+      name: "<light_purple><b>✎ Personnaliser mon stand"
+      lore:
+        - "<gray>Couleur du nom, fond du panneau,"
+        - "<gray>symbole, slogan..."
+        - ""
+        - "<yellow>▶ Clic"
     renewal:
       name: "<red><b>Enchère pour garder ton stand"
       lore: ["<gray>Offre : <gold><bid></gold> <gray><bidder>", "<gray>Fin : <white><time>", "", "<yellow>▶ Clic"]
+
+  style:
+    title: "<dark_gray>Personnaliser mon stand"
+    preview:
+      - "<gray>Aperçu du nom de ton stand"
+      - "<gray>Slogan : <white><slogan>"
+    example: "<gray>Aperçu : <example>"
+    selected: "<green><b>✔ Choisi"
+    click: "<yellow>▶ Clic pour choisir"
+    background: "<white>Fond : <b><name>"
+    no-symbol: "<gray>Aucun symbole"
+    label-themes:
+      name: "<white><b>Couleur du nom →"
+      lore: ["<gray>Aussi utilisée pour les prix", "<gray>sur tes vitrines."]
+    label-backgrounds:
+      name: "<white><b>Fond du panneau →"
+      lore: ["<gray>Panneau et étiquettes des vitrines."]
+    label-symbols:
+      name: "<white><b>Symbole →"
+      lore: ["<gray>Devant le nom de ta boutique."]
+    slogan:
+      name: "<white><b>Slogan"
+      lore:
+        - "<gray>Actuel : <white><slogan>"
+        - ""
+        - "<yellow>▶ Clic gauche : écrire"
+        - "<yellow>▶ Clic droit : retirer"
 
   showcase:
     title: "<dark_gray>Vitrine"

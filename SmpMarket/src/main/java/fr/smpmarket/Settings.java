@@ -31,6 +31,10 @@ public final class Settings {
     public final double signHeight;
     public final float itemScale;
     public final boolean spin;
+    public final float labelScale;
+    public final int labelWidth;
+    public final boolean labelStagger;
+    public final boolean labelShortPrices;
 
     Settings(FileConfiguration c) {
         currency = c.getString("currency-symbol", "$");
@@ -63,6 +67,10 @@ public final class Settings {
         signHeight = c.getDouble("visuals.sign-height", 2.6);
         itemScale = (float) Math.max(0.2, Math.min(2, c.getDouble("visuals.item-scale", 0.55)));
         spin = c.getBoolean("visuals.spin", true);
+        labelScale = (float) Math.max(0.2, Math.min(1.5, c.getDouble("visuals.label-scale", 0.5)));
+        labelWidth = Math.max(40, c.getInt("visuals.label-width", 70));
+        labelStagger = c.getBoolean("visuals.label-stagger", true);
+        labelShortPrices = c.getBoolean("visuals.label-short-prices", true);
     }
 
     /** "12 500 $" ou "12 500,50 $". */
@@ -71,6 +79,19 @@ public final class Settings {
         sym.setGroupingSeparator(' ');
         DecimalFormat f = new DecimalFormat(Math.abs(v - Math.rint(v)) < 0.005 ? "#,##0" : "#,##0.00", sym);
         return f.format(v) + " " + currency;
+    }
+
+    /** Prix court pour les étiquettes : "950 $", "12,5k $", "1M $", "2,3Md $". */
+    public String moneyShort(double v) {
+        double a = Math.abs(v);
+        if (a < 10_000) return money(v);
+        String[] u = {"k", "M", "Md"};
+        double[] d = {1_000, 1_000_000, 1_000_000_000};
+        int i = a >= 1e9 ? 2 : a >= 1e6 ? 1 : 0;
+        double x = v / d[i];
+        String n = x >= 100 ? String.valueOf(Math.round(x))
+                : String.format(Locale.FRANCE, "%.1f", x).replaceAll(",0$", "");
+        return n + u[i] + " " + currency;
     }
 
     /** Offre minimale pour une enchère. */

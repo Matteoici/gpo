@@ -28,6 +28,10 @@ public final class Stall {
     public long leaseEnd;
     public boolean autoRenew = true;
     public String name;                                    // nom de boutique choisi par le locataire
+    public String theme;                                   // couleur du nom (customization.themes)
+    public String background;                              // fond du panneau et des étiquettes
+    public String symbol;                                  // symbole devant le nom
+    public String slogan;                                  // petite phrase sous le nom
     public final Map<UUID, String> trusted = new LinkedHashMap<>();
     public final List<Showcase> showcases = new ArrayList<>();
     public Auction auction;

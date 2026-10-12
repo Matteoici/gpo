@@ -15,6 +15,7 @@ import java.util.UUID;
 public final class SmpMarket extends JavaPlugin {
 
     private Settings settings;
+    private final Styles styles = new Styles();
     private Texts texts;
     private Economy economy;
     private MarketStore store;
@@ -32,6 +33,7 @@ public final class SmpMarket extends JavaPlugin {
         key = new NamespacedKey(this, "market");
         wandKey = new NamespacedKey(this, "wand");
         settings = new Settings(getConfig());
+        styles.load(getConfig());
         texts = new Texts(this);
         texts.load();
         economy = new Economy();
@@ -73,8 +75,9 @@ public final class SmpMarket extends JavaPlugin {
     void reload() {
         reloadConfig();
         settings = new Settings(getConfig());
+        styles.load(getConfig());
         texts.load();
-        for (Stall st : store.stalls()) visuals.rebuild(st);
+        for (Stall st : store.stalls()) visuals.restyle(st);
     }
 
     /** Message à un joueur : tout de suite s'il est connecté, sinon à sa prochaine connexion. */
@@ -93,6 +96,10 @@ public final class SmpMarket extends JavaPlugin {
 
     public Location[] selection(UUID id) {
         return selections.computeIfAbsent(id, k -> new Location[2]);
+    }
+
+    public Styles styles() {
+        return styles;
     }
 
     public Settings settings() {

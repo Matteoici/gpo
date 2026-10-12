@@ -131,7 +131,7 @@ public final class Visuals {
         sp.text = w.spawn(at, TextDisplay.class, d -> {
             d.text(signText(st));
             d.setBillboard(Display.Billboard.CENTER);
-            d.setBackgroundColor(Color.fromARGB(150, 10, 10, 20));
+            d.setBackgroundColor(plugin.styles().background(st.background).color());
             d.setShadowed(true);
             d.setViewRange(1.2f);
             d.setLineWidth(220);
@@ -160,14 +160,20 @@ public final class Visuals {
             d.setBrightness(new Display.Brightness(15, 15));
             tag(d, null);
         });
-        p.label = w.spawn(top.clone().add(0, 0.95, 0), TextDisplay.class, d -> {
-            d.text(showText(c));
+        Settings set = plugin.settings();
+        // vitrines côte à côte : une étiquette sur deux un peu plus haut, pour qu'elles ne se chevauchent pas
+        double lift = set.labelStagger && ((c.x + c.z) & 1) == 1 ? 0.38 : 0;
+        float ls = set.labelScale;
+        p.label = w.spawn(top.clone().add(0, 0.95 + lift, 0), TextDisplay.class, d -> {
+            d.text(showText(st, c));
             d.setBillboard(Display.Billboard.CENTER);
-            d.setBackgroundColor(Color.fromARGB(120, 0, 0, 0));
+            Color bg = plugin.styles().background(st.background).color();
+            d.setBackgroundColor(Color.fromARGB(Math.min(bg.getAlpha(), 170), bg.getRed(), bg.getGreen(), bg.getBlue()));
             d.setShadowed(true);
             d.setViewRange(0.5f);
+            d.setLineWidth(set.labelWidth);
             Transformation tr = d.getTransformation();
-            d.setTransformation(new Transformation(tr.getTranslation(), tr.getLeftRotation(), new Vector3f(0.6f, 0.6f, 0.6f),
+            d.setTransformation(new Transformation(tr.getTranslation(), tr.getLeftRotation(), new Vector3f(ls, ls, ls),
                     tr.getRightRotation()));
             tag(d, null);
         });
@@ -198,7 +204,14 @@ public final class Visuals {
             Component timeLine = t.get(running ? "sign.free-time" : "sign.free-waiting", vals);
             return t.lines("sign.free", base, pc("bid-line", bidLine), pc("time-line", timeLine));
         }
-        Component c = t.lines("sign.rented", base);
+        Styles styles = plugin.styles();
+        String sym = styles.symbol(st.symbol);
+        Component name = styles.styled(st.theme, (sym.isEmpty() ? "" : sym + " ") + st.displayName(), true);
+        Component slogan = st.slogan == null || st.slogan.isBlank() ? Component.empty()
+                : t.get("sign.slogan", ph("slogan", st.slogan));
+        Component c = st.slogan == null || st.slogan.isBlank()
+                ? t.lines("sign.styled", base, pc("name", name))
+                : t.lines("sign.styled-slogan", base, pc("name", name), pc("slogan", slogan));
         if (a != null && a.renewal) {
             c = c.append(Component.newline()).append(t.get("sign.renewal", ph("bid", s.money(a.hasBid() ? a.bid : st.startPrice)),
                     ph("time", Settings.time(a.endsAt - now))));
@@ -206,11 +219,13 @@ public final class Visuals {
         return c;
     }
 
-    private Component showText(Showcase c) {
+    private Component showText(Stall st, Showcase c) {
         Texts t = plugin.texts();
-        TagResolver[] r = {pc("item", Shops.itemName(c.template)), ph("price", plugin.settings().money(c.price)),
+        Settings set = plugin.settings();
+        String price = set.labelShortPrices ? set.moneyShort(c.price) : set.money(c.price);
+        TagResolver[] r = {pc("item", Shops.itemName(c.template)), pc("price", plugin.styles().styled(st.theme, price, true)),
                 ph("stock", c.stock)};
-        return t.lines(c.stock > 0 ? "showcase-label.in-stock" : "showcase-label.out-of-stock", r);
+        return t.lines(c.stock > 0 ? "showcase-label.v2.in-stock" : "showcase-label.v2.out-of-stock", r);
     }
 
     public void refreshSign(Stall st) {
@@ -225,7 +240,7 @@ public final class Visuals {
             ensure(st);
             return;
         }
-        p.label.text(showText(c));
+        p.label.text(showText(st, c));
         if (p.item != null && p.item.isValid()) p.item.setItemStack(c.template);
     }
 
@@ -256,6 +271,14 @@ public final class Visuals {
     public void rebuild(Stall st) {
         SignParts sp = signs.remove(st.id);
         if (sp != null) removeSign(sp);
+        ensure(st);
+    }
+
+    /** Le style du stand a changé : on refait le panneau et les étiquettes. */
+    public void restyle(Stall st) {
+        SignParts sp = signs.remove(st.id);
+        if (sp != null) removeSign(sp);
+        removeShowcases(st);
         ensure(st);
     }
 

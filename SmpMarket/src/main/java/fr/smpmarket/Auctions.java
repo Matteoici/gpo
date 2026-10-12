@@ -192,6 +192,10 @@ public final class Auctions {
         st.leaseEnd = leaseEnd;
         st.autoRenew = true;
         st.name = null;
+        st.theme = null;
+        st.background = null;
+        st.symbol = null;
+        st.slogan = null;
         st.trusted.clear();
         st.totalSold = 0;
         st.totalRevenue = 0;
@@ -216,6 +220,10 @@ public final class Auctions {
         st.ownerName = null;
         st.leaseEnd = 0;
         st.name = null;
+        st.theme = null;
+        st.background = null;
+        st.symbol = null;
+        st.slogan = null;
         st.trusted.clear();
         plugin.store().markDirty();
     }
