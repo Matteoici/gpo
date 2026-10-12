@@ -569,7 +569,7 @@ public final class SmpGojo extends JavaPlugin implements Listener {
     }
 
     /** Envoie le pack de sons (si configuré) à chaque connexion. */
-    private static final String PACK_URL = "https://download.mc-packs.net/pack/9e1c331857ad36a02660314a7f8e898fc64dcc23.zip",
+    private static final String PACK_URL = "https://raw.githubusercontent.com/Matteoici/smp-sons/main/SmpGojo-sons.zip",
             PACK_SHA = "9e1c331857ad36a02660314a7f8e898fc64dcc23";
 
     /** Envoie le pack de sons. Renvoie false s'il n'y a pas de lien. */

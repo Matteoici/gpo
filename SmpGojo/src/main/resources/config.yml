@@ -240,10 +240,10 @@ bombes:
 
 # ------------------------------------------------------------ Pack de sons
 # Le son du clip des 8 Black Flash est dans SmpGojo-sons.zip.
-# Mets ce zip en ligne (par ex. sur mc-packs.net), colle le lien direct et son SHA-1 ici :
-# le plugin l'envoie à chaque joueur qui se connecte.
+# Le zip est hébergé sur GitHub (dépôt public Matteoici/smp-sons) ; le plugin l'envoie
+# à chaque joueur qui se connecte. /jjk pack pour le renvoyer et voir ce qui bloque.
 resource-pack:
-  url: "https://download.mc-packs.net/pack/9e1c331857ad36a02660314a7f8e898fc64dcc23.zip"
+  url: "https://raw.githubusercontent.com/Matteoici/smp-sons/main/SmpGojo-sons.zip"
   sha1: "9e1c331857ad36a02660314a7f8e898fc64dcc23"
   # true = les joueurs qui refusent le pack sont déconnectés
   required: false
