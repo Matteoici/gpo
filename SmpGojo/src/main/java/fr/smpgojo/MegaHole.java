@@ -40,6 +40,7 @@ final class MegaHole {
     private final double ax, ay, az, dx, dy, dz, len, r;
     private final int minY, maxY;
     private final List<int[]> chunks = new ArrayList<>();
+    private final Map<int[], Double> along;
     private int chunkIdx, col;
     private long[] keys = new long[1 << 16];
     private int[] pal = new int[1 << 16];
@@ -83,7 +84,7 @@ final class MegaHole {
         this.maxY = (int) Math.min(w.getMaxHeight() - 1, Math.ceil(Math.max(ay, by) + r));
         int c0x = (int) Math.floor((Math.min(ax, bx) - r) / 16), c1x = (int) Math.floor((Math.max(ax, bx) + r) / 16);
         int c0z = (int) Math.floor((Math.min(az, bz) - r) / 16), c1z = (int) Math.floor((Math.max(az, bz) + r) / 16);
-        Map<int[], Double> along = new HashMap<>();
+        along = new HashMap<>();
         for (int x = c0x; x <= c1x; x++) {
             for (int z = c0z; z <= c1z; z++) {
                 double cx = x * 16 + 8, cz = z * 16 + 8;
@@ -113,6 +114,20 @@ final class MegaHole {
         else if (t > len) t = len;
         double px = ax + dx * t - x, py = ay + dy * t - y, pz = az + dz * t - z;
         return px * px + py * py + pz * pz <= r * r;
+    }
+
+    /** Jusqu'où (en blocs le long du trajet) le néant est arrivé. */
+    double progress() {
+        if (!full) return 0;
+        if (chunkIdx >= chunks.size()) return len;
+        Double a = along.get(chunks.get(chunkIdx));
+        double hl = Math.sqrt(dx * dx + dz * dz);
+        double v = a == null ? 0 : a / Math.max(0.2, hl) - 12;
+        return Math.max(0, Math.min(len, v));
+    }
+
+    double length() {
+        return len;
     }
 
     boolean erasing() {
