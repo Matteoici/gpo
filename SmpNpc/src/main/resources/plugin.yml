@@ -1,0 +1,15 @@
+name: SmpNpc
+version: '${version}'
+main: fr.smpnpc.SmpNpc
+api-version: '26.2'
+description: PNJ médiévaux qui se promènent au spawn
+commands:
+  pnj:
+    description: Gérer les zones de PNJ
+    usage: /pnj <zone|liste|respawn|reload>
+    aliases: [npcs, smpnpc]
+    permission: smpnpc.admin
+permissions:
+  smpnpc.admin:
+    description: Créer / supprimer des zones de PNJ
+    default: op

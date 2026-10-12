@@ -1,0 +1,142 @@
+# =====================================================================
+#  SmpNpc - PNJ médiévaux qui se promènent
+#  Créer une zone : place-toi au centre et tape  /pnj zone creer spawn 25 12
+#  (nom, rayon en blocs, nombre de PNJ).   Après une modification : /pnj reload
+# =====================================================================
+
+# vitesse de marche (blocs par seconde ; un joueur marche à ~4.3)
+speed: 1.6
+# pause entre deux marches (secondes, au hasard entre min et max)
+pause-min: 2
+pause-max: 7
+# ils regardent les joueurs à moins de X blocs pendant leurs pauses
+look-at-players: 6
+# afficher le nom et le métier au-dessus de la tête
+show-names: true
+
+# ---------------------------------------------------------------- Skins
+# Liste vide = skins Minecraft par défaut (Steve, Alex, Kai...) au hasard.
+# Deux façons d'ajouter un skin :
+#  1) le pseudo d'un compte Minecraft qui a ce skin :
+#       - name: "UnPseudo"
+#  2) depuis mineskin.org : envoie ton fichier PNG, puis copie "Texture Value" et "Texture Signature" :
+#       - value: "ewogICJ0aW1lc3RhbXAiIDog..."
+#         signature: "AbCdEf..."
+#  Tu peux aussi réserver un skin à un métier :  profession: forgeron
+skins: []
+
+# ---------------------------------------------------------------- Noms (tirés au hasard)
+names:
+  - Godefroy
+  - Bertrand
+  - Aliénor
+  - Ysabeau
+  - Gauthier
+  - Mathilde
+  - Perceval
+  - Guenièvre
+  - Thibault
+  - Héloïse
+  - Roland
+  - Blanche
+  - Enguerrand
+  - Clothilde
+  - Arnaud
+  - Béatrice
+  - Hugues
+  - Jehanne
+  - Aymeric
+  - Margot
+  - Tristan
+  - Ermengarde
+  - Baudouin
+  - Isabeau
+
+# ---------------------------------------------------------------- Métiers (tenue + objets)
+# Objets : NOM_MINECRAFT, ou NOM@#couleur pour le cuir teint (ex. LEATHER_CHESTPLATE@#6b4f2a)
+professions:
+  garde:
+    title: "<gray>Garde"
+    helmet: IRON_HELMET
+    chestplate: CHAINMAIL_CHESTPLATE
+    leggings: CHAINMAIL_LEGGINGS
+    boots: LEATHER_BOOTS@#3b2a1a
+    main-hand: IRON_SWORD
+    off-hand: SHIELD
+  chevalier:
+    title: "<white>Chevalier"
+    helmet: IRON_HELMET
+    chestplate: IRON_CHESTPLATE
+    leggings: IRON_LEGGINGS
+    boots: IRON_BOOTS
+    main-hand: IRON_SWORD
+  paysan:
+    title: "<#c9a15b>Paysan"
+    chestplate: LEATHER_CHESTPLATE@#8a6a3b
+    leggings: LEATHER_LEGGINGS@#5a4326
+    boots: LEATHER_BOOTS@#3b2a1a
+    main-hand: IRON_HOE
+    off-hand: WHEAT
+  marchand:
+    title: "<light_purple>Marchand"
+    helmet: LEATHER_HELMET@#4b1f5c
+    chestplate: LEATHER_CHESTPLATE@#6b2f84
+    leggings: LEATHER_LEGGINGS@#3a1a47
+    boots: LEATHER_BOOTS@#2a1a12
+    main-hand: EMERALD
+  forgeron:
+    title: "<#d97a3a>Forgeron"
+    chestplate: LEATHER_CHESTPLATE@#2e2e2e
+    leggings: LEATHER_LEGGINGS@#4a3a2a
+    boots: LEATHER_BOOTS@#1e1e1e
+    main-hand: IRON_PICKAXE
+  moine:
+    title: "<#a0784a>Moine"
+    helmet: LEATHER_HELMET@#5c3b1e
+    chestplate: LEATHER_CHESTPLATE@#5c3b1e
+    leggings: LEATHER_LEGGINGS@#5c3b1e
+    boots: LEATHER_BOOTS@#3b2410
+    main-hand: BOOK
+  archer:
+    title: "<green>Archer"
+    helmet: LEATHER_HELMET@#2f5a2a
+    chestplate: LEATHER_CHESTPLATE@#3d6b33
+    leggings: LEATHER_LEGGINGS@#2a3f22
+    boots: LEATHER_BOOTS@#2a1a12
+    main-hand: BOW
+  boulanger:
+    title: "<yellow>Boulanger"
+    chestplate: LEATHER_CHESTPLATE@#f0e6d2
+    leggings: LEATHER_LEGGINGS@#8a7350
+    boots: LEATHER_BOOTS@#3b2a1a
+    main-hand: BREAD
+  bucheron:
+    title: "<red>Bûcheron"
+    chestplate: LEATHER_CHESTPLATE@#8b2a2a
+    leggings: LEATHER_LEGGINGS@#3a2a1a
+    boots: LEATHER_BOOTS@#2a1a12
+    main-hand: IRON_AXE
+  pecheur:
+    title: "<aqua>Pêcheur"
+    helmet: LEATHER_HELMET@#c9b27a
+    chestplate: LEATHER_CHESTPLATE@#3a5a7a
+    leggings: LEATHER_LEGGINGS@#2a3a4a
+    boots: LEATHER_BOOTS@#2a1a12
+    main-hand: FISHING_ROD
+    off-hand: COD
+
+# ---------------------------------------------------------------- Phrases (clic droit sur un PNJ)
+phrases:
+  - "Le bonjour, voyageur !"
+  - "Belle journée pour le commerce, n'est-ce pas ?"
+  - "Méfie-toi des bandits sur la route du Nether..."
+  - "As-tu visité les échoppes du marché ? On y trouve de tout !"
+  - "On dit qu'une caisse tombe du ciel toutes les trois heures..."
+  - "Le roi de la colline approche, prépare ton épée !"
+  - "Par ma barbe, quelle armure tu portes !"
+  - "Les quêtes du jour rapportent gros, crois-moi."
+  - "Je ne vends rien, passe ton chemin... ou pas !"
+  - "Garde ton argent en lieu sûr, des primes circulent..."
+
+# format du message
+chat-format: "<gray>[<white><name></white>] <#e8d9b0><phrase>"
