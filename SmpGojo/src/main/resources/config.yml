@@ -31,7 +31,7 @@ cooldowns:
   bleu: 4
   rouge: 4
   violet: 15
-  nuke: 60
+  nuke: 15
   domaine: 45
   demantelement: 2
   clivage: 5

@@ -333,6 +333,7 @@ final class Gojo {
     // ================================================================= Violet creux 200 %
 
     void nuke(Player p) {
+        preload200(p);
         List<Player> vs = pl.viewers(p.getLocation(), 400);
         List<String> lines = List.of("<gray>« <white>Neuf cordes.</white> »", "<gray>« <white>Lumière polarisée.</white> »",
                 "<gray>« <white>Corbeau et déclaration.</white> »", "<gray>« <white>Entre l'avant et l'arrière.</white> »",
@@ -359,6 +360,39 @@ final class Gojo {
             if (k % 6 == 0) SmpGojo.sound(front, "block.beacon.ambient", 4f, 0.5f + k / 120f);
             if (k % 20 == 0) pl.cine.shake(vs, 1, 1);
         }, () -> launch200(p));
+    }
+
+    /**
+     * Pendant l'incantation : charge en arrière-plan tous les chunks du trajet et de l'explosion,
+     * pour que la boule n'ait jamais à attendre.
+     */
+    private void preload200(Player p) {
+        World w = p.getWorld();
+        double bR = pl.cfg("nuke.ball-radius", 22), R = pl.cfg("nuke.radius", 55), length = pl.cfg("nuke.length", 200);
+        Vector d = flat(p.getEyeLocation().getDirection());
+        Vector side = Draw.perpendicular(d, 0);
+        Location from = p.getEyeLocation().add(d.clone().multiply(bR + 3));
+        Set<Long> seen = new HashSet<>();
+        List<int[]> todo = new ArrayList<>();
+        for (double t = -8; t <= length + R + 8; t += 8) {
+            double half = t > length - R ? R + 8 : bR + 8;
+            for (double s = -half; s <= half; s += 8) {
+                Location l = from.clone().add(d.clone().multiply(t)).add(side.clone().multiply(s));
+                int cx = l.getBlockX() >> 4, cz = l.getBlockZ() >> 4;
+                if (seen.add(((long) cx << 32) ^ (cz & 0xffffffffL))) todo.add(new int[]{cx, cz});
+            }
+        }
+        List<int[]> ticketed = new ArrayList<>();
+        for (int[] c : todo) {
+            if (!w.isChunkGenerated(c[0], c[1])) continue;
+            w.getChunkAtAsync(c[0], c[1], false).whenComplete((ch, err) -> {
+                if (ch != null && w.addPluginChunkTicket(c[0], c[1], pl)) ticketed.add(c);
+            });
+        }
+        // on relâche les chunks une fois le 200 % largement terminé
+        pl.later(20L * 90, () -> {
+            for (int[] c : ticketed) w.removePluginChunkTicket(c[0], c[1], pl);
+        });
     }
 
     private static Vector flat(Vector v) {
