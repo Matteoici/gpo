@@ -32,7 +32,7 @@ public final class Styles {
         themes.clear();
         backgrounds.clear();
         symbols.clear();
-        ConfigurationSection t = c.getConfigurationSection("customization.themes");
+        ConfigurationSection t = section(c, "customization.themes");
         if (t != null) {
             for (String id : t.getKeys(false)) {
                 ConfigurationSection s = t.getConfigurationSection(id);
@@ -42,7 +42,7 @@ public final class Styles {
             }
         }
         if (themes.isEmpty()) themes.add(new Theme("or", "Or", Material.YELLOW_DYE, "<gradient:#ffd36b:#ff8a3d>"));
-        ConfigurationSection b = c.getConfigurationSection("customization.backgrounds");
+        ConfigurationSection b = section(c, "customization.backgrounds");
         if (b != null) {
             for (String id : b.getKeys(false)) {
                 ConfigurationSection s = b.getConfigurationSection(id);
@@ -59,6 +59,13 @@ public final class Styles {
             symbols.add(new Symbol(s, v));
         }
         if (symbols.isEmpty()) symbols.add(new Symbol("aucun", ""));
+    }
+
+    /** Section du config.yml du serveur, ou celle par défaut du plugin si elle n'y est pas encore (ancien fichier). */
+    private static ConfigurationSection section(FileConfiguration c, String path) {
+        ConfigurationSection s = c.isConfigurationSection(path) ? c.getConfigurationSection(path) : null;
+        if ((s == null || s.getKeys(false).isEmpty()) && c.getDefaults() != null) s = c.getDefaults().getConfigurationSection(path);
+        return s;
     }
 
     private static Color parseColor(String hex, int opacity) {
