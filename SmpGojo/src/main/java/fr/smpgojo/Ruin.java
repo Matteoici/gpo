@@ -491,11 +491,11 @@ final class Ruin {
     void tick() {
         now++;
         tickDebris();
-        long budget = (long) (pl.getConfig().getDouble("nuke.max-ms-per-tick", 6) * 1_000_000L);
+        long megaBudget = (long) (pl.getConfig().getDouble("nuke.max-ms-per-tick", 6) * 1_000_000L);
         for (java.util.Iterator<MegaHole> it = megas.iterator(); it.hasNext(); ) {
             MegaHole h = it.next();
-            if (h.erasing()) h.eraseTick(budget);
-            else h.restoreTick(now, budget);
+            if (h.erasing()) h.eraseTick(megaBudget);
+            else h.restoreTick(now, megaBudget);
             if (h.done) it.remove();
             break; // un seul trou travaille par tick
         }
