@@ -248,6 +248,11 @@ public final class SmpGojo extends JavaPlugin implements Listener {
                 cine.cleanup();
                 s.sendMessage(mm("<green>Tout est arrêté (invocations, territoires, effets). <gray>/jjk reparer pour le terrain."));
             }
+            case "pack" -> {
+                if (!(s instanceof Player p)) return true;
+                sendPack(p);
+                s.sendMessage(mm("<gray>Pack de sons envoyé... <dark_gray>(le résultat s'affiche juste après)"));
+            }
             case "reload" -> {
                 reloadConfig();
                 s.sendMessage(mm("<green>Config rechargée."));
@@ -257,7 +262,7 @@ public final class SmpGojo extends JavaPlugin implements Listener {
                 s.sendMessage(mm("<aqua>/gojo · /sukuna · /megumi · /yuji · /toji · /todo · /nanami · /hakari</aqua> <gray>(+ kit)"));
                 s.sendMessage(mm("<aqua>/jjk kit tout</aqua> <gray>- tous les kits"));
                 s.sendMessage(mm("<aqua>/jjk reparer</aqua> <gray>- reconstruire le terrain tout de suite"));
-                s.sendMessage(mm("<aqua>/jjk stop</aqua> <gray>- arrêter invocations et territoires · <aqua>/jjk reload"));
+                s.sendMessage(mm("<aqua>/jjk stop</aqua> <gray>- arrêter invocations et territoires · <aqua>/jjk pack</aqua> <gray>- renvoyer le pack de sons · <aqua>/jjk reload"));
             }
         }
         return true;
@@ -268,7 +273,7 @@ public final class SmpGojo extends JavaPlugin implements Listener {
         String name = c.getName().toLowerCase(Locale.ROOT);
         List<String> out = new ArrayList<>();
         if (name.equals("jjk")) {
-            if (a.length == 1) out.addAll(List.of("kit", "reparer", "stop", "reload"));
+            if (a.length == 1) out.addAll(List.of("kit", "reparer", "stop", "pack", "reload"));
             else if (a.length == 2 && a[0].equalsIgnoreCase("kit")) {
                 out.addAll(KITS.keySet());
                 out.add("tout");
@@ -564,24 +569,51 @@ public final class SmpGojo extends JavaPlugin implements Listener {
     }
 
     /** Envoie le pack de sons (si configuré) à chaque connexion. */
-    @EventHandler
-    public void onJoin(org.bukkit.event.player.PlayerJoinEvent e) {
-        String url = getConfig().getString("resource-pack.url", "https://download.mc-packs.net/pack/9e1c331857ad36a02660314a7f8e898fc64dcc23.zip");
-        if (url == null || url.isBlank()) return;
-        String sha = getConfig().getString("resource-pack.sha1", "9e1c331857ad36a02660314a7f8e898fc64dcc23");
+    private static final String PACK_URL = "https://download.mc-packs.net/pack/9e1c331857ad36a02660314a7f8e898fc64dcc23.zip",
+            PACK_SHA = "9e1c331857ad36a02660314a7f8e898fc64dcc23";
+
+    /** Envoie le pack de sons. Renvoie false s'il n'y a pas de lien. */
+    boolean sendPack(Player p) {
+        String url = getConfig().getString("resource-pack.url", PACK_URL);
+        if (url == null || url.isBlank()) url = PACK_URL;
+        String sha = getConfig().getString("resource-pack.sha1", PACK_SHA);
+        if (sha == null || sha.isBlank()) sha = PACK_SHA;
         byte[] hash = null;
-        if (sha != null && sha.matches("[0-9a-fA-F]{40}")) {
+        if (sha.matches("[0-9a-fA-F]{40}")) {
             hash = new byte[20];
             for (int i = 0; i < 20; i++) hash[i] = (byte) Integer.parseInt(sha.substring(i * 2, i * 2 + 2), 16);
         }
+        p.setResourcePack(java.util.UUID.nameUUIDFromBytes(url.getBytes(java.nio.charset.StandardCharsets.UTF_8)), url, hash,
+                mm("<gray>Sons des techniques (Black Flash...)"), getConfig().getBoolean("resource-pack.required", false));
+        return true;
+    }
+
+    /** Dit au joueur ce que son jeu fait du pack (pour comprendre s'il n'entend rien). */
+    @EventHandler
+    public void onPackStatus(org.bukkit.event.player.PlayerResourcePackStatusEvent e) {
+        if (!e.getPlayer().hasPermission("smpgojo.use")) return;
+        String msg = switch (e.getStatus().name()) {
+            case "ACCEPTED" -> "<yellow>Pack de sons accepté, téléchargement...";
+            case "DOWNLOADED" -> "<yellow>Pack de sons téléchargé...";
+            case "SUCCESSFULLY_LOADED" -> "<green>✔ Pack de sons chargé ! <gray>Teste /yuji flash8";
+            case "DECLINED" -> "<red>✘ Ton jeu a refusé le pack. <gray>Multijoueur > ton serveur > Modifier > Packs de ressources du serveur : <white>Activés";
+            case "FAILED_DOWNLOAD" -> "<red>✘ Téléchargement du pack impossible (lien ou réseau).";
+            case "INVALID_URL" -> "<red>✘ Lien du pack invalide.";
+            case "FAILED_RELOAD" -> "<red>✘ Le pack n'a pas pu être chargé par le jeu.";
+            case "DISCARDED" -> "<gray>Pack de sons retiré.";
+            default -> "<gray>Pack de sons : " + e.getStatus().name();
+        };
+        e.getPlayer().sendMessage(mm(msg));
+    }
+
+    @EventHandler
+    public void onJoin(org.bukkit.event.player.PlayerJoinEvent e) {
         Player p = e.getPlayer();
-        byte[] h = hash;
         Bukkit.getScheduler().runTaskLater(this, () -> {
-            if (!p.isOnline()) return;
-            p.setResourcePack(java.util.UUID.nameUUIDFromBytes(url.getBytes(java.nio.charset.StandardCharsets.UTF_8)), url, h,
-                    mm("<gray>Sons des techniques (Black Flash...)"), getConfig().getBoolean("resource-pack.required", false));
+            if (p.isOnline()) sendPack(p);
         }, 40L);
     }
+
 
     @EventHandler
     public void onQuit(PlayerQuitEvent e) {
