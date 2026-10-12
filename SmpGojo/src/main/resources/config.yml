@@ -1,6 +1,6 @@
 # =====================================================================
 #  SmpGojo - techniques de l'infini (admins seulement : smpgojo.use)
-#  /gojo kit = les 6 techniques en objets (clic droit pour lancer)
+#  /gojo kit et /sukuna kit = les techniques en objets (clic droit pour lancer)
 # =====================================================================
 
 # temps de recharge (secondes)
@@ -10,12 +10,28 @@ cooldowns:
   violet: 8
   nuke: 30
   domaine: 40
+  # Sukuna
+  demantelement: 2
+  clivage: 4
+  fuga: 15
+  taille: 30
+  sanctuaire: 45
 
 damage:
   bleu: 4
   rouge: 8
   violet: 30
   nuke: 40
+  # Sukuna
+  demantelement: 6
+  # Clivage : base + (pourcentage x vie max de la cible)
+  clivage-base: 6
+  clivage-percent: 0.3
+  fuga: 25
+  # Taille du monde : traverse l'Infini de Gojo
+  taille: 60
+  # Sanctuaire : dégâts à chaque coupure (4 par seconde)
+  sanctuaire: 2
 
 # Violet creux et Nuke peuvent creuser le terrain (false = aucun bloc touché)
 destroy-blocks: false
@@ -29,3 +45,15 @@ domain:
 nuke:
   radius: 22
   distance: 30
+
+# ----------------------------------------------------------- Sukuna (/sukuna kit)
+fuga:
+  radius: 7
+
+taille:
+  length: 40
+  width: 14
+
+sanctuaire:
+  radius: 20
+  seconds: 10

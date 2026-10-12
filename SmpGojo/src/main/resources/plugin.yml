@@ -2,11 +2,15 @@ name: SmpGojo
 version: '${version}'
 main: fr.smpgojo.SmpGojo
 api-version: '26.2'
-description: Techniques de Gojo pour les admins (troll)
+description: Techniques de Gojo et Sukuna pour les admins (troll)
 commands:
   gojo:
     description: Techniques de l'infini
     usage: /gojo [kit|infini|bleu|rouge|violet|nuke|domaine]
+    permission: smpgojo.use
+  sukuna:
+    description: Techniques de Sukuna
+    usage: /sukuna [kit|demantelement|clivage|fuga|taille|sanctuaire]
     permission: smpgojo.use
 permissions:
   smpgojo.use:

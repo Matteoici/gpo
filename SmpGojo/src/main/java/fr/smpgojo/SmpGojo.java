@@ -74,8 +74,14 @@ public final class SmpGojo extends JavaPlugin implements Listener {
     /** joueurs pris dans un territoire : position figée */
     private final Map<UUID, Location> frozen = new HashMap<>();
     private final Map<Location, BlockData> toRestore = new LinkedHashMap<>();
+    private Sukuna sukuna;
+    /** vrai pendant un coup qui traverse l'Infini (Taille du monde) */
+    private boolean piercing;
 
-    private static Component mm(String s) {
+    static final List<String> GOJO = List.of("infini", "bleu", "rouge", "violet", "nuke", "domaine");
+    static final List<String> SUKUNA = List.of("demantelement", "clivage", "fuga", "taille", "sanctuaire");
+
+    static Component mm(String s) {
         return MM.deserialize(s).decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE);
     }
 
@@ -84,6 +90,7 @@ public final class SmpGojo extends JavaPlugin implements Listener {
         saveDefaultConfig();
         abilityKey = new NamespacedKey(this, "ability");
         frozenKey = new NamespacedKey(this, "frozen_jump");
+        sukuna = new Sukuna(this);
         getServer().getPluginManager().registerEvents(this, this);
         Bukkit.getScheduler().runTaskTimer(this, this::tickInfinity, 1L, 1L);
     }
@@ -100,13 +107,17 @@ public final class SmpGojo extends JavaPlugin implements Listener {
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] a) {
         if (!(sender instanceof Player p)) return true;
+        boolean isSukuna = cmd.getName().equalsIgnoreCase("sukuna");
+        List<String> set = isSukuna ? SUKUNA : GOJO;
         String sub = a.length == 0 ? "kit" : a[0].toLowerCase(Locale.ROOT);
-        switch (sub) {
-            case "kit" -> {
-                for (String id : List.of("infini", "bleu", "rouge", "violet", "nuke", "domaine")) p.getInventory().addItem(item(id));
-                p.sendMessage(mm("<white>Les 6 techniques sont dans ton inventaire. <gray>Clic droit pour lancer."));
-            }
-            default -> use(p, sub);
+        if (sub.equals("kit")) {
+            for (String id : set) p.getInventory().addItem(item(id));
+            p.sendMessage(mm(isSukuna ? "<dark_red>Les " + set.size() + " techniques de Sukuna sont dans ton inventaire. <gray>Clic droit pour lancer."
+                    : "<white>Les " + set.size() + " techniques de Gojo sont dans ton inventaire. <gray>Clic droit pour lancer."));
+        } else if (set.contains(sub) || sub.equals("domain") || sub.equals("territoire")) {
+            use(p, sub);
+        } else {
+            p.sendMessage(mm("<red>/" + cmd.getName().toLowerCase(Locale.ROOT) + " [kit|" + String.join("|", set) + "]"));
         }
         return true;
     }
@@ -114,8 +125,10 @@ public final class SmpGojo extends JavaPlugin implements Listener {
     @Override
     public List<String> onTabComplete(CommandSender s, Command c, String l, String[] a) {
         if (a.length != 1) return List.of();
-        return List.of("kit", "infini", "bleu", "rouge", "violet", "nuke", "domaine").stream()
-                .filter(x -> x.startsWith(a[0].toLowerCase(Locale.ROOT))).toList();
+        List<String> out = new ArrayList<>();
+        out.add("kit");
+        out.addAll(c.getName().equalsIgnoreCase("sukuna") ? SUKUNA : GOJO);
+        return out.stream().filter(x -> x.startsWith(a[0].toLowerCase(Locale.ROOT))).toList();
     }
 
     private ItemStack item(String id) {
@@ -127,6 +140,16 @@ public final class SmpGojo extends JavaPlugin implements Listener {
             case "rouge" -> new Def(Material.RED_DYE, "<gradient:#ff2828:#ff8a8a><b>Inversion : Rouge", "Repousse tout violemment");
             case "violet" -> new Def(Material.PURPLE_DYE, "<gradient:#9628ff:#e0a8ff><b>Violet creux", "Efface tout sur son passage");
             case "nuke" -> new Def(Material.AMETHYST_CLUSTER, "<gradient:#5a00a8:#ff4dff><b>Violet creux : Nuke", "Une sphère qui engloutit la zone");
+            case "demantelement" -> new Def(Material.IRON_SWORD, "<gradient:#ffffff:#aa0000><b>Démantèlement",
+                    "Trois lames invisibles qui tranchent à distance");
+            case "clivage" -> new Def(Material.NETHERITE_SWORD, "<gradient:#aa0000:#2a0000><b>Clivage",
+                    "Découpe la cible visée (plus elle est solide, plus ça coupe)");
+            case "fuga" -> new Def(Material.BLAZE_ROD, "<gradient:#ff3c00:#ffb000><b>⟢ Ouverture : Fuga",
+                    "Une flèche de feu qui embrase toute la zone");
+            case "taille" -> new Def(Material.ECHO_SHARD, "<gradient:#ffffff:#000000><b>Taille du monde",
+                    "Une entaille qui coupe l'espace (traverse l'Infini)");
+            case "sanctuaire" -> new Def(Material.WITHER_SKELETON_SKULL, "<gradient:#8b0000:#ff2a2a:#8b0000><b>Extension du territoire",
+                    "Sanctuaire Démoniaque : tout est tranché dans la zone");
             default -> new Def(Material.ENDER_EYE, "<gradient:#000000:#ffffff:#000000><b>Extension du territoire",
                     "Sphère de l'infini : tout le monde est figé");
         };
@@ -172,7 +195,12 @@ public final class SmpGojo extends JavaPlugin implements Listener {
             case "violet" -> purple(p);
             case "nuke" -> nuke(p);
             case "domaine", "domain", "territoire" -> domain(p);
-            default -> p.sendMessage(mm("<red>/gojo [kit|infini|bleu|rouge|violet|nuke|domaine]"));
+            case "demantelement" -> sukuna.dismantle(p);
+            case "clivage" -> sukuna.cleave(p);
+            case "fuga" -> sukuna.fuga(p);
+            case "taille" -> sukuna.worldSlash(p);
+            case "sanctuaire" -> sukuna.shrine(p);
+            default -> p.sendMessage(mm("<red>/gojo kit · /sukuna kit"));
         }
     }
 
@@ -221,6 +249,7 @@ public final class SmpGojo extends JavaPlugin implements Listener {
     /** Rien ne touche un joueur sous Infini. */
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onHurt(EntityDamageByEntityEvent e) {
+        if (piercing) return;
         if (e.getEntity() instanceof Player p && infinity.contains(p.getUniqueId())) {
             e.setCancelled(true);
             p.getWorld().spawnParticle(Particle.END_ROD, p.getLocation().add(0, 1, 0), 8, 0.5, 0.6, 0.5, 0.02);
@@ -510,8 +539,26 @@ public final class SmpGojo extends JavaPlugin implements Listener {
 
     // ================================================================= outils
 
+    /** Un coup qui ignore l'Infini. */
+    void pierce(Runnable r) {
+        piercing = true;
+        try {
+            r.run();
+        } finally {
+            piercing = false;
+        }
+    }
+
+    void later(long delay, Runnable r) {
+        Bukkit.getScheduler().runTaskLater(this, r, Math.max(0, delay));
+    }
+
+    void resetCooldown(Player p, String id) {
+        cooldowns.remove(p.getUniqueId() + ":" + id);
+    }
+
     /** Efface les blocs dans une sphère (remis après restore-seconds). Jamais la bedrock ni les conteneurs. */
-    private void erase(Location c, double r) {
+    void erase(Location c, double r) {
         int ri = (int) Math.ceil(r);
         long delay = getConfig().getLong("restore-seconds", 20) * 20L;
         List<Location> erased = new ArrayList<>();
@@ -548,7 +595,7 @@ public final class SmpGojo extends JavaPlugin implements Listener {
         }
     }
 
-    private void repeat(int period, int times, IntConsumer step, Runnable end) {
+    void repeat(int period, int times, IntConsumer step, Runnable end) {
         int[] i = {0};
         BukkitTask[] self = new BukkitTask[1];
         self[0] = Bukkit.getScheduler().runTaskTimer(this, () -> {
@@ -561,7 +608,7 @@ public final class SmpGojo extends JavaPlugin implements Listener {
         }, 0L, period);
     }
 
-    private static void sound(Location l, String key, float volume, float pitch) {
+    static void sound(Location l, String key, float volume, float pitch) {
         l.getWorld().playSound(Sound.sound(Key.key("minecraft", key), Sound.Source.PLAYER, volume, pitch), l.getX(), l.getY(), l.getZ());
     }
 }
