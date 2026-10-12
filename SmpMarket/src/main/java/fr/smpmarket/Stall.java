@@ -37,6 +37,7 @@ public final class Stall {
     public boolean privateStall;                           // seuls le locataire et ses amis peuvent entrer
     public boolean mannequin = true;                       // afficher son mannequin quand on est absent
     public double[] npcSpot;                               // x, y, z, yaw du mannequin (null = pas placé)
+    public String skinValue, skinSignature;                // skin du locataire (relevé quand il est connecté)
 
     public int showcaseLimit() {
         return maxShowcases + extraShowcases;

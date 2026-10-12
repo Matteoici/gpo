@@ -1,5 +1,6 @@
 package fr.smpmarket;
 
+import com.destroystokyo.paper.profile.ProfileProperty;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -31,9 +32,32 @@ public final class Mannequins {
         return owner == null || !st.region.contains(owner.getLocation());
     }
 
+    /**
+     * Relève le skin du locataire pendant qu'il est connecté (le serveur le connaît alors),
+     * pour que son mannequin l'ait aussi quand il est déconnecté.
+     */
+    private void captureSkin(Stall st) {
+        if (st.owner == null) return;
+        Player p = Bukkit.getPlayer(st.owner);
+        if (p == null) return;
+        for (ProfileProperty pp : p.getPlayerProfile().getProperties()) {
+            if (!pp.getName().equals("textures")) continue;
+            if (pp.getValue().equals(st.skinValue)) return;
+            st.skinValue = pp.getValue();
+            st.skinSignature = pp.getSignature();
+            plugin.store().markDirty();
+            Mannequin m = npcs.remove(st.id);
+            if (m != null) m.remove();
+            return;
+        }
+    }
+
     /** Toutes les 2 secondes. */
     public void tick() {
-        for (Stall st : plugin.store().stalls()) update(st);
+        for (Stall st : plugin.store().stalls()) {
+            if (st.isRented()) captureSkin(st);
+            update(st);
+        }
         npcs.keySet().removeIf(id -> plugin.store().stall(id) == null && kill(id));
     }
 
@@ -59,7 +83,9 @@ public final class Mannequins {
         if (!w.isChunkLoaded(l.getBlockX() >> 4, l.getBlockZ() >> 4)) return;
         Mannequin spawned = w.spawn(l, Mannequin.class, e -> {
             e.setPersistent(false);
-            e.setProfile(ResolvableProfile.resolvableProfile().uuid(st.owner).name(st.ownerName).build());
+            var profile = ResolvableProfile.resolvableProfile().uuid(st.owner).name(st.ownerName);
+            if (st.skinValue != null) profile.addProperty(new ProfileProperty("textures", st.skinValue, st.skinSignature));
+            e.setProfile(profile.build());
             e.setImmovable(true);
             e.setInvulnerable(true);
             e.setGravity(false);
@@ -75,6 +101,7 @@ public final class Mannequins {
 
     /** Le locataire a changé quelque chose (place, activé / désactivé). */
     public void refresh(Stall st) {
+        captureSkin(st);
         Mannequin m = npcs.remove(st.id);
         if (m != null) m.remove();
         update(st);

@@ -201,6 +201,8 @@ public final class Auctions {
         st.privateStall = false;
         st.mannequin = true;
         st.npcSpot = null;
+        st.skinValue = null;
+        st.skinSignature = null;
         st.trusted.clear();
         st.totalSold = 0;
         st.totalRevenue = 0;
@@ -234,6 +236,8 @@ public final class Auctions {
         st.privateStall = false;
         st.mannequin = true;
         st.npcSpot = null;
+        st.skinValue = null;
+        st.skinSignature = null;
         st.trusted.clear();
         plugin.store().markDirty();
     }

@@ -144,6 +144,10 @@ public final class MarketStore {
             if (s.catalogSlots > 0) y.set(b + "catalog-slots", s.catalogSlots);
             if (s.privateStall) y.set(b + "private", true);
             if (!s.mannequin) y.set(b + "mannequin", false);
+            if (s.skinValue != null) {
+                y.set(b + "skin.value", s.skinValue);
+                y.set(b + "skin.signature", s.skinSignature);
+            }
             if (s.npcSpot != null) y.set(b + "npc-spot", List.of(s.npcSpot[0], s.npcSpot[1], s.npcSpot[2], s.npcSpot[3]));
             for (Map.Entry<UUID, String> t : s.trusted.entrySet()) y.set(b + "trusted." + t.getKey(), t.getValue());
             y.set(b + "total-sold", s.totalSold);
@@ -256,6 +260,8 @@ public final class MarketStore {
         s.catalogSlots = c.getInt("catalog-slots");
         s.privateStall = c.getBoolean("private");
         s.mannequin = c.getBoolean("mannequin", true);
+        s.skinValue = c.getString("skin.value");
+        s.skinSignature = c.getString("skin.signature");
         List<Double> spot = c.getDoubleList("npc-spot");
         s.npcSpot = spot.size() == 4 ? new double[]{spot.get(0), spot.get(1), spot.get(2), spot.get(3)} : null;
         ConfigurationSection t = c.getConfigurationSection("trusted");
