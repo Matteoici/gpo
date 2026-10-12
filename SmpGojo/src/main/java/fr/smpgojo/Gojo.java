@@ -390,13 +390,18 @@ final class Gojo {
         World w = aimed.getWorld();
         Block g = Ruin.surface(w, aimed.getBlockX(), aimed.getBlockY(), aimed.getBlockZ());
         Location ground = g != null ? g.getLocation().add(0.5, 1, 0.5) : aimed.clone();
-        double R = pl.cfg("nuke.radius", 38);
-        int depth = pl.cfgi("nuke.depth", 28);
+        double R = pl.cfg("nuke.radius", 55);
+        int depth = pl.cfgi("nuke.depth", 40);
         int skyH = Math.max(40, Math.min(pl.cfgi("nuke.sky-height", 200), w.getMaxHeight() - 4 - ground.getBlockY()));
         double dmg = pl.cfg("damage.nuke", 200);
         Location sky = ground.clone().add(0, skyH, 0);
         List<Player> vs = pl.viewers(ground, R + 400);
         for (Player v : vs0) if (!vs.contains(v) && v.isOnline()) vs.add(v);
+
+        // le sous-sol est creusé en cachette dès maintenant (la surface reste en place)
+        MegaHole hole = pl.ruin.mega(w, ground.getX(), ground.getZ(), R, sky.getY(), ground.getBlockY() - depth,
+                pl.cfgi("nuke.restore-seconds", 180));
+        if (hole != null) hole.hiddenCeil = ground.getBlockY() - 1;
 
         // 1) la sphère violette part dans le ciel
         Location from = p.getLocation().add(0, 4.5, 0);
@@ -413,11 +418,12 @@ final class Gojo {
             Draw.ball(orb, 2, Draw.WHITE, 3f, 30);
             Draw.fx(orb, Particle.REVERSE_PORTAL, 40, 2, 0.1);
             if (i % 3 == 0) SmpGojo.sound(orb, "entity.ender_dragon.flap", 6f, 0.4f);
-        }, () -> vortex(p, ground, sky, R, skyH, depth, dmg, vs, land));
+        }, () -> vortex(p, ground, sky, R, skyH, depth, dmg, vs, land, hole));
     }
 
     /** 2) Le vortex dans les nuages : il s'étend sur des centaines de blocs. */
-    private void vortex(Player p, Location ground, Location sky, double R, int skyH, int depth, double dmg, List<Player> vs, Runnable land) {
+    private void vortex(Player p, Location ground, Location sky, double R, int skyH, int depth, double dmg, List<Player> vs, Runnable land,
+                        MegaHole hole) {
         SmpGojo.sound(sky, "block.end_portal.spawn", 10f, 0.5f);
         SmpGojo.sound(ground, "entity.lightning_bolt.thunder", 10f, 0.5f);
         int ticks = pl.cfgi("nuke.vortex-ticks", 60);
@@ -454,11 +460,12 @@ final class Gojo {
                 ground.getWorld().strikeLightningEffect(ground.clone().add(Math.cos(a) * rr, 0, Math.sin(a) * rr));
             }
             if (i == ticks / 2) pl.cine.impact(vs, null, Cine.FLASH);
-        }, () -> fall(p, ground, sky, R, skyH, depth, dmg, vs, land));
+        }, () -> fall(p, ground, sky, R, skyH, depth, dmg, vs, land, hole));
     }
 
     /** 3) La colonne tombe, 4) écran blanc, 5) tout est effacé, 6) elle s'éteint : un trou parfait. */
-    private void fall(Player p, Location ground, Location sky, double R, int skyH, int depth, double dmg, List<Player> vs, Runnable land) {
+    private void fall(Player p, Location ground, Location sky, double R, int skyH, int depth, double dmg, List<Player> vs, Runnable land,
+                      MegaHole hole) {
         World w = ground.getWorld();
         Beam beam = new Beam(pl, sky, R);
         Runnable[] clean = new Runnable[1];
@@ -500,8 +507,8 @@ final class Gojo {
             beam.shape(R, total, 4);
             // le néant : le cylindre entier est effacé, chunk par chunk depuis le centre
             // le néant : tout le cylindre est effacé pendant que l'écran est blanc (budget de temps : pas de lag)
-            MegaHole hole = pl.ruin.mega(w, ground.getX(), ground.getZ(), R, sky.getY(), bottomY, pl.cfgi("nuke.restore-seconds", 180));
-            int maxWhite = pl.cfgi("nuke.max-white-ticks", 100);
+            if (hole != null) hole.trigger();
+            int maxWhite = pl.cfgi("nuke.max-white-ticks", 200);
             boolean[] revealed = {false};
             int hold = pl.cfgi("nuke.hold-ticks", 80), maxHold = pl.cfgi("nuke.max-hold-ticks", 600);
             pl.ruin.shockwave(ground, Math.min(R + 40, 120), 24, 1.0);
@@ -547,9 +554,10 @@ final class Gojo {
             loop[0] = Bukkit.getScheduler().runTaskTimer(pl, () -> {
                 int i = tick[0]++;
                 boolean erasing = hole != null && hole.erasing();
+                boolean surface = hole != null && hole.surfacePending();
                 // écran blanc tant que le trou n'est pas fini : quand il s'estompe, tout a disparu d'un coup
                 if (!revealed[0]) {
-                    if ((erasing && i < maxWhite) || i < 12) {
+                    if ((surface && i < maxWhite) || i < 12) {
                         for (Player v : all) if (v.isOnline()) pl.cine.tint(v, Cine.argb(255, Draw.WHITE), 2);
                     } else {
                         revealed[0] = true;

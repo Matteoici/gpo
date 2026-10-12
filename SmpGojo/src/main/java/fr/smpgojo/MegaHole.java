@@ -51,6 +51,19 @@ final class MegaHole {
     private final Set<Long> loading = new HashSet<>();
     private final Set<Long> tickets = new HashSet<>();
     boolean done;
+    /** false = on ne creuse que sous la surface (invisible) ; true = on enlève tout. */
+    private boolean full;
+    private static final int SHELL = 2;
+    /** la phase cachée ne monte jamais au-dessus de ce niveau (le sol au point d'impact) */
+    int hiddenCeil = Integer.MAX_VALUE;
+
+    /** Déclenche l'effacement de la surface (ce qui se voit). */
+    void trigger() {
+        if (full) return;
+        full = true;
+        chunkIdx = 0;
+        col = 0;
+    }
 
     MegaHole(SmpGojo pl, Location from, Vector dir, double length, double r, File file) {
         this.pl = pl;
@@ -103,7 +116,12 @@ final class MegaHole {
     }
 
     boolean erasing() {
-        return chunkIdx < chunks.size();
+        return !full || chunkIdx < chunks.size();
+    }
+
+    /** La partie visible (surface, bâtiments) est-elle encore là ? */
+    boolean surfacePending() {
+        return full && chunkIdx < chunks.size();
     }
 
     boolean contains(Location l) {
@@ -165,6 +183,7 @@ final class MegaHole {
     int eraseTick(long budgetNanos) {
         long start = System.nanoTime();
         int count = 0, skipped = 0;
+        if (!full) budgetNanos /= 2;
         while (chunkIdx < chunks.size() && System.nanoTime() - start < budgetNanos) {
             int[] c = chunks.get(chunkIdx);
             if (!w.isChunkGenerated(c[0], c[1])) {
@@ -184,7 +203,10 @@ final class MegaHole {
                 col++;
                 int x = c[0] * 16 + lx, z = c[1] * 16 + lz;
                 if (flatDist2(x + 0.5, z + 0.5) > r * r) continue;
-                int top = Math.min(maxY, w.getHighestBlockYAt(x, z));
+                int high = w.getHighestBlockYAt(x, z);
+                // phase cachée : seulement sous la croûte de surface (arbres et bâtiments ignorés)
+                int top = full ? Math.min(maxY, high)
+                        : Math.min(maxY, Math.min(w.getHighestBlockYAt(x, z, org.bukkit.HeightMap.MOTION_BLOCKING_NO_LEAVES), hiddenCeil) - SHELL - 1);
                 for (int y = top; y >= minY; y--) {
                     if (!inside(x + 0.5, y + 0.5, z + 0.5)) continue;
                     Block b = ch.getBlock(lx, y, lz);
@@ -201,7 +223,7 @@ final class MegaHole {
                 col = 0;
             }
         }
-        if (!erasing()) {
+        if (full && chunkIdx >= chunks.size()) {
             releaseTickets();
             save();
         }
@@ -240,6 +262,7 @@ final class MegaHole {
     }
 
     void restoreAll() {
+        full = true;
         chunkIdx = chunks.size();
         for (int i = size - 1; i >= 0; i--) restoreOne(i);
         finish();

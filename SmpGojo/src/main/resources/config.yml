@@ -93,12 +93,13 @@ violet:
 # À l'impact l'écran devient blanc ; pendant ce temps tout est effacé, sans lag
 # (le travail ne prend jamais plus de "max-ms-per-tick" par tick). Quand le blanc
 # s'estompe, tout a disparu d'un coup : il reste un trou parfaitement rond.
-# Réglé pour un serveur 6 cœurs / 16 Go : rayon 38 = environ 150 000 blocs (flash blanc court).
+# Le sous-sol est creusé en cachette pendant le vortex ; à l'impact il ne reste que la surface,
+# qui disparaît d'un coup sous l'écran blanc. Réglé pour 6 cœurs / 16 Go.
 nuke:
   # rayon de la colonne (le trou fera cette taille)
-  radius: 38
+  radius: 55
   # profondeur du trou sous le sol
-  depth: 28
+  depth: 40
   # hauteur du vortex au-dessus du sol
   sky-height: 120
   vortex-ticks: 60
@@ -108,7 +109,7 @@ nuke:
   # temps de calcul maximum par tick (ms, un tick = 50) : 30 laisse 20 ms au reste du serveur
   max-ms-per-tick: 30
   # l'écran blanc dure au maximum (ticks) - si le trou n'est pas fini, la fin se creuse à découvert
-  max-white-ticks: 100
+  max-white-ticks: 200
   # le trou se reconstruit après (secondes)
   restore-seconds: 180
   # fissures géantes autour du trou
