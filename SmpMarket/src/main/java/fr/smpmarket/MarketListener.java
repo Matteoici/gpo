@@ -158,6 +158,17 @@ final class MarketListener implements Listener {
         e.blockList().removeIf(b -> plugin.shops().stallAt(b) != null);
     }
 
+    // ================================================================= nos mannequins passent les protections
+
+    /** WorldGuard (mob-spawning deny) et les limiteurs de mobs bloquent aussi les mannequins : on les autorise. */
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onSpawn(org.bukkit.event.entity.EntitySpawnEvent e) {
+        if (e.isCancelled() && e.getEntity() instanceof org.bukkit.entity.Mannequin
+                && e.getEntity().getPersistentDataContainer().has(plugin.key(), PersistentDataType.BYTE)) {
+            e.setCancelled(false);
+        }
+    }
+
     // ================================================================= stand privé
 
     private final java.util.Map<java.util.UUID, Long> privateMsg = new java.util.HashMap<>();

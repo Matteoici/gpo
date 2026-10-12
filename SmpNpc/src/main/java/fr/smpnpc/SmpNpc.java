@@ -238,6 +238,11 @@ public final class SmpNpc extends JavaPlugin implements Listener {
             }
         });
         w.pause = r.nextInt(pauseMin, pauseMax);
+        if (w.entity == null || !w.entity.isValid()) {
+            getLogger().warning("Apparition d'un PNJ bloquée par un autre plugin dans la zone " + z.name()
+                    + " (protection du spawn, limiteur de mobs...).");
+            return null;
+        }
         return w;
     }
 
@@ -406,6 +411,17 @@ public final class SmpNpc extends JavaPlugin implements Listener {
         }
         // en dernier recours : là où la zone a été créée (l'admin y était debout)
         return c.clone();
+    }
+
+    // ================================================================= nos PNJ passent les protections
+
+    /** WorldGuard (mob-spawning deny), limiteurs de mobs... : nos mannequins sont toujours autorisés. */
+    @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST)
+    public void onSpawn(org.bukkit.event.entity.EntitySpawnEvent e) {
+        if (e.isCancelled() && e.getEntity() instanceof Mannequin
+                && e.getEntity().getPersistentDataContainer().has(key, PersistentDataType.BYTE)) {
+            e.setCancelled(false);
+        }
     }
 
     // ================================================================= clic droit : une phrase
