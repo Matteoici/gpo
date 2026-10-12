@@ -1,5 +1,8 @@
 # =====================================================================
-#  Prix de vente (pour UN objet). Un objet absent de la liste ne se vend pas.
+#  Prix de vente (pour UN objet).
+#  Les objets qui ne sont PAS dans cette liste ont quand même un prix, calculé tout seul
+#  (voir auto-price dans config.yml) : un objet fabriqué vaut un peu moins que ses ingrédients.
+#  Mettre 0 = cet objet ne se vend jamais.
 #  Garde-les toujours PLUS BAS que les prix d'achat de shop.yml (sinon argent infini :
 #  le plugin te prévient dans la console au démarrage).
 #  Après une modification : /shopadmin reload
@@ -88,3 +91,63 @@ prices:
   DARK_OAK_LOG: 3
   MANGROVE_LOG: 3
   CHERRY_LOG: 3
+  # ---------------- blocs courants (prix bas : ils sont faciles à farmer)
+  STONE: 1
+  COBBLESTONE: 0.5
+  COBBLED_DEEPSLATE: 0.5
+  DEEPSLATE: 1
+  DIRT: 0.5
+  GRASS_BLOCK: 1
+  NETHERRACK: 0.5
+  SAND: 1
+  RED_SAND: 1
+  GRAVEL: 1
+  ANDESITE: 1
+  DIORITE: 1
+  GRANITE: 1
+  TUFF: 1
+  BLACKSTONE: 1
+  BASALT: 1
+  END_STONE: 2
+  ICE: 1
+  SNOWBALL: 0.5
+  CLAY_BALL: 2
+  FLINT: 2
+  OBSIDIAN: 15
+  CRYING_OBSIDIAN: 30
+  GLOWSTONE_DUST: 8
+  SOUL_SAND: 2
+  # ---------------- objets rares (pas fabricables)
+  TOTEM_OF_UNDYING: 2000
+  ELYTRA: 10000
+  NETHER_STAR: 25000
+  DRAGON_EGG: 100000
+  DRAGON_HEAD: 5000
+  TRIDENT: 3000
+  HEART_OF_THE_SEA: 2000
+  NAUTILUS_SHELL: 300
+  ENCHANTED_GOLDEN_APPLE: 5000
+  HEAVY_CORE: 5000
+  ECHO_SHARD: 100
+  SADDLE: 200
+  NAME_TAG: 150
+  ENCHANTED_BOOK: 50
+  EXPERIENCE_BOTTLE: 20
+  DRAGON_BREATH: 50
+  WITHER_SKELETON_SKULL: 1500
+  SKELETON_SKULL: 100
+  ZOMBIE_HEAD: 100
+  CREEPER_HEAD: 300
+  PIGLIN_HEAD: 300
+  SNIFFER_EGG: 2000
+  TURTLE_SCUTE: 50
+  ARMADILLO_SCUTE: 20
+  BREEZE_ROD: 80
+  TRIAL_KEY: 200
+  OMINOUS_TRIAL_KEY: 1000
+  NETHERITE_UPGRADE_SMITHING_TEMPLATE: 3000
+  # ---------------- jamais vendus (0)
+  PLAYER_HEAD: 0
+  WRITTEN_BOOK: 0
+  FILLED_MAP: 0
+  BUNDLE: 0

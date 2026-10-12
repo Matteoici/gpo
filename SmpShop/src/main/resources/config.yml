@@ -15,6 +15,41 @@ display:
   # ajoute aussi le prix de la pile entière ("x64 : $Y")
   show-stack-total: true
 
+# ---------------------------------------------------------------- Prix automatiques
+# Tous les objets ont un prix, même ceux absents de worth.yml :
+#  - objet fabriqué = (ingrédients ÷ quantité obtenue) × craft-factor
+#  - objet cuit au four = ingrédient cru × smelt-factor
+#  - le reste = default
+# Un prix calculé ne dépasse jamais la moitié du prix d'achat en boutique.
+auto-price:
+  enabled: true
+  craft-factor: 0.9
+  smelt-factor: 1.0
+  default: 1
+  # objets qui ne se vendent jamais (créatif, technique). * = n'importe quelle fin / début
+  never-sell:
+    - "COMMAND_BLOCK*"
+    - "*COMMAND_BLOCK"
+    - "*COMMAND_BLOCK_MINECART"
+    - BARRIER
+    - BEDROCK
+    - "STRUCTURE_*"
+    - JIGSAW
+    - DEBUG_STICK
+    - LIGHT
+    - SPAWNER
+    - TRIAL_SPAWNER
+    - VAULT
+    - END_PORTAL_FRAME
+    - KNOWLEDGE_BOOK
+    - PETRIFIED_OAK_SLAB
+    - REINFORCED_DEEPSLATE
+    - BUDDING_AMETHYST
+    - FARMLAND
+    - DIRT_PATH
+    - "TEST_*"
+    - PLAYER_HEAD
+
 # ---------------------------------------------------------------- Vente
 sell:
   # les objets renommés (clés de caisse, objets spéciaux...) ne se vendent pas

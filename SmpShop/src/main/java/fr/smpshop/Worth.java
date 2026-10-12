@@ -33,11 +33,16 @@ public final class Worth {
         this.plugin = plugin;
     }
 
+    /** Prix écrits à la main dans worth.yml (jamais recalculés). */
+    private volatile java.util.Set<Material> explicit = java.util.EnumSet.noneOf(Material.class);
+
     void load() {
         File f = new File(plugin.getDataFolder(), "worth.yml");
         if (!f.exists()) plugin.saveResource("worth.yml", false);
         YamlConfiguration y = YamlConfiguration.loadConfiguration(f);
         Map<Material, Double> p = new EnumMap<>(Material.class);
+        java.util.Set<Material> fixed = java.util.EnumSet.noneOf(Material.class);
+        java.util.Set<Material> never = java.util.EnumSet.noneOf(Material.class);
         ConfigurationSection s = y.getConfigurationSection("prices");
         if (s != null) {
             for (String k : s.getKeys(false)) {
@@ -47,17 +52,43 @@ public final class Worth {
                     continue;
                 }
                 double v = s.getDouble(k);
+                fixed.add(m);
                 if (v > 0) p.put(m, v);
+                else never.add(m); // 0 = ne se vend jamais
             }
         }
+        int manual = p.size();
+        var c = plugin.getConfig();
+        if (c.getBoolean("auto-price.enabled", true)) {
+            AutoPrice.fill(p, never, c.getDouble("auto-price.craft-factor", 0.9), c.getDouble("auto-price.smelt-factor", 1.0),
+                    c.getDouble("auto-price.default", 1.0), c.getStringList("auto-price.never-sell"));
+        }
         prices = p;
+        explicit = fixed;
         Map<String, Double> mult = new LinkedHashMap<>();
-        ConfigurationSection ms = plugin.getConfig().getConfigurationSection("sell.multipliers");
+        ConfigurationSection ms = c.getConfigurationSection("sell.multipliers");
         if (ms != null) for (String k : ms.getKeys(false)) mult.put(k.toLowerCase(Locale.ROOT), ms.getDouble(k, 1));
         multipliers = mult;
-        ignoreNamed = plugin.getConfig().getBoolean("sell.ignore-named-items", true);
-        ignoreDamaged = plugin.getConfig().getBoolean("sell.ignore-damaged-items", true);
-        plugin.getLogger().info(p.size() + " prix de vente chargés.");
+        ignoreNamed = c.getBoolean("sell.ignore-named-items", true);
+        ignoreDamaged = c.getBoolean("sell.ignore-damaged-items", true);
+        plugin.getLogger().info(manual + " prix écrits à la main, " + (p.size() - manual) + " calculés automatiquement.");
+    }
+
+    /**
+     * Les prix calculés automatiquement ne doivent jamais dépasser la moitié du prix d'achat en boutique
+     * (sinon on achèterait pour revendre plus cher). Les prix écrits à la main ne sont pas touchés.
+     */
+    void capToShop(Map<Material, Double> buyUnit) {
+        Map<Material, Double> p = new EnumMap<>(Material.class);
+        p.putAll(prices);
+        double maxMult = maxMultiplier();
+        for (var e : buyUnit.entrySet()) {
+            Double v = p.get(e.getKey());
+            if (v == null || explicit.contains(e.getKey())) continue;
+            double cap = e.getValue() * 0.5 / maxMult;
+            if (v > cap) p.put(e.getKey(), Math.floor(cap * 100) / 100.0);
+        }
+        prices = p;
     }
 
     public int size() {

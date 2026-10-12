@@ -77,6 +77,15 @@ public final class Shop {
             categories.put(id.toLowerCase(Locale.ROOT), new Category(id, c.getInt("slot", 0), icon, c.getString("name", id),
                     c.getStringList("lore"), c.getString("title", "<dark_gray>" + id), rows, cur, entries));
         }
+        Map<Material, Double> buy = new java.util.EnumMap<>(Material.class);
+        for (Category c : categories.values()) {
+            if (c.currency() != Currency.MONEY) continue;
+            for (Entry e : c.entries()) {
+                if (e.isCommand() || e.price() <= 0) continue;
+                buy.merge(e.item().getType(), e.price() / e.item().getAmount(), Math::min);
+            }
+        }
+        plugin.worth().capToShop(buy);
         warnArbitrage();
     }
 
