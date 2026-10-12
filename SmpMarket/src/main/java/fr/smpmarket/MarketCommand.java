@@ -28,7 +28,7 @@ import static fr.smpmarket.Texts.ph;
 public final class MarketCommand implements TabExecutor {
 
     private static final List<String> SUBS = List.of("chercher", "vitrine", "gerer", "colis", "encheres", "encherir", "tp",
-            "ami", "retirer-ami", "nom", "aide");
+            "ami", "retirer-ami", "nom", "catalogue", "mannequin", "aide");
     private static final List<String> ADMIN = List.of("wand", "create", "delete", "setentrance", "list", "reset", "give",
             "end", "showcases", "price", "reload");
 
@@ -116,6 +116,28 @@ public final class MarketCommand implements TabExecutor {
                 }
                 Stall st = myStall(p);
                 if (st != null) plugin.shops().createVirtual(p, st, price);
+            }
+            case "mannequin", "pnj" -> {
+                Stall st = myStall(p);
+                if (st == null) return true;
+                String opt = args.length > 1 ? args[1].toLowerCase(Locale.ROOT) : "";
+                if (opt.equals("off") || opt.equals("retirer")) {
+                    st.mannequin = false;
+                    plugin.store().markDirty();
+                    plugin.mannequins().refresh(st);
+                    t().send(p, "stall.mannequin-off");
+                    return true;
+                }
+                if (!st.region.contains(p.getLocation().getBlock())) {
+                    t().send(p, "stall.mannequin-outside");
+                    return true;
+                }
+                var l = p.getLocation();
+                st.npcSpot = new double[]{l.getX(), l.getY(), l.getZ(), l.getYaw()};
+                st.mannequin = true;
+                plugin.store().markDirty();
+                plugin.mannequins().refresh(st);
+                t().send(p, "stall.mannequin-placed");
             }
             case "gerer", "manage", "boutique" -> {
                 Stall st = myStall(p);

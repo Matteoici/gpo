@@ -147,6 +147,7 @@ stall:
   private-on: "<green>Ton stand est maintenant <white>privé</white> : seuls toi et tes amis peuvent y entrer. <gray>Les clients achètent depuis le panneau, ton mannequin ou /marche."
   private-off: "<yellow>Ton stand est maintenant ouvert au public."
   mannequin-outside: "<red>Mets-toi à l'intérieur de ton stand, là où ton mannequin doit se tenir."
+  mannequin-off: "<yellow>Mannequin désactivé. <gray>(/marche mannequin pour le remettre)"
   mannequin-placed: "<green>Ton mannequin se tiendra ici quand tu n'es pas dans ton stand. <gray>(clic droit dessus = ton catalogue)"
   trusted: "<green><white><player></white> peut maintenant construire dans ton stand."
   untrusted: "<yellow><white><player></white> ne peut plus construire dans ton stand."
