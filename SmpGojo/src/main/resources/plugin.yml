@@ -2,15 +2,27 @@ name: SmpGojo
 version: '${version}'
 main: fr.smpgojo.SmpGojo
 api-version: '26.2'
-description: Techniques de Gojo et Sukuna pour les admins (troll)
+description: Techniques de Jujutsu Kaisen pour les admins (Gojo, Sukuna, Megumi + Mahoraga, Yuji)
 commands:
   gojo:
-    description: Techniques de l'infini
+    description: Techniques de Satoru Gojo
     usage: /gojo [kit|infini|bleu|rouge|violet|nuke|domaine]
     permission: smpgojo.use
   sukuna:
-    description: Techniques de Sukuna
+    description: Techniques de Ryomen Sukuna
     usage: /sukuna [kit|demantelement|clivage|fuga|taille|sanctuaire]
+    permission: smpgojo.use
+  megumi:
+    description: Techniques de Megumi Fushiguro
+    usage: /megumi [kit|chiens|nue|crapaud|serpent|mahoraga|jardin]
+    permission: smpgojo.use
+  yuji:
+    description: Techniques de Yuji Itadori
+    usage: /yuji [kit|poing|blackflash|manji|rafale|sang]
+    permission: smpgojo.use
+  jjk:
+    description: Kits, réparation du terrain, arrêt
+    usage: /jjk [kit <perso|tout>|reparer|stop|reload]
     permission: smpgojo.use
 permissions:
   smpgojo.use:

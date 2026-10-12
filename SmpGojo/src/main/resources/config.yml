@@ -1,59 +1,143 @@
 # =====================================================================
-#  SmpGojo - techniques de l'infini (admins seulement : smpgojo.use)
-#  /gojo kit et /sukuna kit = les techniques en objets (clic droit pour lancer)
+#  SmpGojo - Jujutsu Kaisen pour les admins (permission smpgojo.use)
+#  /gojo kit · /sukuna kit · /megumi kit · /yuji kit · /jjk kit tout
+#  /jjk reparer = reconstruire le terrain tout de suite · /jjk stop
 # =====================================================================
 
-# temps de recharge (secondes)
+# ------------------------------------------------------------ mise en scène
+cinematic:
+  # images d'impact plein écran (flashs noir / blanc / couleur)
+  impact-frames: true
+  # bandes noires de cinéma pendant les incantations
+  letterbox: true
+  # tremblements de caméra
+  shake: true
+
+# ------------------------------------------------------------ destruction
+# Les techniques cassent vraiment le terrain (rien ne tombe en objet),
+# puis tout se reconstruit tout seul. Jamais : coffres, fours, panneaux,
+# bedrock, liquides. Même après un crash, le terrain est remis au démarrage.
+destroy-blocks: true
+restore-seconds: 45
+restore-blocks-per-tick: 500
+max-blocks-per-hit: 6000
+# débris qui volent (affichage seulement)
+max-debris: 350
+# mondes où rien n'est jamais cassé
+no-destroy-worlds: []
+# rayon autour du spawn du monde où rien n'est cassé (0 = aucun)
+no-destroy-spawn-radius: 0
+
+# ------------------------------------------------------------ temps de recharge (secondes)
 cooldowns:
-  bleu: 3
-  rouge: 3
-  violet: 8
-  nuke: 30
-  domaine: 40
-  # Sukuna
+  bleu: 4
+  rouge: 4
+  violet: 15
+  nuke: 60
+  domaine: 45
   demantelement: 2
-  clivage: 4
+  clivage: 5
   fuga: 15
   taille: 30
-  sanctuaire: 45
+  sanctuaire: 60
+  chiens: 20
+  nue: 8
+  crapaud: 6
+  serpent: 10
+  mahoraga: 60
+  jardin: 50
+  poing: 1
+  blackflash: 6
+  manji: 5
+  rafale: 6
+  sang: 10
 
+# ------------------------------------------------------------ dégâts
 damage:
-  bleu: 4
-  rouge: 8
-  violet: 30
-  nuke: 40
-  # Sukuna
-  demantelement: 6
+  bleu: 5
+  rouge: 14
+  violet: 35
+  nuke: 50
+  demantelement: 8
   # Clivage : base + (pourcentage x vie max de la cible)
-  clivage-base: 6
-  clivage-percent: 0.3
-  fuga: 25
+  clivage-base: 8
+  clivage-percent: 0.35
+  fuga: 30
   # Taille du monde : traverse l'Infini de Gojo
-  taille: 60
-  # Sanctuaire : dégâts à chaque coupure (4 par seconde)
+  taille: 70
+  # Sanctuaire : par coupure (2 par seconde)
   sanctuaire: 2
+  chiens: 8
+  nue: 16
+  crapaud: 4
+  serpent: 14
+  mahoraga: 22
+  mahoraga-saut: 18
+  jardin: 2
+  poing: 8
+  blackflash: 30
+  manji: 16
+  rafale: 1.5
+  uppercut: 10
+  sang: 24
 
-# Violet creux et Nuke peuvent creuser le terrain (false = aucun bloc touché)
-destroy-blocks: false
-# si oui, le terrain se reconstruit tout seul après X secondes
-restore-seconds: 20
-
-domain:
-  radius: 12
-  seconds: 10
-
+# ------------------------------------------------------------ Gojo
+bleu:
+  ticks: 80
+  pull-radius: 11
+rouge:
+  radius: 4.5
+violet:
+  radius: 3.6
+  ticks: 50
 nuke:
-  radius: 22
-  distance: 30
-
-# ----------------------------------------------------------- Sukuna (/sukuna kit)
-fuga:
-  radius: 7
-
-taille:
-  length: 40
-  width: 14
-
-sanctuaire:
   radius: 20
+  range: 140
+domain:
+  radius: 13
   seconds: 10
+
+# ------------------------------------------------------------ Sukuna
+fuga:
+  radius: 9
+taille:
+  length: 50
+  width: 16
+sanctuaire:
+  radius: 22
+  seconds: 10
+  # à la fin du territoire, Sukuna embrase tout avec Fuga
+  fuga-finish: true
+
+# ------------------------------------------------------------ Megumi
+chiens:
+  seconds: 30
+jardin:
+  radius: 16
+  seconds: 15
+mahoraga:
+  seconds: 120
+  health: 500
+  scale: 1.7
+  leap-seconds: 7
+  # coups d'une même technique avant qu'il s'y adapte
+  hits-to-adapt-technique: 2
+  # coups normaux (épée, flèches, feu...) avant adaptation
+  hits-to-adapt-normal: 6
+  # tentatives contre l'Infini avant de le traverser
+  hits-to-adapt-infinity: 3
+
+# ------------------------------------------------------------ Yuji
+yuji:
+  # chance de Black Flash sur un coup de poing (Poing divergent en main)
+  black-flash-chance: 0.10
+  # pareil quand il est "dans la zone" (après un Black Flash)
+  black-flash-chance-zone: 0.30
+  zone-seconds: 15
+  black-flash-knockback: 3.2
+  divergent-ratio: 0.8
+  dash-range: 14
+rafale:
+  hits: 14
+sang:
+  range: 60
