@@ -201,7 +201,7 @@ final class BossListener implements Listener {
             w.spawnParticle(Particle.SWEEP_ATTACK, at, 1, 0, 0, 0, 0, null, true);
         }
         w.playSound(net.kyori.adventure.sound.Sound.sound(net.kyori.adventure.key.Key.key("minecraft", "entity.player.attack.sweep"),
-                net.kyori.adventure.sound.Sound.Source.PLAYERS, 1.5f, 0.6f), p.getX(), p.getY(), p.getZ());
+                net.kyori.adventure.sound.Sound.Source.PLAYER, 1.5f, 0.6f), p.getX(), p.getY(), p.getZ());
         for (Entity t : p.getNearbyEntities(range, 2.5, range)) {
             if (!(t instanceof LivingEntity le) || t == p || t.isInvulnerable()) continue;
             Vector to = t.getLocation().toVector().subtract(p.getLocation().toVector()).setY(0);
