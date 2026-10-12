@@ -202,9 +202,12 @@ final class Yuji {
 
     // ================================================================= 8 Black Flash d'affilée
 
+    private static final org.bukkit.Color CRIMSON = org.bukkit.Color.fromRGB(200, 0, 20), DARK_RED = org.bukkit.Color.fromRGB(90, 0, 0);
+
     /**
-     * Yuji tourne autour de sa cible figée en l'air et enchaîne les Black Flash, de plus en plus vite,
-     * avec un son qui monte à chaque coup. Le dernier est un vrai Black Flash qui l'envoie à travers tout.
+     * Comme dans le clip : anneau rouge et arc blanc autour de la cible, écran noir,
+     * puis une rafale d'explosions rouges au même endroit (éclats noirs en pointes, ondes rouges,
+     * écran teinté de rouge), une pause, re-noir, et le dernier Black Flash énorme.
      */
     void flurry(Player p) {
         LivingEntity t = pl.aim(p, 10);
@@ -214,56 +217,93 @@ final class Yuji {
             return;
         }
         int n = Math.max(2, pl.cfgi("yuji.flurry-hits", 8));
+        int gap = Math.max(4, pl.cfgi("yuji.flurry-gap-ticks", 12));
         double per = pl.cfg("damage.flurry", 10);
         UUID id = p.getUniqueId();
         pl.noFall.add(id);
-        t.setVelocity(new Vector(0, 0.55, 0));
         List<Player> vs = pl.viewers(t.getLocation(), 50);
-        int[] when = new int[n];
-        int acc = 6;
-        for (int k = 0; k < n; k++) {
-            when[k] = acc;
-            acc += Math.max(3, 8 - k);
-        }
-        pl.later(5, () -> {
-            if (t.isValid()) pl.cine.hold(t, when[n - 1] + 6);
+        int charge = 20, black = 4, first = charge + black;
+        int finalAt = first + (n - 1) * gap + 22;
+        pl.cine.hold(t, finalAt + 4);
+        pl.cine.lock(p, finalAt + 2);
+
+        // 1) la charge : anneau rouge, puis arc blanc qui tourne autour de la cible
+        SmpGojo.sound(t.getLocation(), "block.beacon.power_select", 2f, 1.6f);
+        SmpGojo.sound(t.getLocation(), "entity.warden.heartbeat", 3f, 1.2f);
+        pl.repeat(1, charge, i -> {
+            if (!t.isValid()) return;
+            Location c = t.getLocation().add(0, t.getHeight() * 0.5, 0);
+            if (i < 10) {
+                Draw.ring(c.clone().add(0, -0.3, 0), 1.6 - i * 0.05, CRIMSON, 1.6f, 36);
+                Draw.ring(c.clone().add(0, 0.3, 0), 1.4, DARK_RED, 1f, 24);
+            } else {
+                Draw.orbit(c, 1.4, i * 0.9, 1.1, Draw.WHITE, 1.4f, 24);
+                Draw.orbit(c, 1.2, -i * 0.9, -0.9, Draw.WHITE, 0.9f, 16);
+            }
+            Draw.converge(c, 3, CRIMSON, 1f, 6);
+            if (i % 4 == 0) SmpGojo.sound(c, "block.respawn_anchor.charge", 1.5f, 0.8f + i * 0.05f);
+        }, null);
+
+        // 2) écran noir, la cible en silhouette
+        pl.later(charge, () -> {
+            if (!t.isValid()) return;
+            pl.cine.impact(vs, List.of(t, p), new Cine.Frame[]{Cine.f(255, Draw.BLACK, black)});
+            SmpGojo.sound(t.getLocation(), "block.beacon.deactivate", 2f, 2f);
         });
+
+        // 3) la rafale
         for (int k = 0; k < n - 1; k++) {
             int hitN = k + 1;
-            pl.later(when[k], () -> {
+            pl.later((long) first + (long) k * gap, () -> {
                 if (!t.isValid() || !p.isOnline()) return;
                 Location c = t.getLocation().add(0, t.getHeight() * 0.55, 0);
-                // Yuji réapparaît d'un autre côté
-                Location old = p.getLocation();
-                double a = hitN * 2.4 + ThreadLocalRandom.current().nextDouble(-0.4, 0.4);
-                Location to = c.clone().add(Math.cos(a) * 2, -0.9 + ThreadLocalRandom.current().nextDouble(-0.3, 0.6), Math.sin(a) * 2);
+                // Yuji alterne les côtés
+                Location to = c.clone().add(SmpGojo.right(p).multiply(hitN % 2 == 0 ? 1.3 : -1.3)).add(0, -0.9, 0)
+                        .subtract(p.getLocation().getDirection().setY(0).normalize().multiply(1.2));
                 to.setDirection(c.toVector().subtract(to.toVector()));
                 p.teleport(to);
-                p.setVelocity(new Vector());
-                Draw.fx(old.clone().add(0, 1, 0), Particle.CLOUD, 12, 0.3, 0.05);
-                Draw.segment(old.clone().add(0, 1, 0), to.clone().add(0, 1, 0), Draw.BLACK, 0.8f, 0.4);
-                // l'impact
-                pl.cine.impact(vs, List.of(t, p), new Cine.Frame[]{Cine.f(255, Draw.BLACK, 1), Cine.f(200, Draw.RED, 1)});
-                for (int b = 0; b < 5; b++) Draw.bolt(c, Draw.randomDir(), 1.5 + ThreadLocalRandom.current().nextDouble() * 2.5, Draw.BLACK, Draw.RED, 1.3f);
-                Draw.sphere(c, 0.8, Draw.BLACK, 1.6f, 20);
-                Draw.fx(c, Particle.SONIC_BOOM, 1, 0, 0);
+                pl.cine.release(p);
+                pl.cine.lock(p, finalAt - (first + (hitN - 1) * gap));
+                burst(c, 1.0, hitN, n);
+                pl.cine.impact(vs, List.of(t), new Cine.Frame[]{Cine.f(230, Draw.BLACK, 1), Cine.f(170, CRIMSON, 2), Cine.f(110, CRIMSON, 2)});
+                pl.cine.shake(vs, 2, 1);
+                pl.cine.title(List.of(p), "<black><b>黒閃", "<dark_red><b>×" + hitN, gap);
+                if (t instanceof Player tp) pl.cine.title(List.of(tp), "<black><b>黒閃", "<dark_red><b>×" + hitN, gap);
                 flashSound(c, hitN, n);
-                pl.cine.title(List.of(p), "<black><b>黒閃", "<dark_red><b>×" + hitN, 12);
-                if (t instanceof Player tp) pl.cine.title(List.of(tp), "<black><b>黒閃", "<dark_red><b>×" + hitN, 12);
-                pl.cine.shake(vs, 1, 1);
                 strike(p, t, per, "blackflash");
-                Draw.blood(t, 20);
-                pl.ruin.pop(t.getLocation().subtract(0, 1, 0), 2 + hitN * 0.3, 8, 0.4);
+                Draw.blood(t, 25);
             });
+            // entre deux coups, l'écran reste rouge
+            for (int g = 5; g < gap; g += 2) {
+                pl.later((long) first + (long) k * gap + g, () -> {
+                    for (Player v : vs) if (v.isOnline() && v.getLocation().distanceSquared(t.getLocation()) < 400) {
+                        pl.cine.tint(v, Cine.argb(70, CRIMSON), 2);
+                    }
+                });
+            }
         }
-        // le dernier : le vrai Black Flash
-        pl.later(when[n - 1], () -> {
+
+        // 4) pause, re-noir, puis le dernier Black Flash énorme
+        int lastHit = first + (n - 2) * gap;
+        pl.repeat(2, Math.max(1, (finalAt - lastHit - 6) / 2), i -> {
+            if (!t.isValid()) return;
+            Location c = t.getLocation().add(0, t.getHeight() * 0.55, 0);
+            Draw.converge(c, 4, DARK_RED, 1.4f, 10);
+            Draw.fx(c, Particle.SQUID_INK, 4, 0.4, 0.05);
+        }, null);
+        pl.later(finalAt - 6, () -> {
+            pl.cine.impact(vs, List.of(t, p), new Cine.Frame[]{Cine.f(255, Draw.BLACK, 6)});
+            SmpGojo.sound(t.getLocation(), "entity.warden.sonic_charge", 3f, 1.4f);
+        });
+        pl.later(finalAt, () -> {
             if (!t.isValid() || !p.isOnline()) return;
+            pl.cine.release(p);
             pl.cine.release(t);
             Location c = t.getLocation().add(0, t.getHeight() * 0.55, 0);
-            Location to = c.clone().subtract(p.getLocation().getDirection().setY(0).normalize().multiply(2)).add(0, -0.8, 0);
-            to.setDirection(c.toVector().subtract(to.toVector()));
-            p.teleport(to);
+            burst(c, 2.2, n, n);
+            speedLines(c);
+            pl.cine.impact(vs, List.of(t, p), new Cine.Frame[]{Cine.f(210, CRIMSON, 2), Cine.f(255, Draw.BLACK, 1), Cine.f(190, CRIMSON, 3),
+                    Cine.f(120, CRIMSON, 3), Cine.f(60, CRIMSON, 3)});
             flashSound(c, n, n);
             blackFlash(p, t);
             for (Player v : vs) {
@@ -274,18 +314,66 @@ final class Yuji {
         });
     }
 
-    /** Le son du Black Flash : un claquement sec et une distorsion, qui monte à chaque coup. */
+    /** Une explosion rouge avec des éclats noirs en pointes, comme dans le clip. */
+    private void burst(Location c, double scale, int k, int n) {
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        // cœur rouge
+        Draw.ball(c, 1.2 * scale, CRIMSON, 2.2f, (int) (60 * scale));
+        Draw.sphere(c, 2 * scale, Draw.RED, 2f, (int) (70 * scale));
+        Draw.ball(c, 0.5 * scale, Draw.WHITE, 1.4f, 14);
+        // éclats noirs en pointes (bord rouge)
+        int spikes = (int) (14 * scale);
+        for (int s = 0; s < spikes; s++) {
+            Vector dir = Draw.randomDir();
+            double len = (2.5 + rnd.nextDouble() * 4.5) * scale;
+            Location a = c.clone().add(dir.clone().multiply(0.6));
+            Location b = c.clone().add(dir.clone().multiply(len));
+            Draw.segment(a, b, Draw.BLACK, (float) (1.6 * Math.min(1.5, scale)), 0.18);
+            Draw.segment(a.clone().add(0.06, 0.06, 0), b, CRIMSON, 0.8f, 0.3);
+        }
+        // éclairs noirs
+        for (int s = 0; s < 4 * scale; s++) Draw.bolt(c, Draw.randomDir(), (2 + rnd.nextDouble() * 3) * scale, Draw.BLACK, Draw.RED, 1.4f);
+        // ondes rouges qui s'élargissent
+        pl.repeat(1, 5, i -> {
+            double r = (1 + i * 1.1) * scale;
+            Draw.orbit(c, r, i * 0.5, 0.4 + k * 0.3, CRIMSON, 1.8f, (int) (18 + r * 8));
+            Draw.orbit(c, r * 0.9, -i * 0.5, -0.6 - k * 0.2, DARK_RED, 1.2f, (int) (12 + r * 5));
+        }, null);
+        Draw.fx(c, Particle.CRIT, (int) (40 * scale), 0.6 * scale, 0.8);
+        Draw.fx(c, Particle.LAVA, (int) (6 * scale), 0.5, 0);
+        Draw.fx(c, Particle.SONIC_BOOM, 1, 0, 0);
+        pl.ruin.pop(c.clone().subtract(0, 1.5, 0), 2 + k * 0.4, (int) (8 * scale), 0.4);
+    }
+
+    /** Lignes de vitesse noires qui convergent vers l'impact. */
+    private void speedLines(Location c) {
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        pl.repeat(1, 6, i -> {
+            for (int s = 0; s < 18; s++) {
+                Vector dir = Draw.randomDir();
+                double from = 6 + rnd.nextDouble() * 6;
+                Location a = c.clone().add(dir.clone().multiply(from));
+                Location b = c.clone().add(dir.clone().multiply(from * 0.45));
+                Draw.segment(a, b, s % 3 == 0 ? CRIMSON : Draw.BLACK, 1.3f, 0.3);
+            }
+        }, null);
+    }
+
+    /** Le son du Black Flash : claquement sec, distorsion, et une note qui monte à chaque coup. */
     private void flashSound(Location c, int k, int n) {
         float up = (float) k / n;
-        SmpGojo.sound(c, "entity.lightning_bolt.thunder", 2.5f, 1.3f + up * 0.7f);
+        SmpGojo.sound(c, "entity.lightning_bolt.thunder", 2.5f, 1.4f + up * 0.6f);
+        SmpGojo.sound(c, "entity.lightning_bolt.impact", 2.5f, 0.6f + up * 0.5f);
         SmpGojo.sound(c, "block.anvil.land", 2f, 0.5f + up * 0.4f);
         SmpGojo.sound(c, "entity.player.attack.crit", 3f, 0.5f);
         SmpGojo.sound(c, "block.respawn_anchor.deplete", 2f, 0.5f + up * 0.6f);
+        SmpGojo.sound(c, "block.beacon.deactivate", 2f, 2f);
         SmpGojo.sound(c, "block.note_block.bass", 3f, 0.5f + up * 1.5f);
         SmpGojo.sound(c, "block.note_block.pling", 2f, 0.5f + up * 1.5f);
         if (k == n) {
             SmpGojo.sound(c, "entity.warden.sonic_boom", 3f, 1.2f);
             SmpGojo.sound(c, "item.mace.smash_ground_heavy", 3f, 0.5f);
+            SmpGojo.sound(c, "entity.generic.explode", 3f, 0.6f);
         }
     }
 

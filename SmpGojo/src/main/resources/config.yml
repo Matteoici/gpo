@@ -178,6 +178,8 @@ yuji:
   black-flash-knockback: 3.2
   divergent-ratio: 0.8
   flurry-hits: 8
+  # ticks entre deux Black Flash (20 = 1 s)
+  flurry-gap-ticks: 12
   dash-range: 14
 rafale:
   hits: 14
