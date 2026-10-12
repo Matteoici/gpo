@@ -526,6 +526,24 @@ final class Gojo {
         SmpGojo.sound(c, "entity.lightning_bolt.thunder", 10f, 0.5f);
         SmpGojo.sound(c, "entity.wither.death", 8f, 0.5f);
         Draw.fx(c, Particle.EXPLOSION_EMITTER, 6, 3, 0);
+        // la boule éclate : elle disparaît et vole en morceaux de verre violet
+        double bR0 = pl.cfg("nuke.ball-radius", 22);
+        shapeOrb.accept(0.01, 3);
+        pl.later(4, () -> {
+            for (BlockDisplay o : orb) o.remove();
+        });
+        Material[] shards = {Material.PURPLE_STAINED_GLASS, Material.MAGENTA_STAINED_GLASS, Material.PINK_STAINED_GLASS,
+                Material.WHITE_STAINED_GLASS, Material.AMETHYST_BLOCK};
+        ThreadLocalRandom rr = ThreadLocalRandom.current();
+        for (int k = 0; k < 120; k++) {
+            Vector dir = Draw.randomDir();
+            Location at = c.clone().add(dir.clone().multiply(bR0 * rr.nextDouble(0.3, 1)));
+            pl.ruin.spawnDebris(shards[rr.nextInt(shards.length)].createBlockData(), at, dir.multiply(1.2 + rr.nextDouble() * 1.6), null, 50);
+        }
+        Draw.ball(c, bR0, Draw.WHITE, 4f, 200);
+        Draw.sphere(c, bR0, Draw.PINK, 4f, 200);
+        SmpGojo.sound(c, "block.glass.break", 10f, 0.5f);
+        SmpGojo.sound(c, "block.amethyst_block.break", 10f, 0.5f);
         MegaHole hole = pl.ruin.mega(c, d, 0.01, R, pl.cfgi("nuke.restore-seconds", 360));
         if (hole != null) hole.trigger();
         Set<UUID> hit = new HashSet<>();
@@ -543,12 +561,14 @@ final class Gojo {
             double target = hole == null ? R : hole.radiusProgress();
             if (hole == null || !hole.erasing()) target = R;
             cur[0] = Math.min(R, Math.max(cur[0] + 0.15, Math.min(target, cur[0] + 3)));
-            if (i % 2 == 0) {
-                for (int k = 0; k < spin.length; k++) spin[k].rotateY(0.15f + k * 0.05f).rotateX(0.08f);
-                shapeOrb.accept(cur[0], 2);
-            }
-            Draw.sphere(c, cur[0] * 1.02, Draw.PURPLE, 4f, (int) Math.min(250, 40 + cur[0] * 3));
-            Draw.fx(c, Particle.END_ROD, 30, cur[0] * 0.5, 0.4);
+            // l'onde d'énergie : coquille violette, rose dedans, cœur blanc, éclats qui partent
+            double e0 = cur[0];
+            Draw.sphere(c, e0, Draw.PURPLE, 4.5f, (int) Math.min(320, 60 + e0 * 5));
+            Draw.sphere(c, e0 * 0.9, Draw.PINK, 3.5f, (int) Math.min(160, 30 + e0 * 2));
+            Draw.ball(c, Math.max(2, e0 * 0.35), Draw.WHITE, 3.5f, 50);
+            Draw.fx(c, Particle.END_ROD, 40, e0 * 0.5, 0.35);
+            Draw.fx(c, Particle.REVERSE_PORTAL, 40, e0 * 0.4, 0.3);
+            if (i % 3 == 0) Draw.orbit(c, e0 * 1.05, i * 0.2, 0.3, Draw.LIGHT_BLUE, 2.5f, (int) Math.min(120, e0 * 3));
             if (i % 5 == 0) {
                 for (LivingEntity le : pl.targets(p, c, cur[0] + 1)) {
                     if (hit.add(le.getUniqueId())) {
@@ -568,8 +588,11 @@ final class Gojo {
             boolean finished = cur[0] >= R && (hole == null || !hole.erasing());
             if (finished || i >= maxTicks) {
                 loop[0].cancel();
-                shapeOrb.accept(0.01, 25);
-                Draw.sphere(c, R * 1.1, Draw.PURPLE, 4f, 250);
+                // la sphère se résorbe
+                pl.repeat(1, 14, k -> {
+                    double rr2 = R * (1 - k / 14.0);
+                    if (rr2 > 1) Draw.sphere(c, rr2, Draw.PURPLE, 4f, (int) Math.min(250, 40 + rr2 * 4));
+                }, null);
                 SmpGojo.sound(c, "block.beacon.deactivate", 10f, 0.5f);
                 pl.ruin.shockwave(c.clone().add(0, -R * 0.6, 0), Math.min(90, R * 1.6), 22, 0.9);
                 pl.ruin.smoke(c.clone().add(0, -R * 0.5, 0), Math.min(30, R * 0.5), 200);
