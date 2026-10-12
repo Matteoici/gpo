@@ -52,6 +52,9 @@ auto-price:
 
 # ---------------------------------------------------------------- Vente
 sell:
+  # objets vendus dans /shop : prix de revente = prix d'achat × ce ratio (0.3 = 30 %).
+  # Ainsi /sell reste toujours proportionnel à la boutique. 0 = utiliser worth.yml.
+  shop-items-ratio: 0.3
   # les objets renommés (clés de caisse, objets spéciaux...) ne se vendent pas
   ignore-named-items: true
   # les outils / armures abîmés ne se vendent pas

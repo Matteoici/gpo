@@ -85,7 +85,7 @@ public final class Shop {
                 buy.merge(e.item().getType(), e.price() / e.item().getAmount(), Math::min);
             }
         }
-        plugin.worth().capToShop(buy);
+        plugin.worth().applyShop(buy);
         warnArbitrage();
     }
 

@@ -33,10 +33,10 @@ prices:
   LEATHER: 10
   RABBIT_HIDE: 6
   WHITE_WOOL: 6
-  BEEF: 6
-  PORKCHOP: 6
-  CHICKEN: 5
-  MUTTON: 5
+  BEEF: 2
+  PORKCHOP: 2
+  CHICKEN: 1.5
+  MUTTON: 1.5
   INK_SAC: 5
   GLOW_INK_SAC: 15
   # ---------------- monstres

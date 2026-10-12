@@ -75,18 +75,27 @@ public final class Worth {
     }
 
     /**
-     * Les prix calculés automatiquement ne doivent jamais dépasser la moitié du prix d'achat en boutique
-     * (sinon on achèterait pour revendre plus cher). Les prix écrits à la main ne sont pas touchés.
+     * Objets vendus dans la boutique : prix de revente = prix d'achat × ratio (sell.shop-items-ratio),
+     * pour que /sell reste proportionnel à /shop. Ratio 0 = on garde worth.yml, mais un prix calculé
+     * automatiquement ne dépasse jamais la moitié du prix d'achat.
      */
-    void capToShop(Map<Material, Double> buyUnit) {
+    void applyShop(Map<Material, Double> buyUnit) {
         Map<Material, Double> p = new EnumMap<>(Material.class);
         p.putAll(prices);
         double maxMult = maxMultiplier();
+        double ratio = plugin.getConfig().getDouble("sell.shop-items-ratio", 0.3);
+        // jamais plus que ce qu'on paie, même avec le meilleur bonus de grade
+        ratio = Math.min(ratio, 0.9 / maxMult);
         for (var e : buyUnit.entrySet()) {
-            Double v = p.get(e.getKey());
-            if (v == null || explicit.contains(e.getKey())) continue;
+            Material m = e.getKey();
+            if (ratio > 0) {
+                if (p.containsKey(m) || !explicit.contains(m)) p.put(m, Math.floor(e.getValue() * ratio * 100) / 100.0);
+                continue;
+            }
+            Double v = p.get(m);
+            if (v == null || explicit.contains(m)) continue;
             double cap = e.getValue() * 0.5 / maxMult;
-            if (v > cap) p.put(e.getKey(), Math.floor(cap * 100) / 100.0);
+            if (v > cap) p.put(m, Math.floor(cap * 100) / 100.0);
         }
         prices = p;
     }
