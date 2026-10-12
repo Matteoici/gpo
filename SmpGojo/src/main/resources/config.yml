@@ -111,7 +111,7 @@ nuke:
   # l'écran blanc dure au maximum (ticks) - si le trou n'est pas fini, la fin se creuse à découvert
   max-white-ticks: 200
   # le trou se reconstruit après (secondes)
-  restore-seconds: 180
+  restore-seconds: 360
   # fissures géantes autour du trou
   cracks: 16
   range: 300

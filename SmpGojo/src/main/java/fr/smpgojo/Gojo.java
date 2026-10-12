@@ -400,7 +400,7 @@ final class Gojo {
 
         // le sous-sol est creusé en cachette dès maintenant (la surface reste en place)
         MegaHole hole = pl.ruin.mega(w, ground.getX(), ground.getZ(), R, sky.getY(), ground.getBlockY() - depth,
-                pl.cfgi("nuke.restore-seconds", 180));
+                pl.cfgi("nuke.restore-seconds", 360));
         if (hole != null) hole.hiddenCeil = ground.getBlockY() - 1;
 
         // 1) la sphère violette part dans le ciel
