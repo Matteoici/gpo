@@ -495,7 +495,6 @@ final class Gojo {
             // impact : tout devient blanc, très loin
             List<Player> all = pl.viewers(ground, R + 500);
             for (Player v : vs) if (!all.contains(v) && v.isOnline()) all.add(v);
-            for (Player v : all) pl.cine.tint(v, Cine.argb(255, Draw.WHITE), 3);
             pl.cine.shake(all, 40, 2);
             for (int k = 0; k < 4; k++) {
                 int kk = k;
@@ -557,17 +556,9 @@ final class Gojo {
                 int i = tick[0]++;
                 boolean erasing = hole != null && hole.erasing();
                 boolean surface = hole != null && hole.surfacePending();
-                // écran blanc tant que le trou n'est pas fini : quand il s'estompe, tout a disparu d'un coup
-                if (!revealed[0]) {
-                    if ((surface && i < maxWhite) || i < 12) {
-                        for (Player v : all) if (v.isOnline()) pl.cine.tint(v, Cine.argb(255, Draw.WHITE), 2);
-                    } else {
-                        revealed[0] = true;
-                        pl.cine.impact(all, null, new Cine.Frame[]{Cine.f(240, Draw.WHITE, 3), Cine.f(215, Draw.PINK, 3),
-                                Cine.f(190, Draw.WHITE, 3), Cine.f(150, Draw.WHITE, 3), Cine.f(110, Draw.PINK, 3), Cine.f(70, Draw.WHITE, 3),
-                                Cine.f(35, Draw.WHITE, 3)});
-                        SmpGojo.sound(ground, "entity.lightning_bolt.thunder", 10f, 0.5f);
-                    }
+                if (!revealed[0] && !surface && i >= 2) {
+                    revealed[0] = true;
+                    SmpGojo.sound(ground, "entity.lightning_bolt.thunder", 10f, 0.5f);
                 }
                 if (!erasing && !cracked[0]) edges.run();
                 if ((i >= hold && !erasing) || i >= maxHold || !pl.pending.contains(clean[0])) {
