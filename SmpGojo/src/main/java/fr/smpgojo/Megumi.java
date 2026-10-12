@@ -350,8 +350,8 @@ final class Megumi {
         Draw.fx(at.clone().add(0, 1, 0), Particle.ELECTRIC_SPARK, 120, 1.5, 0.4);
         for (int k = 0; k < 6; k++) Draw.bolt(at.clone().add(0, 0.5, 0), Draw.randomDir().setY(0.2), 3.5, Draw.YELLOW, Draw.WHITE, 1f);
         SmpGojo.sound(at, "entity.lightning_bolt.impact", 3f, 1f);
-        pl.ruin.carve(at, 1.6, 0, 0.5, null, null, 40);
-        pl.ruin.scorch(at, 3.5, 0.5);
+        pl.ruin.crater(at, 3, 0.4, 5, false);
+        pl.ruin.scorch(at, 5, 0.5);
         pl.ruin.shockwave(at, 6, 6, 0.5);
         double dmg = pl.cfg("damage.nue", 16);
         for (LivingEntity le : pl.targets(p, at, 3.5)) {
@@ -428,7 +428,7 @@ final class Megumi {
         pl.later(15, () -> {
             List<Player> vs = pl.viewers(at, 40);
             pl.cine.shake(vs, 3, 2);
-            pl.ruin.carve(at.clone().add(0, -0.5, 0), 2.3, 0, 0.5, new Vector(0, 0.6, 0), null, 50);
+            pl.ruin.crater(at.clone().add(0, -0.5, 0), 3.8, 0.45, 6, false);
             SmpGojo.sound(at, "entity.ravager.roar", 3f, 0.6f);
             SmpGojo.sound(at, "entity.generic.explode", 2f, 1.2f);
             int n = 16;

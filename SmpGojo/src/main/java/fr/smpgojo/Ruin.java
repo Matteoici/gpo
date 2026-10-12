@@ -73,7 +73,7 @@ final class Ruin {
     }
 
     private int restoreTicks() {
-        return Math.max(5, pl.getConfig().getInt("restore-seconds", 45)) * 20;
+        return Math.max(5, pl.getConfig().getInt("restore-seconds", 60)) * 20;
     }
 
     private boolean allowedWorld(World w, Location at) {
@@ -197,6 +197,177 @@ final class Ruin {
         return list.size();
     }
 
+    // ================================================================= cratères réalistes
+
+    /** Bruit doux selon la direction, pour des bords irréguliers. */
+    private static double noise(double a, double b, double seed) {
+        return Math.sin(a * 3 + seed) * 0.45 + Math.sin(a * 7 + b * 2 + seed * 1.7) * 0.3 + Math.sin(b * 5 + seed * 2.3) * 0.25;
+    }
+
+    /**
+     * Un vrai cratère : cuvette aux bords irréguliers, débris projetés, rebord de gravats,
+     * fissures qui partent du centre, fond en fusion si "molten", vitres et feuilles soufflées autour.
+     * Les grands cratères sont creusés tranche par tranche pour ne pas faire laguer.
+     */
+    void crater(Location c, double r, double debrisChance, int cracks, boolean molten) {
+        if (!enabled() || !allowedWorld(c.getWorld(), c)) return;
+        World w = c.getWorld();
+        double seed = ThreadLocalRandom.current().nextDouble(100);
+        int ri = (int) Math.ceil(r * 1.3);
+        int cy = c.getBlockY();
+        int top = Math.min(w.getMaxHeight() - 1, cy + ri), bottom = Math.max(w.getMinHeight(), cy - ri);
+        int perTick = Math.max(1, (int) (40000 / Math.max(1, (2 * ri + 1) * (2 * ri + 1))));
+        int layers = top - bottom + 1;
+        Runnable after = () -> {
+            if (molten) scorch(c.clone().add(0, -r * 0.5, 0), r * 0.9, 0.9);
+            rim(c, r, seed);
+            for (int k = 0; k < cracks; k++) crack(c, ThreadLocalRandom.current().nextDouble(Math.PI * 2), r * 0.8, r * (1.6 + ThreadLocalRandom.current().nextDouble()), molten);
+            shatter(c, Math.min(30, r * 2.6 + 6));
+        };
+        pl.repeat(1, (layers + perTick - 1) / perTick, i -> {
+            for (int y = top - i * perTick; y > top - (i + 1) * perTick && y >= bottom; y--) craterLayer(w, c, r, y, seed, debrisChance);
+        }, after);
+    }
+
+    private void craterLayer(World w, Location c, double r, int y, double seed, double debrisChance) {
+        int ri = (int) Math.ceil(r * 1.3);
+        double dy = y + 0.5 - c.getY();
+        double vy = dy < 0 ? dy / 0.7 : dy * 1.1;
+        Deque<Location> list = new ArrayDeque<>();
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        for (int x = -ri; x <= ri; x++) {
+            for (int z = -ri; z <= ri; z++) {
+                double dx = c.getBlockX() + x + 0.5 - c.getX(), dz = c.getBlockZ() + z + 0.5 - c.getZ();
+                double d = Math.sqrt(dx * dx + vy * vy + dz * dz);
+                if (d > r * 1.3) continue;
+                double rr = r * (1 + 0.22 * noise(Math.atan2(dz, dx), Math.atan2(vy, Math.hypot(dx, dz)), seed));
+                if (d > rr) continue;
+                Block b = w.getBlockAt(c.getBlockX() + x, y, c.getBlockZ() + z);
+                if (!breakable(b)) continue;
+                Location key = b.getLocation();
+                BlockData data = b.getBlockData();
+                saved.putIfAbsent(key, new Saved(data, Material.AIR));
+                b.setType(Material.AIR, false);
+                list.add(key);
+                if (rnd.nextDouble() < debrisChance) {
+                    Vector out = new Vector(dx, Math.max(0.3, vy), dz);
+                    if (out.lengthSquared() < 0.01) out = new Vector(0, 1, 0);
+                    spawnDebris(data, key.clone().add(0.5, 0.5, 0.5),
+                            out.normalize().multiply(0.5 + rnd.nextDouble() * 0.7).add(new Vector(0, 0.5 + rnd.nextDouble() * 0.6, 0)), null, 70);
+                }
+            }
+        }
+        schedule(list);
+    }
+
+    /** Rebord de gravats autour d'un cratère. */
+    private void rim(Location c, double r, double seed) {
+        World w = c.getWorld();
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        Material[] rubble = {Material.COBBLESTONE, Material.GRAVEL, Material.COARSE_DIRT, Material.ANDESITE, Material.COBBLESTONE,
+                Material.TUFF, Material.COBBLED_DEEPSLATE};
+        Deque<Location> list = new ArrayDeque<>();
+        int n = (int) (r * 14);
+        for (int k = 0; k < n; k++) {
+            double a = rnd.nextDouble() * Math.PI * 2;
+            double rr = r * (1 + 0.22 * noise(a, 0, seed)) + 0.5 + rnd.nextDouble() * 2.5;
+            int x = (int) Math.floor(c.getX() + Math.cos(a) * rr), z = (int) Math.floor(c.getZ() + Math.sin(a) * rr);
+            Block g = surface(w, x, c.getBlockY(), z);
+            if (g == null) continue;
+            int h = rnd.nextDouble() < 0.35 ? 2 : 1;
+            for (int yy = 1; yy <= h; yy++) {
+                Block b = g.getRelative(0, yy, 0);
+                if (!b.getType().isAir() || saved.containsKey(b.getLocation())) break;
+                Material m = rubble[rnd.nextInt(rubble.length)];
+                saved.put(b.getLocation(), new Saved(b.getBlockData(), m));
+                b.setType(m, false);
+                list.add(b.getLocation());
+            }
+        }
+        schedule(list);
+    }
+
+    /** Une fissure qui part du cratère en zigzag (avec du magma au fond si "molten"). */
+    void crack(Location c, double angle, double from, double length, boolean molten) {
+        if (!enabled()) return;
+        World w = c.getWorld();
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        double a = angle, x = c.getX() + Math.cos(a) * from, z = c.getZ() + Math.sin(a) * from;
+        Deque<Location> placed = new ArrayDeque<>();
+        for (double t = 0; t < length; t += 0.8) {
+            a += rnd.nextDouble(-0.35, 0.35);
+            x += Math.cos(a) * 0.8;
+            z += Math.sin(a) * 0.8;
+            Block g = surface(w, (int) Math.floor(x), c.getBlockY(), (int) Math.floor(z));
+            if (g == null) continue;
+            double depth = Math.max(1, 3.5 * (1 - t / length));
+            double width = t / length < 0.5 ? 1.2 : 0.7;
+            carve(g.getLocation().add(0.5, 0.5 - depth * 0.4, 0.5), width, 0, 0.06, new Vector(0, 0.4, 0), null, 30);
+            if (molten && rnd.nextDouble() < 0.6) {
+                Block bot = g.getRelative(0, -(int) Math.ceil(depth), 0);
+                if (breakable(bot) && !saved.containsKey(bot.getLocation())) {
+                    saved.put(bot.getLocation(), new Saved(bot.getBlockData(), Material.MAGMA_BLOCK));
+                    bot.setType(Material.MAGMA_BLOCK, false);
+                    placed.add(bot.getLocation());
+                }
+            }
+        }
+        schedule(placed);
+    }
+
+    private static boolean fragile(Material m) {
+        String n = m.name();
+        return n.endsWith("GLASS") || n.endsWith("GLASS_PANE") || n.endsWith("LEAVES") || n.equals("GLASS_PANE")
+                || n.endsWith("_CARPET") || n.equals("SHORT_GRASS") || n.equals("TALL_GRASS") || n.equals("FERN") || n.equals("LARGE_FERN");
+    }
+
+    /** Le souffle : vitres, feuillages et herbes volent en éclats dans un grand rayon. */
+    void shatter(Location c, double r) {
+        if (!enabled() || !allowedWorld(c.getWorld(), c)) return;
+        World w = c.getWorld();
+        int ri = (int) Math.ceil(r);
+        int cy = c.getBlockY();
+        int minY = Math.max(w.getMinHeight(), cy - ri / 2), maxY = Math.min(w.getMaxHeight() - 1, cy + ri);
+        int[] y = {maxY};
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        pl.repeat(1, Math.max(1, (maxY - minY + 1 + 5) / 6), i -> {
+            Deque<Location> list = new ArrayDeque<>();
+            for (int k = 0; k < 6 && y[0] >= minY; k++, y[0]--) {
+                for (int x = -ri; x <= ri; x++) {
+                    for (int z = -ri; z <= ri; z++) {
+                        if (x * x + z * z + (y[0] - cy) * (y[0] - cy) > r * r) continue;
+                        Block b = w.getBlockAt(c.getBlockX() + x, y[0], c.getBlockZ() + z);
+                        Material m = b.getType();
+                        if (!fragile(m) || !breakable(b)) continue;
+                        BlockData data = b.getBlockData();
+                        saved.putIfAbsent(b.getLocation(), new Saved(data, Material.AIR));
+                        b.setType(Material.AIR, false);
+                        list.add(b.getLocation());
+                        if (rnd.nextInt(6) == 0) w.spawnParticle(Particle.BLOCK, b.getLocation().add(0.5, 0.5, 0.5), 6, 0.3, 0.3, 0.3, 0, data, true);
+                        if (rnd.nextInt(40) == 0) {
+                            Vector out = b.getLocation().toVector().subtract(c.toVector());
+                            if (out.lengthSquared() > 0.01) spawnDebris(data, b.getLocation().add(0.5, 0.5, 0.5),
+                                    out.normalize().multiply(0.6).setY(0.3), null, 30);
+                        }
+                    }
+                }
+            }
+            if (!list.isEmpty()) {
+                SmpGojo.sound(c, "block.glass.break", 3f, 0.5f + rnd.nextFloat() * 0.5f);
+                schedule(list);
+            }
+        }, null);
+    }
+
+    /** Colonne de fumée et de poussière qui reste après un gros impact. */
+    void smoke(Location c, double r, int ticks) {
+        pl.repeat(3, Math.max(1, ticks / 3), i -> {
+            c.getWorld().spawnParticle(Particle.CAMPFIRE_SIGNAL_SMOKE, c, (int) (4 + r), r * 0.4, 0.5, r * 0.4, 0.04, null, true);
+            c.getWorld().spawnParticle(Particle.LARGE_SMOKE, c, (int) (6 + r * 2), r * 0.6, 0.6, r * 0.6, 0.03, null, true);
+            c.getWorld().spawnParticle(Particle.WHITE_ASH, c, 20, r, 2, r, 0, null, true);
+        }, null);
+    }
+
     /** Une entaille fine le long d'un segment (coupures de Sukuna). */
     void gash(Location c, Vector u, double half, double width) {
         if (!enabled()) return;
@@ -240,7 +411,7 @@ final class Ruin {
     // ================================================================= débris (affichage seulement)
 
     void spawnDebris(BlockData data, Location at, Vector vel, Location attract, int life) {
-        if (debris.size() >= pl.getConfig().getInt("max-debris", 350)) return;
+        if (debris.size() >= pl.getConfig().getInt("max-debris", 600)) return;
         ThreadLocalRandom rnd = ThreadLocalRandom.current();
         Debris d = new Debris();
         d.pos = at.clone();

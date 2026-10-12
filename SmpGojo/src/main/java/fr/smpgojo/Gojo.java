@@ -168,7 +168,7 @@ final class Gojo {
                         Draw.fx(le.getLocation().add(0, 1, 0), Particle.ENCHANTED_HIT, 10, 0.3, 0.3);
                     }
                 }
-                if (i % 3 == 0) pl.ruin.carve(orb, 1.6 + i * 0.015, 0, 0.55, null, orb, 300);
+                if (i % 2 == 0) pl.ruin.carve(orb, 2.2 + i * 0.025, 0, 0.6, null, orb, 300);
                 if (i % 6 == 0) SmpGojo.sound(orb, "block.respawn_anchor.charge", 1.6f, 0.6f + i / (float) life);
                 if (i % 20 == 0) pl.cine.shake(pl.viewers(orb, 14), 1, 1);
             }, () -> {
@@ -180,7 +180,9 @@ final class Gojo {
                 SmpGojo.sound(orb, "entity.generic.explode", 3f, 1.3f);
                 SmpGojo.sound(orb, "entity.breeze.wind_burst", 3f, 0.6f);
                 pl.cine.impact(pl.viewers(orb, 16), null, Cine.FLASH);
-                pl.ruin.carve(orb, 2.8, 0, 0.4, null, null, 50);
+                pl.ruin.crater(orb, pl.cfg("bleu.crater", 4.5), 0.35, 5, false);
+                pl.ruin.shockwave(orb, 12, 10, 0.6);
+                pl.ruin.smoke(orb, 3, 60);
                 for (LivingEntity le : pl.targets(p, orb, 6)) {
                     pl.hit(p, le, dmg * 2, "bleu");
                     Vector out = le.getLocation().toVector().subtract(orb.toVector());
@@ -231,7 +233,7 @@ final class Gojo {
 
     private void redBurst(Player p, Location at, Vector dir) {
         double dmg = pl.cfg("damage.rouge", 14);
-        double r = pl.cfg("rouge.radius", 4.5);
+        double r = pl.cfg("rouge.radius", 6);
         List<LivingEntity> victims = pl.targets(p, at, r + 3);
         List<Player> vs = pl.viewers(at, 60);
         pl.cine.hitStop(victims, 4);
@@ -244,14 +246,16 @@ final class Gojo {
             Draw.sphere(at, r * 0.6, Draw.WHITE, 2f, 60);
             SmpGojo.sound(at, "entity.generic.explode", 4f, 0.6f);
             SmpGojo.sound(at, "item.mace.smash_ground_heavy", 3f, 0.7f);
-            pl.ruin.carve(at, r, 0, 0.3, dir.clone().multiply(0.6), null, 60);
-            pl.ruin.shockwave(at, r * 3, 12, 0.6);
+            pl.ruin.crater(at, r, 0.3, 7, false);
+            pl.ruin.shockwave(at, r * 3.5, 14, 0.7);
+            pl.ruin.smoke(at, r * 0.6, 80);
             pl.cine.shake(vs, 4, 2);
             for (LivingEntity le : victims) {
                 pl.hit(p, le, dmg, "rouge");
                 Vector push = le.getLocation().toVector().subtract(at.toVector()).add(dir.clone().multiply(1.5));
                 if (push.lengthSquared() < 0.01) push = dir.clone();
-                le.setVelocity(push.normalize().multiply(3.4).setY(1));
+                le.setVelocity(push.normalize().multiply(3.6).setY(1));
+                pl.smash(le, 12, 1.6);
             }
         });
     }
@@ -292,8 +296,8 @@ final class Gojo {
         pl.cine.title(vs, "<gradient:#9628ff:#e0a8ff><b>VIOLET CREUX", "", 25);
         SmpGojo.sound(orb, "entity.warden.sonic_boom", 4f, 0.6f);
         SmpGojo.sound(orb, "block.beacon.power_select", 3f, 0.5f);
-        double r = pl.cfg("violet.radius", 3.6), dmg = pl.cfg("damage.violet", 35);
-        int steps = pl.cfgi("violet.ticks", 50);
+        double r = pl.cfg("violet.radius", 4.5), dmg = pl.cfg("damage.violet", 35);
+        int steps = pl.cfgi("violet.ticks", 70);
         Set<UUID> hit = new HashSet<>();
         pl.repeat(1, steps, i -> {
             orb.add(d.clone().multiply(1.5));
@@ -309,11 +313,14 @@ final class Gojo {
                 Draw.fx(le.getLocation().add(0, 1, 0), Particle.REVERSE_PORTAL, 40, 0.4, 0.4);
             }
             pl.ruin.carve(orb, r, 0, 0.06, null, orb, 12);
+            if (i % 6 == 0) pl.ruin.shatter(orb, r * 2.5);
             if (i % 4 == 0) SmpGojo.sound(orb, "entity.ender_dragon.flap", 3f, 0.5f);
             if (i % 10 == 0) pl.cine.shake(pl.viewers(orb, 20), 1, 1);
         }, () -> {
             Draw.sphere(orb, r * 1.6, Draw.PURPLE, 3f, 120);
             Draw.fx(orb, Particle.EXPLOSION_EMITTER, 2, 1, 0);
+            pl.ruin.crater(orb, r * 1.8, 0.2, 6, false);
+            pl.ruin.shockwave(orb, r * 4, 12, 0.6);
             SmpGojo.sound(orb, "entity.generic.explode", 3f, 0.5f);
         });
     }
@@ -382,8 +389,8 @@ final class Gojo {
         World w = aimed.getWorld();
         Block g = Ruin.surface(w, aimed.getBlockX(), aimed.getBlockY(), aimed.getBlockZ());
         Location ground = g != null ? g.getLocation().add(0.5, 1, 0.5) : aimed.clone();
-        double R = pl.cfg("nuke.radius", 18);
-        int skyH = pl.cfgi("nuke.sky-height", 70), depth = pl.cfgi("nuke.depth", 30);
+        double R = pl.cfg("nuke.radius", 22);
+        int skyH = pl.cfgi("nuke.sky-height", 70), depth = pl.cfgi("nuke.depth", 40);
         double dmg = pl.cfg("damage.nuke", 80);
         Location sky = ground.clone().add(0, skyH, 0);
         List<Player> vs = pl.viewers(ground, 320);
@@ -479,7 +486,21 @@ final class Gojo {
             SmpGojo.sound(ground, "entity.wither.death", 8f, 0.5f);
             SmpGojo.sound(ground, "block.beacon.power_select", 8f, 0.5f);
             beam.shape(R, total, 4);
-            pl.ruin.shockwave(ground, R + 16, 18, 0.9);
+            pl.ruin.shockwave(ground, R + 24, 22, 1.0);
+            pl.ruin.shatter(ground, Math.min(30, R + 12));
+            ThreadLocalRandom r0 = ThreadLocalRandom.current();
+            int cracks = pl.cfgi("nuke.cracks", 12);
+            for (int k = 0; k < cracks; k++) {
+                double a = k * Math.PI * 2 / cracks + r0.nextDouble(-0.2, 0.2);
+                pl.later(k, () -> pl.ruin.crack(ground, a, R, R * (1.2 + r0.nextDouble()), false));
+            }
+            // le bord du trou est arraché de façon irrégulière
+            for (int k = 0; k < 10; k++) {
+                double a = r0.nextDouble() * Math.PI * 2;
+                Location edge = ground.clone().add(Math.cos(a) * R, -1, Math.sin(a) * R);
+                pl.later(4 + k, () -> pl.ruin.crater(edge, 3 + r0.nextDouble() * 3, 0.15, 0, false));
+            }
+            pl.ruin.smoke(ground.clone().add(0, 2, 0), R * 0.8, 200);
             int hold = pl.cfgi("nuke.hold-ticks", 60);
             ThreadLocalRandom rnd = ThreadLocalRandom.current();
             pl.repeat(1, hold, i -> {

@@ -166,8 +166,9 @@ final class Yuji {
             SmpGojo.sound(at, "entity.generic.explode", 3f, 0.7f);
             SmpGojo.sound(at, "item.mace.smash_ground_heavy", 3f, 0.6f);
             pl.cine.shake(vs, 4, 2);
-            pl.ruin.shockwave(t.getLocation(), 6, 6, 0.5);
-            Vector launch = dir.clone().multiply(pl.cfg("yuji.black-flash-knockback", 3.2)).setY(0.45);
+            pl.ruin.crater(at, 2.5, 0.4, 4, false);
+            pl.ruin.shockwave(t.getLocation(), 9, 8, 0.6);
+            Vector launch = dir.clone().multiply(pl.cfg("yuji.black-flash-knockback", 4.0)).setY(0.45);
             t.setVelocity(launch);
             // la cible traverse les murs
             pl.repeat(1, 14, i -> {
@@ -175,12 +176,13 @@ final class Yuji {
                 Location l = t.getLocation().add(0, t.getHeight() / 2, 0);
                 Draw.dust(l, Draw.BLACK, 2f);
                 Draw.dust(l.clone().add(Draw.randomDir().multiply(0.4)), Draw.RED, 1.2f);
-                pl.ruin.carve(l.clone().add(dir.clone().multiply(0.8)), 1.3, 0, 0.35, dir.clone().multiply(0.4), null, 40);
+                pl.ruin.carve(l.clone().add(dir.clone().multiply(0.8)), 1.8, 0, 0.4, dir.clone().multiply(0.5), null, 50);
                 if (i < 8) t.setVelocity(launch);
             }, () -> {
                 if (t.isValid()) {
-                    pl.ruin.carve(t.getLocation(), 2, 0, 0.4, null, null, 40);
-                    pl.ruin.shockwave(t.getLocation(), 4, 5, 0.4);
+                    pl.ruin.crater(t.getLocation(), 3.5, 0.4, 5, false);
+                    pl.ruin.shockwave(t.getLocation(), 7, 6, 0.5);
+                    pl.ruin.smoke(t.getLocation(), 2, 50);
                 }
             });
             // la zone
@@ -242,8 +244,9 @@ final class Yuji {
         pl.cine.shake(vs, 4, 2);
         SmpGojo.sound(at, "item.mace.smash_ground_heavy", 3f, 0.6f);
         SmpGojo.sound(at, "entity.generic.explode", 2.5f, 1f);
-        pl.ruin.carve(at.clone().add(0, -0.6, 0), 3, 0, 0.45, new Vector(0, 0.5, 0), null, 50);
-        pl.ruin.shockwave(at, 10, 10, 0.6);
+        pl.ruin.crater(at.clone().add(0, -0.6, 0), 5, 0.45, 8, false);
+        pl.ruin.shockwave(at, 14, 12, 0.7);
+        pl.ruin.smoke(at, 3, 60);
         Draw.ring(at.clone().add(0, 0.2, 0), 3, Draw.CURSED, 1.5f, 40);
         double dmg = pl.cfg("damage.manji", 16);
         pl.later(3, () -> {
@@ -291,7 +294,11 @@ final class Yuji {
             SmpGojo.sound(c, "entity.player.attack.knockback", 3f, 0.5f);
             SmpGojo.sound(c, "entity.generic.explode", 2f, 1.4f);
             strike(p, target, pl.cfg("damage.uppercut", 10), "rafale");
-            pl.later(1, () -> target.setVelocity(new Vector(0, 1.7, 0)));
+            Vector up = p.getLocation().getDirection().setY(0).normalize().multiply(1.2).setY(1.6);
+            pl.later(1, () -> {
+                target.setVelocity(up);
+                pl.smash(target, 10, 1.4);
+            });
         });
     }
 
@@ -334,7 +341,7 @@ final class Yuji {
                 Draw.blood(le, 50);
                 le.setVelocity(d.clone().multiply(0.8).setY(0.2));
             }
-            if (((int) t) % 2 == 0) pl.ruin.carve(l, 0.75, 0, 0.12, d.clone().multiply(0.4), null, 30);
+            pl.ruin.carve(l, 1.15, 0, 0.1, d.clone().multiply(0.5), null, 30);
         }
         pl.repeat(1, 10, i -> {
             for (double t = 1; t <= finalLen; t += 0.35) {

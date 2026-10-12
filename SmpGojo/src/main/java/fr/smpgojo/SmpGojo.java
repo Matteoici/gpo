@@ -10,6 +10,7 @@ import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Particle;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.ArmorStand;
@@ -381,6 +382,26 @@ public final class SmpGojo extends JavaPlugin implements Listener {
         } finally {
             piercing = prev;
         }
+    }
+
+    /** La cible projetée défonce tout sur son passage, puis s'écrase en faisant un petit cratère. */
+    void smash(LivingEntity t, int ticks, double radius) {
+        if (!ruin.enabled()) return;
+        repeat(1, ticks, i -> {
+            if (!t.isValid()) return;
+            Vector v = t.getVelocity();
+            if (v.lengthSquared() < 0.04 && i > 3) return;
+            Location l = t.getLocation().add(0, t.getHeight() / 2, 0);
+            Location ahead = l.clone().add(v.clone().normalize().multiply(Math.min(1.2, v.length())));
+            ruin.carve(ahead, radius, 0, 0.35, v.clone().multiply(0.4), null, 40);
+            Draw.fx(l, Particle.CLOUD, 3, 0.3, 0.02);
+            Draw.fx(l, Particle.CRIT, 4, 0.3, 0.2);
+        }, () -> {
+            if (t.isValid()) {
+                ruin.crater(t.getLocation(), radius + 1, 0.3, 3, false);
+                ruin.shockwave(t.getLocation(), radius * 3, 6, 0.5);
+            }
+        });
     }
 
     static Vector right(Player p) {

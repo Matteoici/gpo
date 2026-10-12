@@ -58,7 +58,7 @@ final class Sukuna {
                             pl.cine.hitStop(List.of(le), 2);
                             SmpGojo.sound(le.getLocation(), "entity.player.attack.crit", 1.5f, 0.7f);
                         }
-                        pl.ruin.gash(c, u, half * 0.8, 0.55);
+                        pl.ruin.gash(c, u, half * 0.9, 0.8);
                     }
                 }, null);
             });
@@ -96,9 +96,10 @@ final class Sukuna {
             SmpGojo.sound(c, "entity.generic.explode", 1.2f, 1.6f);
             Vector away = target.getLocation().toVector().subtract(p.getLocation().toVector());
             if (away.lengthSquared() < 0.01) away = p.getLocation().getDirection();
-            target.setVelocity(away.normalize().multiply(1.4).setY(0.5));
+            target.setVelocity(away.normalize().multiply(2.2).setY(0.6));
+            pl.smash(target, 8, 1.3);
             Location g = target.getLocation();
-            for (int s = 0; s < 3; s++) pl.ruin.gash(g, Draw.perpendicular(new Vector(0, 1, 0).add(Draw.randomDir().multiply(0.1)), s), 2.5, 0.5);
+            for (int s = 0; s < 5; s++) pl.ruin.gash(g.clone().add(Draw.randomDir().setY(0).multiply(1.5)), Draw.randomDir().setY(0).normalize(), 3.5, 0.8);
         });
     }
 
@@ -156,7 +157,7 @@ final class Sukuna {
     }
 
     private void fugaBlast(Player p, Location at) {
-        double dmg = pl.cfg("damage.fuga", 30), r = pl.cfg("fuga.radius", 9);
+        double dmg = pl.cfg("damage.fuga", 30), r = pl.cfg("fuga.radius", 11);
         List<LivingEntity> victims = pl.targets(p, at, r + 3);
         List<Player> vs = pl.viewers(at, 70);
         pl.cine.hitStop(victims, 4);
@@ -173,9 +174,10 @@ final class Sukuna {
         SmpGojo.sound(at, "item.firecharge.use", 5f, 0.4f);
         SmpGojo.sound(at, "entity.blaze.death", 3f, 0.5f);
         pl.cine.shake(vs, 6, 2);
-        pl.ruin.carve(at, Math.max(2.5, r * 0.4), 0, 0.35, null, null, 60);
-        pl.ruin.scorch(at, r * 1.4, 0.75);
-        pl.ruin.shockwave(at, r * 1.8, 12, 0.6);
+        pl.ruin.crater(at, Math.max(3.5, r * 0.6), 0.35, 9, true);
+        pl.ruin.scorch(at, r * 1.6, 0.8);
+        pl.ruin.shockwave(at, r * 2.2, 14, 0.7);
+        pl.ruin.smoke(at.clone().add(0, 2, 0), r * 0.7, 160);
         pl.repeat(2, 40, i -> {
             double cur = Math.min(r, r * (i + 1) / 6.0);
             w.spawnParticle(Particle.FLAME, at, 90, cur * 0.5, 1 + i * 0.3, cur * 0.5, 0.1, null, true);
@@ -223,7 +225,7 @@ final class Sukuna {
         Vector d = eye.getDirection().normalize();
         Vector u = Draw.perpendicular(d, 0.45);
         Vector n = d.clone().crossProduct(u).normalize();
-        double length = pl.cfg("taille.length", 50), half = pl.cfg("taille.width", 16);
+        double length = pl.cfg("taille.length", 70), half = pl.cfg("taille.width", 22);
         double dmg = pl.cfg("damage.taille", 70);
         List<Player> vs = pl.viewers(eye, 120);
         pl.cine.impact(vs, null, Cine.WHITE_BLACK);
@@ -253,7 +255,7 @@ final class Sukuna {
                 }
                 // le plan coupe le terrain
                 for (double t = -half; t <= half; t += 0.8) {
-                    pl.ruin.carve(c.clone().add(u.clone().multiply(t)), 0.6, 0, 0.03, n.clone().multiply(0.3), null, 50);
+                    pl.ruin.carve(c.clone().add(u.clone().multiply(t)), 0.85, 0, 0.04, n.clone().multiply(0.4), null, 50);
                 }
             }
             if (i % 3 == 0) SmpGojo.sound(origin.clone().add(d.clone().multiply(i * length / steps)), "entity.player.attack.sweep", 4f, 0.5f);
@@ -284,7 +286,7 @@ final class Sukuna {
     }
 
     private void openShrine(Player p) {
-        int r = pl.cfgi("sanctuaire.radius", 22);
+        int r = pl.cfgi("sanctuaire.radius", 26);
         int seconds = pl.cfgi("sanctuaire.seconds", 10);
         double dmg = pl.cfg("damage.sanctuaire", 2);
         Location c = p.getLocation().getBlock().getLocation();
@@ -341,15 +343,16 @@ final class Sukuna {
                 Draw.slash(at, Draw.randomDir(), 2.5, Draw.WHITE, Draw.BLOOD);
             }
             // le terrain est haché
-            for (int s = 0; s < 3; s++) {
+            for (int s = 0; s < 6; s++) {
                 double a = rnd.nextDouble() * Math.PI * 2, rr = rnd.nextDouble() * r;
                 int x = (int) Math.floor(c.getX() + Math.cos(a) * rr), z = (int) Math.floor(c.getZ() + Math.sin(a) * rr);
                 Block top = Ruin.surface(w, x, c.getBlockY(), z);
                 if (top == null || top.getLocation().distanceSquared(base) < 49) continue;
-                Location at = top.getLocation().add(0.5, 0.5, 0.5);
+                Location at = top.getLocation().add(0.5, 0.5 + rnd.nextDouble(-1, 10), 0.5);
                 Vector u = Draw.perpendicular(new Vector(rnd.nextDouble(-1, 1), 0.2, rnd.nextDouble(-1, 1)).normalize(), rnd.nextDouble(3));
-                Draw.slash(at, u, 1.6, Draw.WHITE, Draw.BLOOD);
-                pl.ruin.gash(at, u, 1.6, 0.6 + rnd.nextDouble() * 0.6);
+                double len = 2 + rnd.nextDouble() * 3;
+                Draw.slash(at, u, len, Draw.WHITE, Draw.BLOOD);
+                pl.ruin.gash(at, u, len, 0.7 + rnd.nextDouble() * 0.6);
             }
             for (LivingEntity le : pl.targets(p, c, r)) {
                 Location l = le.getLocation().add(0, le.getHeight() / 2, 0);

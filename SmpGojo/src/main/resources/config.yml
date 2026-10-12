@@ -16,11 +16,11 @@ cinematic:
 # puis tout se reconstruit tout seul. Jamais : coffres, fours, panneaux,
 # bedrock, liquides. Même après un crash, le terrain est remis au démarrage.
 destroy-blocks: true
-restore-seconds: 45
+restore-seconds: 60
 restore-blocks-per-tick: 500
 max-blocks-per-hit: 6000
 # débris qui volent (affichage seulement)
-max-debris: 350
+max-debris: 600
 # mondes où rien n'est jamais cassé
 no-destroy-worlds: []
 # rayon autour du spawn du monde où rien n'est cassé (0 = aucun)
@@ -82,20 +82,23 @@ damage:
 # ------------------------------------------------------------ Gojo
 bleu:
   ticks: 80
-  pull-radius: 11
+  pull-radius: 13
+  crater: 5
 rouge:
-  radius: 4.5
+  radius: 6
 violet:
-  radius: 3.6
-  ticks: 50
+  radius: 4.5
+  ticks: 70
 # Violet creux 200 % : une colonne de lumière tombe du ciel et efface tout
 nuke:
   # rayon de la colonne (le trou fera cette taille)
-  radius: 18
+  radius: 22
   # hauteur du vortex au-dessus du sol
   sky-height: 70
   # profondeur du trou sous le sol
-  depth: 30
+  depth: 40
+  # fissures géantes autour du trou
+  cracks: 12
   # durée de la colonne (ticks, 20 = 1 s)
   hold-ticks: 60
   range: 140
@@ -105,12 +108,12 @@ domain:
 
 # ------------------------------------------------------------ Sukuna
 fuga:
-  radius: 9
+  radius: 11
 taille:
-  length: 50
-  width: 16
+  length: 70
+  width: 22
 sanctuaire:
-  radius: 22
+  radius: 26
   seconds: 10
   # à la fin du territoire, Sukuna embrase tout avec Fuga
   fuga-finish: true

@@ -88,7 +88,7 @@ final class Mahoraga {
             SmpGojo.sound(spot, "entity.warden.emerge", 4f, 0.6f);
             SmpGojo.sound(spot, "block.bell.use", 4f, 0.5f);
             pl.ruin.shockwave(spot, 12, 12, 0.7);
-            pl.ruin.carve(spot.clone().add(0, -1, 0), 2.5, 0, 0.4, new Vector(0, 0.5, 0), null, 40);
+            pl.ruin.crater(spot.clone().add(0, -1, 0), 4, 0.4, 6, false);
         });
     }
 
@@ -242,7 +242,10 @@ final class Mahoraga {
         if (push.lengthSquared() < 0.01) push = body.getLocation().getDirection();
         Vector v = push.normalize().multiply(2.6).setY(0.7);
         pl.later(3, () -> {
-            if (victim.isValid()) victim.setVelocity(v);
+            if (victim.isValid()) {
+                victim.setVelocity(v);
+                pl.smash(victim, 10, 1.4);
+            }
         });
     }
 
@@ -299,8 +302,9 @@ final class Mahoraga {
         pl.cine.shake(vs, 4, 2);
         SmpGojo.sound(at, "item.mace.smash_ground_heavy", 4f, 0.5f);
         SmpGojo.sound(at, "entity.generic.explode", 3f, 0.8f);
-        pl.ruin.carve(at.clone().add(0, -0.5, 0), 2.8, 0, 0.4, new Vector(0, 0.6, 0), null, 50);
-        pl.ruin.shockwave(at, 10, 10, 0.6);
+        pl.ruin.crater(at.clone().add(0, -0.5, 0), 4.5, 0.4, 7, false);
+        pl.ruin.shockwave(at, 14, 12, 0.7);
+        pl.ruin.smoke(at, 3, 60);
         for (LivingEntity le : hit) {
             if (le == body) continue;
             pl.hit(owner, le, pl.cfg("damage.mahoraga-saut", 18), "mahoraga");
