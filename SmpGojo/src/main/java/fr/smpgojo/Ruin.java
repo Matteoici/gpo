@@ -479,19 +479,27 @@ final class Ruin {
 
     // ================================================================= tick
 
-    /** Commence un trou géant (cylindre). Il s'efface chunk par chunk, puis se reconstruit après "restoreSeconds". */
-    MegaHole mega(World w, double cx, double cz, double r, int bottom, int restoreSeconds) {
-        if (!enabled() || !allowedWorld(w, new Location(w, cx, bottom, cz))) return null;
-        MegaHole h = new MegaHole(pl, w, cx, cz, r, bottom, new java.io.File(pl.getDataFolder(), "mega-" + System.currentTimeMillis() + "-" + (megaSeq++) + ".bin"));
+    /** Commence un tunnel géant (boule qui avance). Effacé avec un budget de temps, reconstruit après "restoreSeconds". */
+    MegaHole mega(Location from, Vector dir, double length, double r, int restoreSeconds) {
+        if (!enabled() || !allowedWorld(from.getWorld(), from)) return null;
+        MegaHole h = new MegaHole(pl, from, dir, length, r,
+                new java.io.File(pl.getDataFolder(), "mega-" + System.currentTimeMillis() + "-" + (megaSeq++) + ".bin"));
         h.scheduleRestore(now, Math.max(5, restoreSeconds) * 20);
         megas.add(h);
         return h;
     }
 
+    /** Cylindre vertical (colonne du 200 %) : du haut "topY" jusqu'à "bottomY", fond arrondi. */
+    MegaHole mega(World w, double cx, double cz, double r, double topY, int bottomY, int restoreSeconds) {
+        Location from = new Location(w, cx, topY, cz);
+        double length = Math.max(1, topY - (bottomY + r));
+        return mega(from, new Vector(0, -1, 0), length, r, restoreSeconds);
+    }
+
     void tick() {
         now++;
         tickDebris();
-        long megaBudget = (long) (pl.getConfig().getDouble("nuke.max-ms-per-tick", 6) * 1_000_000L);
+        long megaBudget = (long) (pl.getConfig().getDouble("nuke.max-ms-per-tick", 30) * 1_000_000L);
         for (java.util.Iterator<MegaHole> it = megas.iterator(); it.hasNext(); ) {
             MegaHole h = it.next();
             if (h.erasing()) h.eraseTick(megaBudget);

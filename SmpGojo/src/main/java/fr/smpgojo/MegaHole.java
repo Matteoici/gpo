@@ -4,7 +4,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.Particle;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
@@ -21,14 +20,16 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.Set;
 
 /**
- * Un trou géant (Violet creux 200 %) : un cylindre effacé chunk par chunk depuis le centre,
- * gardé en mémoire de façon compacte (12 octets par bloc) puis reconstruit petit à petit.
- * Sauvegardé sur disque : même après un crash, tout est remis au démarrage.
+ * Un tunnel géant (Violet creux 200 %) : tout ce qui est dans une "capsule"
+ * (une boule de rayon r qui avance sur une distance donnée) est effacé, liquides compris.
+ * Travail découpé avec un budget de temps par tick (pas de lag), gardé en mémoire de façon compacte
+ * (12 octets par bloc), sauvegardé sur disque et reconstruit tout seul plus tard.
  */
 final class MegaHole {
 
@@ -36,10 +37,10 @@ final class MegaHole {
 
     private final SmpGojo pl;
     final World w;
-    final double cx, cz, r;
-    final int bottom;
+    private final double ax, ay, az, dx, dy, dz, len, r;
+    private final int minY, maxY;
     private final List<int[]> chunks = new ArrayList<>();
-    private int chunkIdx;
+    private int chunkIdx, col;
     private long[] keys = new long[1 << 16];
     private int[] pal = new int[1 << 16];
     private int size;
@@ -47,35 +48,58 @@ final class MegaHole {
     private final Map<BlockData, Integer> palIndex = new HashMap<>();
     private int restoreAt = -1, restoreIdx = -1;
     private final File file;
+    private final Set<Long> loading = new HashSet<>();
+    private final Set<Long> tickets = new HashSet<>();
     boolean done;
 
-    MegaHole(SmpGojo pl, World w, double cx, double cz, double r, int bottom, File file) {
+    MegaHole(SmpGojo pl, Location from, Vector dir, double length, double r, File file) {
         this.pl = pl;
-        this.w = w;
-        this.cx = cx;
-        this.cz = cz;
+        this.w = from.getWorld();
+        Vector d = dir.clone().normalize();
+        this.ax = from.getX();
+        this.ay = from.getY();
+        this.az = from.getZ();
+        this.dx = d.getX();
+        this.dy = d.getY();
+        this.dz = d.getZ();
+        this.len = length;
         this.r = r;
-        this.bottom = Math.max(w.getMinHeight() + 1, bottom);
         this.file = file;
-        int c0x = (int) Math.floor((cx - r) / 16), c1x = (int) Math.floor((cx + r) / 16);
-        int c0z = (int) Math.floor((cz - r) / 16), c1z = (int) Math.floor((cz + r) / 16);
+        double bx = ax + dx * len, by = ay + dy * len, bz = az + dz * len;
+        this.minY = (int) Math.max(w.getMinHeight() + 1, Math.floor(Math.min(ay, by) - r));
+        this.maxY = (int) Math.min(w.getMaxHeight() - 1, Math.ceil(Math.max(ay, by) + r));
+        int c0x = (int) Math.floor((Math.min(ax, bx) - r) / 16), c1x = (int) Math.floor((Math.max(ax, bx) + r) / 16);
+        int c0z = (int) Math.floor((Math.min(az, bz) - r) / 16), c1z = (int) Math.floor((Math.max(az, bz) + r) / 16);
+        Map<int[], Double> along = new HashMap<>();
         for (int x = c0x; x <= c1x; x++) {
             for (int z = c0z; z <= c1z; z++) {
-                double nx = Math.max(x * 16, Math.min(cx, x * 16 + 15)), nz = Math.max(z * 16, Math.min(cz, z * 16 + 15));
-                if ((nx - cx) * (nx - cx) + (nz - cz) * (nz - cz) <= r * r) chunks.add(new int[]{x, z});
+                double cx = x * 16 + 8, cz = z * 16 + 8;
+                if (flatDist2(cx, cz) > (r + 12) * (r + 12)) continue;
+                int[] c = {x, z};
+                chunks.add(c);
+                along.put(c, (cx - ax) * dx + (cz - az) * dz);
             }
         }
-        // du centre vers l'extérieur
-        chunks.sort((a, b) -> Double.compare(d2(a), d2(b)));
+        // dans l'ordre du trajet de la boule
+        chunks.sort((a, b) -> Double.compare(along.get(a), along.get(b)));
     }
 
-    private double d2(int[] c) {
-        double x = c[0] * 16 + 8 - cx, z = c[1] * 16 + 8 - cz;
-        return x * x + z * z;
+    /** Distance² horizontale entre une colonne et le trajet (pour trier / filtrer les chunks). */
+    private double flatDist2(double x, double z) {
+        double hx = dx, hz = dz, hl = Math.sqrt(hx * hx + hz * hz);
+        double t;
+        if (hl < 1e-6) t = 0;
+        else t = Math.max(0, Math.min(len * hl, ((x - ax) * hx + (z - az) * hz) / hl));
+        double px = ax + (hl < 1e-6 ? 0 : hx / hl * t), pz = az + (hl < 1e-6 ? 0 : hz / hl * t);
+        return (x - px) * (x - px) + (z - pz) * (z - pz);
     }
 
-    int chunkCount() {
-        return chunks.size();
+    private boolean inside(double x, double y, double z) {
+        double t = (x - ax) * dx + (y - ay) * dy + (z - az) * dz;
+        if (t < 0) t = 0;
+        else if (t > len) t = len;
+        double px = ax + dx * t - x, py = ay + dy * t - y, pz = az + dz * t - z;
+        return px * px + py * py + pz * pz <= r * r;
     }
 
     boolean erasing() {
@@ -83,9 +107,7 @@ final class MegaHole {
     }
 
     boolean contains(Location l) {
-        if (l.getWorld() != w || l.getY() < bottom - 1) return false;
-        double dx = l.getX() - cx, dz = l.getZ() - cz;
-        return dx * dx + dz * dz <= (r + 1) * (r + 1);
+        return l.getWorld() == w && inside(l.getX(), l.getY(), l.getZ());
     }
 
     private static long pack(int x, int y, int z) {
@@ -120,17 +142,6 @@ final class MegaHole {
         size++;
     }
 
-    // ================================================================= effacement
-
-    private int col;
-    private final java.util.Set<Long> loading = new java.util.HashSet<>();
-    private final java.util.Set<Long> tickets = new java.util.HashSet<>();
-
-    private void releaseTickets() {
-        for (long k : tickets) w.removePluginChunkTicket((int) (k >> 32), (int) k, pl);
-        tickets.clear();
-    }
-
     private boolean ready(int x, int z) {
         if (w.isChunkLoaded(x, z)) return true;
         long key = ((long) x << 32) ^ (z & 0xffffffffL);
@@ -143,15 +154,17 @@ final class MegaHole {
         return false;
     }
 
-    /**
-     * Efface pendant au plus "budgetNanos" ce tick, colonne par colonne, puis s'arrête :
-     * le serveur ne lag jamais, un gros trou prend juste plus de temps.
-     */
+    private void releaseTickets() {
+        for (long k : tickets) w.removePluginChunkTicket((int) (k >> 32), (int) k, pl);
+        tickets.clear();
+    }
+
+    // ================================================================= effacement
+
+    /** Efface pendant au plus "budgetNanos" ce tick, colonne par colonne. */
     int eraseTick(long budgetNanos) {
         long start = System.nanoTime();
-        int count = 0;
-        ThreadLocalRandom rnd = ThreadLocalRandom.current();
-        int skipped = 0;
+        int count = 0, skipped = 0;
         while (chunkIdx < chunks.size() && System.nanoTime() - start < budgetNanos) {
             int[] c = chunks.get(chunkIdx);
             if (!w.isChunkGenerated(c[0], c[1])) {
@@ -160,10 +173,9 @@ final class MegaHole {
                 continue;
             }
             if (!ready(c[0], c[1])) {
-                // pas encore chargé : on le remet un peu plus loin dans la file et on continue
                 if (++skipped > 8) break;
                 chunks.remove(chunkIdx);
-                chunks.add(Math.min(chunks.size(), chunkIdx + 6), c);
+                chunks.add(Math.min(chunks.size(), chunkIdx + 4), c);
                 continue;
             }
             Chunk ch = w.getChunkAt(c[0], c[1]);
@@ -171,31 +183,22 @@ final class MegaHole {
                 int lx = col & 15, lz = col >> 4;
                 col++;
                 int x = c[0] * 16 + lx, z = c[1] * 16 + lz;
-                double dx = x + 0.5 - cx, dz = z + 0.5 - cz;
-                if (dx * dx + dz * dz > r * r) continue;
-                int top = w.getHighestBlockYAt(x, z);
-                for (int y = top; y >= bottom; y--) {
+                if (flatDist2(x + 0.5, z + 0.5) > r * r) continue;
+                int top = Math.min(maxY, w.getHighestBlockYAt(x, z));
+                for (int y = top; y >= minY; y--) {
+                    if (!inside(x + 0.5, y + 0.5, z + 0.5)) continue;
                     Block b = ch.getBlock(lx, y, lz);
                     Material m = b.getType();
                     if (m.isAir()) continue;
                     if (!b.isLiquid() && !Ruin.breakable(b)) continue;
-                    BlockData d = b.getBlockData();
-                    record(x, y, z, d);
+                    record(x, y, z, b.getBlockData());
                     b.setBlockData(AIR, false);
                     count++;
-                    if (y == top && rnd.nextInt(2500) == 0) {
-                        pl.ruin.spawnDebris(d, new Location(w, x + 0.5, y + 0.5, z + 0.5),
-                                new Vector(dx, 0, dz).normalize().multiply(0.3).setY(1.2 + rnd.nextDouble()), null, 40);
-                    }
                 }
             }
             if (col >= 256) {
                 chunkIdx++;
                 col = 0;
-                if (rnd.nextInt(6) == 0) {
-                    Location at = new Location(w, c[0] * 16 + 8, w.getHighestBlockYAt(c[0] * 16 + 8, c[1] * 16 + 8) + 1, c[1] * 16 + 8);
-                    w.spawnParticle(Particle.END_ROD, at, 4, 6, 2, 6, 0.3, null, true);
-                }
             }
         }
         if (!erasing()) {
@@ -211,7 +214,6 @@ final class MegaHole {
         restoreAt = now + delayTicks;
     }
 
-    /** true quand tout est remis. Même budget de temps que l'effacement. */
     boolean restoreTick(int now, long budgetNanos) {
         if (erasing() || restoreAt < 0 || now < restoreAt) return false;
         if (restoreIdx < 0) restoreIdx = size - 1;
@@ -237,7 +239,6 @@ final class MegaHole {
         if (cur.isAir() || b.isLiquid() || cur == Material.FIRE) b.setBlockData(palette.get(pal[i]), false);
     }
 
-    /** Tout remettre tout de suite. */
     void restoreAll() {
         chunkIdx = chunks.size();
         for (int i = size - 1; i >= 0; i--) restoreOne(i);

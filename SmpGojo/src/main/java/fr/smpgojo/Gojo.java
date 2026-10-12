@@ -390,7 +390,7 @@ final class Gojo {
         World w = aimed.getWorld();
         Block g = Ruin.surface(w, aimed.getBlockX(), aimed.getBlockY(), aimed.getBlockZ());
         Location ground = g != null ? g.getLocation().add(0.5, 1, 0.5) : aimed.clone();
-        double R = pl.cfg("nuke.radius", 150);
+        double R = pl.cfg("nuke.radius", 55);
         int depth = pl.cfgi("nuke.depth", 40);
         int skyH = Math.max(40, Math.min(pl.cfgi("nuke.sky-height", 200), w.getMaxHeight() - 4 - ground.getBlockY()));
         double dmg = pl.cfg("damage.nuke", 200);
@@ -486,9 +486,7 @@ final class Gojo {
             // impact : tout devient blanc, très loin
             List<Player> all = pl.viewers(ground, R + 500);
             for (Player v : vs) if (!all.contains(v) && v.isOnline()) all.add(v);
-            pl.cine.impact(all, null, new Cine.Frame[]{Cine.f(255, Draw.WHITE, 10), Cine.f(240, Draw.WHITE, 4), Cine.f(220, Draw.PINK, 3),
-                    Cine.f(210, Draw.WHITE, 4), Cine.f(180, Draw.WHITE, 4), Cine.f(150, Draw.PINK, 4), Cine.f(110, Draw.WHITE, 4),
-                    Cine.f(70, Draw.WHITE, 4), Cine.f(35, Draw.WHITE, 4)});
+            for (Player v : all) pl.cine.tint(v, Cine.argb(255, Draw.WHITE), 3);
             pl.cine.shake(all, 40, 2);
             for (int k = 0; k < 4; k++) {
                 int kk = k;
@@ -501,7 +499,10 @@ final class Gojo {
             SmpGojo.sound(ground, "block.beacon.power_select", 10f, 0.5f);
             beam.shape(R, total, 4);
             // le néant : le cylindre entier est effacé, chunk par chunk depuis le centre
-            MegaHole hole = pl.ruin.mega(w, ground.getX(), ground.getZ(), R, bottomY, pl.cfgi("nuke.restore-seconds", 180));
+            // le néant : tout le cylindre est effacé pendant que l'écran est blanc (budget de temps : pas de lag)
+            MegaHole hole = pl.ruin.mega(w, ground.getX(), ground.getZ(), R, sky.getY(), bottomY, pl.cfgi("nuke.restore-seconds", 180));
+            int maxWhite = pl.cfgi("nuke.max-white-ticks", 100);
+            boolean[] revealed = {false};
             int hold = pl.cfgi("nuke.hold-ticks", 80), maxHold = pl.cfgi("nuke.max-hold-ticks", 600);
             pl.ruin.shockwave(ground, Math.min(R + 40, 120), 24, 1.0);
             ThreadLocalRandom r0 = ThreadLocalRandom.current();
@@ -546,6 +547,18 @@ final class Gojo {
             loop[0] = Bukkit.getScheduler().runTaskTimer(pl, () -> {
                 int i = tick[0]++;
                 boolean erasing = hole != null && hole.erasing();
+                // écran blanc tant que le trou n'est pas fini : quand il s'estompe, tout a disparu d'un coup
+                if (!revealed[0]) {
+                    if ((erasing && i < maxWhite) || i < 12) {
+                        for (Player v : all) if (v.isOnline()) pl.cine.tint(v, Cine.argb(255, Draw.WHITE), 2);
+                    } else {
+                        revealed[0] = true;
+                        pl.cine.impact(all, null, new Cine.Frame[]{Cine.f(240, Draw.WHITE, 3), Cine.f(215, Draw.PINK, 3),
+                                Cine.f(190, Draw.WHITE, 3), Cine.f(150, Draw.WHITE, 3), Cine.f(110, Draw.PINK, 3), Cine.f(70, Draw.WHITE, 3),
+                                Cine.f(35, Draw.WHITE, 3)});
+                        SmpGojo.sound(ground, "entity.lightning_bolt.thunder", 10f, 0.5f);
+                    }
+                }
                 if (!erasing && !cracked[0]) edges.run();
                 if ((i >= hold && !erasing) || i >= maxHold || !pl.pending.contains(clean[0])) {
                     loop[0].cancel();
