@@ -84,7 +84,7 @@ final class Yuji {
         });
     }
 
-    private void strike(Player p, LivingEntity t, double dmg, String tech) {
+    void strike(Player p, LivingEntity t, double dmg, String tech) {
         inside = true;
         try {
             pl.hit(p, t, dmg, tech);
@@ -104,7 +104,7 @@ final class Yuji {
     }
 
     /** Fonce sur la cible visée, puis frappe quand il l'atteint. */
-    private void dash(Player p, String id, java.util.function.Consumer<LivingEntity> onHit) {
+    void dash(Player p, String id, java.util.function.Consumer<LivingEntity> onHit) {
         LivingEntity target = pl.aim(p, pl.cfg("yuji.dash-range", 14));
         if (target == null) {
             p.sendActionBar(SmpGojo.mm("<red>Aucune cible en vue"));
@@ -198,6 +198,95 @@ final class Yuji {
                         + p.getName() + (n >= 4 ? " <gold>- égale le record d'Itadori !" : "")));
             }
         });
+    }
+
+    // ================================================================= 8 Black Flash d'affilée
+
+    /**
+     * Yuji tourne autour de sa cible figée en l'air et enchaîne les Black Flash, de plus en plus vite,
+     * avec un son qui monte à chaque coup. Le dernier est un vrai Black Flash qui l'envoie à travers tout.
+     */
+    void flurry(Player p) {
+        LivingEntity t = pl.aim(p, 10);
+        if (t == null) {
+            p.sendActionBar(SmpGojo.mm("<red>Aucune cible en vue"));
+            pl.resetCooldown(p, "flash8");
+            return;
+        }
+        int n = Math.max(2, pl.cfgi("yuji.flurry-hits", 8));
+        double per = pl.cfg("damage.flurry", 10);
+        UUID id = p.getUniqueId();
+        pl.noFall.add(id);
+        t.setVelocity(new Vector(0, 0.55, 0));
+        List<Player> vs = pl.viewers(t.getLocation(), 50);
+        int[] when = new int[n];
+        int acc = 6;
+        for (int k = 0; k < n; k++) {
+            when[k] = acc;
+            acc += Math.max(3, 8 - k);
+        }
+        pl.later(5, () -> {
+            if (t.isValid()) pl.cine.hold(t, when[n - 1] + 6);
+        });
+        for (int k = 0; k < n - 1; k++) {
+            int hitN = k + 1;
+            pl.later(when[k], () -> {
+                if (!t.isValid() || !p.isOnline()) return;
+                Location c = t.getLocation().add(0, t.getHeight() * 0.55, 0);
+                // Yuji réapparaît d'un autre côté
+                Location old = p.getLocation();
+                double a = hitN * 2.4 + ThreadLocalRandom.current().nextDouble(-0.4, 0.4);
+                Location to = c.clone().add(Math.cos(a) * 2, -0.9 + ThreadLocalRandom.current().nextDouble(-0.3, 0.6), Math.sin(a) * 2);
+                to.setDirection(c.toVector().subtract(to.toVector()));
+                p.teleport(to);
+                p.setVelocity(new Vector());
+                Draw.fx(old.clone().add(0, 1, 0), Particle.CLOUD, 12, 0.3, 0.05);
+                Draw.segment(old.clone().add(0, 1, 0), to.clone().add(0, 1, 0), Draw.BLACK, 0.8f, 0.4);
+                // l'impact
+                pl.cine.impact(vs, List.of(t, p), new Cine.Frame[]{Cine.f(255, Draw.BLACK, 1), Cine.f(200, Draw.RED, 1)});
+                for (int b = 0; b < 5; b++) Draw.bolt(c, Draw.randomDir(), 1.5 + ThreadLocalRandom.current().nextDouble() * 2.5, Draw.BLACK, Draw.RED, 1.3f);
+                Draw.sphere(c, 0.8, Draw.BLACK, 1.6f, 20);
+                Draw.fx(c, Particle.SONIC_BOOM, 1, 0, 0);
+                flashSound(c, hitN, n);
+                pl.cine.title(List.of(p), "<black><b>黒閃", "<dark_red><b>×" + hitN, 12);
+                if (t instanceof Player tp) pl.cine.title(List.of(tp), "<black><b>黒閃", "<dark_red><b>×" + hitN, 12);
+                pl.cine.shake(vs, 1, 1);
+                strike(p, t, per, "blackflash");
+                Draw.blood(t, 20);
+                pl.ruin.pop(t.getLocation().subtract(0, 1, 0), 2 + hitN * 0.3, 8, 0.4);
+            });
+        }
+        // le dernier : le vrai Black Flash
+        pl.later(when[n - 1], () -> {
+            if (!t.isValid() || !p.isOnline()) return;
+            pl.cine.release(t);
+            Location c = t.getLocation().add(0, t.getHeight() * 0.55, 0);
+            Location to = c.clone().subtract(p.getLocation().getDirection().setY(0).normalize().multiply(2)).add(0, -0.8, 0);
+            to.setDirection(c.toVector().subtract(to.toVector()));
+            p.teleport(to);
+            flashSound(c, n, n);
+            blackFlash(p, t);
+            for (Player v : vs) {
+                if (v.isOnline()) v.sendMessage(SmpGojo.mm("<black>■</black> <dark_red><b>" + n + " BLACK FLASH CONSÉCUTIFS</b></dark_red> <gray>"
+                        + p.getName() + (n > 4 ? " <gold>- record d'Itadori pulvérisé !" : "")));
+            }
+            pl.later(100, () -> pl.noFall.remove(id));
+        });
+    }
+
+    /** Le son du Black Flash : un claquement sec et une distorsion, qui monte à chaque coup. */
+    private void flashSound(Location c, int k, int n) {
+        float up = (float) k / n;
+        SmpGojo.sound(c, "entity.lightning_bolt.thunder", 2.5f, 1.3f + up * 0.7f);
+        SmpGojo.sound(c, "block.anvil.land", 2f, 0.5f + up * 0.4f);
+        SmpGojo.sound(c, "entity.player.attack.crit", 3f, 0.5f);
+        SmpGojo.sound(c, "block.respawn_anchor.deplete", 2f, 0.5f + up * 0.6f);
+        SmpGojo.sound(c, "block.note_block.bass", 3f, 0.5f + up * 1.5f);
+        SmpGojo.sound(c, "block.note_block.pling", 2f, 0.5f + up * 1.5f);
+        if (k == n) {
+            SmpGojo.sound(c, "entity.warden.sonic_boom", 3f, 1.2f);
+            SmpGojo.sound(c, "item.mace.smash_ground_heavy", 3f, 0.5f);
+        }
     }
 
     // ================================================================= Coup de pied Manji

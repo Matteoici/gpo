@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "fr.smpgojo"
-version = "3.7.1"
+version = "4.0.0"
 
 repositories {
     mavenCentral()

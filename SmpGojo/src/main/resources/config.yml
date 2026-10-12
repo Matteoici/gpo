@@ -49,6 +49,19 @@ cooldowns:
   manji: 5
   rafale: 6
   sang: 10
+  flash8: 20
+  lance: 6
+  nuage: 6
+  restriction: 60
+  pas-eclair: 3
+  boogie: 1
+  boogie2: 3
+  todo-poing: 8
+  ratio: 5
+  heures-sup: 90
+  effondrement: 12
+  pachinko: 90
+  portes: 8
 
 # ------------------------------------------------------------ dégâts
 damage:
@@ -78,6 +91,15 @@ damage:
   rafale: 1.5
   uppercut: 10
   sang: 24
+  # 8 Black Flash : dégâts de chacun des 7 premiers (le dernier = blackflash)
+  flurry: 10
+  lance: 22
+  nuage: 6
+  pas-eclair: 10
+  ratio: 24
+  effondrement: 18
+  billes: 1.5
+  portes: 14
 
 # ------------------------------------------------------------ Gojo
 bleu:
@@ -151,8 +173,37 @@ yuji:
   zone-seconds: 15
   black-flash-knockback: 3.2
   divergent-ratio: 0.8
+  flurry-hits: 8
   dash-range: 14
 rafale:
   hits: 14
 sang:
   range: 60
+
+# ------------------------------------------------------------ Yuji : 8 Black Flash
+# (dans la section yuji plus haut : flurry-hits = nombre de Black Flash d'affilée)
+
+# ------------------------------------------------------------ Toji
+toji:
+  # l'Infini de Gojo reste brisé ce temps-là après la Lance céleste inversée
+  infinity-break-seconds: 10
+  restriction-seconds: 30
+  flash-range: 14
+
+# ------------------------------------------------------------ Todo
+todo:
+  range: 40
+
+# ------------------------------------------------------------ Nanami
+nanami:
+  overtime-seconds: 40
+  collapse-radius: 7
+
+# ------------------------------------------------------------ Hakari
+hakari:
+  radius: 14
+  seconds: 25
+  # chance de jackpot à chaque partie (une toutes les 5 s)
+  jackpot-chance: 0.35
+  # durée de l'immortalité
+  jackpot-seconds: 60

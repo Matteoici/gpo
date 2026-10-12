@@ -2,7 +2,7 @@ name: SmpGojo
 version: '${version}'
 main: fr.smpgojo.SmpGojo
 api-version: '26.2'
-description: Techniques de Jujutsu Kaisen pour les admins (Gojo, Sukuna, Megumi + Mahoraga, Yuji)
+description: Techniques de Jujutsu Kaisen pour les admins (Gojo, Sukuna, Megumi + Mahoraga, Yuji, Toji, Todo, Nanami, Hakari)
 commands:
   gojo:
     description: Techniques de Satoru Gojo
@@ -18,7 +18,23 @@ commands:
     permission: smpgojo.use
   yuji:
     description: Techniques de Yuji Itadori
-    usage: /yuji [kit|poing|blackflash|manji|rafale|sang]
+    usage: /yuji [kit|poing|blackflash|flash8|manji|rafale|sang]
+    permission: smpgojo.use
+  toji:
+    description: Techniques de Toji Fushiguro
+    usage: /toji [kit|lance|nuage|restriction|pas-eclair]
+    permission: smpgojo.use
+  todo:
+    description: Techniques d'Aoi Todo
+    usage: /todo [kit|boogie|boogie2|todo-poing]
+    permission: smpgojo.use
+  nanami:
+    description: Techniques de Kento Nanami
+    usage: /nanami [kit|ratio|heures-sup|effondrement]
+    permission: smpgojo.use
+  hakari:
+    description: Techniques de Kinji Hakari
+    usage: /hakari [kit|pachinko|portes]
     permission: smpgojo.use
   jjk:
     description: Kits, réparation du terrain, arrêt

@@ -129,6 +129,24 @@ final class Gojo {
         }
     }
 
+    /** La Lance céleste inversée de Toji : l'Infini est brisé un moment. */
+    void breakInfinity(Player p, int ticks) {
+        if (!infinity.remove(p.getUniqueId())) return;
+        releaseProjectiles(p.getUniqueId());
+        Location c = p.getLocation().add(0, 1, 0);
+        Draw.sphere(c, 1.4, Draw.LIGHT_BLUE, 1f, 60);
+        Draw.fx(c, Particle.END_ROD, 30, 0.8, 0.2);
+        SmpGojo.sound(c, "block.glass.break", 3f, 0.6f);
+        SmpGojo.sound(c, "block.beacon.deactivate", 2f, 1.6f);
+        p.sendActionBar(SmpGojo.mm("<red><b>∞ Infini brisé"));
+        pl.later(ticks, () -> {
+            if (p.isOnline() && infinity.add(p.getUniqueId())) {
+                p.sendActionBar(SmpGojo.mm("<gradient:#ffffff:#9ad7ff><b>∞ Infini rétabli"));
+                SmpGojo.sound(p.getLocation(), "block.beacon.activate", 1.2f, 1.8f);
+            }
+        });
+    }
+
     private void releaseProjectiles(UUID owner) {
         stopped.entrySet().removeIf(e -> {
             if (!e.getValue().equals(owner)) return false;

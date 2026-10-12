@@ -99,6 +99,25 @@ public final class SmpGojo extends JavaPlugin implements Listener {
         tech("yuji", "manji", Material.FEATHER, "<gradient:#ffffff:#4f9bff><b>Coup de pied Manji", "Saut, puis écrasement au sol");
         tech("yuji", "rafale", Material.BLAZE_POWDER, "<gradient:#ffb000:#ff4000><b>Rafale", "Une pluie de coups, puis un uppercut");
         tech("yuji", "sang", Material.REDSTONE, "<gradient:#ff0000:#600000><b>Sang perforant", "Convergence, puis un rayon qui perce tout");
+        tech("yuji", "flash8", Material.NETHER_STAR, "<gradient:#000000:#ff1e1e:#000000><b>黒閃 ×8",
+                "8 Black Flash d'affilée autour de la cible");
+        tech("toji", "lance", Material.TRIDENT, "<gradient:#9ad7ff:#3a3a3a><b>Lance céleste inversée",
+                "Fonce et transperce : traverse et brise l'Infini");
+        tech("toji", "nuage", Material.LEAD, "<gradient:#ff4040:#2a2a2a><b>Nuage capricieux", "Le bâton à trois sections balaie tout autour");
+        tech("toji", "restriction", Material.ROTTEN_FLESH, "<gradient:#7a7a7a:#1a1a1a><b>Restriction céleste",
+                "Corps surhumain pendant 30 s : vitesse, force, sauts");
+        tech("toji", "pas-eclair", Material.SUGAR, "<gradient:#ffffff:#4a4a4a><b>Pas éclair", "Traverse 14 blocs d'un coup en tranchant tout");
+        tech("todo", "boogie", Material.GOLD_NUGGET, "<gradient:#ffd040:#4f9bff><b>Boogie Woogie", "👏 Échange ta place avec la cible");
+        tech("todo", "boogie2", Material.GOLD_INGOT, "<gradient:#4f9bff:#ffd040><b>Boogie Woogie : échange",
+                "👏 Deux ennemis proches échangent leur place");
+        tech("todo", "todo-poing", Material.NETHERITE_SCRAP, "<gradient:#000000:#ff1e1e><b>Poing de Todo", "Fonce et frappe : Black Flash garanti");
+        tech("nanami", "ratio", Material.GOLDEN_SWORD, "<gradient:#ffd040:#ff4040><b>Ratio 7:3", "Le point faible à 7/10 : coup critique");
+        tech("nanami", "heures-sup", Material.CLOCK, "<gradient:#ffd040:#ffffff><b>Heures sup'", "40 s de force décuplée");
+        tech("nanami", "effondrement", Material.COBBLESTONE, "<gradient:#a0a0a0:#ffd040><b>Effondrement",
+                "Le ratio appliqué au décor : tout s'écroule");
+        tech("hakari", "pachinko", Material.EMERALD, "<gradient:#ffd700:#00ff7f><b>Extension du territoire",
+                "Jeu de la mort oisive : jackpot = immortel");
+        tech("hakari", "portes", Material.IRON_DOOR, "<gradient:#c0c0c0:#ffd700><b>Portes du train", "Deux portes claquent sur la cible");
     }
 
     NamespacedKey abilityKey, tagKey, ownerKey, jumpKey;
@@ -108,6 +127,10 @@ public final class SmpGojo extends JavaPlugin implements Listener {
     Sukuna sukuna;
     Megumi megumi;
     Yuji yuji;
+    Toji toji;
+    Todo todo;
+    Nanami nanami;
+    Hakari hakari;
     private final Map<String, Long> cooldowns = new HashMap<>();
     final Set<UUID> noFall = new HashSet<>();
     /** pendant un coup de technique : laquelle (pour l'adaptation de Mahoraga) */
@@ -134,6 +157,10 @@ public final class SmpGojo extends JavaPlugin implements Listener {
         sukuna = new Sukuna(this);
         megumi = new Megumi(this);
         yuji = new Yuji(this);
+        toji = new Toji(this);
+        todo = new Todo(this);
+        nanami = new Nanami(this);
+        hakari = new Hakari(this);
         getServer().getPluginManager().registerEvents(this, this);
         Bukkit.getScheduler().runTaskTimer(this, () -> {
             cine.tick();
@@ -141,6 +168,7 @@ public final class SmpGojo extends JavaPlugin implements Listener {
             gojo.tick();
             megumi.tick();
             yuji.tick();
+            toji.tick();
         }, 1L, 1L);
         // restes d'un ancien arrêt (affichages perdus)
         for (var w : Bukkit.getWorlds()) {
@@ -186,6 +214,10 @@ public final class SmpGojo extends JavaPlugin implements Listener {
             case "gojo" -> "<gradient:#ffffff:#9ad7ff>Satoru Gojo";
             case "sukuna" -> "<gradient:#ff2a2a:#5a0000>Ryomen Sukuna";
             case "megumi" -> "<gradient:#8a8aff:#1a1a2a>Megumi Fushiguro";
+            case "toji" -> "<gradient:#9a9a9a:#1a1a1a>Toji Fushiguro";
+            case "todo" -> "<gradient:#ffd040:#4f9bff>Aoi Todo";
+            case "nanami" -> "<gradient:#ffd040:#ffffff>Kento Nanami";
+            case "hakari" -> "<gradient:#ffd700:#00ff7f>Kinji Hakari";
             default -> "<gradient:#ff7a7a:#4f9bff>Yuji Itadori";
         };
         p.sendMessage(mm("<gray>Techniques de " + who + "</gray> <gray>dans ton inventaire. <dark_gray>Clic droit pour lancer."));
@@ -199,7 +231,7 @@ public final class SmpGojo extends JavaPlugin implements Listener {
                 String kit = a.length > 1 ? a[1].toLowerCase(Locale.ROOT) : "";
                 if (kit.equals("tout") || kit.equals("all")) for (String k : KITS.keySet()) giveKit(p, k);
                 else if (KITS.containsKey(kit)) giveKit(p, kit);
-                else s.sendMessage(mm("<red>/jjk kit <gojo|sukuna|megumi|yuji|tout>"));
+                else s.sendMessage(mm("<red>/jjk kit <gojo|sukuna|megumi|yuji|toji|todo|nanami|hakari|tout>"));
             }
             case "reparer", "restore" -> s.sendMessage(mm("<green>" + ruin.restoreAll() + " blocs remis en place."));
             case "stop" -> {
@@ -215,8 +247,8 @@ public final class SmpGojo extends JavaPlugin implements Listener {
             }
             default -> {
                 s.sendMessage(mm("<gradient:#9628ff:#ff2a2a><b>Jujutsu Kaisen"));
-                s.sendMessage(mm("<aqua>/gojo kit</aqua> · <aqua>/sukuna kit</aqua> · <aqua>/megumi kit</aqua> · <aqua>/yuji kit"));
-                s.sendMessage(mm("<aqua>/jjk kit tout</aqua> <gray>- les 4 kits"));
+                s.sendMessage(mm("<aqua>/gojo · /sukuna · /megumi · /yuji · /toji · /todo · /nanami · /hakari</aqua> <gray>(+ kit)"));
+                s.sendMessage(mm("<aqua>/jjk kit tout</aqua> <gray>- tous les kits"));
                 s.sendMessage(mm("<aqua>/jjk reparer</aqua> <gray>- reconstruire le terrain tout de suite"));
                 s.sendMessage(mm("<aqua>/jjk stop</aqua> <gray>- arrêter invocations et territoires · <aqua>/jjk reload"));
             }
@@ -306,6 +338,19 @@ public final class SmpGojo extends JavaPlugin implements Listener {
             case "manji" -> yuji.manji(p);
             case "rafale" -> yuji.barrage(p);
             case "sang" -> yuji.piercingBlood(p);
+            case "flash8" -> yuji.flurry(p);
+            case "lance" -> toji.spear(p);
+            case "nuage" -> toji.cloud(p);
+            case "restriction" -> toji.restriction(p);
+            case "pas-eclair" -> toji.flash(p);
+            case "boogie" -> todo.clap(p);
+            case "boogie2" -> todo.swapTwo(p);
+            case "todo-poing" -> todo.punch(p);
+            case "ratio" -> nanami.ratio(p);
+            case "heures-sup" -> nanami.overtime(p);
+            case "effondrement" -> nanami.collapse(p);
+            case "pachinko" -> hakari.domain(p);
+            case "portes" -> hakari.doors(p);
             default -> {
             }
         }
@@ -473,6 +518,7 @@ public final class SmpGojo extends JavaPlugin implements Listener {
             return;
         }
         megumi.onDamaged(e);
+        hakari.onDamage(e);
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -514,6 +560,9 @@ public final class SmpGojo extends JavaPlugin implements Listener {
         cine.quit(e.getPlayer());
         megumi.quit(e.getPlayer());
         yuji.quit(e.getPlayer());
+        toji.quit(e.getPlayer());
+        nanami.quit(e.getPlayer());
+        hakari.quit(e.getPlayer());
         noFall.remove(e.getPlayer().getUniqueId());
     }
 }
