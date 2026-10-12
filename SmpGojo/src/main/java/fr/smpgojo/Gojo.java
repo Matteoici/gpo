@@ -372,8 +372,8 @@ final class Gojo {
      * au rythme où le serveur efface (budget de temps par tick : pas de lag). Tout disparaît dedans.
      */
     private void launch200(Player p) {
-        double R = pl.cfg("nuke.radius", 55), range = pl.cfg("nuke.range", 250);
-        double bR = pl.cfg("nuke.ball-radius", 5), speed = pl.cfg("nuke.ball-speed", 2.5);
+        double R = pl.cfg("nuke.radius", 55);
+        double bR = pl.cfg("nuke.ball-radius", 22), speed = pl.cfg("nuke.ball-speed", 3);
         double dmg = pl.cfg("damage.nuke", 200);
         Location eye = p.getEyeLocation();
         Vector d = flat(eye.getDirection());
@@ -414,12 +414,19 @@ final class Gojo {
         };
         shapeOrb.accept(0.5, 0);
         pl.later(1, () -> shapeOrb.accept(bR, 6));
-        List<Player> vs = pl.viewers(pos, range + 200);
+        List<Player> vs = pl.viewers(pos, 450);
         pl.cine.shake(vs, 3, 2);
         SmpGojo.sound(pos, "entity.warden.sonic_boom", 8f, 0.5f);
         SmpGojo.sound(pos, "block.end_portal.spawn", 6f, 0.7f);
 
-        double[] travelled = {0};
+        // le tunnel : tout ce que la boule traverse disparaît au moment où elle passe
+        double length = pl.cfg("nuke.length", 200);
+        Location from = pos.clone();
+        MegaHole tunnel = pl.ruin.mega(from, d, length, bR, pl.cfgi("nuke.restore-seconds", 360));
+        if (tunnel != null) tunnel.trigger();
+        double minSpeed = pl.cfg("nuke.min-speed", 0.6);
+        Set<UUID> hit = new HashSet<>();
+        double[] at = {0};
         int[] tick = {0};
         org.bukkit.scheduler.BukkitTask[] loop = new org.bukkit.scheduler.BukkitTask[1];
         loop[0] = Bukkit.getScheduler().runTaskTimer(pl, () -> {
@@ -428,40 +435,32 @@ final class Gojo {
                 loop[0].cancel();
                 return;
             }
-            // avance bloc par bloc et cherche un contact
-            boolean contact = false;
-            for (double s = 0; s < speed && !contact; s += 0.5) {
-                pos.add(d.clone().multiply(0.5));
-                travelled[0] += 0.5;
-                contact = touches(p, pos, d, bR) || travelled[0] >= range || pos.getY() < w.getMinHeight() || pos.getY() > w.getMaxHeight();
-            }
+            // la boule suit le néant : elle ne va jamais plus vite que l'effacement
+            boolean digging = tunnel != null && tunnel.erasing();
+            double target = digging ? tunnel.progress() : length;
+            double next = Math.min(length, Math.min(at[0] + speed, Math.max(target, at[0] + (digging ? 0 : speed))));
+            if (digging && next < at[0] + minSpeed && target >= at[0] + minSpeed) next = at[0] + minSpeed;
+            at[0] = Math.max(at[0], next);
+            pos.setX(from.getX() + d.getX() * at[0]);
+            pos.setY(from.getY());
+            pos.setZ(from.getZ() + d.getZ() * at[0]);
             for (BlockDisplay o : orb) o.teleport(pos);
             if (i % 2 == 0) {
                 for (int k = 0; k < spin.length; k++) spin[k].rotateY(0.4f + k * 0.1f).rotateX(0.2f);
                 shapeOrb.accept(bR, 2);
             }
-            Draw.sphere(pos, bR * 1.1, Draw.PURPLE, 3f, 40);
-            Draw.fx(pos, Particle.REVERSE_PORTAL, 25, bR * 0.4, 0.15);
-            Draw.fx(pos.clone().subtract(d.clone().multiply(bR)), Particle.END_ROD, 10, bR * 0.3, 0.05);
-            if (i % 4 == 0) SmpGojo.sound(pos, "entity.ender_dragon.flap", 5f, 0.6f);
-            if (contact) {
+            Draw.sphere(pos, bR * 1.05, Draw.PURPLE, 3.5f, (int) Math.min(120, 30 + bR * 3));
+            Draw.fx(pos, Particle.REVERSE_PORTAL, 30, bR * 0.4, 0.15);
+            Draw.fx(pos.clone().subtract(d.clone().multiply(bR)), Particle.END_ROD, 15, bR * 0.3, 0.05);
+            if (i % 4 == 0) SmpGojo.sound(pos, "entity.ender_dragon.flap", 8f, 0.5f);
+            if (i % 20 == 0) pl.cine.shake(pl.viewers(pos, bR + 60), 1, 1);
+            if (i % 4 == 0) capsuleZap(p, from, d, at[0], bR + 1, dmg, hit);
+            // au bout du trajet : l'explosion
+            if ((at[0] >= length && !digging) || i >= pl.cfgi("nuke.max-ticks", 1200)) {
                 loop[0].cancel();
                 explode200(p, pos.clone(), d, R, dmg, orb, spin, shapeOrb, clean);
             }
         }, 1L, 1L);
-    }
-
-    /** La boule touche-t-elle un bloc ou quelqu'un ? */
-    private boolean touches(Player p, Location c, Vector d, double bR) {
-        World w = c.getWorld();
-        Vector side = Draw.perpendicular(d, 0);
-        double[][] pts = {{0, 0, 0}, {1, 0, 0}, {0.7, 0.5, 0}, {0.7, -0.5, 0}, {0.7, 0, 0.5}, {0.7, 0, -0.5}, {0, -0.9, 0}};
-        for (double[] q : pts) {
-            Location l = c.clone().add(d.clone().multiply(q[0] * bR)).add(0, q[1] * bR, 0).add(side.clone().multiply(q[2] * bR));
-            if (l.getY() < w.getMinHeight() || l.getY() >= w.getMaxHeight()) continue;
-            if (!l.getBlock().isPassable()) return true;
-        }
-        return !pl.targets(p, c, bR).isEmpty();
     }
 
     /** L'explosion : une sphère géante qui grandit en effaçant tout. */
@@ -478,7 +477,7 @@ final class Gojo {
         MegaHole hole = pl.ruin.mega(c, d, 0.01, R, pl.cfgi("nuke.restore-seconds", 360));
         if (hole != null) hole.trigger();
         Set<UUID> hit = new HashSet<>();
-        double[] cur = {orb.isEmpty() ? 1 : 5};
+        double[] cur = {Math.min(R, pl.cfg("nuke.ball-radius", 22))};
         int maxTicks = pl.cfgi("nuke.max-ticks", 1200);
         int[] tick = {0};
         org.bukkit.scheduler.BukkitTask[] loop = new org.bukkit.scheduler.BukkitTask[1];

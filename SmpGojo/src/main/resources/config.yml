@@ -89,21 +89,24 @@ rouge:
 violet:
   radius: 4.5
   ticks: 70
-# Violet creux 200 % : une boule violette part droit devant, à l'horizontale, sans rien casser.
-# Au premier contact (un bloc ou quelqu'un), elle explose en une sphère géante qui efface tout.
-# La sphère grandit au rythme où le serveur efface (jamais plus de "max-ms-per-tick" par tick : pas de lag).
+# Violet creux 200 % : une boule violette géante part droit devant, à l'horizontale.
+# Elle efface tout sur son passage, puis au bout de "length" blocs elle explose
+# en une sphère encore plus grande. Tout grandit au rythme où le serveur efface
+# (jamais plus de "max-ms-per-tick" par tick : pas de lag).
 nuke:
-  # rayon de l'explosion
+  # rayon de la boule (= taille du tunnel)
+  ball-radius: 22
+  # distance avant l'explosion
+  length: 200
+  # rayon de l'explosion finale
   radius: 55
-  # taille et vitesse de la boule en vol (blocs, blocs par tick)
-  ball-radius: 5
-  ball-speed: 2.5
-  # distance max : si elle ne touche rien, elle explose au bout
-  range: 250
+  # vitesse max de la boule (blocs par tick) ; elle ralentit si l'effacement prend du retard
+  ball-speed: 3
+  min-speed: 0.6
   max-ticks: 1200
   # temps de calcul maximum par tick (ms, un tick = 50) : 30 laisse 20 ms au reste du serveur
   max-ms-per-tick: 30
-  # le trou se reconstruit après (secondes)
+  # tunnel et cratère se reconstruisent après (secondes)
   restore-seconds: 360
 domain:
   radius: 13
