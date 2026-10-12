@@ -35,14 +35,14 @@ final class Beam {
         add(pl, maxR, 0.68, 16, Material.PINK_STAINED_GLASS);
         add(pl, maxR, 0.48, 12, Material.WHITE_STAINED_GLASS);
         // le cœur blanc : un pilier par panneau de 12 blocs de large pour les très gros rayons
-        int coreN = Math.max(1, Math.min(64, (int) Math.ceil(maxR * 0.84 / 24)));
+        int coreN = Math.max(1, Math.min(4, (int) Math.ceil(maxR * 0.84 / 32)));
         BlockData white = Material.WHITE_CONCRETE.createBlockData();
         for (int k = 0; k < coreN * coreN; k++) core.add(spawn(pl, white));
         shape(0.01, 0.01, 0);
     }
 
     private void add(SmpGojo pl, double maxR, double factor, int minPanels, Material m) {
-        int panels = Math.max(minPanels, Math.min(120, (int) (2 * Math.PI * maxR * factor / 8)));
+        int panels = Math.max(minPanels, Math.min(48, (int) (2 * Math.PI * maxR * factor / 12)));
         List<BlockDisplay> parts = new ArrayList<>();
         BlockData d = m.createBlockData();
         for (int k = 0; k < panels; k++) parts.add(spawn(pl, d));

@@ -20,7 +20,7 @@ restore-seconds: 60
 restore-blocks-per-tick: 500
 max-blocks-per-hit: 6000
 # débris qui volent (affichage seulement)
-max-debris: 600
+max-debris: 250
 # mondes où rien n'est jamais cassé
 no-destroy-worlds: []
 # rayon autour du spawn du monde où rien n'est cassé (0 = aucun)
@@ -90,22 +90,24 @@ violet:
   radius: 4.5
   ticks: 70
 # Violet creux 200 % : un vortex géant dans le ciel, puis une colonne de lumière
-# de plusieurs centaines de blocs qui efface tout. Il reste un trou parfaitement rond.
+# qui efface tout. Il reste un trou parfaitement rond.
+# Anti-lag : l'effacement ne prend jamais plus de "max-ms-per-tick" par tick.
+# Un rayon plus grand ne fait pas laguer : il prend juste plus de temps à se creuser.
 nuke:
   # rayon de la colonne (le trou fera cette taille)
-  radius: 220
+  radius: 150
   # profondeur du trou sous le sol
   depth: 40
   # hauteur du vortex au-dessus du sol
   sky-height: 200
   vortex-ticks: 60
-  # durée minimum de la colonne (ticks, 20 = 1 s) - elle reste tant que tout n'est pas effacé
-  hold-ticks: 60
-  # vitesse d'effacement : chunks par tick (plus haut = plus rapide mais plus de lag)
-  chunks-per-tick: 4
-  # le trou se reconstruit après (secondes), à cette vitesse (blocs par tick)
+  # la colonne reste au moins ça (ticks), et tant que le trou se creuse (max "max-hold-ticks")
+  hold-ticks: 80
+  max-hold-ticks: 600
+  # temps maximum par tick pour creuser / reconstruire (millisecondes, 50 = un tick entier)
+  max-ms-per-tick: 6
+  # le trou se reconstruit après (secondes)
   restore-seconds: 180
-  restore-blocks-per-tick: 40000
   # fissures géantes autour du trou
   cracks: 16
   range: 300

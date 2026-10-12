@@ -413,7 +413,7 @@ final class Ruin {
     // ================================================================= débris (affichage seulement)
 
     void spawnDebris(BlockData data, Location at, Vector vel, Location attract, int life) {
-        if (debris.size() >= pl.getConfig().getInt("max-debris", 600)) return;
+        if (debris.size() >= pl.getConfig().getInt("max-debris", 250)) return;
         ThreadLocalRandom rnd = ThreadLocalRandom.current();
         Debris d = new Debris();
         d.pos = at.clone();
@@ -491,12 +491,13 @@ final class Ruin {
     void tick() {
         now++;
         tickDebris();
-        int cpt = pl.getConfig().getInt("nuke.chunks-per-tick", 4);
+        long budget = (long) (pl.getConfig().getDouble("nuke.max-ms-per-tick", 6) * 1_000_000L);
         for (java.util.Iterator<MegaHole> it = megas.iterator(); it.hasNext(); ) {
             MegaHole h = it.next();
-            if (h.erasing()) h.eraseTick(cpt);
-            else h.restoreTick(now, pl.getConfig().getInt("nuke.restore-blocks-per-tick", 40000));
+            if (h.erasing()) h.eraseTick(budget);
+            else h.restoreTick(now, budget);
             if (h.done) it.remove();
+            break; // un seul trou travaille par tick
         }
         int budget = pl.getConfig().getInt("restore-blocks-per-tick", 500);
         for (Iterator<Batch> it = batches.iterator(); it.hasNext() && budget > 0; ) {

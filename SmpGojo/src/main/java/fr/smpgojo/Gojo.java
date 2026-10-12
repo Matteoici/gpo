@@ -390,7 +390,7 @@ final class Gojo {
         World w = aimed.getWorld();
         Block g = Ruin.surface(w, aimed.getBlockX(), aimed.getBlockY(), aimed.getBlockZ());
         Location ground = g != null ? g.getLocation().add(0.5, 1, 0.5) : aimed.clone();
-        double R = pl.cfg("nuke.radius", 220);
+        double R = pl.cfg("nuke.radius", 150);
         int depth = pl.cfgi("nuke.depth", 40);
         int skyH = Math.max(40, Math.min(pl.cfgi("nuke.sky-height", 200), w.getMaxHeight() - 4 - ground.getBlockY()));
         double dmg = pl.cfg("damage.nuke", 200);
@@ -426,8 +426,8 @@ final class Gojo {
         pl.repeat(1, ticks, i -> {
             double grow = (i + 1) / (double) ticks;
             double outer = Math.max(20, maxOuter * (0.3 + 0.7 * grow));
-            double stepT = Math.max(0.004, 2.5 / outer);
-            for (int arm = 0; arm < 6; arm++) {
+            double stepT = Math.max(0.02, 4.0 / outer);
+            for (int arm = 0; arm < 5; arm++) {
                 for (double t = 0.04; t <= 1; t += stepT) {
                     double a = arm * Math.PI * 2 / 6 + i * 0.09 + t * 4;
                     double rr = outer * t;
@@ -436,11 +436,11 @@ final class Gojo {
                     if (rnd.nextInt(8) == 0) Draw.fx(l, Particle.CLOUD, 1, 1, 0.02);
                 }
             }
-            Draw.ball(sky, 2 + grow * Math.min(40, R * 0.18), Draw.WHITE, 4f, 120);
-            Draw.sphere(sky, 3 + grow * Math.min(55, R * 0.25), Draw.PINK, 4f, 120);
+            Draw.ball(sky, 2 + grow * Math.min(40, R * 0.18), Draw.WHITE, 4f, 60);
+            Draw.sphere(sky, 3 + grow * Math.min(55, R * 0.25), Draw.PINK, 4f, 60);
             Draw.fx(sky, Particle.END_ROD, 40, Math.min(40, R * 0.2) * grow, 0.2);
             // la zone visée s'éclaire, le sol tremble
-            if (i % 2 == 0) Draw.ring(ground.clone().add(0, 0.5, 0), R, Draw.PURPLE, 4f, (int) Math.min(700, R * 4));
+            if (i % 4 == 0) Draw.ring(ground.clone().add(0, 0.5, 0), R, Draw.PURPLE, 4f, (int) Math.min(250, R * 3));
             if (i % 8 == 0) {
                 SmpGojo.sound(sky, "entity.lightning_bolt.thunder", 10f, 0.4f + rnd.nextFloat() * 0.3f);
                 pl.cine.shake(vs, 1, 1);
@@ -480,8 +480,8 @@ final class Gojo {
             double h = total * prog;
             double r = R * (0.35 + 0.65 * prog);
             beam.shape(r, h, 1);
-            if (i % 2 == 0) zap(p, ground, r, sky.getY() - h, sky.getY(), dmg, hit);
-            Draw.fx(sky.clone().add(0, -h, 0), Particle.END_ROD, 60, Math.min(40, r * 0.4), 0.4);
+            if (i % 5 == 0) zap(p, ground, r, sky.getY() - h, sky.getY(), dmg, hit);
+            Draw.fx(sky.clone().add(0, -h, 0), Particle.END_ROD, 25, Math.min(40, r * 0.4), 0.4);
         }, () -> {
             // impact : tout devient blanc, très loin
             List<Player> all = pl.viewers(ground, R + 500);
@@ -502,34 +502,58 @@ final class Gojo {
             beam.shape(R, total, 4);
             // le néant : le cylindre entier est effacé, chunk par chunk depuis le centre
             MegaHole hole = pl.ruin.mega(w, ground.getX(), ground.getZ(), R, bottomY, pl.cfgi("nuke.restore-seconds", 180));
-            int cpt = Math.max(1, pl.cfgi("nuke.chunks-per-tick", 4));
-            int eraseTicks = hole == null ? 0 : hole.chunkCount() / cpt + 20;
-            int hold = Math.max(pl.cfgi("nuke.hold-ticks", 60), eraseTicks);
-            pl.ruin.shockwave(ground, R + 40, 30, 1.0);
+            int hold = pl.cfgi("nuke.hold-ticks", 80), maxHold = pl.cfgi("nuke.max-hold-ticks", 600);
+            pl.ruin.shockwave(ground, Math.min(R + 40, 120), 24, 1.0);
             ThreadLocalRandom r0 = ThreadLocalRandom.current();
-            // fissures géantes autour du trou, et un bord arraché de façon irrégulière (une fois le trou creusé)
-            pl.later(eraseTicks, () -> {
+            boolean[] cracked = {false};
+            // fissures géantes autour du trou et bord arraché, une fois le trou creusé
+            Runnable edges = () -> {
+                if (cracked[0]) return;
+                cracked[0] = true;
                 int cracks = pl.cfgi("nuke.cracks", 16);
                 for (int k = 0; k < cracks; k++) {
                     double a = k * Math.PI * 2 / cracks + r0.nextDouble(-0.15, 0.15);
-                    pl.later(k * 2L, () -> pl.ruin.crack(ground, a, R, Math.min(160, R * (0.3 + r0.nextDouble() * 0.5)), false));
+                    pl.later(k * 3L, () -> pl.ruin.crack(ground, a, R, Math.min(90, R * (0.3 + r0.nextDouble() * 0.4)), false));
                 }
-                int bites = (int) Math.min(24, 6 + R / 15);
+                int bites = (int) Math.min(16, 6 + R / 20);
                 for (int k = 0; k < bites; k++) {
                     double a = r0.nextDouble() * Math.PI * 2;
-                    double br = Math.max(3, Math.min(20, R * (0.04 + r0.nextDouble() * 0.05)));
+                    double br = Math.max(3, Math.min(14, R * (0.04 + r0.nextDouble() * 0.04)));
                     Location edge = ground.clone().add(Math.cos(a) * R, -1, Math.sin(a) * R);
-                    pl.later(4L + k * 3L, () -> pl.ruin.crater(edge, br, 0.12, 2, false));
+                    pl.later(10L + k * 6L, () -> pl.ruin.crater(edge, br, 0.08, 2, false));
                 }
                 if (R <= 30) pl.ruin.shatter(ground, R + 12);
-            });
-            pl.ruin.smoke(ground.clone().add(0, 4, 0), Math.min(R * 0.6, 80), hold + 200);
+            };
+            pl.ruin.smoke(ground.clone().add(0, 4, 0), Math.min(R * 0.5, 40), 300);
             ThreadLocalRandom rnd = ThreadLocalRandom.current();
-            int streaks = (int) Math.min(80, 14 + R / 4);
-            pl.repeat(1, hold, i -> {
-                double r = R * (1 + 0.03 * Math.sin(i * 0.6));
-                if (i % 3 == 0) beam.shape(r, total, 3);
-                if (i % 4 == 0) zap(p, ground, R + 0.5, bottomY, sky.getY(), dmg, hit);
+            int streaks = (int) Math.min(40, 10 + R / 6);
+            int ringPts = (int) Math.min(300, R * 3);
+            int[] tick = {0};
+            org.bukkit.scheduler.BukkitTask[] loop = new org.bukkit.scheduler.BukkitTask[1];
+            Runnable fade = () -> {
+                beam.shape(0.01, total, 25);
+                SmpGojo.sound(ground, "block.beacon.deactivate", 10f, 0.5f);
+                pl.later(30, () -> {
+                    if (pl.pending.contains(clean[0])) clean[0].run();
+                });
+                if (!cracked[0]) {
+                    // le trou finit de se creuser après la colonne : on attend avant les fissures
+                    pl.repeat(20, 120, k -> {
+                        if (!cracked[0] && (hole == null || !hole.erasing())) edges.run();
+                    }, null);
+                }
+            };
+            loop[0] = Bukkit.getScheduler().runTaskTimer(pl, () -> {
+                int i = tick[0]++;
+                boolean erasing = hole != null && hole.erasing();
+                if (!erasing && !cracked[0]) edges.run();
+                if ((i >= hold && !erasing) || i >= maxHold || !pl.pending.contains(clean[0])) {
+                    loop[0].cancel();
+                    fade.run();
+                    return;
+                }
+                if (i % 10 == 0) beam.shape(R * (1 + 0.03 * Math.sin(i * 0.3)), total, 10);
+                if (i % 10 == 0) zap(p, ground, R + 0.5, bottomY, sky.getY(), dmg, hit);
                 // traînées de lumière qui tombent dans la colonne
                 for (int k = 0; k < streaks; k++) {
                     double a = rnd.nextDouble() * Math.PI * 2, rr = Math.sqrt(rnd.nextDouble()) * R;
@@ -537,28 +561,21 @@ final class Gojo {
                     w.spawnParticle(Particle.END_ROD, l, 0, 0, -1, 0, 2.5, null, true);
                 }
                 // anneau lumineux au sol
-                if (i % 2 == 0) {
-                    Draw.ring(ground.clone().add(0, 0.5, 0), R + 0.6, Draw.PINK, 4f, (int) Math.min(800, R * 5));
-                    Draw.ring(ground.clone().add(0, 2, 0), R + 1.5, Draw.PURPLE, 3f, (int) Math.min(500, R * 3));
+                if (i % 4 == 0) {
+                    Draw.ring(ground.clone().add(0, 0.5, 0), R + 0.6, Draw.PINK, 4f, ringPts);
+                    Draw.ring(ground.clone().add(0, 2, 0), R + 1.5, Draw.PURPLE, 3f, ringPts / 2);
                 }
                 // le souffle repousse tout autour
-                if (i % 5 == 0) {
-                    for (LivingEntity le : pl.targets(p, ground, R + 40)) {
+                if (i % 10 == 0) {
+                    for (LivingEntity le : pl.targets(p, ground, Math.min(R + 40, 160))) {
                         Vector out = le.getLocation().toVector().subtract(ground.toVector()).setY(0);
-                        if (out.lengthSquared() > 0.01) le.setVelocity(le.getVelocity().add(out.normalize().multiply(0.5).setY(0.1)));
+                        if (out.lengthSquared() > 0.01) le.setVelocity(le.getVelocity().add(out.normalize().multiply(0.6).setY(0.1)));
                     }
                 }
                 if (i % 10 == 0) SmpGojo.sound(ground, "block.beacon.ambient", 10f, 0.5f);
-                if (i % 20 == 0) SmpGojo.sound(ground, "entity.generic.explode", 10f, 0.4f);
-                if (i % 15 == 0) pl.cine.shake(all, 1, 1);
-            }, () -> {
-                // la colonne s'amincit et disparaît
-                beam.shape(0.01, total, 25);
-                SmpGojo.sound(ground, "block.beacon.deactivate", 10f, 0.5f);
-                pl.later(30, () -> {
-                    if (pl.pending.contains(clean[0])) clean[0].run();
-                });
-            });
+                if (i % 30 == 0) SmpGojo.sound(ground, "entity.generic.explode", 10f, 0.4f);
+                if (i % 20 == 0) pl.cine.shake(all, 1, 1);
+            }, 1L, 1L);
         });
     }
 

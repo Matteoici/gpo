@@ -122,42 +122,86 @@ final class MegaHole {
 
     // ================================================================= effacement
 
-    /** Efface quelques chunks. Renvoie le nombre de blocs effacés. */
-    int eraseTick(int perTick) {
+    private int col;
+    private final java.util.Set<Long> loading = new java.util.HashSet<>();
+    private final java.util.Set<Long> tickets = new java.util.HashSet<>();
+
+    private void releaseTickets() {
+        for (long k : tickets) w.removePluginChunkTicket((int) (k >> 32), (int) k, pl);
+        tickets.clear();
+    }
+
+    private boolean ready(int x, int z) {
+        if (w.isChunkLoaded(x, z)) return true;
+        long key = ((long) x << 32) ^ (z & 0xffffffffL);
+        if (loading.add(key)) {
+            w.getChunkAtAsync(x, z, false).whenComplete((c, err) -> {
+                loading.remove(key);
+                if (c != null && !done && tickets.add(key)) w.addPluginChunkTicket(x, z, pl);
+            });
+        }
+        return false;
+    }
+
+    /**
+     * Efface pendant au plus "budgetNanos" ce tick, colonne par colonne, puis s'arrête :
+     * le serveur ne lag jamais, un gros trou prend juste plus de temps.
+     */
+    int eraseTick(long budgetNanos) {
+        long start = System.nanoTime();
         int count = 0;
         ThreadLocalRandom rnd = ThreadLocalRandom.current();
-        for (int n = 0; n < perTick && chunkIdx < chunks.size(); n++) {
-            int[] c = chunks.get(chunkIdx++);
-            if (!w.isChunkGenerated(c[0], c[1])) continue;
+        int skipped = 0;
+        while (chunkIdx < chunks.size() && System.nanoTime() - start < budgetNanos) {
+            int[] c = chunks.get(chunkIdx);
+            if (!w.isChunkGenerated(c[0], c[1])) {
+                chunkIdx++;
+                col = 0;
+                continue;
+            }
+            if (!ready(c[0], c[1])) {
+                // pas encore chargé : on le remet un peu plus loin dans la file et on continue
+                if (++skipped > 8) break;
+                chunks.remove(chunkIdx);
+                chunks.add(Math.min(chunks.size(), chunkIdx + 6), c);
+                continue;
+            }
             Chunk ch = w.getChunkAt(c[0], c[1]);
-            for (int lx = 0; lx < 16; lx++) {
-                for (int lz = 0; lz < 16; lz++) {
-                    int x = c[0] * 16 + lx, z = c[1] * 16 + lz;
-                    double dx = x + 0.5 - cx, dz = z + 0.5 - cz;
-                    if (dx * dx + dz * dz > r * r) continue;
-                    int top = w.getHighestBlockYAt(x, z);
-                    for (int y = top; y >= bottom; y--) {
-                        Block b = ch.getBlock(lx, y, lz);
-                        Material m = b.getType();
-                        if (m.isAir()) continue;
-                        if (!b.isLiquid() && !Ruin.breakable(b)) continue;
-                        BlockData d = b.getBlockData();
-                        record(x, y, z, d);
-                        b.setBlockData(AIR, false);
-                        count++;
-                        if (y == top && rnd.nextInt(900) == 0) {
-                            pl.ruin.spawnDebris(d, new Location(w, x + 0.5, y + 0.5, z + 0.5),
-                                    new Vector(dx, 0, dz).normalize().multiply(0.3).setY(1.2 + rnd.nextDouble()), null, 45);
-                        }
+            while (col < 256 && System.nanoTime() - start < budgetNanos) {
+                int lx = col & 15, lz = col >> 4;
+                col++;
+                int x = c[0] * 16 + lx, z = c[1] * 16 + lz;
+                double dx = x + 0.5 - cx, dz = z + 0.5 - cz;
+                if (dx * dx + dz * dz > r * r) continue;
+                int top = w.getHighestBlockYAt(x, z);
+                for (int y = top; y >= bottom; y--) {
+                    Block b = ch.getBlock(lx, y, lz);
+                    Material m = b.getType();
+                    if (m.isAir()) continue;
+                    if (!b.isLiquid() && !Ruin.breakable(b)) continue;
+                    BlockData d = b.getBlockData();
+                    record(x, y, z, d);
+                    b.setBlockData(AIR, false);
+                    count++;
+                    if (y == top && rnd.nextInt(2500) == 0) {
+                        pl.ruin.spawnDebris(d, new Location(w, x + 0.5, y + 0.5, z + 0.5),
+                                new Vector(dx, 0, dz).normalize().multiply(0.3).setY(1.2 + rnd.nextDouble()), null, 40);
                     }
                 }
             }
-            if (rnd.nextInt(3) == 0) {
-                Location at = new Location(w, c[0] * 16 + 8, w.getHighestBlockYAt(c[0] * 16 + 8, c[1] * 16 + 8) + 1, c[1] * 16 + 8);
-                w.spawnParticle(Particle.END_ROD, at, 6, 6, 2, 6, 0.3, null, true);
+            if (col >= 256) {
+                chunkIdx++;
+                col = 0;
+                if (rnd.nextInt(6) == 0) {
+                    Location at = new Location(w, c[0] * 16 + 8, w.getHighestBlockYAt(c[0] * 16 + 8, c[1] * 16 + 8) + 1, c[1] * 16 + 8);
+                    w.spawnParticle(Particle.END_ROD, at, 4, 6, 2, 6, 0.3, null, true);
+                }
             }
         }
-        if (!erasing()) save();
+        if (!erasing()) {
+            releaseTickets();
+            save();
+        }
         return count;
     }
 
@@ -167,11 +211,18 @@ final class MegaHole {
         restoreAt = now + delayTicks;
     }
 
-    /** true quand tout est remis. */
-    boolean restoreTick(int now, int budget) {
+    /** true quand tout est remis. Même budget de temps que l'effacement. */
+    boolean restoreTick(int now, long budgetNanos) {
         if (erasing() || restoreAt < 0 || now < restoreAt) return false;
         if (restoreIdx < 0) restoreIdx = size - 1;
-        while (budget-- > 0 && restoreIdx >= 0) restoreOne(restoreIdx--);
+        long start = System.nanoTime();
+        int n = 0;
+        while (restoreIdx >= 0) {
+            if ((++n & 63) == 0 && System.nanoTime() - start > budgetNanos) break;
+            long k = keys[restoreIdx];
+            if (!ready(ux(k) >> 4, uz(k) >> 4)) break;
+            restoreOne(restoreIdx--);
+        }
         if (restoreIdx < 0) {
             finish();
             return true;
@@ -194,6 +245,7 @@ final class MegaHole {
     }
 
     private void finish() {
+        releaseTickets();
         size = 0;
         done = true;
         keys = new long[0];
