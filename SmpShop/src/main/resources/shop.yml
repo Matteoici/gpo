@@ -46,7 +46,6 @@ categories:
       - {material: TERRACOTTA, price: 8}
       - {material: SEA_LANTERN, price: 100}
       - {material: LANTERN, price: 30}
-      - {material: ENDER_CHEST, price: 1500, max: 64}
 
   nether:
     slot: 12
@@ -97,6 +96,20 @@ categories:
       - {material: POTION, potion: STRONG_STRENGTH, price: 1000}
       - {material: POTION, potion: STRONG_SWIFTNESS, price: 700}
       - {material: POTION, potion: LONG_FIRE_RESISTANCE, price: 500}
+
+  stockage:
+    slot: 16
+    icon: CHEST
+    name: "<#c8a165><b>Stockage"
+    lore: ["<gray>Coffres, barils, coffre de l'End."]
+    title: "<dark_gray>Boutique - Stockage"
+    rows: 3
+    currency: money
+    items:
+      - {material: CHEST, price: 25}
+      - {material: TRAPPED_CHEST, price: 40}
+      - {material: BARREL, price: 25}
+      - {material: ENDER_CHEST, price: 1500, max: 64}
 
   nourriture:
     slot: 14
