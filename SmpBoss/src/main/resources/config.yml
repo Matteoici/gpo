@@ -60,6 +60,28 @@ boss:
     charge: 9
     meteor: 14
     phase-shockwave: 4
+    # coups d'épée (combo) et coup final qui fend le sol
+    sword: 7
+    sword-finisher: 11
+    fissure: 8
+    # phase 3 (Roi Sans Tête)
+    eclipse: 8
+    soul-blade: 15
+    carillon: 9
+    leap: 14
+    leap-ring: 6
+    feast: 3
+    # tous les dégâts sont multipliés par ça en phase 3
+    phase-3-multiplier: 1.6
+  # phase 2 à 50 % de vie ; à 0 il fait le mort puis revient en phase 3 avec TOUTE sa vie
+  phase-2-at-v2: 0.5
+  phase-3-health-multiplier: 1.0
+  scale-phase-3-v2: 4.6
+  attack-interval-phase-3: 55
+  # chance qu'il enchaîne une 2e attaque en phase 3
+  phase-3-combo-chance: 0.4
+  # Festin : % de sa vie max qu'il récupère à chaque morsure
+  feast-heal-percent: 1.0
   scythe-radius: 6.5
 
 # ---------------------------------------------------------------- Butin
@@ -243,6 +265,27 @@ messages:
     timeout: "<gray>Trop tard ! Le <#ff7a00>Roi Citrouille</#ff7a00> s'enfonce dans la nuit."
     vanished: "<gray>Le <#ff7a00>Roi Citrouille</#ff7a00> a disparu."
     stopped: "<gray>Le Roi Citrouille a été renvoyé par le staff."
+    name-headless: "<gradient:#5ff3ff:#3a1d6e><b>☠ Roi Sans Tête ☠"
+    bar-headless: "<gradient:#5ff3ff:#7a1fa2><b>☠ Roi Sans Tête</b></gradient> <dark_gray>|</dark_gray> <aqua>Le Festin des Âmes"
+    bar-dead: "<dark_gray><b>☠ ...</b> <gray>le cœur bat encore..."
+    title-fake-death: "<gold><b>VICTOIRE...?"
+    subtitle-fake-death: "<dark_gray>Le Roi s'effondre... mais quelque chose remue."
+    title-headless: "<gradient:#5ff3ff:#7a1fa2><b>LE ROI SANS TÊTE"
+    subtitle-headless: "<aqua>Il revient avec toute sa vie. <red>Le Festin commence."
+    feast-warning: "<aqua><b>⛓ Une chaîne d'âme te relie au Roi !</b> <gray>Éloigne-toi pour la briser."
+    attack:
+      combo: "<gold>⚔ <b>Lame du Roi</b> <gray>· recule !"
+      ignite: "<red>🔥 <b>La Lanterne s'embrase</b> <gray>· son épée prend feu"
+      fissure: "<red>🔥 <b>Fissures de feu</b> <gray>· écarte-toi des lignes"
+      whirl: "<red>⚔ <b>Tourbillon</b> <gray>· sors du cercle !"
+      spikes: "<gold>🎃 <b>Champ de citrouilles</b> <gray>· quitte la ligne"
+      barrage: "<gold>🎃 <b>Barrage</b>"
+      meteor: "<dark_red>☄ <b>Citrouille géante</b> <gray>· cours !"
+      eclipse: "<aqua>☾ <b>Lune de Sang</b> <gray>· ne reste pas immobile"
+      soul-blade: "<aqua>⚔ <b>Lame des Âmes</b> <gray>· change de côté !"
+      carillon: "<aqua>🔔 <b>Carillon</b> <gray>· reste hors des cases orange"
+      leap: "<aqua>⬆ <b>Chute du Roi</b> <gray>· fuis son ombre, saute les ondes"
+      feast: "<aqua>⛓ <b>Festin</b> <gray>· éloigne-toi ou il se soigne"
     new-fighter: "<gold>⚔ <white><player></white> rejoint le combat <dark_gray>· <gray>le Roi gagne <red>+<hp> ❤"
     not-enough: "<gray>Tu n'as fait que <white><percent>%</white> des dégâts <dark_gray>(il faut <min>%)</dark_gray><gray> : pas de butin cette fois."
     bar-hp: " <dark_gray>| <white><hp></white><gray>/<max> <red>❤"

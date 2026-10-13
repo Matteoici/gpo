@@ -23,6 +23,9 @@ import org.bukkit.entity.Firework;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.TextDisplay;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Mob;
+import org.bukkit.entity.WitherSkeleton;
 import org.bukkit.entity.Zombie;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.EquipmentSlot;
@@ -59,7 +62,8 @@ import static fr.smpboss.SmpBoss.parse;
 public final class PumpkinKing {
 
     private enum Attack {
-        BARRAGE, VINES, FLAME_WAVE, MINIONS, SEED_RAIN, VORTEX, SPIKES, SCYTHE, CHARGE, METEOR
+        BARRAGE, VINES, FLAME_WAVE, MINIONS, SEED_RAIN, VORTEX, SPIKES, SCYTHE, CHARGE, METEOR,
+        SWORD_COMBO, FIRE_FISSURE, ECLIPSE, SOUL_BLADE, CARILLON, LEAP, FEAST
     }
 
     private final SmpBoss plugin;
@@ -76,7 +80,9 @@ public final class PumpkinKing {
     private final Set<Entity> minions = new HashSet<>();
     private final Map<UUID, Double> damage = new HashMap<>();
 
-    private Zombie boss;
+    private Mob boss;
+    /** pendant la fausse mort / résurrection : barre de vie animée à la main */
+    private boolean reviving;
     private BossBar bar;
     private double hp, maxHp;
     /** nombre de combattants pris en compte pour la vie (ne fait qu'augmenter) */
@@ -167,12 +173,11 @@ public final class PumpkinKing {
         hp = maxHp;
         if (plugin.getConfig().getBoolean("boss.damage-sidebar", true)) board = new DamageBoard(plugin);
         scale = (float) cfg("scale", 3.0);
-        boss = w.spawn(at, Zombie.class, z -> {
+        // un squelette du Wither géant : il marche vraiment (jambes, bras) et frappe à l'épée
+        boss = w.spawn(at, WitherSkeleton.class, z -> {
             z.setPersistent(false);
             z.setRemoveWhenFarAway(false);
             z.getPersistentDataContainer().set(bossKey, PersistentDataType.BYTE, (byte) 1);
-            z.setAdult();
-            z.setShouldBurnInDay(false);
             z.setCanPickupItems(false);
             z.setAI(false);
             base(z, Attribute.MAX_HEALTH, 1024);
@@ -187,7 +192,7 @@ public final class PumpkinKing {
             eq.setChestplate(leather(Material.LEATHER_CHESTPLATE, 0x2f4a1e));
             eq.setLeggings(leather(Material.LEATHER_LEGGINGS, 0x3a2a14));
             eq.setBoots(leather(Material.LEATHER_BOOTS, 0x2a1a0c));
-            eq.setItemInMainHand(new ItemStack(Material.NETHERITE_HOE));
+            eq.setItemInMainHand(blade());
             for (EquipmentSlot s : EquipmentSlot.values()) {
                 try {
                     eq.setDropChance(s, 0f);
@@ -236,7 +241,36 @@ public final class PumpkinKing {
         tasks.add(Bukkit.getScheduler().runTaskTimer(plugin, this::tick, 1L, 1L));
     }
 
-    private static void base(Zombie z, Attribute a, double v) {
+    /** L'épée du Roi (brillante). */
+    private static ItemStack blade() {
+        ItemStack it = new ItemStack(Material.NETHERITE_SWORD);
+        var m = it.getItemMeta();
+        m.setEnchantmentGlintOverride(true);
+        it.setItemMeta(m);
+        return it;
+    }
+
+    /** Animation de coup d'épée (bras qui frappe). */
+    private void swing() {
+        if (boss != null && boss.isValid()) boss.swingMainHand();
+    }
+
+    private void face(Location target) {
+        if (boss == null) return;
+        Vector d = target.toVector().subtract(boss.getLocation().toVector()).setY(0);
+        if (d.lengthSquared() < 0.01) return;
+        boss.setRotation((float) Math.toDegrees(Math.atan2(-d.getX(), d.getZ())), 0);
+    }
+
+    /** Annonce le nom de l'attaque (en bas de l'écran) aux joueurs proches. */
+    private void announce(String key) {
+        if (boss == null) return;
+        String m = plugin.msg("boss.attack." + key);
+        if (m.startsWith("<red>[")) return;
+        for (Player p : nearby(boss.getLocation(), 50)) p.sendActionBar(parse(m));
+    }
+
+    private static void base(LivingEntity z, Attribute a, double v) {
         AttributeInstance i = z.getAttribute(a);
         if (i != null) i.setBaseValue(v);
     }
@@ -301,8 +335,8 @@ public final class PumpkinKing {
             }
         }
         if (tick % 10 == 0) borderRing();
-        if (tick % 10 == 0) {
-            bar.name(parse(plugin.msg("boss.bar-" + phase) + plugin.msg("boss.bar-hp").replace("<hp>", String.valueOf((long) Math.ceil(Math.max(0, hp))))
+        if (tick % 10 == 0 && !reviving) {
+            bar.name(parse(plugin.msg(phase == 3 ? "boss.bar-headless" : "boss.bar-" + phase) + plugin.msg("boss.bar-hp").replace("<hp>", String.valueOf((long) Math.ceil(Math.max(0, hp))))
                     .replace("<max>", String.valueOf((long) maxHp))));
         }
         if (tick % 5 == 0) {
@@ -316,12 +350,28 @@ public final class PumpkinKing {
             if (near.contains(p)) p.showBossBar(bar);
             else p.hideBossBar(bar);
         }
-        bar.progress((float) Math.max(0, Math.min(1, hp / maxHp)));
+        if (!reviving) bar.progress((float) Math.max(0, Math.min(1, hp / maxHp)));
+        // l'épée s'embrase en phase 2, flammes d'âmes en phase 3
+        if (phase >= 2 && tick % 2 == 0) {
+            double yaw = Math.toRadians(boss.getBodyYaw());
+            Vector right = new Vector(-Math.cos(yaw), 0, -Math.sin(yaw));
+            Location hand = c.clone().add(right.multiply(0.42 * scale)).add(0, scale * 0.95, 0);
+            w.spawnParticle(phase == 3 ? Particle.SOUL_FIRE_FLAME : Particle.FLAME, hand, 3, 0.15 * scale, 0.35 * scale, 0.15 * scale, 0.01,
+                    null, true);
+        }
+        if (phase == 3 && tick % 3 == 0) {
+            // halo de flammes d'âmes autour de la tête
+            for (int k = 0; k < 6; k++) {
+                double a = tick * 0.15 + k * Math.PI / 3;
+                w.spawnParticle(Particle.SOUL_FIRE_FLAME, c.clone().add(Math.cos(a) * 0.45 * scale, scale * 1.85, Math.sin(a) * 0.45 * scale), 1,
+                        0, 0.05, 0, 0.01, null, true);
+            }
+        }
         if (board != null && tick % 10 == 0) board.update(near, hp, maxHp, damage, minPct());
 
         // laisse : il reste dans son arène
         double arena = cfg("arena-radius", 18);
-        if (c.getWorld() != altar.getWorld() || c.distanceSquared(altar) > (arena + 8) * (arena + 8)) {
+        if (c.getWorld() != altar.getWorld() || horizontalDist(c, altar) > arena + 8 || c.getY() < altar.getY() - 12) {
             boss.teleport(altar.clone().add(0.5, 1, 0.5));
         }
         // personne autour pendant 60 s : il repart
@@ -341,19 +391,41 @@ public final class PumpkinKing {
         // attaques
         if (invulnerable > 0 || !boss.hasAI()) return;
         if (--nextAttack <= 0) {
-            nextAttack = (int) cfg("attack-interval." + phase, phase == 1 ? 110 : phase == 2 ? 90 : 70);
+            nextAttack = (int) (phase == 3 ? cfg("attack-interval-phase-3", 55) : cfg("attack-interval." + phase, phase == 1 ? 110 : 90));
             List<Attack> pool = switch (phase) {
-                case 1 -> List.of(Attack.BARRAGE, Attack.VINES, Attack.SPIKES);
-                case 2 -> List.of(Attack.BARRAGE, Attack.VINES, Attack.FLAME_WAVE, Attack.MINIONS, Attack.SPIKES, Attack.SCYTHE, Attack.CHARGE);
-                default -> List.of(Attack.FLAME_WAVE, Attack.MINIONS, Attack.SEED_RAIN, Attack.VORTEX, Attack.SPIKES, Attack.SCYTHE,
-                        Attack.CHARGE, Attack.METEOR, Attack.METEOR);
+                // La Récolte : coups d'épée, citrouilles, lianes, pics
+                case 1 -> List.of(Attack.SWORD_COMBO, Attack.SWORD_COMBO, Attack.BARRAGE, Attack.VINES, Attack.SPIKES);
+                // La Lanterne : tout s'embrase
+                case 2 -> List.of(Attack.SWORD_COMBO, Attack.FIRE_FISSURE, Attack.FIRE_FISSURE, Attack.FLAME_WAVE, Attack.CHARGE,
+                        Attack.SCYTHE, Attack.MINIONS, Attack.METEOR, Attack.BARRAGE);
+                // Le Roi Sans Tête : tout ce qu'il a, en plus fort et enchaîné
+                default -> List.of(Attack.ECLIPSE, Attack.SOUL_BLADE, Attack.CARILLON, Attack.LEAP, Attack.FEAST, Attack.SWORD_COMBO,
+                        Attack.CHARGE, Attack.METEOR, Attack.FIRE_FISSURE, Attack.SPIKES);
             };
             Attack a;
             do {
                 a = pool.get(ThreadLocalRandom.current().nextInt(pool.size()));
             } while (a == last && pool.size() > 1);
             last = a;
-            switch (a) {
+            run(a);
+            // phase 3 : il enchaîne souvent une deuxième attaque
+            if (phase == 3 && ThreadLocalRandom.current().nextDouble() < cfg("phase-3-combo-chance", 0.4)) {
+                Attack first = a;
+                later(30, () -> {
+                    if (ended || reviving || boss == null || !boss.isValid()) return;
+                    List<Attack> quick = List.of(Attack.SWORD_COMBO, Attack.SPIKES, Attack.METEOR, Attack.FIRE_FISSURE, Attack.CHARGE);
+                    Attack b;
+                    do {
+                        b = quick.get(ThreadLocalRandom.current().nextInt(quick.size()));
+                    } while (b == first);
+                    run(b);
+                });
+            }
+        }
+    }
+
+    private void run(Attack a) {
+        switch (a) {
                 case BARRAGE -> barrage();
                 case VINES -> vines();
                 case FLAME_WAVE -> flameWave();
@@ -364,15 +436,21 @@ public final class PumpkinKing {
                 case SCYTHE -> scythe();
                 case CHARGE -> charge();
                 case METEOR -> meteor();
+                case SWORD_COMBO -> swordCombo();
+                case FIRE_FISSURE -> fireFissure();
+                case ECLIPSE -> eclipse();
+                case SOUL_BLADE -> soulBlade();
+                case CARILLON -> carillon();
+                case LEAP -> leap();
+                case FEAST -> feast();
             }
-        }
     }
 
     // ================================================================= dégâts reçus
 
     /** Un joueur frappe le boss. Renvoie false si le coup est ignoré (invulnérable). */
     boolean hurt(Player by, double amount) {
-        if (ended || invulnerable > 0 || boss == null) return false;
+        if (ended || reviving || invulnerable > 0 || boss == null) return false;
         if (by != null) damage.merge(by.getUniqueId(), amount, Double::sum);
         // un joueur de plus sur le boss : sa vie grandit d'autant (le % de vie reste le même)
         if (damage.size() > fighters) {
@@ -392,17 +470,20 @@ public final class PumpkinKing {
                 0.4 * scale, 0, Material.PUMPKIN.createBlockData(), true);
         double ratio = hp / maxHp;
         if (hp <= 0) {
-            defeat();
-        } else if (phase == 1 && ratio <= cfg("phase-2-at", 0.66)) {
+            if (phase < 3) resurrect();
+            else defeat();
+        } else if (phase == 1 && ratio <= cfg("phase-2-at-v2", 0.5)) {
             changePhase(2);
-        } else if (phase == 2 && ratio <= cfg("phase-3-at", 0.33)) {
-            changePhase(3);
         }
         return true;
     }
 
     private void changePhase(int to) {
         phase = to;
+        if (to == 2) {
+            boss.getEquipment().setChestplate(leather(Material.LEATHER_CHESTPLATE, 0x5a1a0a));
+            announce("ignite");
+        }
         invulnerable = 70;
         boss.setAI(false);
         Location c = boss.getLocation();
@@ -446,6 +527,8 @@ public final class PumpkinKing {
 
     /** Citrouilles explosives lancées en cloche sur 3 joueurs. */
     private void barrage() {
+        swing();
+        announce("barrage");
         List<Player> targets = nearby(boss.getLocation(), 30);
         java.util.Collections.shuffle(targets);
         sound(boss.getLocation(), "entity.witch.throw", 2f, 0.6f);
@@ -649,12 +732,14 @@ public final class PumpkinKing {
     }
 
     private double mult() {
-        return cfg("damage.multiplier", 1.0) * (phase == 3 ? 1.2 : 1.0);
+        return cfg("damage.multiplier", 1.0) * (phase == 3 ? cfg("damage.phase-3-multiplier", 1.6) : phase == 2 ? 1.15 : 1.0);
     }
 
     /** Lignes de citrouilles qui jaillissent du sol vers chaque joueur. */
     private void spikes() {
         Location c = boss.getLocation().clone();
+        swing();
+        announce("spikes");
         sound(c, "block.rooted_dirt.break", 2f, 0.5f);
         sound(c, "entity.evoker.prepare_attack", 2f, 0.7f);
         List<Player> targets = nearby(c, 26);
@@ -722,6 +807,7 @@ public final class PumpkinKing {
     private void scythe() {
         Location c = boss.getLocation().clone();
         boss.setAI(false);
+        announce("whirl");
         double r = cfg("scythe-radius", 6.5);
         sound(c, "item.trident.riptide_3", 2f, 0.5f);
         sound(c, "entity.ravager.roar", 1.5f, 1.2f);
@@ -735,6 +821,7 @@ public final class PumpkinKing {
                 if (boss == null || !boss.isValid()) return;
                 float yaw = boss.getYaw() + 36f;
                 boss.setRotation(yaw, 0);
+                if (i % 3 == 0) swing();
                 double a = Math.toRadians(i * 36);
                 for (double d = 1.2; d <= r; d += 0.8) {
                     Location l = c.clone().add(Math.cos(a) * d, scale * 0.5, Math.sin(a) * d);
@@ -828,6 +915,21 @@ public final class PumpkinKing {
 
     /** Une citrouille géante tombe du ciel sur le joueur qui fait le plus de dégâts. */
     private void meteor() {
+        announce("meteor");
+        swing();
+        // phase 3 : une citrouille par joueur (jusqu'à 3)
+        if (phase == 3) {
+            List<Player> near3 = nearby(boss.getLocation(), 30);
+            java.util.Collections.shuffle(near3);
+            for (int i = 1; i < Math.min(3, near3.size()); i++) {
+                Player extra = near3.get(i);
+                later(i * 12, () -> meteorOn(extra));
+            }
+        }
+        meteorTop();
+    }
+
+    private void meteorTop() {
         List<Player> near = nearby(boss.getLocation(), 30);
         if (near.isEmpty()) return;
         Player target = near.get(0);
@@ -839,6 +941,11 @@ public final class PumpkinKing {
                 target = p;
             }
         }
+        meteorOn(target);
+    }
+
+    private void meteorOn(Player target) {
+        if (ended || boss == null || !target.isOnline()) return;
         Location dest = ground(target.getLocation().clone());
         double r = 5;
         sound(boss.getLocation(), "entity.ghast.warn", 3f, 0.4f);
@@ -891,6 +998,604 @@ public final class PumpkinKing {
                             0.1, 0.01, null, true);
                 }
             }, null);
+        });
+    }
+
+    // ================================================================= épée
+
+    private static Player closest(List<Player> list, Location c) {
+        Player best = null;
+        double bd = Double.MAX_VALUE;
+        for (Player p : list) {
+            double d = p.getLocation().distanceSquared(c);
+            if (d < bd) {
+                bd = d;
+                best = p;
+            }
+        }
+        return best;
+    }
+
+    private void wake(int ticks) {
+        later(ticks, () -> {
+            if (boss != null && boss.isValid() && !ended && !reviving && invulnerable <= 0) boss.setAI(true);
+        });
+    }
+
+    /** Arc de particules devant le boss (angle total en degrés), à la hauteur h. */
+    private void arc(Location c, Vector dir, double r, double angle, Color col, double h) {
+        int pts = Math.max(4, (int) (angle / 6));
+        Particle.DustOptions dust = new Particle.DustOptions(col, 1.4f);
+        for (int i = 0; i <= pts; i++) {
+            Vector v = dir.clone().rotateAroundY(Math.toRadians(-angle / 2 + i * angle / pts));
+            for (double d = r * 0.4; d <= r + 0.01; d += r * 0.2) {
+                c.getWorld().spawnParticle(Particle.DUST, c.clone().add(v.clone().multiply(d)).add(0, h, 0), 1, 0, 0, 0, 0, dust, true);
+            }
+        }
+    }
+
+    /** Combo de coups d'épée : balayages devant lui, le dernier fend le sol en ligne droite. */
+    private void swordCombo() {
+        List<Player> near = nearby(boss.getLocation(), 16);
+        if (near.isEmpty()) {
+            barrage();
+            return;
+        }
+        Player target = closest(near, boss.getLocation());
+        boss.setAI(false);
+        announce("combo");
+        int hits = phase == 3 ? 4 : 3;
+        int gap = phase == 1 ? 15 : phase == 2 ? 13 : 10;
+        double reach = 2.4 + scale * 0.9;
+        Color col = phase == 3 ? Color.fromRGB(110, 230, 255) : phase == 2 ? Color.fromRGB(255, 110, 20) : Color.fromRGB(255, 205, 90);
+        for (int k = 0; k < hits; k++) {
+            boolean finisher = k == hits - 1;
+            boolean left = k % 2 == 0;
+            // préparation : il se tourne, fait un pas, un arc rouge montre la zone
+            later(k * gap, () -> {
+                if (boss == null || !boss.isValid()) return;
+                if (target.isOnline() && target.getWorld() == boss.getWorld()) {
+                    face(target.getLocation());
+                    Location step = boss.getLocation().add(boss.getLocation().getDirection().setY(0).normalize().multiply(0.9));
+                    if (step.clone().add(0, 1, 0).getBlock().isPassable()) boss.teleport(ground(step));
+                }
+                Location c = boss.getLocation();
+                Vector dir = c.getDirection().setY(0).normalize();
+                if (finisher) {
+                    for (int d = 1; d <= 10; d++) {
+                        Location l = ground(c.clone().add(dir.clone().multiply(d * 1.2))).add(0, 0.15, 0);
+                        c.getWorld().spawnParticle(Particle.DUST, l, 3, 0.3, 0, 0.3, 0, new Particle.DustOptions(Color.fromRGB(200, 20, 20), 1.5f), true);
+                    }
+                    sound(c, "item.trident.riptide_1", 2f, 0.5f);
+                } else {
+                    arc(c, dir, reach, 150, Color.fromRGB(190, 30, 30), 0.15);
+                    sound(c, "item.armor.equip_netherite", 1.5f, 0.6f);
+                }
+            });
+            later(k * gap + gap / 2 + 2, () -> {
+                if (boss == null || !boss.isValid()) return;
+                swing();
+                Location c = boss.getLocation();
+                Vector dir = c.getDirection().setY(0).normalize();
+                if (finisher) {
+                    sound(c, "entity.generic.explode", 2f, 0.8f);
+                    sound(c, "entity.zombie.attack_iron_door", 2f, 0.5f);
+                    shake(c, 16);
+                    Set<UUID> hit = new HashSet<>();
+                    for (int d = 1; d <= 10; d++) {
+                        int dd = d;
+                        later(d, () -> {
+                            Location l = ground(c.clone().add(dir.clone().multiply(dd * 1.2)));
+                            org.bukkit.block.data.BlockData under = l.clone().add(0, -1, 0).getBlock().getBlockData();
+                            c.getWorld().spawnParticle(Particle.BLOCK, l.clone().add(0, 0.3, 0), 30, 0.5, 0.4, 0.5, 0, under, true);
+                            c.getWorld().spawnParticle(phase == 3 ? Particle.SOUL_FIRE_FLAME : Particle.FLAME, l.clone().add(0, 0.6, 0), 10, 0.3, 0.7,
+                                    0.3, 0.02, null, true);
+                            for (Player p : nearby(l, 1.8)) {
+                                if (!hit.add(p.getUniqueId())) continue;
+                                p.damage(cfg("damage.sword-finisher", 11) * mult(), boss);
+                                p.setVelocity(new Vector(0, 1.05, 0));
+                            }
+                        });
+                    }
+                } else {
+                    arc(c, dir, reach, 150, col, scale * 0.45);
+                    for (int i = -3; i <= 3; i++) {
+                        Vector v = dir.clone().rotateAroundY(Math.toRadians(i * 22 * (left ? 1 : -1))).multiply(reach * 0.75);
+                        c.getWorld().spawnParticle(Particle.SWEEP_ATTACK, c.clone().add(v).add(0, scale * 0.45, 0), 1, 0, 0, 0, 0, null, true);
+                    }
+                    sound(c, "entity.player.attack.sweep", 2f, 0.6f);
+                    for (Player p : nearby(c, reach + 0.6)) {
+                        Vector to = p.getLocation().toVector().subtract(c.toVector()).setY(0);
+                        if (to.lengthSquared() > 0.5 && to.normalize().dot(dir) < 0.2) continue;
+                        p.damage(cfg("damage.sword", 7) * mult(), boss);
+                        p.setVelocity(dir.clone().multiply(0.9).setY(0.35));
+                    }
+                }
+            });
+        }
+        wake(hits * gap + 14);
+    }
+
+    /** Il plante son épée en feu : des fissures de flammes partent en éventail vers les joueurs. */
+    private void fireFissure() {
+        Location c = boss.getLocation().clone();
+        List<Player> near = nearby(c, 26);
+        Vector b = near.isEmpty() ? c.getDirection().setY(0) : closest(near, c).getLocation().toVector().subtract(c.toVector()).setY(0);
+        if (b.lengthSquared() < 0.01) b = new Vector(1, 0, 0);
+        Vector base = b.normalize();
+        boss.setAI(false);
+        face(c.clone().add(base));
+        announce("fissure");
+        swing();
+        sound(c, "item.firecharge.use", 2f, 0.5f);
+        sound(c, "entity.blaze.shoot", 2f, 0.6f);
+        boolean soul = phase == 3;
+        int lines = soul ? 5 : 3;
+        Set<UUID> hit = new HashSet<>();
+        for (int n = 0; n < lines; n++) {
+            Vector d = base.clone().rotateAroundY(Math.toRadians((n - (lines - 1) / 2.0) * 24));
+            repeat(3, 6, i -> {
+                for (int k = 2; k <= 17; k++) {
+                    Location l = ground(c.clone().add(d.clone().multiply(k))).add(0, 0.12, 0);
+                    c.getWorld().spawnParticle(Particle.DUST, l, 1, 0.15, 0, 0.15, 0, new Particle.DustOptions(Color.fromRGB(255, 80, 0), 1.2f), true);
+                }
+            }, null);
+            later(20, () -> {
+                swing();
+                repeat(1, 16, k -> {
+                    Location l = ground(c.clone().add(d.clone().multiply(k + 2)));
+                    c.getWorld().spawnParticle(soul ? Particle.SOUL_FIRE_FLAME : Particle.FLAME, l.clone().add(0, 1, 0), 14, 0.25, 1.0, 0.25, 0.03,
+                            null, true);
+                    c.getWorld().spawnParticle(Particle.LAVA, l, 2, 0.2, 0.1, 0.2, 0, null, true);
+                    if (k % 3 == 0) sound(l, "block.fire.extinguish", 1f, 0.6f);
+                    for (Player p : nearby(l, 1.5)) {
+                        if (!hit.add(p.getUniqueId())) continue;
+                        p.damage(cfg("damage.fissure", 8) * mult(), boss);
+                        p.setFireTicks(80);
+                        p.setVelocity(p.getVelocity().setY(0.75));
+                    }
+                }, null);
+            });
+        }
+        wake(42);
+    }
+
+    // ================================================================= phase 3
+
+    private static Transformation centered(float size, Quaternionf rot) {
+        Vector3f half = new Vector3f(size / 2, size / 2, size / 2);
+        rot.transform(half);
+        return new Transformation(new Vector3f(-half.x, -half.y, -half.z), rot, new Vector3f(size, size, size), new Quaternionf());
+    }
+
+    /** Lune de sang : une lune-citrouille géante se lève au-dessus de l'arène et tire des rayons d'âmes. */
+    private void eclipse() {
+        announce("eclipse");
+        swing();
+        Location center = altar.clone().add(0.5, 22, 0.5);
+        sound(boss.getLocation(), "entity.wither.spawn", 3f, 0.5f);
+        float sz = 7f;
+        BlockDisplay moon = center.getWorld().spawn(center, BlockDisplay.class, e -> {
+            e.setPersistent(false);
+            e.getPersistentDataContainer().set(bossKey, PersistentDataType.BYTE, (byte) 4);
+            e.setBlock(Material.JACK_O_LANTERN.createBlockData());
+            e.setBrightness(new Display.Brightness(15, 15));
+            e.setGlowing(true);
+            e.setGlowColorOverride(Color.fromRGB(0x5ff3ff));
+            e.setViewRange(6f);
+            e.setTransformation(centered(0.1f, new Quaternionf()));
+        });
+        props.add(moon);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (!moon.isValid()) return;
+            moon.setInterpolationDelay(0);
+            moon.setInterpolationDuration(25);
+            moon.setTransformation(centered(sz, new Quaternionf().rotateY(0.6f)));
+        }, 2L);
+        for (Player p : nearby(center, 70)) p.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 60, 0, false, false, false));
+        int volleys = 8;
+        repeat(13, volleys, i -> {
+            if (moon.isValid()) {
+                moon.setInterpolationDelay(0);
+                moon.setInterpolationDuration(13);
+                moon.setTransformation(centered(sz, new Quaternionf().rotateY(0.6f + (i + 1) * 0.5f).rotateX((float) Math.sin(i) * 0.2f)));
+            }
+            if (i == 0) return; // le temps qu'elle se lève
+            sound(center, "block.beacon.power_select", 2f, 1.6f);
+            for (Player p : nearby(altar, cfg("arena-radius", 18) + 6)) {
+                Location target = ground(p.getLocation().clone());
+                ring(target, 2.2, Color.fromRGB(80, 220, 255), 14);
+                later(14, () -> {
+                    Vector dv = target.toVector().subtract(center.toVector());
+                    double len = dv.length();
+                    dv.normalize();
+                    for (double t = sz * 0.5; t < len; t += 0.5) {
+                        Location l = center.clone().add(dv.clone().multiply(t));
+                        center.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, l, 2, 0.12, 0.12, 0.12, 0.005, null, true);
+                        if (((int) (t * 2)) % 3 == 0) center.getWorld().spawnParticle(Particle.END_ROD, l, 1, 0.05, 0.05, 0.05, 0, null, true);
+                    }
+                    target.getWorld().spawnParticle(Particle.EXPLOSION, target.clone().add(0, 0.5, 0), 2, 0.5, 0.2, 0.5, 0, null, true);
+                    target.getWorld().spawnParticle(Particle.SOUL, target.clone().add(0, 0.4, 0), 20, 1, 0.2, 1, 0.03, null, true);
+                    sound(target, "entity.warden.sonic_boom", 1.2f, 1.7f);
+                    for (Player v : nearby(target, 2.3)) v.damage(cfg("damage.eclipse", 8) * mult(), boss);
+                });
+            }
+        }, () -> later(18, () -> {
+            Location mc = center.clone();
+            mc.getWorld().spawnParticle(Particle.EXPLOSION_EMITTER, mc, 3, 2, 2, 2, 0, null, true);
+            mc.getWorld().spawnParticle(Particle.BLOCK, mc, 200, 3, 3, 3, 0, Material.PUMPKIN.createBlockData(), true);
+            sound(mc, "entity.generic.explode", 4f, 0.6f);
+            moon.remove();
+            props.remove(moon);
+        }));
+    }
+
+    /** Lame des âmes : une épée géante balaie la moitié de l'arène, puis l'autre. Il faut changer de côté à temps. */
+    private void soulBlade() {
+        announce("soul-blade");
+        boss.setAI(false);
+        swing();
+        Location c = ground(altar.clone().add(0.5, 0, 0.5));
+        double arena = cfg("arena-radius", 18);
+        double a0 = ThreadLocalRandom.current().nextDouble(Math.PI * 2);
+        Vector n = new Vector(Math.cos(a0), 0, Math.sin(a0));
+        sound(c, "block.respawn_anchor.charge", 3f, 0.5f);
+        sweepHalf(c, n, arena + 1, 0);
+        sweepHalf(c, n.clone().multiply(-1), arena + 1, 46);
+        wake(46 + 48);
+    }
+
+    private void sweepHalf(Location c, Vector n, double radius, int delay) {
+        later(delay, () -> {
+            // avertissement : la moitié visée se couvre de rouge
+            repeat(4, 8, i -> {
+                for (double x = -radius; x <= radius; x += 2) {
+                    for (double z = -radius; z <= radius; z += 2) {
+                        if (x * x + z * z > radius * radius || x * n.getX() + z * n.getZ() < 0) continue;
+                        Location l = ground(c.clone().add(x, 0, z)).add(0, 0.15, 0);
+                        c.getWorld().spawnParticle(Particle.DUST, l, 1, 0.4, 0, 0.4, 0, new Particle.DustOptions(Color.fromRGB(170, 10, 30), 1.6f), true);
+                    }
+                }
+            }, null);
+            later(32, () -> {
+                swing();
+                float s = (float) (radius / 1.25);
+                ItemDisplay sword = c.getWorld().spawn(c.clone().add(0, 1.6, 0), ItemDisplay.class, e -> {
+                    e.setPersistent(false);
+                    e.getPersistentDataContainer().set(bossKey, PersistentDataType.BYTE, (byte) 4);
+                    e.setItemStack(blade());
+                    e.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
+                    e.setBrightness(new Display.Brightness(15, 15));
+                    e.setGlowing(true);
+                    e.setGlowColorOverride(Color.fromRGB(0x5ff3ff));
+                    e.setTeleportDuration(1);
+                    e.setViewRange(6f);
+                    e.setTransformation(new Transformation(new Vector3f((float) radius * 0.5f, 0, 0),
+                            new Quaternionf().rotateZ((float) Math.toRadians(-45)), new Vector3f(s, s, s), new Quaternionf()));
+                });
+                props.add(sword);
+                double phiN = Math.toDegrees(Math.atan2(n.getZ(), n.getX()));
+                Set<UUID> hit = new HashSet<>();
+                sound(c, "item.trident.riptide_3", 3f, 0.5f);
+                repeat(1, 10, i -> {
+                    double ang = phiN - 90 + 180.0 * (i + 1) / 10;
+                    Location l = c.clone().add(0, 1.6, 0);
+                    l.setYaw((float) ang);
+                    sword.teleport(l);
+                    double rad = Math.toRadians(ang);
+                    Vector along = new Vector(Math.cos(rad), 0, Math.sin(rad));
+                    for (double d = 2; d <= radius; d += 1.5) {
+                        Location p = c.clone().add(along.clone().multiply(d)).add(0, 1, 0);
+                        c.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, p, 2, 0.2, 0.4, 0.2, 0.01, null, true);
+                        if (d % 4.5 < 1.5) c.getWorld().spawnParticle(Particle.SWEEP_ATTACK, p, 1, 0, 0, 0, 0, null, true);
+                    }
+                    if (i % 3 == 0) sound(c, "entity.player.attack.sweep", 3f, 0.5f);
+                    for (Player p : nearby(c, radius + 1)) {
+                        Vector to = p.getLocation().toVector().subtract(c.toVector()).setY(0);
+                        if (to.getX() * n.getX() + to.getZ() * n.getZ() < -0.5 || !hit.add(p.getUniqueId())) continue;
+                        p.damage(cfg("damage.soul-blade", 15) * mult(), boss);
+                        p.setVelocity(n.clone().multiply(1.1).setY(0.6));
+                    }
+                }, () -> {
+                    sword.remove();
+                    props.remove(sword);
+                });
+            });
+        });
+    }
+
+    /** Carillon : des lanternes tombent sur une case sur deux (damier), puis sur les autres. */
+    private void carillon() {
+        announce("carillon");
+        swing();
+        Location c = ground(altar.clone().add(0.5, 0, 0.5));
+        double arena = cfg("arena-radius", 18);
+        int cell = 3;
+        int rounds = 3;
+        boolean start = ThreadLocalRandom.current().nextBoolean();
+        for (int round = 0; round < rounds; round++) {
+            boolean parity = (round % 2 == 0) == start;
+            later(round * 34, () -> {
+                List<Location> cells = new ArrayList<>();
+                for (int ix = (int) -Math.floor(arena / cell); ix <= arena / cell; ix++) {
+                    for (int iz = (int) -Math.floor(arena / cell); iz <= arena / cell; iz++) {
+                        double x = ix * cell, z = iz * cell;
+                        if (x * x + z * z > arena * arena) continue;
+                        if (((Math.abs(ix) + Math.abs(iz)) % 2 == 0) != parity) continue;
+                        cells.add(ground(c.clone().add(x, 0, z)));
+                    }
+                }
+                sound(c, "block.bell.use", 3f, 0.6f);
+                repeat(4, 6, i -> {
+                    for (Location l : cells) {
+                        for (int k = -1; k <= 1; k++) {
+                            for (int[] e : new int[][]{{k, -1}, {k, 1}, {-1, k}, {1, k}}) {
+                                c.getWorld().spawnParticle(Particle.DUST, l.clone().add(e[0] * 1.4, 0.12, e[1] * 1.4), 1, 0, 0, 0, 0,
+                                        new Particle.DustOptions(Color.fromRGB(255, 120, 0), 1.1f), true);
+                            }
+                        }
+                    }
+                }, null);
+                later(24, () -> {
+                    Set<UUID> hit = new HashSet<>();
+                    for (Location l : cells) {
+                        BlockDisplay lan = l.getWorld().spawn(l.clone().add(0, 9, 0), BlockDisplay.class, e -> {
+                            e.setPersistent(false);
+                            e.getPersistentDataContainer().set(bossKey, PersistentDataType.BYTE, (byte) 4);
+                            e.setBlock(Material.SOUL_LANTERN.createBlockData());
+                            e.setBrightness(new Display.Brightness(15, 15));
+                            e.setTeleportDuration(1);
+                            e.setTransformation(centered(1.8f, new Quaternionf()));
+                        });
+                        props.add(lan);
+                        repeat(1, 6, i -> lan.teleport(l.clone().add(0, 9 - 9 * (i + 1) / 6.0 + 0.9, 0)), () -> {
+                            lan.remove();
+                            props.remove(lan);
+                            l.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, l.clone().add(0, 0.3, 0), 10, 0.8, 0.1, 0.8, 0.03, null, true);
+                            for (Player p : l.getWorld().getPlayers()) {
+                                Location pl = p.getLocation();
+                                if (Math.abs(pl.getX() - l.getX()) <= 1.6 && Math.abs(pl.getZ() - l.getZ()) <= 1.6 && Math.abs(pl.getY() - l.getY()) < 3
+                                        && hit.add(p.getUniqueId()) && !nearby(pl, 0.1).isEmpty()) {
+                                    p.damage(cfg("damage.carillon", 9) * mult(), boss);
+                                }
+                            }
+                        });
+                    }
+                    later(6, () -> {
+                        sound(c, "block.bell.resonate", 3f, 0.7f);
+                        sound(c, "block.anvil.land", 2f, 0.5f);
+                        shake(c, cfg("arena-radius", 18) + 4);
+                    });
+                });
+            });
+        }
+    }
+
+    /** Il bondit dans le ciel, son ombre suit un joueur, puis il s'écrase avec trois ondes de choc. */
+    private void leap() {
+        List<Player> near = nearby(boss.getLocation(), 28);
+        if (near.isEmpty()) return;
+        Player target = near.get(ThreadLocalRandom.current().nextInt(near.size()));
+        announce("leap");
+        boss.setAI(false);
+        swing();
+        Location start = boss.getLocation().clone();
+        sound(start, "entity.ravager.roar", 3f, 0.6f);
+        start.getWorld().spawnParticle(Particle.CLOUD, start, 40, 1.5, 0.2, 1.5, 0.1, null, true);
+        double h = 17;
+        repeat(1, 10, i -> {
+            Location l = start.clone().add(0, h * (i + 1) / 10.0, 0);
+            l.setYaw(boss.getYaw());
+            boss.teleport(l);
+        }, () -> {
+            Location[] shadow = {ground(target.getLocation().clone())};
+            repeat(2, 18, i -> {
+                if (target.isOnline() && target.getWorld() == altar.getWorld()
+                        && horizontalDist(target.getLocation(), altar) <= cfg("arena-radius", 18) + 4) {
+                    shadow[0] = ground(target.getLocation().clone());
+                }
+                Location up = shadow[0].clone().add(0, h, 0);
+                up.setYaw(boss.getYaw());
+                boss.teleport(up);
+                for (int k = 0; k < 24; k++) {
+                    double a = Math.PI * 2 * k / 24;
+                    shadow[0].getWorld().spawnParticle(Particle.DUST, shadow[0].clone().add(Math.cos(a) * 4.5, 0.15, Math.sin(a) * 4.5), 1, 0, 0, 0, 0,
+                            new Particle.DustOptions(Color.fromRGB(20, 20, 30), 1.6f), true);
+                }
+                shadow[0].getWorld().spawnParticle(Particle.LARGE_SMOKE, shadow[0].clone().add(0, 0.2, 0), 6, 1.5, 0, 1.5, 0, null, true);
+            }, () -> {
+                Location lock = shadow[0].clone();
+                ring(lock, 4.5, Color.fromRGB(220, 20, 20), 12);
+                sound(lock, "entity.wither.shoot", 2f, 0.5f);
+                later(12, () -> repeat(1, 4, i -> {
+                    Location l = lock.clone().add(0, h * (1 - (i + 1) / 4.0), 0);
+                    l.setYaw(boss.getYaw());
+                    boss.teleport(l);
+                }, () -> {
+                    swing();
+                    lock.getWorld().spawnParticle(Particle.EXPLOSION_EMITTER, lock, 2, 1, 0.3, 1, 0, null, true);
+                    lock.getWorld().spawnParticle(Particle.BLOCK, lock.clone().add(0, 0.5, 0), 160, 3, 0.6, 3, 0,
+                            lock.clone().add(0, -1, 0).getBlock().getBlockData(), true);
+                    sound(lock, "entity.generic.explode", 4f, 0.5f);
+                    sound(lock, "block.anvil.land", 3f, 0.5f);
+                    shake(lock, 30);
+                    for (Player p : nearby(lock, 4.5)) {
+                        p.damage(cfg("damage.leap", 14) * mult(), boss);
+                        Vector kb = p.getLocation().toVector().subtract(lock.toVector()).setY(0);
+                        if (kb.lengthSquared() < 0.01) kb = new Vector(0.1, 0, 0);
+                        p.setVelocity(kb.normalize().multiply(1.3).setY(0.9));
+                    }
+                    // trois anneaux qui s'élargissent : il faut sauter par-dessus
+                    for (int w = 0; w < 3; w++) {
+                        int ww = w;
+                        later(w * 9, () -> {
+                            Set<UUID> hit = new HashSet<>();
+                            repeat(1, 18, i -> {
+                                double r = 2 + i * 1.1;
+                                int pts = (int) Math.max(24, r * 7);
+                                for (int k = 0; k < pts; k++) {
+                                    double a = Math.PI * 2 * k / pts;
+                                    lock.getWorld().spawnParticle(ww == 1 ? Particle.SOUL_FIRE_FLAME : Particle.FLAME,
+                                            lock.clone().add(Math.cos(a) * r, 0.3, Math.sin(a) * r), 1, 0, 0.05, 0, 0.005, null, true);
+                                }
+                                for (Player p : nearby(lock, r + 1)) {
+                                    double d = horizontalDist(p.getLocation(), lock);
+                                    if (Math.abs(d - r) > 0.9 || !p.isOnGround() || !hit.add(p.getUniqueId())) continue;
+                                    p.damage(cfg("damage.leap-ring", 6) * mult(), boss);
+                                    p.setVelocity(p.getVelocity().setY(0.5));
+                                }
+                            }, null);
+                        });
+                    }
+                    wake(30);
+                }));
+            });
+        });
+    }
+
+    private static double horizontalDist(Location a, Location b) {
+        return Math.hypot(a.getX() - b.getX(), a.getZ() - b.getZ());
+    }
+
+    /** Festin : des chaînes d'âmes le relient aux joueurs proches et lui rendent de la vie. Il faut s'éloigner pour les briser. */
+    private void feast() {
+        Location c = boss.getLocation().clone();
+        List<Player> near = nearby(c, 11);
+        if (near.isEmpty()) {
+            leap();
+            return;
+        }
+        announce("feast");
+        boss.setAI(false);
+        swing();
+        sound(c, "block.sculk_shrieker.shriek", 3f, 0.6f);
+        sound(c, "entity.warden.heartbeat", 3f, 0.5f);
+        double range = 15;
+        Set<UUID> linked = new HashSet<>();
+        for (Player p : near) {
+            linked.add(p.getUniqueId());
+            p.sendActionBar(parse(plugin.msg("boss.feast-warning")));
+        }
+        repeat(2, 45, i -> {
+            if (boss == null || !boss.isValid()) return;
+            Location heart = boss.getLocation().add(0, scale * 1.2, 0);
+            for (UUID id : new ArrayList<>(linked)) {
+                Player p = Bukkit.getPlayer(id);
+                if (p == null || p.isDead() || p.getWorld() != heart.getWorld() || p.getLocation().distance(heart) > range) {
+                    linked.remove(id);
+                    if (p != null && p.isOnline()) {
+                        sound(p.getLocation(), "block.chain.break", 1.5f, 0.6f);
+                        p.getWorld().spawnParticle(Particle.SOUL, p.getLocation().add(0, 1, 0), 15, 0.4, 0.4, 0.4, 0.05, null, true);
+                    }
+                    continue;
+                }
+                Location from = p.getLocation().add(0, 1, 0);
+                Vector dv = heart.toVector().subtract(from.toVector());
+                double len = dv.length();
+                dv.normalize();
+                for (double t = (i % 3) * 0.3; t < len; t += 0.9) {
+                    Location l = from.clone().add(dv.clone().multiply(t));
+                    heart.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, l, 1, 0.03, 0.03, 0.03, 0, null, true);
+                    heart.getWorld().spawnParticle(Particle.DUST, l, 1, 0, 0, 0, 0, new Particle.DustOptions(Color.fromRGB(60, 200, 230), 0.9f), true);
+                }
+                if (i % 5 == 0) {
+                    p.damage(cfg("damage.feast", 3) * mult(), boss);
+                    hp = Math.min(maxHp, hp + maxHp * cfg("feast-heal-percent", 1.0) / 100.0);
+                    heart.getWorld().spawnParticle(Particle.HEART, heart, 2, 0.6, 0.6, 0.6, 0, null, true);
+                }
+            }
+        }, null);
+        wake(92);
+    }
+
+    // ================================================================= fausse mort → Roi Sans Tête
+
+    /** Fin de la phase 2 : il s'effondre... puis se relève, toute sa vie revenue. */
+    private void resurrect() {
+        reviving = true;
+        hp = 0;
+        invulnerable = Integer.MAX_VALUE / 4;
+        Location c = boss.getLocation().clone();
+        boss.setAI(false);
+        for (Entity m : minions) m.remove();
+        minions.clear();
+        bar.name(parse(plugin.msg("boss.bar-dead")));
+        bar.progress(0f);
+        titleAll("boss.title-fake-death", "boss.subtitle-fake-death");
+        sound(c, "entity.wither.death", 3f, 0.7f);
+        float from = scale;
+        repeat(1, 30, i -> {
+            if (boss == null || !boss.isValid()) return;
+            setScale(from - (from - 1.6f) * (i + 1) / 30f);
+            boss.getWorld().spawnParticle(Particle.LARGE_SMOKE, boss.getLocation().add(0, 1, 0), 8, 0.8, 0.8, 0.8, 0.02, null, true);
+        }, null);
+        for (ItemDisplay d : border) if (d.isValid()) d.setItemStack(new ItemStack(Material.CARVED_PUMPKIN));
+        for (ItemDisplay d : orbit) if (d.isValid()) d.setItemStack(new ItemStack(Material.CARVED_PUMPKIN));
+        if (crown != null && crown.isValid()) crown.setGlowing(false);
+        // silence... puis le cœur se remet à battre, les âmes de l'arène affluent vers lui
+        later(50, () -> {
+            for (Player p : nearby(c, 60)) p.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 120, 0, false, false, false));
+        });
+        later(60, () -> repeat(2, 45, i -> {
+            if (boss == null || !boss.isValid()) return;
+            Location b = boss.getLocation().add(0, 1, 0);
+            double arena = cfg("arena-radius", 18);
+            ThreadLocalRandom r = ThreadLocalRandom.current();
+            for (int k = 0; k < 8; k++) {
+                double a = r.nextDouble(Math.PI * 2);
+                Location src = ground(altar.clone().add(0.5 + Math.cos(a) * arena, 0, 0.5 + Math.sin(a) * arena)).add(0, 1, 0);
+                Vector v = b.toVector().subtract(src.toVector());
+                b.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, src, 0, v.getX(), v.getY(), v.getZ(), 0.06, null, true);
+            }
+            bar.progress((float) Math.min(1, (i + 1) / 45.0));
+            if (i % 8 == 0) sound(b, "entity.warden.heartbeat", 3f, 0.5f + i * 0.02f);
+            if (i % 15 == 0) shake(b, 30);
+        }, null));
+        later(155, () -> {
+            if (boss == null || !boss.isValid()) return;
+            phase = 3;
+            maxHp = perPlayer() * fighters;
+            hp = maxHp;
+            Location h = boss.getLocation().add(0, scale * 1.8, 0);
+            h.getWorld().spawnParticle(Particle.EXPLOSION_EMITTER, h, 2, 0.5, 0.5, 0.5, 0, null, true);
+            h.getWorld().spawnParticle(Particle.BLOCK, h, 160, 1, 1, 1, 0, Material.PUMPKIN.createBlockData(), true);
+            h.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, h, 120, 1.5, 1.5, 1.5, 0.15, null, true);
+            sound(h, "entity.generic.explode", 4f, 0.6f);
+            sound(h, "entity.wither.spawn", 4f, 0.8f);
+            EntityEquipment eq = boss.getEquipment();
+            eq.setHelmet(new ItemStack(Material.CARVED_PUMPKIN));
+            eq.setChestplate(leather(Material.LEATHER_CHESTPLATE, 0x1a0f2e));
+            eq.setLeggings(leather(Material.LEATHER_LEGGINGS, 0x120a20));
+            eq.setBoots(leather(Material.LEATHER_BOOTS, 0x0a0612));
+            for (ItemDisplay d : orbit) if (d.isValid()) d.setItemStack(new ItemStack(Material.SOUL_LANTERN));
+            for (ItemDisplay d : border) if (d.isValid()) d.setItemStack(new ItemStack(Material.SOUL_LANTERN));
+            if (crown != null && crown.isValid()) {
+                crown.setGlowing(true);
+                crown.setGlowColorOverride(Color.fromRGB(0x7ff3ff));
+            }
+            boss.customName(parse(plugin.msg("boss.name-headless")));
+            double arena = cfg("arena-radius", 18);
+            for (int k = 0; k < 10; k++) {
+                double a = Math.PI * 2 * k / 10;
+                altar.getWorld().strikeLightningEffect(ground(altar.clone().add(0.5 + Math.cos(a) * arena, 0, 0.5 + Math.sin(a) * arena)));
+            }
+            titleAll("boss.title-headless", "boss.subtitle-headless");
+            bar.color(BossBar.Color.BLUE);
+            shockwave(boss.getLocation(), 14, 1.8, cfg("damage.phase-shockwave", 4) * 1.5);
+            float to = (float) cfg("scale-phase-3-v2", 4.6);
+            repeat(1, 25, i -> {
+                if (boss == null || !boss.isValid()) return;
+                scale = 1.6f + (to - 1.6f) * (i + 1) / 25f;
+                setScale(scale);
+            }, null);
+            AttributeInstance sp = boss.getAttribute(Attribute.MOVEMENT_SPEED);
+            if (sp != null) sp.setBaseValue(cfg("speed", 0.24) * 1.4);
+        });
+        later(185, () -> {
+            reviving = false;
+            invulnerable = 0;
+            if (boss != null && boss.isValid()) boss.setAI(true);
+            nextAttack = 25;
         });
     }
 
@@ -1100,7 +1805,7 @@ public final class PumpkinKing {
     }
 
     private double perPlayer() {
-        return Math.max(1, cfg("health-per-player", 1200));
+        return Math.max(1, cfg("health-per-player", 1200)) * (phase == 3 ? cfg("phase-3-health-multiplier", 1.0) : 1.0);
     }
 
     private double minPct() {
