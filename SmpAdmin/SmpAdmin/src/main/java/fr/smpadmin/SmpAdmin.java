@@ -42,6 +42,10 @@ public final class SmpAdmin extends JavaPlugin {
         input = new ChatInput(this);
         listener = new AdminListener(this);
         getServer().getPluginManager().registerEvents(listener, this);
+        Refunds refunds = new Refunds(this);
+        getServer().getPluginManager().registerEvents(refunds, this);
+        PluginCommand rc = getCommand("refund");
+        if (rc != null) { rc.setExecutor(refunds); rc.setTabCompleter(refunds); }
 
         AdminCommand cmd = new AdminCommand(this);
         for (String name : COMMANDS) {
