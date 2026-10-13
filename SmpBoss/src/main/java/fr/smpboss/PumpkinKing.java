@@ -184,7 +184,8 @@ public final class PumpkinKing {
             z.setHealth(1024);
             base(z, Attribute.SCALE, 0.4);
             base(z, Attribute.MOVEMENT_SPEED, cfg("speed", 0.24));
-            base(z, Attribute.ATTACK_DAMAGE, cfg("melee-damage", 9));
+            // l'épée en netherite ajoute +7 : on retire ce bonus pour garder melee-damage au total
+            base(z, Attribute.ATTACK_DAMAGE, Math.max(1, cfg("melee-damage", 9) - 7));
             base(z, Attribute.KNOCKBACK_RESISTANCE, 1);
             base(z, Attribute.FOLLOW_RANGE, 48);
             EntityEquipment eq = z.getEquipment();
