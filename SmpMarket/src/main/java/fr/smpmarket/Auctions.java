@@ -66,7 +66,8 @@ public final class Auctions {
     private void reclaimInactive(Stall st) {
         UUID old = st.owner;
         String oldName = st.ownerName;
-        double refund = Math.max(0, st.paid);
+        // stands achetés avant cette mise à jour : on ne connaît pas le prix payé, on rend le prix de départ
+        double refund = st.paid > 0 ? st.paid : Math.max(0, st.startPrice);
         if (st.auction != null) cancel(st);
         evict(st);
         if (old != null && refund > 0) eco().give(Bukkit.getOfflinePlayer(old), refund);
