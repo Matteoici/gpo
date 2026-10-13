@@ -68,7 +68,8 @@ public final class StallMenu extends Menu {
         button(48, item(stall.autoRenew ? Material.REPEATER : Material.COMPARATOR, "gui.stall.autorenew",
                 pc("state", t().get(stall.autoRenew ? "gui.stall.on" : "gui.stall.off")), ph("price", money(stall.startPrice))), c -> {
             stall.autoRenew = !stall.autoRenew;
-            plugin.store().markDirty();
+            stall.touch();
+                plugin.store().markDirty();
             t().send(viewer, stall.autoRenew ? "stall.auto-renew-on" : "stall.auto-renew-off");
             redraw();
         });
@@ -120,6 +121,7 @@ public final class StallMenu extends Menu {
             button(41, item(stall.privateStall ? Material.IRON_DOOR : Material.OAK_DOOR, "gui.stall.private",
                     pc("state", t().get(stall.privateStall ? "gui.stall.on" : "gui.stall.off"))), c -> {
                 stall.privateStall = !stall.privateStall;
+                stall.touch();
                 plugin.store().markDirty();
                 t().send(viewer, stall.privateStall ? "stall.private-on" : "stall.private-off");
                 redraw();
@@ -134,6 +136,7 @@ public final class StallMenu extends Menu {
                 var l = viewer.getLocation();
                 stall.npcSpot = new double[]{l.getX(), l.getY(), l.getZ(), l.getYaw()};
                 stall.mannequin = true;
+                stall.touch();
                 plugin.store().markDirty();
                 plugin.mannequins().refresh(stall);
                 t().send(viewer, "stall.mannequin-placed");
@@ -142,6 +145,7 @@ public final class StallMenu extends Menu {
             button(43, item(stall.mannequin ? Material.LIME_DYE : Material.GRAY_DYE, "gui.stall.mannequin-toggle",
                     pc("state", t().get(stall.mannequin ? "gui.stall.on" : "gui.stall.off"))), c -> {
                 stall.mannequin = !stall.mannequin;
+                stall.touch();
                 plugin.store().markDirty();
                 plugin.mannequins().refresh(stall);
                 redraw();

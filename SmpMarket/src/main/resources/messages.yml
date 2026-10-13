@@ -100,6 +100,8 @@ auction:
   won-broadcast: "<gold><b>🏪</b></gold> <white><player></white> <gray>a remporté le stand <white><stall></white> pour <gold><amount></gold> !"
   renewal-opened: "<yellow>Ta location du stand <white><shop></white> se termine dans <white><time></white>. <gray>L'enchère pour la suite est ouverte : enchéris pour garder ton stand. Sans offre, il sera renouvelé automatiquement pour <gold><price></gold> si l'option est activée."
   renewed: "<green>Tu gardes ton stand <white><shop></white> ! <gray>(<gold><amount></gold>) Location prolongée : <white><time></white> restants."
+  inactive-refund: "<yellow>Ton stand <white><shop></white> n'a pas été modifié depuis <white><time></white> : il repart aux enchères. <green>Tu as été remboursé de <gold><amount></gold><green>. <gray>Ton stock t'attend dans ton colis."
+  inactive-broadcast: "<gold>[Marché] <white><shop></white> <gray>(inactif) est de nouveau <green>aux enchères</green> <gray>! Fais une offre avec <white>/marche</white>."
   auto-renewed: "<green>Stand <white><shop></white> renouvelé automatiquement pour <gold><amount></gold>. <gray><white><time></white> restants."
   lost-stall: "<red>Ton stand <white><shop></white> a été repris par <white><player></white>. <gray>Tes objets t'attendent dans <aqua>/marche colis</aqua>."
   expired: "<red>Ta location du stand <white><shop></white> est terminée. <gray>Tes objets t'attendent dans <aqua>/marche colis</aqua>."

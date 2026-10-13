@@ -14,7 +14,7 @@ public final class Settings {
     public final String currency;
     public final long leaseMs, renewWindowMs;
     public final int maxPerPlayer;
-    public final long auctionMs, antiSnipeMs;
+    public final long auctionMs, antiSnipeMs, inactiveMs;
     public final double minIncrement, minIncrementPercent;
     public final double taxPercent;
     /** vente d'au moins X -> impôt de Y % (impôt progressif) */
@@ -45,7 +45,8 @@ public final class Settings {
         leaseMs = Math.max(1, (long) (c.getDouble("lease.days", 7) * 24 * H));
         renewWindowMs = Math.max(H, (long) (c.getDouble("lease.renew-window-hours", 24) * H));
         maxPerPlayer = Math.max(1, c.getInt("lease.max-per-player", 1));
-        auctionMs = Math.max(60_000L, (long) (c.getDouble("auction.duration-hours", 12) * H));
+        auctionMs = Math.max(60_000L, (long) (c.getDouble("auction.duration-hours", 2) * H));
+        inactiveMs = Math.max(0, (long) (c.getDouble("lease.inactive-hours", 24) * H));
         minIncrement = Math.max(1, c.getDouble("auction.min-increment", 100));
         minIncrementPercent = Math.max(0, c.getDouble("auction.min-increment-percent", 5));
         antiSnipeMs = Math.max(0, (long) (c.getDouble("auction.anti-snipe-minutes", 5) * 60_000L));

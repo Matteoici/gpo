@@ -169,6 +169,85 @@ final class MarketListener implements Listener {
         }
     }
 
+    // ================================================================= aquariums : eau, seaux d'axolotl / de poissons
+
+    /** Le locataire peut vider un seau (eau, lave, axolotl, poisson...) dans son stand, même si la zone est protégée. */
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onBucketEmpty(org.bukkit.event.player.PlayerBucketEmptyEvent e) {
+        Block target = e.getBlockClicked().getRelative(e.getBlockFace());
+        Stall st = plugin.shops().stallAt(target);
+        if (st == null) st = plugin.shops().stallAt(e.getBlock());
+        if (st == null) return;
+        Player p = e.getPlayer();
+        if (plugin.isAdminBypass(p)) return;
+        if (st.canBuild(p.getUniqueId())) {
+            if (plugin.settings().overrideProtections) e.setCancelled(false);
+            st.touch();
+        } else if (plugin.settings().protectStalls) {
+            e.setCancelled(true);
+            plugin.texts().send(p, "protection.not-yours");
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onBucketFill(org.bukkit.event.player.PlayerBucketFillEvent e) {
+        Stall st = plugin.shops().stallAt(e.getBlockClicked());
+        if (st == null) return;
+        Player p = e.getPlayer();
+        if (plugin.isAdminBypass(p)) return;
+        if (st.canBuild(p.getUniqueId())) {
+            if (plugin.settings().overrideProtections) e.setCancelled(false);
+        } else if (plugin.settings().protectStalls) {
+            e.setCancelled(true);
+            plugin.texts().send(p, "protection.not-yours");
+        }
+    }
+
+    /** Personne d'autre ne peut repêcher les axolotls / poissons d'un stand. */
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onBucketEntity(org.bukkit.event.player.PlayerBucketEntityEvent e) {
+        Stall st = plugin.shops().stallAt(e.getEntity().getLocation());
+        if (st == null) return;
+        Player p = e.getPlayer();
+        if (plugin.isAdminBypass(p)) return;
+        if (st.canBuild(p.getUniqueId())) {
+            if (plugin.settings().overrideProtections) e.setCancelled(false);
+        } else {
+            e.setCancelled(true);
+            plugin.texts().send(p, "protection.not-yours");
+        }
+    }
+
+    /** Les animaux sortis d'un seau ou d'un œuf dans un stand apparaissent, même si la zone interdit les mobs. */
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onCreatureSpawn(org.bukkit.event.entity.CreatureSpawnEvent e) {
+        var r = e.getSpawnReason();
+        if (r != org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BUCKET
+                && r != org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG
+                && r != org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BREEDING) return;
+        if (plugin.shops().stallAt(e.getLocation()) != null && plugin.settings().overrideProtections) e.setCancelled(false);
+    }
+
+    /** L'eau / la lave d'un stand ne coule jamais dehors. */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onFlow(org.bukkit.event.block.BlockFromToEvent e) {
+        Stall from = plugin.shops().stallAt(e.getBlock());
+        if (from == null) return;
+        if (!from.region.contains(e.getToBlock())) e.setCancelled(true);
+    }
+
+    /** Les animaux d'un stand sont protégés des autres joueurs. */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onHurtPet(org.bukkit.event.entity.EntityDamageByEntityEvent e) {
+        if (e.getEntity() instanceof Player || !(e.getEntity() instanceof org.bukkit.entity.LivingEntity)) return;
+        Player attacker = e.getDamager() instanceof Player pl ? pl
+                : e.getDamager() instanceof org.bukkit.entity.Projectile pr && pr.getShooter() instanceof Player sh ? sh : null;
+        if (attacker == null) return;
+        Stall st = plugin.shops().stallAt(e.getEntity().getLocation());
+        if (st == null || !st.isRented() || st.canBuild(attacker.getUniqueId()) || plugin.isAdminBypass(attacker)) return;
+        e.setCancelled(true);
+    }
+
     // ================================================================= stand privé
 
     private final java.util.Map<java.util.UUID, Long> privateMsg = new java.util.HashMap<>();
@@ -192,17 +271,38 @@ final class MarketListener implements Listener {
         if (!plugin.settings().privateAllowed) return;
         Player p = e.getPlayer();
         Stall st = plugin.shops().stallAt(to.getBlock());
-        if (!blockedFrom(p, st)) return;
-        if (st.region.contains(from.getBlock())) {
+        if (!blockedFrom(p, st) || !st.insideCore(to)) return;
+        if (st.insideCore(from)) {
             // déjà dedans (le stand vient de passer en privé) : on le sort par l'entrée
             Location ent = st.entrance();
-            if (ent != null) p.teleport(ent);
+            if (ent != null) {
+                ent.setPitch(p.getLocation().getPitch());
+                p.teleport(ent);
+            }
         } else {
-            e.setTo(from);
-            org.bukkit.util.Vector back = from.toVector().subtract(to.toVector()).setY(0);
-            if (back.lengthSquared() > 1e-4) p.setVelocity(back.normalize().multiply(0.35).setY(0.1));
+            // on le bloque au seuil, sans le faire sauter : seule la position horizontale est annulée
+            Location back = from.clone();
+            back.setY(Math.min(from.getY(), to.getY()));
+            back.setYaw(to.getYaw());
+            back.setPitch(to.getPitch());
+            e.setTo(back);
+            org.bukkit.util.Vector push = from.toVector().subtract(to.toVector()).setY(0);
+            if (push.lengthSquared() > 1e-4) {
+                org.bukkit.util.Vector v = p.getVelocity();
+                p.setVelocity(push.normalize().multiply(0.2).setY(Math.min(0, v.getY())));
+            }
+            barrierFx(p, st, to);
         }
         warnPrivate(p, st);
+    }
+
+    /** Petit mur de lumière là où le joueur a tapé, visible par lui seul. */
+    private void barrierFx(Player p, Stall st, Location at) {
+        org.bukkit.Particle.DustOptions d = new org.bukkit.Particle.DustOptions(org.bukkit.Color.fromRGB(255, 80, 80), 0.9f);
+        for (int i = 0; i < 14; i++) {
+            double ox = (Math.random() - 0.5) * 1.6, oy = Math.random() * 2, oz = (Math.random() - 0.5) * 1.6;
+            p.spawnParticle(org.bukkit.Particle.DUST, at.getX() + ox, at.getBlockY() + oy, at.getZ() + oz, 1, 0, 0, 0, 0, d);
+        }
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)

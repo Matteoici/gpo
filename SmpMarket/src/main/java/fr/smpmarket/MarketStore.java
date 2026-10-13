@@ -152,6 +152,8 @@ public final class MarketStore {
             for (Map.Entry<UUID, String> t : s.trusted.entrySet()) y.set(b + "trusted." + t.getKey(), t.getValue());
             y.set(b + "total-sold", s.totalSold);
             y.set(b + "total-revenue", s.totalRevenue);
+            y.set(b + "last-change", s.lastChange);
+            y.set(b + "paid", s.paid);
             for (Showcase c : s.showcases) {
                 String cb = b + "showcases." + c.id + ".";
                 y.set(cb + "item", Items.encode(c.template));
@@ -268,6 +270,8 @@ public final class MarketStore {
         if (t != null) for (String k : t.getKeys(false)) s.trusted.put(UUID.fromString(k), t.getString(k, "?"));
         s.totalSold = c.getLong("total-sold");
         s.totalRevenue = c.getDouble("total-revenue");
+        s.lastChange = c.getLong("last-change", System.currentTimeMillis());
+        s.paid = c.getDouble("paid", 0);
         ConfigurationSection sc = c.getConfigurationSection("showcases");
         if (sc != null) for (String k : sc.getKeys(false)) {
             ConfigurationSection x = sc.getConfigurationSection(k);

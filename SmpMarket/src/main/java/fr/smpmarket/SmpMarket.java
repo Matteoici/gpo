@@ -31,6 +31,13 @@ public final class SmpMarket extends JavaPlugin {
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        if (getConfig().getInt("config-version", 1) < 2) {
+            // enchères de 2 h et stands inactifs remboursés au bout de 24 h
+            getConfig().set("auction.duration-hours", 2);
+            getConfig().set("lease.inactive-hours", 24);
+            getConfig().set("config-version", 2);
+            saveConfig();
+        }
         key = new NamespacedKey(this, "market");
         wandKey = new NamespacedKey(this, "wand");
         settings = new Settings(getConfig());

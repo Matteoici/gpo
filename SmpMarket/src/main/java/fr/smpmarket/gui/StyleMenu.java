@@ -31,7 +31,8 @@ public final class StyleMenu extends Menu {
     }
 
     private void apply() {
-        plugin.store().markDirty();
+        stall.touch();
+                plugin.store().markDirty();
         plugin.visuals().restyle(stall);
         redraw();
     }
@@ -121,7 +122,8 @@ public final class StyleMenu extends Menu {
                     t().send(viewer, "stall.bad-slogan");
                 } else {
                     stall.slogan = clean.isEmpty() ? null : clean;
-                    plugin.store().markDirty();
+                    stall.touch();
+                plugin.store().markDirty();
                     plugin.visuals().restyle(stall);
                     t().send(viewer, "stall.slogan-set");
                 }

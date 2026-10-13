@@ -1,3 +1,4 @@
+config-version: 2
 # =====================================================================
 #  SmpMarket - marché de joueurs (stands loués aux enchères + vitrines)
 #  Les textes sont dans messages.yml. Après une modification : /marche admin reload
@@ -13,11 +14,14 @@ lease:
   renew-window-hours: 24
   # nombre maximum de stands par joueur (en comptant les enchères où il est en tête)
   max-per-player: 1
+  # un stand acheté mais pas modifié (vitrines, stock, prix, style...) pendant X heures
+  # est remboursé à son acheteur et remis aux enchères (0 = jamais)
+  inactive-hours: 24
 
 # ---------------------------------------------------------------- Enchères
 auction:
   # durée d'une enchère sur un stand libre, à partir de la première offre (heures)
-  duration-hours: 12
+  duration-hours: 2
   # surenchère minimale : le plus grand des deux
   min-increment: 100
   min-increment-percent: 5

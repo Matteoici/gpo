@@ -55,7 +55,32 @@ public final class Auctions {
                 continue;
             }
             if (a != null && a.endsAt > 0 && now >= a.endsAt) resolve(st);
+            else if (st.isRented() && s().inactiveMs > 0 && st.lastChange > 0 && now - st.lastChange >= s().inactiveMs
+                    && (st.auction == null || !st.auction.hasBid())) {
+                reclaimInactive(st);
+            }
         }
+    }
+
+    /** Stand acheté mais pas modifié depuis X heures : on rembourse le locataire et le stand repart aux enchères. */
+    private void reclaimInactive(Stall st) {
+        UUID old = st.owner;
+        String oldName = st.ownerName;
+        double refund = Math.max(0, st.paid);
+        if (st.auction != null) cancel(st);
+        evict(st);
+        if (old != null && refund > 0) eco().give(Bukkit.getOfflinePlayer(old), refund);
+        st.paid = 0;
+        st.auction = new Auction();
+        if (old != null) {
+            plugin.notify(old, plugin.texts().get("auction.inactive-refund", stallTags(st), ph("amount", s().money(refund)),
+                    ph("time", Settings.time(s().inactiveMs))));
+        }
+        for (Player o : Bukkit.getOnlinePlayers()) {
+            plugin.texts().send(o, "auction.inactive-broadcast", stallTags(st), ph("player", oldName == null ? "?" : oldName));
+        }
+        plugin.store().save();
+        plugin.visuals().rebuild(st);
     }
 
     // ================================================================= offre
@@ -146,9 +171,11 @@ public final class Auctions {
         if (a.hasBid()) {
             if (!st.isRented()) {
                 assign(st, a.bidder, a.bidderName, now + s().leaseMs);
+                st.paid = a.bid;
                 announceWin(st, a);
             } else if (st.isOwner(a.bidder)) {
                 st.leaseEnd = Math.max(st.leaseEnd, now) + s().leaseMs;
+                st.paid = a.bid;
                 plugin.notify(st.owner, t.get("auction.renewed", stallTags(st), ph("amount", s().money(a.bid)),
                         ph("time", Settings.time(st.leaseEnd - now))));
             } else {
@@ -156,12 +183,14 @@ public final class Auctions {
                 evict(st);
                 plugin.notify(old, t.get("auction.lost-stall", stallTags(st), ph("player", a.bidderName)));
                 assign(st, a.bidder, a.bidderName, now + s().leaseMs);
+                st.paid = a.bid;
                 announceWin(st, a);
             }
         } else if (a.renewal && st.isRented()) {
             OfflinePlayer owner = Bukkit.getOfflinePlayer(st.owner);
             if (st.autoRenew && eco().has(owner, st.startPrice) && eco().take(owner, st.startPrice)) {
                 st.leaseEnd = Math.max(st.leaseEnd, now) + s().leaseMs;
+                st.paid = st.startPrice;
                 plugin.notify(st.owner, t.get("auction.auto-renewed", stallTags(st), ph("amount", s().money(st.startPrice)),
                         ph("time", Settings.time(st.leaseEnd - now))));
             } else {
@@ -206,6 +235,7 @@ public final class Auctions {
         st.trusted.clear();
         st.totalSold = 0;
         st.totalRevenue = 0;
+        st.touch();
         plugin.store().markDirty();
     }
 

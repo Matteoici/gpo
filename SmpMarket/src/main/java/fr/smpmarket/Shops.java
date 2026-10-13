@@ -56,6 +56,7 @@ public final class Shops {
             t().send(p, "showcase.outside-stall");
             return;
         }
+        if (st.canBuild(p.getUniqueId())) st.touch();
         if (!st.isOwner(p.getUniqueId())) {
             t().send(p, "showcase.not-your-stall");
             return;
@@ -98,6 +99,7 @@ public final class Shops {
 
     /** Met l'objet en main en vente au catalogue du stand (sans vitrine dans le monde). */
     public void createVirtual(Player p, Stall st, double price) {
+        if (st.canBuild(p.getUniqueId())) st.touch();
         if (!st.isOwner(p.getUniqueId())) {
             t().send(p, "showcase.not-your-stall");
             return;
@@ -139,6 +141,7 @@ public final class Shops {
     }
 
     public void buyShowcase(Player p, Stall st) {
+        if (st.canBuild(p.getUniqueId())) st.touch();
         if (st.extraShowcases >= s().maxExtraShowcases) {
             t().send(p, "upgrade.showcase-max", ph("max", st.showcaseLimit()));
             return;
@@ -155,6 +158,7 @@ public final class Shops {
     }
 
     public void buyCatalogSlot(Player p, Stall st) {
+        if (st.canBuild(p.getUniqueId())) st.touch();
         if (st.catalogSlots >= s().maxCatalogSlots) {
             t().send(p, "upgrade.catalog-max", ph("max", st.catalogSlots));
             return;
@@ -218,6 +222,7 @@ public final class Shops {
     }
 
     public int addStock(Player p, Stall st, Showcase c) {
+        if (st.canBuild(p.getUniqueId())) st.touch();
         int room = s().maxStock - c.stock;
         if (room <= 0) {
             t().send(p, "showcase.stock-full", ph("max", s().maxStock));
@@ -237,6 +242,7 @@ public final class Shops {
     }
 
     public void withdraw(Player p, Stall st, Showcase c, int amount) {
+        if (st.canBuild(p.getUniqueId())) st.touch();
         int n = Math.min(amount, Math.min(c.stock, space(p.getInventory(), c.template)));
         if (n <= 0) {
             t().send(p, c.stock <= 0 ? "showcase.empty" : "buy.no-space");
@@ -250,6 +256,7 @@ public final class Shops {
     }
 
     public void setPrice(Player p, Stall st, Showcase c, double price) {
+        if (st.canBuild(p.getUniqueId())) st.touch();
         if (price < s().minPrice || price > s().maxPrice) {
             t().send(p, "showcase.bad-price", ph("min", s().money(s().minPrice)), ph("max", s().money(s().maxPrice)));
             return;
@@ -261,6 +268,7 @@ public final class Shops {
     }
 
     public void remove(Player p, Stall st, Showcase c) {
+        if (st.canBuild(p.getUniqueId())) st.touch();
         int give = Math.min(c.stock, space(p.getInventory(), c.template));
         if (give > 0) give(p, c.template, give);
         int rest = c.stock - give;

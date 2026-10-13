@@ -58,6 +58,8 @@ public final class Stall {
     public final List<Showcase> showcases = new ArrayList<>();
     public Auction auction;
 
+    public long lastChange;                                // dernière modification par le locataire (ms)
+    public double paid;                                    // ce qu'il a payé pour ce stand (remboursé s'il est inactif)
     public long totalSold;
     public double totalRevenue;
 
@@ -75,6 +77,19 @@ public final class Stall {
 
     public boolean canBuild(UUID id) {
         return isOwner(id) || trusted.containsKey(id);
+    }
+
+    /** Intérieur du stand (sans le mur / la bordure) : c'est là que la zone privée commence. */
+    public boolean insideCore(Location l) {
+        if (l == null || l.getWorld() == null || !l.getWorld().getName().equals(region.world())) return false;
+        int x = l.getBlockX(), y = l.getBlockY(), z = l.getBlockZ();
+        int m = region.sizeX() > 3 && region.sizeZ() > 3 ? 1 : 0;
+        return x >= region.minX() + m && x <= region.maxX() - m && z >= region.minZ() + m && z <= region.maxZ() - m
+                && y >= region.minY() - 1 && y <= region.maxY() + 2;
+    }
+
+    public void touch() {
+        lastChange = System.currentTimeMillis();
     }
 
     public Location entrance() {
