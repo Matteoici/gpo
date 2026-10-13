@@ -10,7 +10,7 @@
 #    commands: au lieu d'un objet, lance ces commandes (%player%). icon: l'objet affiché
 #  Clic gauche = choisir la quantité, clic droit = acheter 1, shift + clic = un stack.
 # =====================================================================
-version: 3
+version: 4
 
 main:
   title: "<dark_gray>Boutique"
@@ -85,7 +85,7 @@ categories:
       - {material: SHULKER_BOX, price: 1000, max: 16}
       - {material: ENDER_CHEST, price: 900, max: 64}
       - {material: GLOWSTONE, price: 50}
-      - {material: TOTEM_OF_UNDYING, price: 9000}
+      - {material: TOTEM_OF_UNDYING, price: 4000}
       - {material: ENDER_PEARL, price: 150}
       - {material: GOLDEN_APPLE, price: 360}
       - {material: ENCHANTED_GOLDEN_APPLE, price: 30000, max: 64}
@@ -97,21 +97,6 @@ categories:
       - {material: POTION, potion: STRONG_STRENGTH, price: 600}
       - {material: POTION, potion: STRONG_SWIFTNESS, price: 420}
       - {material: POTION, potion: LONG_FIRE_RESISTANCE, price: 300}
-
-  stockage:
-    slot: 16
-    icon: CHEST
-    name: "<#c8a165><b>Stockage"
-    lore: ["<gray>Coffres, barils, coffre de l'End, shulkers."]
-    title: "<dark_gray>Boutique - Stockage"
-    rows: 3
-    currency: money
-    items:
-      - {material: CHEST, price: 15}
-      - {material: TRAPPED_CHEST, price: 25}
-      - {material: BARREL, price: 15}
-      - {material: ENDER_CHEST, price: 900, max: 64}
-      - {material: SHULKER_BOX, price: 1000, max: 16}
 
   nourriture:
     slot: 14
