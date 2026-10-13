@@ -115,24 +115,27 @@ rouge:
 violet:
   radius: 4.5
   ticks: 70
-# Violet creux 200 % : une boule violette géante part droit devant, à l'horizontale.
-# Elle efface tout sur son passage, puis au bout de "length" blocs elle explose
-# en une sphère encore plus grande. Tout grandit au rythme où le serveur efface
-# (jamais plus de "max-ms-per-tick" par tick : pas de lag).
+# Violet creux 200 % (comme l'animation) : la nuit tombe, éclairs violets, les orbes rouge et bleu
+# fusionnent, la boule se condense dans la main, Gojo la lance vers l'endroit visé ; elle file
+# en creusant une traînée, puis une colonne de lumière jaillit du sol jusqu'au ciel et efface tout.
+# Il reste un trou rond relié à la ligne de la boule. Effacement sans lag (budget de temps).
 nuke:
-  # rayon de la boule (= taille du tunnel)
-  ball-radius: 22
-  # distance avant l'explosion
-  length: 200
-  # rayon de l'explosion finale
+  # distance de visée max
+  range: 300
+  # rayon de la colonne (le trou)
   radius: 55
-  # vitesse max de la boule (blocs par tick) ; elle ralentit si l'effacement prend du retard
-  ball-speed: 3
-  min-speed: 0.6
-  max-ticks: 1200
-  # temps de calcul maximum par tick (ms, un tick = 50) : 30 laisse 20 ms au reste du serveur
+  # profondeur du trou et hauteur de la colonne
+  depth: 40
+  column-height: 220
+  # boule : vitesse (blocs par tick) et taille de la traînée creusée
+  ball-speed: 5
+  trail-radius: 4
+  # la colonne reste au moins ça (ticks), et tant que le trou se creuse (max "max-hold-ticks")
+  hold-ticks: 80
+  max-hold-ticks: 600
+  # temps de calcul maximum par tick (ms, un tick = 50)
   max-ms-per-tick: 30
-  # tunnel et cratère se reconstruisent après (secondes)
+  # tout se reconstruit après (secondes)
   restore-seconds: 360
 domain:
   radius: 13
