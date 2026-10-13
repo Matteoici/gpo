@@ -49,6 +49,12 @@ public final class SmpBoss extends JavaPlugin {
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        // mise à jour des réglages d'une ancienne config (sans toucher à ce que l'admin a changé)
+        if (getConfig().getInt("config-version", 1) < 2) {
+            if (getConfig().getDouble("loot.min-damage-percent", 3) == 3) getConfig().set("loot.min-damage-percent", 5);
+            getConfig().set("config-version", 2);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);

@@ -79,6 +79,9 @@ public final class PumpkinKing {
     private Zombie boss;
     private BossBar bar;
     private double hp, maxHp;
+    /** nombre de combattants pris en compte pour la vie (ne fait qu'augmenter) */
+    private int fighters;
+    private DamageBoard board;
     private int phase = 1;
     private int tick;
     private int invulnerable;
@@ -157,9 +160,12 @@ public final class PumpkinKing {
 
     private void spawnBoss(Location at) {
         World w = at.getWorld();
-        int players = Math.max(1, nearby(at, 45).size());
-        maxHp = cfg("health", 1500) + cfg("health-per-extra-player", 600) * (players - 1);
+        // vie proportionnelle au nombre de combattants : X PV par joueur (ceux qui sont là au réveil,
+        // puis chaque nouveau joueur qui le frappe en rajoute)
+        fighters = Math.max(1, nearby(at, 45).size());
+        maxHp = perPlayer() * fighters;
         hp = maxHp;
+        if (plugin.getConfig().getBoolean("boss.damage-sidebar", true)) board = new DamageBoard(plugin);
         scale = (float) cfg("scale", 3.0);
         boss = w.spawn(at, Zombie.class, z -> {
             z.setPersistent(false);
@@ -311,6 +317,7 @@ public final class PumpkinKing {
             else p.hideBossBar(bar);
         }
         bar.progress((float) Math.max(0, Math.min(1, hp / maxHp)));
+        if (board != null && tick % 10 == 0) board.update(near, hp, maxHp, damage, minPct());
 
         // laisse : il reste dans son arène
         double arena = cfg("arena-radius", 18);
@@ -367,6 +374,17 @@ public final class PumpkinKing {
     boolean hurt(Player by, double amount) {
         if (ended || invulnerable > 0 || boss == null) return false;
         if (by != null) damage.merge(by.getUniqueId(), amount, Double::sum);
+        // un joueur de plus sur le boss : sa vie grandit d'autant (le % de vie reste le même)
+        if (damage.size() > fighters) {
+            double old = maxHp;
+            fighters = damage.size();
+            maxHp = perPlayer() * fighters;
+            hp = hp * maxHp / old;
+            for (Player p : nearby(boss.getLocation(), 60)) {
+                p.sendActionBar(parse(plugin.msg("boss.new-fighter").replace("<player>", SmpBoss.MM.escapeTags(by.getName()))
+                        .replace("<hp>", String.valueOf((long) perPlayer()))));
+            }
+        }
         hp -= amount;
         damageNumber(amount);
         if (tick % 3 == 0) sound(boss.getLocation(), "block.wood.break", 1.2f, 0.6f);
@@ -1044,7 +1062,7 @@ public final class PumpkinKing {
     private void rewards() {
         double total = 0;
         for (double v : damage.values()) total += v;
-        double minPct = plugin.getConfig().getDouble("loot.min-damage-percent", 3) / 100.0;
+        double minPct = minPct();
         List<Map.Entry<UUID, Double>> sorted = new ArrayList<>(damage.entrySet());
         sorted.sort((a, b) -> Double.compare(b.getValue(), a.getValue()));
         Bukkit.broadcast(parse(plugin.msg("boss.defeated")));
@@ -1057,7 +1075,13 @@ public final class PumpkinKing {
         }
         for (var e : sorted) {
             Player p = Bukkit.getPlayer(e.getKey());
-            if (p == null || e.getValue() < total * minPct) continue;
+            if (p == null) continue;
+            if (e.getValue() < total * minPct) {
+                p.sendMessage(parse(plugin.msg("boss.not-enough").replace("<percent>",
+                        String.format(java.util.Locale.ROOT, "%.1f", e.getValue() * 100 / Math.max(1, total)))
+                        .replace("<min>", String.valueOf(Math.round(minPct * 100)))));
+                continue;
+            }
             plugin.loot().reward(p);
         }
         plugin.store().save(true);
@@ -1075,7 +1099,19 @@ public final class PumpkinKing {
         plugin.bossEnded();
     }
 
+    private double perPlayer() {
+        return Math.max(1, cfg("health-per-player", 1200));
+    }
+
+    private double minPct() {
+        return plugin.getConfig().getDouble("loot.min-damage-percent", 5) / 100.0;
+    }
+
     void cleanup() {
+        if (board != null) {
+            board.close();
+            board = null;
+        }
         for (BukkitTask t : tasks) t.cancel();
         tasks.clear();
         if (bar != null) for (Player p : Bukkit.getOnlinePlayers()) p.hideBossBar(bar);
