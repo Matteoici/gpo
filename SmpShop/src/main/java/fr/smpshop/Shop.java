@@ -53,7 +53,7 @@ public final class Shop {
     void load() {
         categories.clear();
         File f = new File(plugin.getDataFolder(), "shop.yml");
-        if (!f.exists()) plugin.saveResource("shop.yml", false);
+        plugin.upgrade("shop.yml", 2);
         YamlConfiguration y = YamlConfiguration.loadConfiguration(f);
         mainTitle = y.getString("main.title", mainTitle);
         mainRows = Math.max(1, Math.min(6, y.getInt("main.rows", 3)));

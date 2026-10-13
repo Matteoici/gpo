@@ -10,6 +10,7 @@
 #    commands: au lieu d'un objet, lance ces commandes (%player%). icon: l'objet affiché
 #  Clic gauche = choisir la quantité, clic droit = acheter 1, shift + clic = un stack.
 # =====================================================================
+version: 2
 
 main:
   title: "<dark_gray>Boutique"
@@ -25,27 +26,27 @@ categories:
     rows: 5
     currency: money
     items:
-      - {material: STONE, price: 3}
-      - {material: COBBLESTONE, price: 2}
+      - {material: STONE, price: 2}
+      - {material: COBBLESTONE, price: 1}
       - {material: DIRT, price: 1}
-      - {material: GRASS_BLOCK, price: 4}
-      - {material: SAND, price: 3}
-      - {material: GRAVEL, price: 3}
-      - {material: GLASS, price: 8}
-      - {material: OAK_LOG, price: 10}
-      - {material: SPRUCE_LOG, price: 10}
-      - {material: BIRCH_LOG, price: 10}
-      - {material: DARK_OAK_LOG, price: 10}
-      - {material: DEEPSLATE, price: 4}
-      - {material: STONE_BRICKS, price: 6}
-      - {material: BRICKS, price: 12}
-      - {material: SMOOTH_STONE, price: 6}
-      - {material: QUARTZ_BLOCK, price: 40}
-      - {material: WHITE_CONCRETE, price: 8}
-      - {material: BLACK_CONCRETE, price: 8}
-      - {material: TERRACOTTA, price: 8}
-      - {material: SEA_LANTERN, price: 100}
-      - {material: LANTERN, price: 30}
+      - {material: GRASS_BLOCK, price: 2}
+      - {material: SAND, price: 2}
+      - {material: GRAVEL, price: 2}
+      - {material: GLASS, price: 5}
+      - {material: OAK_LOG, price: 6}
+      - {material: SPRUCE_LOG, price: 6}
+      - {material: BIRCH_LOG, price: 6}
+      - {material: DARK_OAK_LOG, price: 6}
+      - {material: DEEPSLATE, price: 2}
+      - {material: STONE_BRICKS, price: 4}
+      - {material: BRICKS, price: 7}
+      - {material: SMOOTH_STONE, price: 4}
+      - {material: QUARTZ_BLOCK, price: 25}
+      - {material: WHITE_CONCRETE, price: 5}
+      - {material: BLACK_CONCRETE, price: 5}
+      - {material: TERRACOTTA, price: 5}
+      - {material: SEA_LANTERN, price: 60}
+      - {material: LANTERN, price: 20}
 
   nether:
     slot: 12
@@ -56,20 +57,20 @@ categories:
     rows: 4
     currency: money
     items:
-      - {material: NETHERRACK, price: 2}
-      - {material: SOUL_SAND, price: 15}
-      - {material: SOUL_SOIL, price: 15}
-      - {material: NETHER_BRICKS, price: 15}
-      - {material: RED_NETHER_BRICKS, price: 20}
-      - {material: MAGMA_BLOCK, price: 20}
-      - {material: BLACKSTONE, price: 4}
-      - {material: BASALT, price: 4}
-      - {material: GLOWSTONE, price: 80}
-      - {material: SHROOMLIGHT, price: 80}
-      - {material: CRIMSON_STEM, price: 10}
-      - {material: WARPED_STEM, price: 10}
-      - {material: NETHER_WART, price: 20}
-      - {material: CRYING_OBSIDIAN, price: 150}
+      - {material: NETHERRACK, price: 1}
+      - {material: SOUL_SAND, price: 9}
+      - {material: SOUL_SOIL, price: 9}
+      - {material: NETHER_BRICKS, price: 9}
+      - {material: RED_NETHER_BRICKS, price: 10}
+      - {material: MAGMA_BLOCK, price: 10}
+      - {material: BLACKSTONE, price: 2}
+      - {material: BASALT, price: 2}
+      - {material: GLOWSTONE, price: 50}
+      - {material: SHROOMLIGHT, price: 50}
+      - {material: CRIMSON_STEM, price: 6}
+      - {material: WARPED_STEM, price: 6}
+      - {material: NETHER_WART, price: 10}
+      - {material: CRYING_OBSIDIAN, price: 90}
 
   pvp:
     slot: 13
@@ -80,22 +81,22 @@ categories:
     rows: 4
     currency: money
     items:
-      - {material: OBSIDIAN, price: 50}
-      - {material: END_CRYSTAL, price: 800}
-      - {material: RESPAWN_ANCHOR, price: 2000}
-      - {material: GLOWSTONE, price: 80}
-      - {material: TOTEM_OF_UNDYING, price: 15000}
-      - {material: ENDER_PEARL, price: 250}
-      - {material: GOLDEN_APPLE, price: 600}
-      - {material: ENCHANTED_GOLDEN_APPLE, price: 50000, max: 64}
-      - {material: EXPERIENCE_BOTTLE, price: 100}
-      - {material: ARROW, amount: 16, price: 100}
-      - {material: COBWEB, price: 100}
-      - {material: SHIELD, price: 600, max: 16}
-      - {material: SPLASH_POTION, potion: STRONG_HEALING, price: 500}
-      - {material: POTION, potion: STRONG_STRENGTH, price: 1000}
-      - {material: POTION, potion: STRONG_SWIFTNESS, price: 700}
-      - {material: POTION, potion: LONG_FIRE_RESISTANCE, price: 500}
+      - {material: OBSIDIAN, price: 30}
+      - {material: END_CRYSTAL, price: 480}
+      - {material: RESPAWN_ANCHOR, price: 1200}
+      - {material: GLOWSTONE, price: 50}
+      - {material: TOTEM_OF_UNDYING, price: 9000}
+      - {material: ENDER_PEARL, price: 150}
+      - {material: GOLDEN_APPLE, price: 360}
+      - {material: ENCHANTED_GOLDEN_APPLE, price: 30000, max: 64}
+      - {material: EXPERIENCE_BOTTLE, price: 60}
+      - {material: ARROW, amount: 16, price: 60}
+      - {material: COBWEB, price: 60}
+      - {material: SHIELD, price: 360, max: 16}
+      - {material: SPLASH_POTION, potion: STRONG_HEALING, price: 300}
+      - {material: POTION, potion: STRONG_STRENGTH, price: 600}
+      - {material: POTION, potion: STRONG_SWIFTNESS, price: 420}
+      - {material: POTION, potion: LONG_FIRE_RESISTANCE, price: 300}
 
   stockage:
     slot: 16
@@ -106,10 +107,10 @@ categories:
     rows: 3
     currency: money
     items:
-      - {material: CHEST, price: 25}
-      - {material: TRAPPED_CHEST, price: 40}
-      - {material: BARREL, price: 25}
-      - {material: ENDER_CHEST, price: 1500, max: 64}
+      - {material: CHEST, price: 15}
+      - {material: TRAPPED_CHEST, price: 25}
+      - {material: BARREL, price: 15}
+      - {material: ENDER_CHEST, price: 900, max: 64}
 
   nourriture:
     slot: 14
@@ -120,13 +121,13 @@ categories:
     rows: 3
     currency: money
     items:
-      - {material: COOKED_BEEF, price: 10}
-      - {material: COOKED_PORKCHOP, price: 10}
-      - {material: COOKED_CHICKEN, price: 8}
-      - {material: COOKED_MUTTON, price: 8}
-      - {material: BREAD, price: 5}
-      - {material: GOLDEN_CARROT, price: 40}
-      - {material: CAKE, price: 100, max: 64}
+      - {material: COOKED_BEEF, price: 6}
+      - {material: COOKED_PORKCHOP, price: 6}
+      - {material: COOKED_CHICKEN, price: 5}
+      - {material: COOKED_MUTTON, price: 5}
+      - {material: BREAD, price: 3}
+      - {material: GOLDEN_CARROT, price: 25}
+      - {material: CAKE, price: 60, max: 64}
 
   halloween:
     slot: 15

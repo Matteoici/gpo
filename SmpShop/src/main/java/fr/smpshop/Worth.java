@@ -38,7 +38,7 @@ public final class Worth {
 
     void load() {
         File f = new File(plugin.getDataFolder(), "worth.yml");
-        if (!f.exists()) plugin.saveResource("worth.yml", false);
+        plugin.upgrade("worth.yml", 2);
         YamlConfiguration y = YamlConfiguration.loadConfiguration(f);
         Map<Material, Double> p = new EnumMap<>(Material.class);
         java.util.Set<Material> fixed = java.util.EnumSet.noneOf(Material.class);

@@ -194,4 +194,24 @@ public final class SmpShop extends JavaPlugin {
     public NamespacedKey menuKey() {
         return menuKey;
     }
+
+    /**
+     * Met à jour un fichier de prix livré avec le plugin quand sa version change :
+     * l'ancien est gardé à côté (nom-ancien-vX.yml), le nouveau le remplace.
+     */
+    void upgrade(String name, int version) {
+        java.io.File f = new java.io.File(getDataFolder(), name);
+        if (!f.exists()) {
+            saveResource(name, false);
+            return;
+        }
+        int cur = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(f).getInt("version", 1);
+        if (cur >= version) return;
+        java.io.File old = new java.io.File(getDataFolder(), name.replace(".yml", "") + "-ancien-v" + cur + ".yml");
+        if (old.exists()) old.delete();
+        if (f.renameTo(old)) {
+            saveResource(name, true);
+            getLogger().info(name + " mis à jour (v" + version + "). L'ancien est gardé dans " + old.getName());
+        }
+    }
 }

@@ -48,14 +48,6 @@ auto-price:
     - FARMLAND
     - DIRT_PATH
     - "TEST_*"
-    - PLAYER_HEAD
-    # string infinie + échanges villageois infinis : familles entières à 0
-    - "*_WOOL"
-    - "*_CARPET"
-    - "*_BED"
-    - "*_BANNER"
-    - "*_TERRACOTTA"
-    - "*_HORSE_ARMOR"
 
 # ---------------------------------------------------------------- Vente
 sell:
