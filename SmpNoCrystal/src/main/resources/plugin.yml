@@ -1,0 +1,17 @@
+name: SmpNoCrystal
+version: '${version}'
+main: fr.smpnocrystal.SmpNoCrystal
+api-version: '26.2'
+description: Interdit le crystal PvP et l'anchor PvP (cristaux seulement dans l'End, ancres seulement dans le Nether)
+commands:
+  nocrystal:
+    description: Recharger la config de SmpNoCrystal
+    usage: /nocrystal reload
+    permission: smpnocrystal.admin
+permissions:
+  smpnocrystal.admin:
+    description: Recharger la config
+    default: op
+  smpnocrystal.bypass:
+    description: Ignore les interdictions (staff, constructions)
+    default: false

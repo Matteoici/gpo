@@ -1,0 +1,29 @@
+# =====================================================================
+#  SmpNoCrystal - pas de crystal PvP ni d'anchor PvP
+#  Après une modification : /nocrystal reload
+# =====================================================================
+
+crystals:
+  # on ne peut poser des cristaux de l'End que dans ces dimensions
+  # (THE_END = pour pouvoir réinvoquer le dragon). NORMAL = monde normal, NETHER = Nether.
+  allowed-in: [THE_END]
+  # l'explosion d'un cristal ne fait aucun dégât aux joueurs (partout, même dans l'End)
+  no-player-damage: true
+
+anchors:
+  # une ancre de réapparition chargée explose quand on l'utilise hors du Nether :
+  # on bloque le clic droit dessus hors du Nether (elle sert toujours de point de réapparition dans le Nether)
+  block-outside-nether: true
+  # l'explosion d'une ancre ne fait aucun dégât aux joueurs
+  no-player-damage: true
+
+beds:
+  # même chose avec les lits dans le Nether / l'End (le "bed PvP") : false = autorisé
+  block-outside-overworld: false
+  no-player-damage: false
+
+messages:
+  crystal: "<red>Les cristaux de l'End ne se posent que dans l'End <gray>(pas de crystal PvP)."
+  anchor: "<red>Les ancres de réapparition ne s'utilisent que dans le Nether <gray>(pas d'anchor PvP)."
+  bed: "<red>Les lits explosent ici : interdit <gray>(pas de bed PvP)."
+  reloaded: "<green>SmpNoCrystal rechargé."
