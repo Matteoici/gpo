@@ -63,9 +63,9 @@ final class InvButtons implements Listener {
     private ItemStack button(Player p, String kind) {
         boolean bag = kind.equals("sac");
         boolean has = !bag || plugin.relics().hasBackpack(p);
-        ItemStack it = new ItemStack(bag ? (has ? Material.BUNDLE : Material.GRAY_DYE) : Material.TOTEM_OF_UNDYING);
+        ItemStack it = new ItemStack(bag ? Material.BUNDLE : Material.TOTEM_OF_UNDYING);
         ItemMeta m = it.getItemMeta();
-        String base = "inv-buttons." + (bag ? (has ? "bag" : "bag-locked") : "cosmetics");
+        String base = "inv-buttons." + (bag ? (has ? "bag" : "bag-unequipped") : "cosmetics");
         m.displayName(parse(plugin.msg(base + ".name")));
         List<Component> lore = new ArrayList<>();
         for (String s : plugin.getConfig().getStringList("messages." + base + ".lore")) lore.add(parse(s));
@@ -104,7 +104,9 @@ final class InvButtons implements Listener {
         if (g == null) return;
         ItemStack[] matrix = g.getMatrix();
         for (ItemStack it : matrix) if (it != null && !it.getType().isAir() && !isButton(it)) return; // il fabrique quelque chose
-        g.setItem(BAG, button(p, "sac"));
+        // le bouton Sac n'existe que pour ceux qui ont trouvé le sac (pas de spoil)
+        if (plugin.relics().ownsBackpack(p)) g.setItem(BAG, button(p, "sac"));
+        else if (isButton(g.getItem(BAG))) g.setItem(BAG, null);
         g.setItem(COSMETICS, button(p, "cosmetiques"));
     }
 
@@ -239,7 +241,7 @@ final class InvButtons implements Listener {
         if ("sac".equals(kind)) {
             if (plugin.relics().hasBackpack(p)) plugin.backpacks().open(p);
             else {
-                p.sendMessage(parse(plugin.msg("inv-buttons.bag-locked.message")));
+                p.sendMessage(parse(plugin.msg("backpack.not-equipped")));
                 p.playSound(p.getLocation(), org.bukkit.Sound.BLOCK_CHEST_LOCKED, 0.8f, 1.2f);
             }
         } else {

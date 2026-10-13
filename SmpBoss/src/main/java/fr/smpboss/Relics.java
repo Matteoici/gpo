@@ -95,6 +95,15 @@ public final class Relics {
         return true;
     }
 
+    /** Le joueur possède le sac (équipé ou non). Sinon on n'en parle jamais : pas de spoil. */
+    public boolean ownsBackpack(Player p) {
+        for (String id : plugin.store().of(p.getUniqueId()).relics) {
+            Relic r = get(id);
+            if (r != null && r.backpack()) return true;
+        }
+        return false;
+    }
+
     public boolean hasBackpack(Player p) {
         for (String id : plugin.store().of(p.getUniqueId()).equipped) {
             Relic r = get(id);

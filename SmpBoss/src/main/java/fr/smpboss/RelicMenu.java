@@ -111,8 +111,9 @@ public final class RelicMenu implements InventoryHolder {
         }
         drawFrames();
         if (bagInRow()) {
-            inv.setItem(BAG, plugin.relics().hasBackpack(viewer) ? named(Material.BUNDLE, "menu.open-backpack", null)
-                    : named(Material.GRAY_DYE, "menu.bag-locked", null));
+            // le sac n'apparaît que pour ceux qui l'ont (pas de spoil)
+            if (plugin.relics().hasBackpack(viewer)) inv.setItem(BAG, named(Material.BUNDLE, "menu.open-backpack", null));
+            else if (plugin.relics().ownsBackpack(viewer)) inv.setItem(BAG, named(Material.BUNDLE, "menu.bag-unequipped", null));
         }
         // collection
         List<Relic> all = catalog();
@@ -208,15 +209,12 @@ public final class RelicMenu implements InventoryHolder {
     }
 
     private ItemStack locked(Relic r) {
-        boolean secret = r.rarity() == Rarity.SECRET;
-        ItemStack it = new ItemStack(secret ? Material.BLACK_DYE : Material.GRAY_DYE);
+        // relique pas encore trouvée : ni nom, ni rareté, ni apparence (pas de spoil)
+        ItemStack it = new ItemStack(Material.GRAY_DYE);
         ItemMeta m = it.getItemMeta();
-        m.displayName(parse(secret ? "<dark_gray><b>???" : "<gray>" + SmpBoss.MM.escapeTags(r.name())));
+        m.displayName(parse("<dark_gray><b>???"));
         List<Component> lore = new ArrayList<>();
-        lore.add(parse(r.rarity().tag));
-        lore.add(Component.empty());
-        lore.add(parse(plugin.msg("menu.locked")));
-        if (!secret) lore.add(parse(plugin.msg("menu.click-preview")));
+        lore.add(parse(plugin.msg("menu.locked-v2")));
         m.lore(lore);
         m.addItemFlags(ItemFlag.values());
         it.setItemMeta(m);
@@ -343,8 +341,11 @@ public final class RelicMenu implements InventoryHolder {
             }
         }
         if (r == null) return;
+        if (!owned) {
+            viewer.playSound(Sound.sound(Key.key("minecraft", "block.chest.locked"), Sound.Source.MASTER, 0.7f, 1.3f));
+            return;
+        }
         if (type.isShiftClick()) {
-            if (!owned && r.rarity() == Rarity.SECRET) return;
             viewer.closeInventory();
             inspect(plugin, viewer, r);
             return;

@@ -263,6 +263,8 @@ messages:
   backpack:
     title: "<gradient:#ffffff:#6b2f84><b>Sac de la Récolte"
     none: "<red>Il te faut la relique <white>Sac de la Récolte</white> équipée (/reliques)."
+    not-equipped: "<red>Équipe ton <white>Sac de la Récolte</white> dans /reliques pour l'ouvrir."
+    unknown: "<red>Tu n'as pas de sac."
     lost: "<red>Ton sac s'est déchiré : <white><n></white> objet(s) sont tombés au sol."
   sickle:
     cooldown: "<gray>Moisson prête dans <white><s>s"
@@ -270,10 +272,9 @@ messages:
     bag:
       name: "<gradient:#ffb347:#ff7a00><b>Sac de la Récolte"
       lore: ["<gray>27 cases rien qu'à toi.", "", "<yellow>▶ Clic : ouvrir"]
-    bag-locked:
-      name: "<gray><b>Sac verrouillé"
-      lore: ["<dark_gray>Relique secrète du Roi Citrouille.", "<dark_gray>Équipe le Sac de la Récolte pour l'ouvrir ici."]
-      message: "<red>Il te faut la relique <white>Sac de la Récolte</white> équipée (/reliques)."
+    bag-unequipped:
+      name: "<gray><b>Sac de la Récolte <dark_gray>(pas équipé)"
+      lore: ["<dark_gray>Équipe-le dans /reliques pour l'ouvrir."]
     cosmetics:
       name: "<gradient:#ffd36b:#ff7a00><b>Cosmétiques & Reliques"
       lore: ["<gray>Équipe tes reliques, admire-les en 3D", "<gray>et récupère ton butin.", "", "<yellow>▶ Clic : ouvrir"]
@@ -304,16 +305,15 @@ messages:
     collection-label: "<gold><b>▼ COLLECTION ▼</b> <gray>(<white><n></white>/<total>)"
     collection-lore:
       - "<gray>Toutes les reliques du serveur."
-      - "<gray>En couleur : les tiennes · grisées : à trouver."
+      - "<gray>Les « ??? » sont encore à découvrir."
       - ""
       - "<yellow>Clic <gray>: équiper / retirer"
       - "<aqua>Shift + clic <gray>: voir en 3D"
-    locked: "<dark_gray>Pas encore trouvée · se gagne sur le Roi Citrouille"
-    click-preview: "<aqua>▶ Shift + clic : aperçu en 3D"
+    locked-v2: "<dark_gray>Relique inconnue... à toi de la découvrir."
     preview-tag: "<gray>Aperçu · pas encore à toi"
-    bag-locked:
-      name: "<gray><b>Sac verrouillé"
-      lore: ["<dark_gray>Équipe le Sac de la Récolte", "<dark_gray>(relique secrète) pour l'ouvrir ici."]
+    bag-unequipped:
+      name: "<gray><b>Sac de la Récolte <dark_gray>(pas équipé)"
+      lore: ["<dark_gray>Équipe-le en bas pour l'ouvrir ici."]
     prev:
       name: "<yellow>◀ Page précédente"
     next:

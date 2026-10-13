@@ -39,7 +39,7 @@ public final class Backpacks {
 
     public void open(Player p) {
         if (!plugin.relics().hasBackpack(p)) {
-            p.sendMessage(parse(plugin.msg("backpack.none")));
+            p.sendMessage(parse(plugin.relics().ownsBackpack(p) ? plugin.msg("backpack.not-equipped") : plugin.msg("backpack.unknown")));
             return;
         }
         Holder h = new Holder(p);
