@@ -64,7 +64,7 @@ public final class SmpGuilds extends JavaPlugin {
         pm.registerEvents(new GuiListener(this), this);
 
         GuildCommand cmd = new GuildCommand(this);
-        for (String name : new String[]{"guild", "gc", "ac"}) {
+        for (String name : new String[]{"guild", "gc", "allychat"}) {
             PluginCommand c = getCommand(name);
             if (c != null) {
                 c.setExecutor(cmd);

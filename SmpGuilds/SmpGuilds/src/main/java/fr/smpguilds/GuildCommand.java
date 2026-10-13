@@ -29,7 +29,7 @@ import static fr.smpguilds.Messages.guild;
 import static fr.smpguilds.Messages.money;
 import static fr.smpguilds.Messages.ph;
 
-/** /guild (alias /g, /guilde, /clan), /gc et /ac. */
+/** /guild (alias /g, /guilde, /clan), /gc et /ca (chat alliés). */
 public final class GuildCommand implements TabExecutor {
 
     /** Alias français -> nom interne de la sous-commande. */
@@ -77,7 +77,7 @@ public final class GuildCommand implements TabExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         String cmd = command.getName().toLowerCase(Locale.ROOT);
-        if (cmd.equals("gc") || cmd.equals("ac")) {
+        if (cmd.equals("gc") || cmd.equals("allychat")) {
             if (!(sender instanceof Player p)) {
                 m().send(sender, "error.player-only");
                 return true;

@@ -8,7 +8,7 @@ commands:
   anticheat:
     description: Panneau anticheat
     usage: /anticheat [check|alerts|bait|reset|reload]
-    aliases: [guard, smpguard]
+    aliases: [ac, guard, smpguard]
     permission: smpguard.staff
 permissions:
   smpguard.staff:

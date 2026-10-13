@@ -253,7 +253,7 @@ help:
     - "<yellow>/guild ally | unally <guilde>"
     - "<yellow>/guild war <guilde></yellow> <gray>| <yellow>/guild war surrender"
     - "<yellow>/guild description <texte></yellow> <gray>| <yellow>tag | rename | color | banner | open"
-    - "<yellow>/gc [message]</yellow> <gray>chat de guilde  <yellow>/ac [message]</yellow> <gray>chat alliés"
+    - "<yellow>/gc [message]</yellow> <gray>chat de guilde  <yellow>/ca [message]</yellow> <gray>chat alliés"
     - "<yellow>/guild leave</yellow> <gray>| <yellow>/guild disband"
   admin:
     - "<red><b>Guildes - admin"
@@ -676,7 +676,7 @@ gui:
     title: "<dark_gray>Alliances"
     header:
       name: "<aqua><b>Alliés <count>/<max>"
-      lore: ["<gray>Pas de dégâts entre alliés.", "<gray>Chat commun : /ac"]
+      lore: ["<gray>Pas de dégâts entre alliés.", "<gray>Chat commun : /ca"]
     none:
       name: "<gray>Aucun allié"
     requests-header:

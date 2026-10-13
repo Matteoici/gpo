@@ -45,7 +45,7 @@ Tout se fait depuis un menu (`/guild`) ou en commandes. Tous les textes sont mod
 
 **Alliances** : demandes, pas de dégâts entre alliés, chat commun, limite d'alliés.
 
-**Chat** : `/gc` (guilde) et `/ac` (alliés), en message unique ou en mode permanent. Espion pour les admins.
+**Chat** : `/gc` (guilde) et `/ca` (alliés), en message unique ou en mode permanent. Espion pour les admins.
 
 **Autres** : journal de la guilde, classement, pas de tir ami, sauvegarde automatique.
 
@@ -69,7 +69,7 @@ Tout se fait depuis un menu (`/guild`) ou en commandes. Tous les textes sont mod
 | `/guild ally` / `unally <guilde>` / `allies` | Alliances |
 | `/guild war <guilde>` / `war surrender` | Guerres |
 | `/guild members` / `levels` / `log` / `settings` | Menus |
-| `/gc [message]` / `/ac [message]` | Chat de guilde / alliés |
+| `/gc [message]` / `/ca [message]` | Chat de guilde / alliés |
 
 **Admin** (`smpguilds.admin`) : `/guild admin reload | bypass | spy | info | disband | addxp | setxp | setbank | unclaim | save`
 

@@ -14,9 +14,10 @@ commands:
     description: Chat de guilde
     usage: /gc <message>
     permission: smpguilds.use
-  ac:
+  allychat:
     description: Chat des alliés
-    usage: /ac <message>
+    usage: /ca <message>
+    aliases: [ca, ally, allies]
     permission: smpguilds.use
 permissions:
   smpguilds.use:
