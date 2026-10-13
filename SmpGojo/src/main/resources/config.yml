@@ -242,10 +242,14 @@ bombes:
     cloud-seconds: 20
 
 # ------------------------------------------------------------ Pack de sons
-# Le son du clip des 8 Black Flash est dans SmpGojo-sons.zip.
-# Le zip est hébergé sur GitHub (dépôt public Matteoici/smp-sons) ; le plugin l'envoie
-# à chaque joueur qui se connecte. /jjk pack pour le renvoyer et voir ce qui bloque.
+# Le pack (son du clip des 8 Black Flash) est dans le plugin et ton serveur l'héberge lui-même
+# sur ce port (celui que ton hébergeur t'a donné). 0 = désactivé, on utilise alors "url" plus bas.
+# /jjk pack pour le renvoyer et voir ce qui bloque.
 resource-pack:
+  port: 23123
+  # adresse publique du serveur ; vide = celle que le joueur a tapée pour se connecter
+  host: ""
+  # (seulement si port: 0) lien d'un pack hébergé ailleurs
   url: "https://raw.githubusercontent.com/Matteoici/smp-sons/main/SmpGojo-sons.zip"
   sha1: "9e1c331857ad36a02660314a7f8e898fc64dcc23"
   # true = les joueurs qui refusent le pack sont déconnectés

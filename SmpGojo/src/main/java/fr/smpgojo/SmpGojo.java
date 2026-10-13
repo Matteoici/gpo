@@ -136,6 +136,7 @@ public final class SmpGojo extends JavaPlugin implements Listener {
     Nanami nanami;
     Hakari hakari;
     Bombes bombes;
+    PackServer packServer;
     private final Map<String, Long> cooldowns = new HashMap<>();
     final Set<UUID> noFall = new HashSet<>();
     /** pendant un coup de technique : laquelle (pour l'adaptation de Mahoraga) */
@@ -168,6 +169,11 @@ public final class SmpGojo extends JavaPlugin implements Listener {
         hakari = new Hakari(this);
         bombes = new Bombes(this);
         getServer().getPluginManager().registerEvents(this, this);
+        int port = getConfig().getInt("resource-pack.port", 23123);
+        if (port > 0) {
+            packServer = new PackServer(this);
+            packServer.start(port);
+        }
         Bukkit.getScheduler().runTaskTimer(this, () -> {
             cine.tick();
             ruin.tick();
@@ -184,6 +190,7 @@ public final class SmpGojo extends JavaPlugin implements Listener {
 
     @Override
     public void onDisable() {
+        if (packServer != null) packServer.stop();
         for (Runnable r : new ArrayList<>(pending)) {
             try {
                 r.run();
@@ -251,7 +258,8 @@ public final class SmpGojo extends JavaPlugin implements Listener {
             case "pack" -> {
                 if (!(s instanceof Player p)) return true;
                 sendPack(p);
-                s.sendMessage(mm("<gray>Pack de sons envoyé... <dark_gray>(le résultat s'affiche juste après)"));
+                String where = packServer != null && packServer.running() ? packServer.urlFor(p) : getConfig().getString("resource-pack.url", PACK_URL);
+                s.sendMessage(mm("<gray>Pack de sons envoyé depuis <white>" + where + " <dark_gray>(le résultat s'affiche juste après)"));
             }
             case "reload" -> {
                 reloadConfig();
@@ -578,6 +586,14 @@ public final class SmpGojo extends JavaPlugin implements Listener {
         if (url == null || url.isBlank()) url = PACK_URL;
         String sha = getConfig().getString("resource-pack.sha1", PACK_SHA);
         if (sha == null || sha.isBlank()) sha = PACK_SHA;
+        // hébergé par le serveur lui-même (port de l'hébergeur)
+        if (packServer != null && packServer.running()) {
+            String own = packServer.urlFor(p);
+            if (own != null) {
+                url = own;
+                sha = packServer.sha1();
+            }
+        }
         byte[] hash = null;
         if (sha.matches("[0-9a-fA-F]{40}")) {
             hash = new byte[20];
