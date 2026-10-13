@@ -50,6 +50,12 @@ boss:
     minion: 6
     seed-rain: 6
     slam: 12
+    spikes: 7
+    scythe: 10
+    charge: 9
+    meteor: 14
+    phase-shockwave: 4
+  scythe-radius: 6.5
 
 # ---------------------------------------------------------------- Butin
 loot:
@@ -232,6 +238,9 @@ messages:
     timeout: "<gray>Trop tard ! Le <#ff7a00>Roi Citrouille</#ff7a00> s'enfonce dans la nuit."
     vanished: "<gray>Le <#ff7a00>Roi Citrouille</#ff7a00> a disparu."
     stopped: "<gray>Le Roi Citrouille a été renvoyé par le staff."
+    bar-hp: " <dark_gray>| <white><hp></white><gray>/<max> <red>❤"
+    stunned: "<yellow><b>Le Roi est sonné !</b> <gray>Frappe-le maintenant !"
+    meteor-warning: "<red><b>⚠ Une citrouille géante tombe sur toi ! COURS !"
   loot:
     common: "<gray>Tu reçois ta part du butin. <dark_gray>(pas d'objet rare cette fois)"
     where-relic: "<green>✔ Ajoutée à tes reliques <gray>(/reliques)"
