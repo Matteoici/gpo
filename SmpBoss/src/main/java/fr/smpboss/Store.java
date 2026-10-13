@@ -55,8 +55,13 @@ public final class Store {
             d.pityLegendary = s.getInt("pity-legendary");
             d.pitySecret = s.getInt("pity-secret");
             d.kills = s.getLong("kills");
+            d.hideCosmetics = s.getBoolean("hide-cosmetics");
             List<String> bp = s.getStringList("backpack");
             for (int i = 0; i < Math.min(27, bp.size()); i++) d.backpack[i] = decode(bp.get(i));
+            for (String st : s.getStringList("stash")) {
+                ItemStack it = decode(st);
+                if (it != null) d.stash.add(it);
+            }
             data.put(d.id, d);
         }
     }
@@ -73,6 +78,7 @@ public final class Store {
             if (d.pityLegendary > 0) y.set(k + ".pity-legendary", d.pityLegendary);
             if (d.pitySecret > 0) y.set(k + ".pity-secret", d.pitySecret);
             if (d.kills > 0) y.set(k + ".kills", d.kills);
+            if (d.hideCosmetics) y.set(k + ".hide-cosmetics", true);
             boolean any = false;
             String[] bp = new String[27];
             for (int i = 0; i < 27; i++) {
@@ -80,6 +86,7 @@ public final class Store {
                 if (!bp[i].isEmpty()) any = true;
             }
             if (any) y.set(k + ".backpack", List.of(bp));
+            if (!d.stash.isEmpty()) y.set(k + ".stash", d.stash.stream().map(Store::encode).filter(x -> !x.isEmpty()).toList());
         }
         String text = y.saveToString();
         Runnable w = () -> write(text);

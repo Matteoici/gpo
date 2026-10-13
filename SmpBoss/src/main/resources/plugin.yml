@@ -12,7 +12,7 @@ commands:
   reliques:
     description: Tes reliques
     usage: /reliques
-    aliases: [relics, relique]
+    aliases: [relics, relique, cosmetiques, cosmetique, butin]
   sac:
     description: Ouvrir ton sac (relique)
     usage: /sac

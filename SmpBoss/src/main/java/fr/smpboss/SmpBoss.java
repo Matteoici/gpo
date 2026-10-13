@@ -35,6 +35,8 @@ public final class SmpBoss extends JavaPlugin {
     private Relics relics;
     private Loot loot;
     private Backpacks backpacks;
+    private Cosmetics cosmetics;
+    private InvButtons invButtons;
     private PumpkinKing king;
     private Location altar;
     private long lastEnd;
@@ -52,11 +54,15 @@ public final class SmpBoss extends JavaPlugin {
         relics = new Relics(this);
         loot = new Loot(this);
         backpacks = new Backpacks(this);
+        cosmetics = new Cosmetics(this);
         store.load();
         relics.load();
         loadAltar();
         registerRecipe();
         getServer().getPluginManager().registerEvents(new BossListener(this), this);
+        invButtons = new InvButtons(this);
+        getServer().getPluginManager().registerEvents(invButtons, this);
+        Bukkit.getScheduler().runTaskTimer(this, invButtons::tick, 40L, 40L);
 
         Bukkit.getScheduler().runTaskTimer(this, relics::tickBackpacks, 1L, 1L);
         Bukkit.getScheduler().runTaskTimer(this, relics::tickTrails, 5L, 5L);
@@ -74,6 +80,10 @@ public final class SmpBoss extends JavaPlugin {
         if (king != null) king.cleanup();
         if (relics != null) relics.removeAll();
         for (Player p : Bukkit.getOnlinePlayers()) {
+            if (invButtons != null) {
+                invButtons.clear(p);
+                invButtons.sanitize(p);
+            }
             var top = p.getOpenInventory().getTopInventory().getHolder(false);
             if (top instanceof Backpacks.Holder h) backpacks.close(h);
             if (top instanceof Backpacks.Holder || top instanceof RelicMenu) p.closeInventory();
@@ -82,7 +92,9 @@ public final class SmpBoss extends JavaPlugin {
     }
 
     public String msg(String key) {
-        return getConfig().getString("messages." + key, "<red>[" + key + "]");
+        // sans valeur par défaut explicite : les nouveaux textes du plugin sont pris même si le config.yml est ancien
+        String s = getConfig().getString("messages." + key);
+        return s == null ? "<red>[" + key + "]" : s;
     }
 
     // ================================================================= recette
@@ -242,7 +254,7 @@ public final class SmpBoss extends JavaPlugin {
                     sender.sendMessage(parse("<red>Objet inconnu."));
                     return true;
                 }
-                Loot.give(t, it);
+                loot.give(t, it);
                 sender.sendMessage(parse("<green>Donné à " + t.getName() + "."));
             }
             case "reload" -> {
@@ -295,6 +307,14 @@ public final class SmpBoss extends JavaPlugin {
 
     public Loot loot() {
         return loot;
+    }
+
+    public InvButtons invButtons() {
+        return invButtons;
+    }
+
+    public Cosmetics cosmetics() {
+        return cosmetics;
     }
 
     public Backpacks backpacks() {

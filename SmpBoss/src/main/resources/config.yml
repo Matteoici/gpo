@@ -88,7 +88,9 @@ loot:
 
 # ---------------------------------------------------------------- Reliques
 # health = cœurs en plus · speed = % de vitesse · regen = demi-cœurs toutes les 4 s hors combat (8 s sans dégâts)
-# trail = particules sous les pieds · backpack = le sac (27 cases, visible sur le dos)
+# trail = particules sous les pieds · backpack = le sac (27 cases)
+# visual = cosmétique visible : backpack (sac à dos), crown (couronne flottante), lantern (lanterne à la ceinture),
+#          wisp (feu follet d'âme sur l'épaule), amulet (amulette), boots (feuilles d'automne), flames (empreintes de feu)
 # item-model = modèle du pack de textures (plus tard, ex. "monserveur:couronne")
 relics:
   max-equipped: 2
@@ -97,55 +99,63 @@ relics:
       name: "Traînée de Flammes"
       rarity: rare
       icon: BLAZE_POWDER
+      visual: flames
       lore: ["<gray>Tes pas laissent des braises."]
       trail: FLAME
     amulette_recolte:
       name: "Amulette de la Récolte"
       rarity: epic
       icon: GOLDEN_CARROT
+      visual: amulet
       lore: ["<gray>Bénie par les champs."]
       speed: 2
     lanterne_mineure:
       name: "Lanterne Mineure"
       rarity: epic
       icon: LANTERN
+      visual: lantern
       lore: ["<gray>Une petite flamme réconfortante."]
       regen: 0.5
     couronne:
       name: "Couronne du Roi Citrouille"
       rarity: legendary
       icon: GOLDEN_HELMET
+      visual: crown
       lore: ["<gray>Arrachée au Roi en personne."]
       health: 1
     lanterne_eternelle:
       name: "Lanterne Éternelle"
       rarity: legendary
       icon: SOUL_LANTERN
+      visual: wisp
       lore: ["<gray>Sa flamme ne s'éteint jamais."]
       regen: 1
     bottes_recolte:
       name: "Bottes de la Récolte"
       rarity: legendary
       icon: GOLDEN_BOOTS
+      visual: boots
       lore: ["<gray>On ne rattrape pas le vent d'automne."]
       speed: 5
     sac_recolte:
       name: "Sac de la Récolte"
       rarity: secret
       icon: BUNDLE
+      visual: backpack
       lore: ["<gray>Il a appartenu au Roi... et il est toujours chaud."]
       backpack: true
 
 # ---------------------------------------------------------------- Sac (relique secrète)
 backpack:
-  # objet affiché sur le dos (sans pack de textures)
-  display-item: WHITE_SHULKER_BOX
+  # sac à dos visible (modèle en blocs : tissu, rabat orange, couverture roulée, mini citrouille)
   show-on-back: true
-  scale: 0.45
-  offset-back: 0.3
-  height: 1.05
   # % des objets du sac qui tombent à la mort (au hasard)
   drop-percent-on-death: 70
+
+# ---------------------------------------------------------------- Boutons en haut de l'inventaire
+# Sac + Cosmétiques dans la grille d'artisanat 2×2 (ils s'effacent dès qu'on y pose un objet)
+inventory-buttons:
+  enabled: true
 
 # ---------------------------------------------------------------- Faucille (arme secrète)
 sickle:
@@ -224,6 +234,12 @@ messages:
     stopped: "<gray>Le Roi Citrouille a été renvoyé par le staff."
   loot:
     common: "<gray>Tu reçois ta part du butin. <dark_gray>(pas d'objet rare cette fois)"
+    where-relic: "<green>✔ Ajoutée à tes reliques <gray>(/reliques)"
+    where-inventory: "<gray>Rangé dans ton inventaire"
+    where-stash: "<gold>Dans ton coffre de butin <gray>(/reliques)"
+    stash-added: "<yellow>Inventaire plein : <white><n></white> objet(s) rangé(s) dans ton <gold>coffre de butin</gold><yellow>. <gray>Récupère-les dans /reliques."
+    stash-taken: "<green>Tu as récupéré <white><n></white> objet(s) du coffre de butin."
+    stash-full: "<red>Fais de la place dans ton inventaire d'abord."
     new-item: "<white>Nouvel objet <dark_gray>‹</dark_gray><item><dark_gray>›"
     new-title: "<white>Nouveau titre débloqué : <dark_gray>‹</dark_gray><title><dark_gray>›"
     broadcast-legendary: "<rainbow><b>✦</b></rainbow> <white><player></white> <gray>a obtenu</gray> <item> <gray>sur le Roi Citrouille !"
@@ -241,6 +257,19 @@ messages:
     lost: "<red>Ton sac s'est déchiré : <white><n></white> objet(s) sont tombés au sol."
   sickle:
     cooldown: "<gray>Moisson prête dans <white><s>s"
+  inv-buttons:
+    bag:
+      name: "<gradient:#ffb347:#ff7a00><b>Sac de la Récolte"
+      lore: ["<gray>27 cases rien qu'à toi.", "", "<yellow>▶ Clic : ouvrir"]
+    bag-locked:
+      name: "<gray><b>Sac verrouillé"
+      lore: ["<dark_gray>Relique secrète du Roi Citrouille.", "<dark_gray>Équipe le Sac de la Récolte pour l'ouvrir ici."]
+      message: "<red>Il te faut la relique <white>Sac de la Récolte</white> équipée (/reliques)."
+    cosmetics:
+      name: "<gradient:#ffd36b:#ff7a00><b>Cosmétiques & Reliques"
+      lore: ["<gray>Équipe tes reliques, admire-les en 3D", "<gray>et récupère ton butin.", "", "<yellow>▶ Clic : ouvrir"]
+    cosmetics-count: "<dark_gray>Collection : <white><n></white>/<total>"
+    stash-waiting: "<gold>✦ <n> objet(s) t'attendent dans le coffre de butin !"
   menu:
     title: "<dark_gray>Reliques"
     info-name: "<gold><b>Mes reliques"
@@ -257,7 +286,46 @@ messages:
       name: "<gray>Emplacement libre"
       lore: ["<dark_gray>Choisis une relique en bas."]
     open-backpack:
-      name: "<white><b>Ouvrir mon sac"
-      lore: ["<gray>/sac"]
+      name: "<gradient:#ffb347:#ff7a00><b>Ouvrir mon sac"
+      lore: ["<gray>27 cases · aussi en haut de ton inventaire", "<dark_gray>/sac"]
     close:
       name: "<red>Fermer"
+    title-v2: "<dark_gray>✦ Cosmétiques & Reliques"
+    equipped-tag: "ÉQUIPÉE"
+    collection-label: "<gold><b>▼ COLLECTION ▼</b> <gray>(<white><n></white>/<total>)"
+    collection-lore:
+      - "<gray>Toutes les reliques du serveur."
+      - "<gray>En couleur : les tiennes · grisées : à trouver."
+      - ""
+      - "<yellow>Clic <gray>: équiper / retirer"
+      - "<aqua>Shift + clic <gray>: voir en 3D"
+    locked: "<dark_gray>Pas encore trouvée · se gagne sur le Roi Citrouille"
+    click-preview: "<aqua>▶ Shift + clic : aperçu en 3D"
+    preview-tag: "<gray>Aperçu · pas encore à toi"
+    bag-locked:
+      name: "<gray><b>Sac verrouillé"
+      lore: ["<dark_gray>Équipe le Sac de la Récolte", "<dark_gray>(relique secrète) pour l'ouvrir ici."]
+    prev:
+      name: "<yellow>◀ Page précédente"
+    next:
+      name: "<yellow>Page suivante ▶"
+    cosmetics-on:
+      name: "<green><b>Cosmétiques visibles"
+      lore: ["<gray>Les autres voient tes reliques sur toi.", "", "<yellow>▶ Clic : les cacher", "<dark_gray>(les bonus restent actifs)"]
+    cosmetics-off:
+      name: "<red><b>Cosmétiques cachés"
+      lore: ["<gray>Tes reliques sont invisibles.", "", "<yellow>▶ Clic : les afficher", "<dark_gray>(les bonus restent actifs)"]
+    stash:
+      name: "<gold><b>Coffre de butin</b> <white>(<n>)"
+      lore: ["<gray>Butin gagné quand ton inventaire était plein.", "", "<yellow>▶ Clic : tout récupérer"]
+    stash-empty:
+      name: "<gray><b>Coffre de butin</b> <dark_gray>(vide)"
+      lore: ["<dark_gray>Si ton inventaire est plein quand tu gagnes", "<dark_gray>un objet, il t'attend ici : rien ne se perd."]
+    visual:
+      backpack: "<white>✧ Visuel : <gold>sac à dos de la Récolte"
+      crown: "<white>✧ Visuel : <gold>couronne dorée flottante"
+      lantern: "<white>✧ Visuel : <gold>lanterne à la ceinture"
+      wisp: "<white>✧ Visuel : <aqua>feu follet d'âme sur l'épaule"
+      amulet: "<white>✧ Visuel : <gold>amulette dorée"
+      boots: "<white>✧ Visuel : <gold>feuilles d'automne sous tes pas"
+      flames: "<white>✧ Visuel : <gold>empreintes de flammes"

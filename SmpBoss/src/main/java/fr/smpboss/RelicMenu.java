@@ -4,38 +4,38 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.entity.Display;
-import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.TextDisplay;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.util.Transformation;
-import org.joml.AxisAngle4f;
-import org.joml.Quaternionf;
-import org.joml.Vector3f;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import static fr.smpboss.SmpBoss.parse;
 
 /**
- * /reliques : les reliques équipées en haut, encadrées par la couleur de leur rareté
- * (cadre arc-en-ciel animé pour les légendaires, noir et blanc qui clignote pour les secrètes),
- * la collection en bas. Shift + clic = inspecter la relique en 3D devant soi.
+ * /reliques — trois zones bien séparées par des bandes orange :
+ * <pre>
+ *  ┌ bande orange ─────── ★ infos ─────────────────┐
+ *  │ ÉQUIPÉES : [cadre][relique][cadre] [sac] [cadre][relique][cadre] │
+ *  ├ bande orange ─────── ▼ COLLECTION ▼ ──────────┤
+ *  │ toutes les reliques du serveur (trouvées en couleur, les autres grisées) │
+ *  └ bande orange : ◀  cosmétiques on/off  ✕  coffre de butin  ▶ ┘
+ * </pre>
+ * Cadres animés : arc-en-ciel pour les légendaires, noir et blanc qui clignote pour les secrètes.
+ * Clic = équiper / retirer · Shift + clic = voir la relique en 3D devant soi.
  */
 public final class RelicMenu implements InventoryHolder {
 
-    /** Centres des emplacements équipés et leur cadre (3×3). */
-    private static final int[] EQUIP = {11, 15, 13};
+    private static final int INFO = 4, BAG = 13, LABEL = 22, PREV = 45, TOGGLE = 47, CLOSE = 49, STASH = 51, NEXT = 53;
     private static final int[] COLLECTION = {28, 29, 30, 31, 32, 33, 34, 37, 38, 39, 40, 41, 42, 43};
+    private static final Material BAND = Material.ORANGE_STAINED_GLASS_PANE;
     private static final Material[] RAINBOW = {Material.RED_STAINED_GLASS_PANE, Material.ORANGE_STAINED_GLASS_PANE,
             Material.YELLOW_STAINED_GLASS_PANE, Material.LIME_STAINED_GLASS_PANE, Material.LIGHT_BLUE_STAINED_GLASS_PANE,
             Material.BLUE_STAINED_GLASS_PANE, Material.PURPLE_STAINED_GLASS_PANE, Material.MAGENTA_STAINED_GLASS_PANE};
@@ -44,17 +44,19 @@ public final class RelicMenu implements InventoryHolder {
     private final Player viewer;
     private final Inventory inv;
     private int frame;
+    private int page;
 
     public RelicMenu(SmpBoss plugin, Player viewer) {
         this.plugin = plugin;
         this.viewer = viewer;
-        this.inv = Bukkit.createInventory(this, 54, parse(plugin.msg("menu.title")));
+        this.inv = Bukkit.createInventory(this, 54, parse(plugin.msg("menu.title-v2")));
         draw();
     }
 
     public void open() {
         viewer.openInventory(inv);
         plugin.openMenus().add(this);
+        viewer.playSound(Sound.sound(Key.key("minecraft", "block.chest.open"), Sound.Source.MASTER, 0.6f, 1.3f));
     }
 
     @Override
@@ -63,7 +65,32 @@ public final class RelicMenu implements InventoryHolder {
     }
 
     private int slots() {
-        return Math.min(EQUIP.length, plugin.relics().maxEquipped);
+        return Math.min(3, plugin.relics().maxEquipped);
+    }
+
+    /** Emplacements équipés (centre) selon le nombre autorisé. */
+    private int[] equipSlots() {
+        return switch (slots()) {
+            case 1 -> new int[]{11};
+            case 2 -> new int[]{11, 15};
+            default -> new int[]{10, 13, 16};
+        };
+    }
+
+    private boolean bagInRow() {
+        return slots() <= 2;
+    }
+
+    /** Tout le catalogue, trié : d'abord ce qu'on a, puis par rareté. */
+    private List<Relic> catalog() {
+        PlayerData d = plugin.store().of(viewer.getUniqueId());
+        List<Relic> all = new ArrayList<>(plugin.relics().all().values());
+        all.sort(Comparator.comparing((Relic r) -> !d.relics.contains(r.id())).thenComparing(r -> r.rarity().ordinal()));
+        return all;
+    }
+
+    private int pages() {
+        return Math.max(1, (int) Math.ceil(plugin.relics().all().size() / (double) COLLECTION.length));
     }
 
     // ================================================================= dessin
@@ -71,45 +98,75 @@ public final class RelicMenu implements InventoryHolder {
     public void draw() {
         inv.clear();
         PlayerData d = plugin.store().of(viewer.getUniqueId());
-        for (int i = 0; i < 54; i++) inv.setItem(i, pane(Material.BLACK_STAINED_GLASS_PANE));
-        for (int i = 0; i < slots(); i++) {
-            String id = i < d.equipped.size() ? d.equipped.get(i) : null;
-            Relic r = plugin.relics().get(id);
-            inv.setItem(EQUIP[i], r == null ? emptySlot() : icon(r, true));
+        // fond : bandes orange en haut, au milieu et en bas ; noir ailleurs
+        for (int i = 0; i < 54; i++) {
+            int row = i / 9;
+            inv.setItem(i, pane(row == 0 || row == 2 || row == 5 ? BAND : Material.BLACK_STAINED_GLASS_PANE));
+        }
+        // zone équipée
+        int[] eq = equipSlots();
+        for (int i = 0; i < eq.length; i++) {
+            Relic r = plugin.relics().get(i < d.equipped.size() ? d.equipped.get(i) : null);
+            inv.setItem(eq[i], r == null ? emptySlot() : icon(r, true, true));
         }
         drawFrames();
-        List<Relic> owned = plugin.relics().owned(viewer);
-        for (int i = 0; i < COLLECTION.length; i++) {
-            inv.setItem(COLLECTION[i], i < owned.size() ? icon(owned.get(i), d.equipped.contains(owned.get(i).id()))
-                    : pane(Material.GRAY_STAINED_GLASS_PANE));
+        if (bagInRow()) {
+            inv.setItem(BAG, plugin.relics().hasBackpack(viewer) ? named(Material.BUNDLE, "menu.open-backpack", null)
+                    : named(Material.GRAY_DYE, "menu.bag-locked", null));
         }
-        inv.setItem(4, info(d));
-        if (plugin.relics().hasBackpack(viewer)) inv.setItem(45, named(Material.BUNDLE, "menu.open-backpack"));
-        inv.setItem(49, named(Material.BARRIER, "menu.close"));
+        // collection
+        List<Relic> all = catalog();
+        page = Math.max(0, Math.min(page, pages() - 1));
+        for (int i = 0; i < COLLECTION.length; i++) {
+            int idx = page * COLLECTION.length + i;
+            if (idx >= all.size()) {
+                inv.setItem(COLLECTION[i], pane(Material.GRAY_STAINED_GLASS_PANE));
+                continue;
+            }
+            Relic r = all.get(idx);
+            inv.setItem(COLLECTION[i], d.relics.contains(r.id()) ? icon(r, d.equipped.contains(r.id()), false) : locked(r));
+        }
+        inv.setItem(INFO, info(d));
+        inv.setItem(LABEL, label(d));
+        // barre du bas
+        if (page > 0) inv.setItem(PREV, named(Material.ARROW, "menu.prev", null));
+        if (page < pages() - 1) inv.setItem(NEXT, named(Material.ARROW, "menu.next", null));
+        inv.setItem(TOGGLE, named(d.hideCosmetics ? Material.ENDER_EYE : Material.ENDER_PEARL,
+                d.hideCosmetics ? "menu.cosmetics-off" : "menu.cosmetics-on", null));
+        inv.setItem(CLOSE, named(Material.BARRIER, "menu.close", null));
+        ItemStack stash = named(d.stash.isEmpty() ? Material.BARREL : Material.CHEST, d.stash.isEmpty() ? "menu.stash-empty" : "menu.stash",
+                String.valueOf(d.stash.stream().mapToInt(ItemStack::getAmount).sum()));
+        if (!d.stash.isEmpty()) {
+            ItemMeta m = stash.getItemMeta();
+            m.setEnchantmentGlintOverride(true);
+            stash.setItemMeta(m);
+        }
+        inv.setItem(STASH, stash);
     }
 
-    /** Toutes les 4 ticks : les cadres animés. */
+    /** Toutes les 4 ticks : les cadres animés et le nom arc-en-ciel des légendaires. */
     public void animate() {
         frame++;
         drawFrames();
-        // le nom des légendaires défile aussi en arc-en-ciel
         PlayerData d = plugin.store().of(viewer.getUniqueId());
-        for (int i = 0; i < slots() && i < d.equipped.size(); i++) {
+        int[] eq = equipSlots();
+        for (int i = 0; i < eq.length && i < d.equipped.size(); i++) {
             Relic r = plugin.relics().get(d.equipped.get(i));
-            if (r != null && r.rarity().ordinal() >= Rarity.LEGENDARY.ordinal()) inv.setItem(EQUIP[i], icon(r, true));
+            if (r != null && r.rarity().ordinal() >= Rarity.LEGENDARY.ordinal()) inv.setItem(eq[i], icon(r, true, true));
         }
     }
 
     private void drawFrames() {
         PlayerData d = plugin.store().of(viewer.getUniqueId());
-        for (int i = 0; i < slots(); i++) {
+        int[] eq = equipSlots();
+        for (int i = 0; i < eq.length; i++) {
             Relic r = plugin.relics().get(i < d.equipped.size() ? d.equipped.get(i) : null);
-            int c = EQUIP[i];
-            int[] around = {c - 10, c - 9, c - 8, c - 1, c + 1, c + 8, c + 9, c + 10};
+            int c = eq[i];
+            int[] around = {c - 1, c + 1};
             for (int k = 0; k < around.length; k++) {
                 int s = around[k];
-                if (s < 0 || s >= 27) continue;
-                inv.setItem(s, pane(frameColor(r, k)));
+                if (s < 9 || s > 17 || (bagInRow() && s == BAG)) continue;
+                inv.setItem(s, pane(frameColor(r, k + i)));
             }
         }
     }
@@ -118,22 +175,24 @@ public final class RelicMenu implements InventoryHolder {
         if (r == null) return Material.GRAY_STAINED_GLASS_PANE;
         return switch (r.rarity()) {
             case COMMON -> Material.WHITE_STAINED_GLASS_PANE;
-            case RARE -> Material.BLUE_STAINED_GLASS_PANE;
+            case RARE -> Material.LIGHT_BLUE_STAINED_GLASS_PANE;
             case EPIC -> Material.PURPLE_STAINED_GLASS_PANE;
-            case LEGENDARY -> RAINBOW[Math.floorMod(frame + k, RAINBOW.length)];
-            case SECRET -> (frame + k) % 2 == 0 ? Material.WHITE_STAINED_GLASS_PANE : Material.BLACK_STAINED_GLASS_PANE;
+            case LEGENDARY -> RAINBOW[Math.floorMod(frame + k * 3, RAINBOW.length)];
+            case SECRET -> (frame + k) % 2 == 0 ? Material.WHITE_STAINED_GLASS_PANE : Material.GRAY_STAINED_GLASS_PANE;
         };
     }
 
-    private ItemStack icon(Relic r, boolean equipped) {
+    private ItemStack icon(Relic r, boolean equipped, boolean inEquipRow) {
         ItemStack it = new ItemStack(r.icon());
         ItemMeta m = it.getItemMeta();
         m.displayName(parse(r.rarity().name(r.name(), frame % 10)));
         List<Component> lore = new ArrayList<>();
-        lore.add(parse(r.rarity().tag));
+        lore.add(parse(r.rarity().tag + (equipped ? "  <green>✔ " + plugin.msg("menu.equipped-tag") : "")));
         lore.add(Component.empty());
         for (String s : r.lore()) lore.add(parse(s));
         lore.addAll(plugin.items().effectLines(r));
+        String look = plugin.msg("menu.visual." + (r.visual() == null || r.visual().isBlank() ? "none" : r.visual()));
+        if (!look.startsWith("<red>[")) lore.add(parse(look));
         lore.add(Component.empty());
         lore.add(parse(plugin.msg(equipped ? "menu.click-unequip" : "menu.click-equip")));
         lore.add(parse(plugin.msg("menu.click-inspect")));
@@ -144,6 +203,22 @@ public final class RelicMenu implements InventoryHolder {
             var k = org.bukkit.NamespacedKey.fromString(r.itemModel());
             if (k != null) m.setItemModel(k);
         }
+        it.setItemMeta(m);
+        return it;
+    }
+
+    private ItemStack locked(Relic r) {
+        boolean secret = r.rarity() == Rarity.SECRET;
+        ItemStack it = new ItemStack(secret ? Material.BLACK_DYE : Material.GRAY_DYE);
+        ItemMeta m = it.getItemMeta();
+        m.displayName(parse(secret ? "<dark_gray><b>???" : "<gray>" + SmpBoss.MM.escapeTags(r.name())));
+        List<Component> lore = new ArrayList<>();
+        lore.add(parse(r.rarity().tag));
+        lore.add(Component.empty());
+        lore.add(parse(plugin.msg("menu.locked")));
+        if (!secret) lore.add(parse(plugin.msg("menu.click-preview")));
+        m.lore(lore);
+        m.addItemFlags(ItemFlag.values());
         it.setItemMeta(m);
         return it;
     }
@@ -170,17 +245,31 @@ public final class RelicMenu implements InventoryHolder {
         return it;
     }
 
-    private ItemStack emptySlot() {
-        return named(Material.LIGHT_GRAY_STAINED_GLASS_PANE, "menu.empty-slot");
+    private ItemStack label(PlayerData d) {
+        ItemStack it = new ItemStack(Material.JACK_O_LANTERN);
+        ItemMeta m = it.getItemMeta();
+        m.displayName(parse(plugin.msg("menu.collection-label").replace("<n>", String.valueOf(d.relics.size()))
+                .replace("<total>", String.valueOf(plugin.relics().all().size()))));
+        List<Component> lore = new ArrayList<>();
+        for (String s : plugin.getConfig().getStringList("messages.menu.collection-lore")) lore.add(parse(s));
+        if (pages() > 1) lore.add(parse("<dark_gray>Page " + (page + 1) + "/" + pages()));
+        m.lore(lore);
+        it.setItemMeta(m);
+        return it;
     }
 
-    private ItemStack named(Material mat, String key) {
+    private ItemStack emptySlot() {
+        return named(Material.LIGHT_GRAY_STAINED_GLASS_PANE, "menu.empty-slot", null);
+    }
+
+    private ItemStack named(Material mat, String key, String n) {
         ItemStack it = new ItemStack(mat);
         ItemMeta m = it.getItemMeta();
-        m.displayName(parse(plugin.msg(key + ".name")));
+        m.displayName(parse(plugin.msg(key + ".name").replace("<n>", n == null ? "" : n)));
         List<Component> lore = new ArrayList<>();
-        for (String s : plugin.getConfig().getStringList("messages." + key + ".lore")) lore.add(parse(s));
+        for (String s : plugin.getConfig().getStringList("messages." + key + ".lore")) lore.add(parse(s.replace("<n>", n == null ? "" : n)));
         m.lore(lore);
+        m.addItemFlags(ItemFlag.values());
         it.setItemMeta(m);
         return it;
     }
@@ -197,93 +286,91 @@ public final class RelicMenu implements InventoryHolder {
 
     public void click(int slot, ClickType type) {
         PlayerData d = plugin.store().of(viewer.getUniqueId());
-        if (slot == 49) {
-            viewer.closeInventory();
-            return;
+        switch (slot) {
+            case CLOSE -> {
+                viewer.closeInventory();
+                return;
+            }
+            case PREV -> {
+                if (page > 0) {
+                    page--;
+                    tick();
+                    draw();
+                }
+                return;
+            }
+            case NEXT -> {
+                if (page < pages() - 1) {
+                    page++;
+                    tick();
+                    draw();
+                }
+                return;
+            }
+            case TOGGLE -> {
+                d.hideCosmetics = !d.hideCosmetics;
+                plugin.store().dirty();
+                plugin.cosmetics().refresh(viewer);
+                tick();
+                draw();
+                return;
+            }
+            case STASH -> {
+                if (d.stash.isEmpty()) return;
+                int got = plugin.loot().takeStash(viewer);
+                viewer.sendMessage(parse(got > 0 ? plugin.msg("loot.stash-taken").replace("<n>", String.valueOf(got)) : plugin.msg("loot.stash-full")));
+                viewer.playSound(Sound.sound(Key.key("minecraft", got > 0 ? "entity.item.pickup" : "block.chest.locked"), Sound.Source.MASTER, 1f, 1f));
+                draw();
+                return;
+            }
+            default -> {
+            }
         }
-        if (slot == 45 && plugin.relics().hasBackpack(viewer)) {
-            plugin.backpacks().open(viewer);
+        if (slot == BAG && bagInRow()) {
+            if (plugin.relics().hasBackpack(viewer)) plugin.backpacks().open(viewer);
             return;
         }
         Relic r = null;
-        for (int i = 0; i < slots(); i++) {
-            if (EQUIP[i] == slot && i < d.equipped.size()) r = plugin.relics().get(d.equipped.get(i));
+        boolean owned = true;
+        int[] eq = equipSlots();
+        for (int i = 0; i < eq.length; i++) if (eq[i] == slot && i < d.equipped.size()) r = plugin.relics().get(d.equipped.get(i));
+        List<Relic> all = catalog();
+        for (int i = 0; i < COLLECTION.length; i++) {
+            int idx = page * COLLECTION.length + i;
+            if (COLLECTION[i] == slot && idx < all.size()) {
+                r = all.get(idx);
+                owned = d.relics.contains(r.id());
+            }
         }
-        List<Relic> owned = plugin.relics().owned(viewer);
-        for (int i = 0; i < COLLECTION.length && i < owned.size(); i++) if (COLLECTION[i] == slot) r = owned.get(i);
         if (r == null) return;
         if (type.isShiftClick()) {
+            if (!owned && r.rarity() == Rarity.SECRET) return;
             viewer.closeInventory();
-            inspect(viewer, r);
+            inspect(plugin, viewer, r);
+            return;
+        }
+        if (!owned) {
+            viewer.playSound(Sound.sound(Key.key("minecraft", "block.chest.locked"), Sound.Source.MASTER, 0.7f, 1.3f));
             return;
         }
         String key = plugin.relics().toggle(viewer, r.id());
         viewer.sendMessage(parse(plugin.msg(key).replace("<relic>", r.rarity().name(r.name(), 0))
                 .replace("<max>", String.valueOf(slots()))));
-        viewer.playSound(Sound.sound(Key.key("minecraft", key.endsWith("equipped") && !key.contains("un")
+        viewer.playSound(Sound.sound(Key.key("minecraft", key.equals("relics.equipped")
                 ? "item.armor.equip_netherite" : "ui.button.click"), Sound.Source.MASTER, 1f, 1.2f));
         draw();
     }
 
-    // ================================================================= inspection 3D
-
-    /** La relique flotte et tourne devant le joueur (visible par lui seul) pendant 8 secondes. */
-    public static void inspect(SmpBoss plugin, Player p, Relic r) {
-        Location eye = p.getEyeLocation();
-        Location at = eye.clone().add(eye.getDirection().setY(0).normalize().multiply(2.2));
-        at.setY(eye.getY() - 0.2);
-        at.setYaw(eye.getYaw() + 180);
-        at.setPitch(0);
-        ItemStack look = plugin.items().relicItem(r);
-        ItemDisplay item = p.getWorld().spawn(at, ItemDisplay.class, d -> {
-            d.setPersistent(false);
-            d.setVisibleByDefault(false);
-            d.setItemStack(look);
-            d.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
-            d.setBrightness(new Display.Brightness(15, 15));
-            d.setGlowing(true);
-            d.setGlowColorOverride(switch (r.rarity()) {
-                case RARE -> org.bukkit.Color.fromRGB(0x4aa8ff);
-                case EPIC -> org.bukkit.Color.fromRGB(0xb45cff);
-                case LEGENDARY -> org.bukkit.Color.fromRGB(0xffd36b);
-                case SECRET -> org.bukkit.Color.WHITE;
-                default -> org.bukkit.Color.WHITE;
-            });
-            d.setTransformation(new Transformation(new Vector3f(), new Quaternionf(), new Vector3f(1.2f, 1.2f, 1.2f), new Quaternionf()));
-        });
-        TextDisplay label = p.getWorld().spawn(at.clone().add(0, 0.95, 0), TextDisplay.class, d -> {
-            d.setPersistent(false);
-            d.setVisibleByDefault(false);
-            d.setBillboard(Display.Billboard.CENTER);
-            d.text(parse(r.rarity().name(r.name(), 0)).appendNewline().append(parse(r.rarity().tag)));
-            d.setBackgroundColor(org.bukkit.Color.fromARGB(140, 0, 0, 0));
-        });
-        p.showEntity(plugin, item);
-        p.showEntity(plugin, label);
-        p.playSound(Sound.sound(Key.key("minecraft", "block.amethyst_block.resonate"), Sound.Source.MASTER, 1f, 1.2f));
-        int[] t = {0};
-        org.bukkit.scheduler.BukkitTask[] task = new org.bukkit.scheduler.BukkitTask[1];
-        task[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
-            t[0] += 2;
-            if (t[0] > 160 || !p.isOnline() || !item.isValid()) {
-                item.remove();
-                label.remove();
-                task[0].cancel();
-                return;
-            }
-            item.setInterpolationDelay(0);
-            item.setInterpolationDuration(2);
-            float angle = (float) Math.toRadians(t[0] * 4.5);
-            float bob = (float) Math.sin(t[0] * 0.08) * 0.08f;
-            item.setTransformation(new Transformation(new Vector3f(0, bob, 0), new Quaternionf(new AxisAngle4f(angle, 0, 1, 0)),
-                    new Vector3f(1.2f, 1.2f, 1.2f), new Quaternionf()));
-            if (r.rarity() == Rarity.LEGENDARY && t[0] % 4 == 0) {
-                label.text(parse(r.rarity().name(r.name(), (t[0] / 4) % 10)).appendNewline().append(parse(r.rarity().tag)));
-            }
-        }, 1L, 2L);
+    private void tick() {
+        viewer.playSound(Sound.sound(Key.key("minecraft", "ui.button.click"), Sound.Source.MASTER, 0.6f, 1.4f));
     }
 
-    private void inspect(Player p, Relic r) {
-        inspect(plugin, p, r);
+    // ================================================================= inspection 3D
+
+    /** La relique apparaît en 3D devant le joueur (même animation que le butin). */
+    public static void inspect(SmpBoss plugin, Player p, Relic r) {
+        PlayerData d = plugin.store().of(p.getUniqueId());
+        String where = d.relics.contains(r.id()) ? null : plugin.msg("menu.preview-tag");
+        Reveal.show(plugin, p, plugin.items().relicItem(r), r.rarity(), r.rarity().name(r.name(), 0), where);
     }
 }

@@ -84,11 +84,17 @@ public final class Loot {
                 plugin.getLogger().warning("loot : relique inconnue " + e.get("relic"));
                 return;
             }
-            give(p, plugin.items().relicItem(relic));
             displayName = relic.rarity().name(relic.name(), 0);
+            // directement dans la collection : rien à ramasser, rien à perdre
+            String where;
+            if (plugin.relics().claim(p, relic)) where = plugin.msg("loot.where-relic");
+            else where = give(p, plugin.items().relicItem(relic)) ? plugin.msg("loot.where-inventory") : plugin.msg("loot.where-stash");
+            Reveal.show(plugin, p, plugin.items().relicItem(relic), rarity, displayName, where);
         } else if (Boolean.TRUE.equals(e.get("sickle"))) {
-            give(p, plugin.items().sickle());
-            displayName = Rarity.SECRET.name(plugin.msg("items.sickle.name"), 0);
+            ItemStack it = plugin.items().sickle();
+            displayName = Rarity.SECRET.name(SmpBoss.MM.stripTags(plugin.msg("items.sickle.name")), 0);
+            boolean inv = give(p, it.clone());
+            Reveal.show(plugin, p, it, rarity, displayName, plugin.msg(inv ? "loot.where-inventory" : "loot.where-stash"));
         } else if (e.get("item") != null) {
             Material m = Material.matchMaterial(String.valueOf(e.get("item")));
             if (m == null) return;
@@ -97,8 +103,10 @@ public final class Loot {
             if (e.get("lore") instanceof List<?> l) for (Object o : l) lore.add(String.valueOf(o));
             int amount = e.get("amount") instanceof Number num ? num.intValue() : 1;
             String model = e.get("item-model") == null ? null : String.valueOf(e.get("item-model"));
-            give(p, plugin.items().lootItem(m, amount, name, rarity, lore, model));
+            ItemStack it = plugin.items().lootItem(m, amount, name, rarity, lore, model);
             displayName = name == null ? "<lang:" + m.translationKey() + ">" : rarity.name(name, 0);
+            boolean inv = give(p, it.clone());
+            Reveal.show(plugin, p, it, rarity, displayName, plugin.msg(inv ? "loot.where-inventory" : "loot.where-stash"));
         } else {
             displayName = e.get("name") == null ? "?" : rarity.name(String.valueOf(e.get("name")), 0);
         }
@@ -134,7 +142,42 @@ public final class Loot {
         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), line.startsWith("/") ? line.substring(1) : line);
     }
 
-    static void give(Player p, ItemStack it) {
-        for (ItemStack rest : p.getInventory().addItem(it).values()) p.getWorld().dropItemNaturally(p.getLocation(), rest);
+    /**
+     * Donne un objet sans jamais le faire tomber par terre : ce qui ne rentre pas dans l'inventaire
+     * part dans le coffre de butin du joueur (/reliques). Renvoie true si tout est entré dans l'inventaire.
+     */
+    public boolean give(Player p, ItemStack it) {
+        var rest = p.getInventory().addItem(it).values();
+        if (rest.isEmpty()) return true;
+        PlayerData d = plugin.store().of(p.getUniqueId());
+        int n = 0;
+        for (ItemStack left : rest) {
+            d.stash.add(left);
+            n += left.getAmount();
+        }
+        plugin.store().dirty();
+        p.sendMessage(parse(plugin.msg("loot.stash-added").replace("<n>", String.valueOf(n))));
+        return false;
+    }
+
+    /** Sort du coffre de butin tout ce qui rentre dans l'inventaire. Renvoie le nombre d'objets récupérés. */
+    public int takeStash(Player p) {
+        PlayerData d = plugin.store().of(p.getUniqueId());
+        int got = 0;
+        java.util.List<ItemStack> keep = new ArrayList<>();
+        for (ItemStack it : d.stash) {
+            int before = it.getAmount();
+            var rest = p.getInventory().addItem(it.clone()).values();
+            int left = 0;
+            for (ItemStack l : rest) {
+                keep.add(l);
+                left += l.getAmount();
+            }
+            got += before - left;
+        }
+        d.stash.clear();
+        d.stash.addAll(keep);
+        plugin.store().dirty();
+        return got;
     }
 }

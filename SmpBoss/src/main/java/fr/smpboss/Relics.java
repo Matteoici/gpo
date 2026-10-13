@@ -34,7 +34,6 @@ public final class Relics {
     private final Map<String, Relic> catalog = new LinkedHashMap<>();
     private final NamespacedKey healthKey, speedKey;
     private final Map<UUID, Long> lastHurt = new HashMap<>();
-    private final Map<UUID, ItemDisplay> backpacks = new HashMap<>();
     public int maxEquipped;
 
     Relics(SmpBoss plugin) {
@@ -56,8 +55,24 @@ public final class Relics {
             catalog.put(id.toLowerCase(Locale.ROOT), new Relic(id.toLowerCase(Locale.ROOT), r.getString("name", id),
                     Rarity.of(r.getString("rarity")), icon == null ? Material.NETHER_STAR : icon, r.getString("item-model", ""),
                     r.getStringList("lore"), r.getDouble("health"), r.getDouble("speed"), r.getDouble("regen"),
-                    r.getString("trail"), r.getBoolean("backpack")));
+                    r.getString("trail"), r.getBoolean("backpack"), r.getString("visual", defaultVisual(id, r, icon))));
         }
+    }
+
+    /** Visuel par défaut (anciens config.yml sans "visual:"). */
+    private static String defaultVisual(String id, ConfigurationSection r, Material icon) {
+        if (r.getBoolean("backpack")) return "backpack";
+        String trail = r.getString("trail");
+        if (trail != null && trail.toUpperCase(Locale.ROOT).contains("FLAME")) return "flames";
+        if (icon == null) return "";
+        return switch (icon) {
+            case GOLDEN_HELMET -> "crown";
+            case LANTERN -> "lantern";
+            case SOUL_LANTERN -> "wisp";
+            case GOLDEN_BOOTS -> "boots";
+            case GOLDEN_CARROT -> "amulet";
+            default -> "";
+        };
     }
 
     public Relic get(String id) {
@@ -157,7 +172,7 @@ public final class Relics {
             if (p.isInvisible() || p.getGameMode() == org.bukkit.GameMode.SPECTATOR) continue;
             for (String id : plugin.store().of(p.getUniqueId()).equipped) {
                 Relic r = get(id);
-                if (r == null || r.trail() == null) continue;
+                if (r == null || r.trail() == null || "flames".equals(r.visual())) continue;
                 Particle part;
                 try {
                     part = Particle.valueOf(r.trail().toUpperCase(Locale.ROOT));
@@ -171,96 +186,24 @@ public final class Relics {
         }
     }
 
-    // ================================================================= sac sur le dos
-
-    private ItemStack backpackLook() {
-        var c = plugin.getConfig();
-        Material m = Material.matchMaterial(c.getString("backpack.display-item", "WHITE_SHULKER_BOX"));
-        ItemStack it = new ItemStack(m == null ? Material.WHITE_SHULKER_BOX : m);
-        String model = c.getString("models.backpack", "");
-        if (model != null && !model.isBlank()) {
-            NamespacedKey k = NamespacedKey.fromString(model);
-            if (k != null) {
-                ItemMeta meta = it.getItemMeta();
-                meta.setItemModel(k);
-                it.setItemMeta(meta);
-            }
-        }
-        return it;
-    }
+    // ================================================================= cosmétiques (voir Cosmetics)
 
     public void updateBackpack(Player p) {
-        boolean want = hasBackpack(p) && !p.isDead() && p.getGameMode() != org.bukkit.GameMode.SPECTATOR
-                && plugin.getConfig().getBoolean("backpack.show-on-back", true);
-        ItemDisplay d = backpacks.get(p.getUniqueId());
-        if (!want) {
-            if (d != null) d.remove();
-            backpacks.remove(p.getUniqueId());
-            return;
-        }
-        if (d != null && d.isValid() && d.getWorld() == p.getWorld()) return;
-        if (d != null) d.remove();
-        float sc = (float) plugin.getConfig().getDouble("backpack.scale", 0.45);
-        ItemDisplay disp = p.getWorld().spawn(backPosition(p), ItemDisplay.class, e -> {
-            e.setPersistent(false);
-            e.getPersistentDataContainer().set(plugin.items().relicKey, PersistentDataType.STRING, "backpack-display");
-            e.setItemStack(backpackLook());
-            e.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
-            e.setTransformation(new Transformation(new Vector3f(), new Quaternionf(),
-                    new Vector3f(sc, sc, sc * 0.7f), new Quaternionf()));
-            e.setBillboard(Display.Billboard.FIXED);
-            e.setTeleportDuration(1);
-        });
-        backpacks.put(p.getUniqueId(), disp);
+        plugin.cosmetics().refresh(p);
+        if (plugin.invButtons() != null) plugin.invButtons().place(p);
     }
 
-    /**
-     * Position du sac : dans le dos, à hauteur du torse, tourné comme le corps.
-     * (Pas "monté" sur le joueur : un passager bloquerait ses téléportations /home, /spawn...)
-     */
-    private Location backPosition(Player p) {
-        Location l = p.getLocation();
-        float yaw = p.getBodyYaw();
-        double rad = Math.toRadians(yaw);
-        double back = plugin.getConfig().getDouble("backpack.offset-back", 0.3);
-        double height = plugin.getConfig().getDouble("backpack.height", 1.05) - (p.isSneaking() ? 0.25 : 0);
-        Location out = l.clone().add(Math.sin(rad) * back, height, -Math.cos(rad) * back);
-        out.setYaw(yaw);
-        out.setPitch(0);
-        return out;
-    }
-
-    /** Toutes les ticks : le sac suit le joueur. */
     public void tickBackpacks() {
-        for (var e : new java.util.ArrayList<>(backpacks.entrySet())) {
-            Player p = Bukkit.getPlayer(e.getKey());
-            ItemDisplay d = e.getValue();
-            if (p == null || d == null || !d.isValid()) continue;
-            if (d.getWorld() != p.getWorld() || p.isDead()) {
-                updateBackpackLater(p);
-                continue;
-            }
-            d.teleport(backPosition(p));
-        }
-    }
-
-    private void updateBackpackLater(Player p) {
-        ItemDisplay d = backpacks.remove(p.getUniqueId());
-        if (d != null) d.remove();
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            if (p.isOnline()) updateBackpack(p);
-        }, 5L);
+        plugin.cosmetics().tick();
     }
 
     public void forget(Player p) {
-        ItemDisplay d = backpacks.remove(p.getUniqueId());
-        if (d != null) d.remove();
+        plugin.cosmetics().remove(p.getUniqueId());
         lastHurt.remove(p.getUniqueId());
     }
 
     public void removeAll() {
-        for (ItemDisplay d : backpacks.values()) if (d != null) d.remove();
-        backpacks.clear();
+        plugin.cosmetics().removeAll();
     }
 
     public List<Relic> owned(Player p) {

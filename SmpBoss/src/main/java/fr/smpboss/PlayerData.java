@@ -18,7 +18,11 @@ public final class PlayerData {
     /** combats de boss gagnés sans légendaire (ou mieux) / sans secret : garantie */
     public int pityLegendary, pitySecret;
     public long kills;
+    /** cosmétiques visibles ou non (les bonus restent actifs) */
+    public boolean hideCosmetics;
     public ItemStack[] backpack = new ItemStack[27];
+    /** butin gagné qui n'a pas pu entrer dans l'inventaire (récupérable dans /reliques) */
+    public final List<ItemStack> stash = new ArrayList<>();
 
     public PlayerData(UUID id) {
         this.id = id;
