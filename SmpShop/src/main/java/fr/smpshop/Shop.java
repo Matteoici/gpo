@@ -82,6 +82,9 @@ public final class Shop {
             if (c.currency() != Currency.MONEY) continue;
             for (Entry e : c.entries()) {
                 if (e.isCommand() || e.price() <= 0) continue;
+                // objets spéciaux (renommés, potions) : leur prix ne doit pas fixer celui de l'objet de base
+                var meta = e.item().hasItemMeta() ? e.item().getItemMeta() : null;
+                if (meta != null && (meta.hasDisplayName() || meta.hasLore() || meta instanceof org.bukkit.inventory.meta.PotionMeta)) continue;
                 buy.merge(e.item().getType(), e.price() / e.item().getAmount(), Math::min);
             }
         }

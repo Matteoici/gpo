@@ -51,9 +51,29 @@ auto-price:
 
 # ---------------------------------------------------------------- Vente
 sell:
-  # objets vendus dans /shop : la revente ne dépasse jamais prix d'achat × ce ratio (0.3 = 30 %).
-  # Acheter pour revendre ne rapporte donc jamais rien.
+  # objets vendus dans /shop : prix de revente = prix d'achat × ce ratio (0.3 = 30 %), pour tous.
+  # La vente suit donc toujours la boutique : si tu changes un prix dans shop.yml, la vente suit.
+  # Acheter pour revendre ne rapporte jamais rien (même avec le bonus de grade).
+  # 0 = on garde les prix de worth.yml pour ces objets.
   shop-items-ratio: 0.3
+  # Exceptions (sinon argent infini) :
+  #  - un objet fabriqué ne se revend jamais plus cher que ses ingrédients (automatique) ;
+  #  - ces objets-là se farment à l'infini (villageois à stock infini, fermes AFK) : ils gardent
+  #    leur prix bas de worth.yml.
+  keep-worth:
+    - TOTEM_OF_UNDYING
+    - ENDER_PEARL
+    - EXPERIENCE_BOTTLE
+    - GLOWSTONE
+    - ARROW
+    - GOLDEN_CARROT
+    - BREAD
+    - COOKED_BEEF
+    - COOKED_PORKCHOP
+    - COOKED_CHICKEN
+    - COOKED_MUTTON
+    - NETHER_WART
+    - COBWEB
   # les objets renommés (clés de caisse, objets spéciaux...) ne se vendent pas
   ignore-named-items: true
   # les outils / armures abîmés ne se vendent pas

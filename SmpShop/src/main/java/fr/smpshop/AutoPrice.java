@@ -35,6 +35,34 @@ final class AutoPrice {
     private record R(Material result, int amount, List<RecipeChoice> inputs, double factor) {
     }
 
+    /** Recettes lues au dernier calcul (pour plafonner les prix des objets de la boutique). */
+    private static volatile List<R> lastRecipes = List.of();
+
+    /**
+     * Valeur d'un objet d'après ses ingrédients (la recette la moins chère), -1 s'il ne se fabrique pas.
+     * Sert à empêcher "j'achète / je farme les ingrédients, je fabrique, je revends plus cher".
+     */
+    static double recipeValue(Material m, Map<Material, Double> prices) {
+        double best = -1;
+        for (R r : lastRecipes) {
+            if (r.result() != m) continue;
+            double sum = 0;
+            boolean ok = true;
+            for (RecipeChoice c : r.inputs()) {
+                double v = cheapest(c, prices);
+                if (v < 0) {
+                    ok = false;
+                    break;
+                }
+                sum += v;
+            }
+            if (!ok) continue;
+            double v = sum / r.amount() * r.factor();
+            if (best < 0 || v < best) best = v;
+        }
+        return best;
+    }
+
     static void fill(Map<Material, Double> prices, Set<Material> never, double craftFactor, double smeltFactor,
                      double defaultPrice, List<String> neverPatterns) {
         List<R> recipes = new ArrayList<>();
@@ -76,6 +104,7 @@ final class AutoPrice {
             if (!in.isEmpty()) recipes.add(new R(res.getType(), Math.max(1, res.getAmount()), in, factor));
         }
 
+        lastRecipes = List.copyOf(recipes);
         Map<Material, Double> fixed = new EnumMap<>(Material.class);
         fixed.putAll(prices);
         // plusieurs passes : les objets fabriqués à partir d'objets fabriqués

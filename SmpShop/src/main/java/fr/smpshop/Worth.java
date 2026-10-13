@@ -35,6 +35,8 @@ public final class Worth {
 
     /** Prix écrits à la main dans worth.yml (jamais recalculés). */
     private volatile java.util.Set<Material> explicit = java.util.EnumSet.noneOf(Material.class);
+    /** 0 dans worth.yml = ne se vend jamais, même si la boutique le vend */
+    private volatile java.util.Set<Material> never = java.util.EnumSet.noneOf(Material.class);
 
     void load() {
         File f = new File(plugin.getDataFolder(), "worth.yml");
@@ -65,6 +67,7 @@ public final class Worth {
         }
         prices = p;
         explicit = fixed;
+        this.never = never;
         Map<String, Double> mult = new LinkedHashMap<>();
         ConfigurationSection ms = c.getConfigurationSection("sell.multipliers");
         if (ms != null) for (String k : ms.getKeys(false)) mult.put(k.toLowerCase(Locale.ROOT), ms.getDouble(k, 1));
@@ -84,21 +87,40 @@ public final class Worth {
         p.putAll(prices);
         double maxMult = maxMultiplier();
         double ratio = plugin.getConfig().getDouble("sell.shop-items-ratio", 0.3);
+        java.util.Set<Material> keep = java.util.EnumSet.noneOf(Material.class);
+        for (String k : plugin.getConfig().getStringList("sell.keep-worth")) {
+            Material km = Material.matchMaterial(k);
+            if (km != null) keep.add(km);
+        }
         // jamais plus que ce qu'on paie, même avec le meilleur bonus de grade
         ratio = Math.min(ratio, 0.9 / maxMult);
         for (var e : buyUnit.entrySet()) {
             Material m = e.getKey();
             if (ratio > 0) {
-                // plafond : jamais plus de ratio × prix d'achat (un prix plus bas dans worth.yml est gardé)
-                Double cur = p.get(m);
-                double cap = Math.floor(e.getValue() * ratio * 100) / 100.0;
-                if (cur != null && cur > cap) p.put(m, cap);
+                // prix de vente = prix d'achat × ratio : /sell suit /shop
+                if (never.contains(m)) continue;
+                double v = Math.max(0.01, Math.floor(e.getValue() * ratio * 100) / 100.0);
+                if (keep.contains(m)) {
+                    // objets qui se farment à l'infini (villageois, fermes AFK) : on garde le prix bas de worth.yml s'il est plus bas
+                    Double cur = p.get(m);
+                    if (cur != null && cur < v) continue;
+                }
+                p.put(m, v);
                 continue;
             }
             Double v = p.get(m);
             if (v == null || explicit.contains(m)) continue;
             double cap = e.getValue() * 0.5 / maxMult;
             if (v > cap) p.put(m, Math.floor(cap * 100) / 100.0);
+        }
+        // anti-boucle : un objet fabriqué ne se revend jamais plus cher que ses ingrédients
+        if (ratio > 0) {
+            for (Material m : buyUnit.keySet()) {
+                Double v = p.get(m);
+                if (v == null) continue;
+                double rv = AutoPrice.recipeValue(m, p);
+                if (rv > 0 && v > rv) p.put(m, Math.max(0.01, Math.floor(rv * 100) / 100.0));
+            }
         }
         prices = p;
     }
