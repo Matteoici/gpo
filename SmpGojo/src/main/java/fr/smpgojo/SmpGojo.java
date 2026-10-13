@@ -174,13 +174,14 @@ public final class SmpGojo extends JavaPlugin implements Listener {
             packServer = new PackServer(this);
             packServer.start(port);
         }
+        // chaque système tourne à part : une erreur dans l'un ne bloque pas les autres et n'est écrite qu'une fois par minute
         Bukkit.getScheduler().runTaskTimer(this, () -> {
-            cine.tick();
-            ruin.tick();
-            gojo.tick();
-            megumi.tick();
-            yuji.tick();
-            toji.tick();
+            safe("cine", cine::tick);
+            safe("ruin", ruin::tick);
+            safe("gojo", gojo::tick);
+            safe("megumi", megumi::tick);
+            safe("yuji", yuji::tick);
+            safe("toji", toji::tick);
         }, 1L, 1L);
         // restes d'un ancien arrêt (affichages perdus)
         for (var w : Bukkit.getWorlds()) {
@@ -488,14 +489,50 @@ public final class SmpGojo extends JavaPlugin implements Listener {
     void repeat(int period, int times, IntConsumer step, Runnable end) {
         int[] i = {0};
         BukkitTask[] self = new BukkitTask[1];
-        self[0] = Bukkit.getScheduler().runTaskTimer(this, () -> {
+        self[0] = Bukkit.getScheduler().runTaskTimer(this, guard(this, self, "animation", () -> {
             if (i[0] >= times) {
                 self[0].cancel();
                 if (end != null) end.run();
                 return;
             }
             step.accept(i[0]++);
-        }, 0L, Math.max(1, period));
+        }), 0L, Math.max(1, period));
+    }
+
+    // ================================================================= anti-boucle d'erreurs
+    // Une tâche répétée qui plante à chaque tick écrit une erreur 20 fois par seconde dans les logs
+    // (des dizaines de Go en quelques jours). Ici : la tâche est arrêtée et l'erreur écrite une seule fois.
+
+    private final java.util.Map<String, Long> lastError = new java.util.HashMap<>();
+
+    void logOnce(String where, Throwable t) {
+        long now = System.currentTimeMillis();
+        Long last = lastError.get(where);
+        if (last != null && now - last < 60_000) return;
+        lastError.put(where, now);
+        getLogger().warning("Erreur dans " + where + " (arrêté, écrit une fois par minute max) : " + t);
+        StackTraceElement[] st = t.getStackTrace();
+        for (int i = 0; i < Math.min(4, st.length); i++) getLogger().warning("    à " + st[i]);
+    }
+
+    private void safe(String where, Runnable r) {
+        try {
+            r.run();
+        } catch (Throwable t) {
+            logOnce(where, t);
+        }
+    }
+
+    /** Enveloppe le corps d'une tâche répétée : à la première erreur, la tâche s'arrête. */
+    static Runnable guard(SmpGojo pl, BukkitTask[] self, String where, Runnable body) {
+        return () -> {
+            try {
+                body.run();
+            } catch (Throwable t) {
+                if (self[0] != null) self[0].cancel();
+                pl.logOnce(where, t);
+            }
+        };
     }
 
     void later(long delay, Runnable r) {

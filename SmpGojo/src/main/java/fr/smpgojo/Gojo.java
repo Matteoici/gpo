@@ -543,7 +543,7 @@ final class Gojo {
             ThreadLocalRandom rnd = ThreadLocalRandom.current();
             int[] tick = {0};
             org.bukkit.scheduler.BukkitTask[] loop = new org.bukkit.scheduler.BukkitTask[1];
-            loop[0] = Bukkit.getScheduler().runTaskTimer(pl, () -> {
+            loop[0] = Bukkit.getScheduler().runTaskTimer(pl, SmpGojo.guard(pl, loop, "violet 200 %", () -> {
                 int i = tick[0]++;
                 if (!pl.pending.contains(clean[0])) {
                     loop[0].cancel();
@@ -598,7 +598,7 @@ final class Gojo {
                         if (pl.pending.contains(clean[0])) clean[0].run();
                     });
                 }
-            }, 1L, 1L);
+            }), 1L, 1L);
         });
     }
 

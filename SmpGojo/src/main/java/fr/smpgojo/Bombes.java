@@ -325,7 +325,7 @@ final class Bombes {
         double[] wave = {R * 0.5};
         int[] tick = {0};
         org.bukkit.scheduler.BukkitTask[] loop = new org.bukkit.scheduler.BukkitTask[1];
-        loop[0] = org.bukkit.Bukkit.getScheduler().runTaskTimer(pl, () -> {
+        loop[0] = org.bukkit.Bukkit.getScheduler().runTaskTimer(pl, SmpGojo.guard(pl, loop, "bombe", () -> {
             int i = tick[0]++;
             double target = hole == null || !hole.erasing() ? R : hole.radiusProgress();
             cur[0] = Math.min(R, Math.max(cur[0] + 0.3, Math.min(target, cur[0] + 4)));
@@ -369,7 +369,7 @@ final class Bombes {
                 loop[0].cancel();
                 aftermath(ground, R, big);
             }
-        }, 1L, 1L);
+        }), 1L, 1L);
     }
 
     /** Sol brûlé, fissures, vitres soufflées, puis le champignon atomique. */
