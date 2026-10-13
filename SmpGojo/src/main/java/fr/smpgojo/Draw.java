@@ -22,12 +22,17 @@ final class Draw {
     private Draw() {
     }
 
+    /** Particule de couleur, taille toujours dans les limites du jeu (0,01 à 4). */
+    static Particle.DustOptions dustOpt(Color c, float size) {
+        return new Particle.DustOptions(c, Math.max(0.05f, Math.min(4f, size)));
+    }
+
     static ThreadLocalRandom rnd() {
         return ThreadLocalRandom.current();
     }
 
     static void dust(Location l, Color c, float size) {
-        l.getWorld().spawnParticle(Particle.DUST, l, 1, 0, 0, 0, 0, new Particle.DustOptions(c, size), true);
+        l.getWorld().spawnParticle(Particle.DUST, l, 1, 0, 0, 0, 0, dustOpt(c, size), true);
     }
 
     static void fx(Location l, Particle p, int count, double spread, double speed) {
@@ -40,7 +45,7 @@ final class Draw {
 
     /** Points au hasard sur une sphère. */
     static void sphere(Location c, double r, Color color, float size, int points) {
-        Particle.DustOptions dust = new Particle.DustOptions(color, size);
+        Particle.DustOptions dust = dustOpt(color, size);
         World w = c.getWorld();
         ThreadLocalRandom rnd = rnd();
         for (int i = 0; i < points; i++) {
@@ -52,7 +57,7 @@ final class Draw {
 
     /** Remplit une boule (pour les noyaux lumineux). */
     static void ball(Location c, double r, Color color, float size, int points) {
-        Particle.DustOptions dust = new Particle.DustOptions(color, size);
+        Particle.DustOptions dust = dustOpt(color, size);
         World w = c.getWorld();
         ThreadLocalRandom rnd = rnd();
         for (int i = 0; i < points; i++) {
@@ -63,7 +68,7 @@ final class Draw {
 
     /** Cercle horizontal. */
     static void ring(Location c, double r, Color color, float size, int points) {
-        Particle.DustOptions dust = new Particle.DustOptions(color, size);
+        Particle.DustOptions dust = dustOpt(color, size);
         World w = c.getWorld();
         double off = rnd().nextDouble() * Math.PI;
         for (int i = 0; i < points; i++) {
@@ -82,7 +87,7 @@ final class Draw {
 
     /** Anneau penché qui tourne (orbite autour d'une sphère). */
     static void orbit(Location c, double r, double phase, double tilt, Color color, float size, int points) {
-        Particle.DustOptions dust = new Particle.DustOptions(color, size);
+        Particle.DustOptions dust = dustOpt(color, size);
         World w = c.getWorld();
         for (int i = 0; i < points; i++) {
             double a = phase + i * Math.PI * 2 / points;
@@ -95,7 +100,7 @@ final class Draw {
 
     /** Une coupure : trait principal + liseré. */
     static void slash(Location c, Vector u, double half, Color core, Color edge) {
-        Particle.DustOptions a = new Particle.DustOptions(core, half > 4 ? 1.6f : 1.1f), b = new Particle.DustOptions(edge, 0.7f);
+        Particle.DustOptions a = dustOpt(core, half > 4 ? 1.6f : 1.1f), b = dustOpt(edge, 0.7f);
         World w = c.getWorld();
         double step = half > 4 ? 0.35 : 0.16;
         for (double t = -half; t <= half; t += step) {
@@ -108,7 +113,7 @@ final class Draw {
 
     /** Segment droit. */
     static void segment(Location a, Location b, Color c, float size, double step) {
-        Particle.DustOptions dust = new Particle.DustOptions(c, size);
+        Particle.DustOptions dust = dustOpt(c, size);
         Vector d = b.toVector().subtract(a.toVector());
         double len = d.length();
         if (len < 0.001) return;
@@ -136,7 +141,7 @@ final class Draw {
 
     /** Particules qui se resserrent vers un point (charge). */
     static void converge(Location c, double r, Color color, float size, int n) {
-        Particle.DustOptions dust = new Particle.DustOptions(color, size);
+        Particle.DustOptions dust = dustOpt(color, size);
         World w = c.getWorld();
         for (int i = 0; i < n; i++) {
             Vector v = randomDir().multiply(r * (0.3 + rnd().nextDouble() * 0.7));
@@ -172,6 +177,6 @@ final class Draw {
         e.getWorld().spawnParticle(Particle.BLOCK, e.getLocation().add(0, e.getHeight() * 0.6, 0), n, 0.3, 0.4, 0.3, 0,
                 Material.REDSTONE_BLOCK.createBlockData(), true);
         e.getWorld().spawnParticle(Particle.DUST, e.getLocation().add(0, e.getHeight() * 0.6, 0), n / 2, 0.3, 0.4, 0.3, 0,
-                new Particle.DustOptions(BLOOD, 1.3f), true);
+                dustOpt(BLOOD, 1.3f), true);
     }
 }
