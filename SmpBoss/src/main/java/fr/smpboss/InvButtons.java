@@ -180,7 +180,8 @@ final class InvButtons implements Listener {
                     }
                     p.updateInventory();
                 });
-            } else {
+            } else if (c == ClickType.NUMBER_KEY) {
+                // touche 1-9 sur un bouton : on libère la grille, il pourra recommencer
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     clear(p);
                     p.updateInventory();

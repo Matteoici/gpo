@@ -305,8 +305,8 @@ final class Cosmetics {
                     parts.add(block(at, Material.BLACK_WOOL, 0.18f, 0.33f, -0.12f, 0.03f, 0.135f, 0.135f, null));
                     parts.add(block(at, Material.BLACK_WOOL, -0.18f, 0.33f, -0.12f, 0.03f, 0.135f, 0.135f, null));
                     for (float x : new float[]{0.15f, -0.15f}) {
-                        parts.add(block(at, Material.BROWN_TERRACOTTA, x, 0.325f, 0.12f, 0.07f, 0.02f, 0.27f, null));
-                        parts.add(block(at, Material.BROWN_TERRACOTTA, x, 0.17f, 0.262f, 0.07f, 0.3f, 0.02f, null));
+                        parts.add(block(at, Material.BROWN_TERRACOTTA, x, 0.325f, 0.135f, 0.07f, 0.02f, 0.3f, null));
+                        parts.add(block(at, Material.BROWN_TERRACOTTA, x, 0.17f, 0.278f, 0.07f, 0.3f, 0.02f, null));
                     }
                     parts.add(block(at, Material.JACK_O_LANTERN, 0.28f, -0.12f, -0.12f, 0.15f, 0.15f, 0.15f, null));
                 }
