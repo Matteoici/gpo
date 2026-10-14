@@ -29,7 +29,12 @@ public final class Items {
     public static ItemStack head(OfflinePlayer owner, Component name, List<Component> lore) {
         ItemStack it = new ItemStack(Material.PLAYER_HEAD);
         SkullMeta meta = (SkullMeta) it.getItemMeta();
-        meta.setOwningPlayer(owner);
+        // Pas de setOwningPlayer : pour un joueur hors ligne, le serveur interrogerait Mojang à chaque menu
+        // ouvert (erreurs 429 "Couldn't look up profile properties" quand il y a beaucoup de têtes).
+        // En ligne : son profil avec skin ; hors ligne : juste son nom, et c'est le jeu du joueur qui affiche le skin.
+        org.bukkit.entity.Player online = owner.getPlayer();
+        meta.setPlayerProfile(online != null ? online.getPlayerProfile()
+                : org.bukkit.Bukkit.createProfile(owner.getUniqueId(), owner.getName()));
         meta.displayName(name);
         if (lore != null && !lore.isEmpty()) meta.lore(lore);
         it.setItemMeta(meta);
