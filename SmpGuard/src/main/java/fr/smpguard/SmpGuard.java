@@ -2,7 +2,11 @@ package fr.smpguard;
 
 import fr.smpguard.check.AutoTotemCheck;
 import fr.smpguard.check.BaitTest;
-import fr.smpguard.check.CrystalCheck;
+import fr.smpguard.check.BreakCheck;
+import fr.smpguard.check.ClientCheck;
+import fr.smpguard.check.CombatCheck;
+import fr.smpguard.check.MoveCheck;
+import fr.smpguard.check.WallCheck;
 import fr.smpguard.check.Culling;
 import fr.smpguard.check.EspAimCheck;
 import fr.smpguard.check.FreecamCheck;
@@ -30,7 +34,11 @@ public final class SmpGuard extends JavaPlugin {
     private XrayCheck xray;
     private Culling culling;
     private AutoTotemCheck autoTotem;
-    private CrystalCheck crystal;
+    private ClientCheck client;
+    private WallCheck wall;
+    private CombatCheck combat;
+    private MoveCheck move;
+    private BreakCheck breaks;
     private NamespacedKey key;
     private final Map<UUID, Profile> profiles = new HashMap<>();
     private final Map<UUID, BaitTest> baits = new HashMap<>();
@@ -50,7 +58,11 @@ public final class SmpGuard extends JavaPlugin {
         xray = new XrayCheck(this);
         culling = new Culling(this);
         autoTotem = new AutoTotemCheck(this);
-        crystal = new CrystalCheck(this);
+        client = new ClientCheck(this);
+        wall = new WallCheck(this);
+        combat = new CombatCheck(this);
+        move = new MoveCheck(this);
+        breaks = new BreakCheck(this);
 
         getServer().getPluginManager().registerEvents(new GuardListener(this), this);
         PluginCommand cmd = getCommand("anticheat");
@@ -86,8 +98,10 @@ public final class SmpGuard extends JavaPlugin {
         if (tick % EspAimCheck.period() == 0) espAim.run();
         if (tick % FreecamCheck.PERIOD == 3) freecam.run();
         culling.tick();
+        move.tick();
         if (tick % 20 == 11) {
-            crystal.tickSecond();
+            combat.tickSecond();
+            breaks.tickSecond();
             autoTotem.prune();
         }
         if (tick % 20 == 7) {
@@ -114,7 +128,10 @@ public final class SmpGuard extends JavaPlugin {
         if (b != null) b.cancel();
         culling.forget(p);
         autoTotem.forget(p);
-        crystal.forget(p);
+        client.forget(p);
+        combat.forget(p);
+        move.forget(p);
+        breaks.forget(p);
         for (Profile o : profiles.values()) o.tracks.remove(p.getUniqueId());
     }
 
@@ -126,6 +143,7 @@ public final class SmpGuard extends JavaPlugin {
         prof.clearHistory();
         prof.tracks.clear();
         prof.inputStillSeconds = 0;
+        if (move != null) move.reset(p);
     }
 
     public Profile profile(Player p) {
@@ -206,8 +224,24 @@ public final class SmpGuard extends JavaPlugin {
         return autoTotem;
     }
 
-    public CrystalCheck crystal() {
-        return crystal;
+    public ClientCheck client() {
+        return client;
+    }
+
+    public WallCheck wall() {
+        return wall;
+    }
+
+    public CombatCheck combat() {
+        return combat;
+    }
+
+    public MoveCheck move() {
+        return move;
+    }
+
+    public BreakCheck breaks() {
+        return breaks;
     }
 
     /** Numéro du tick serveur (compté par le plugin). */

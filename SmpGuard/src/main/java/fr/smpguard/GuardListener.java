@@ -2,7 +2,6 @@ package fr.smpguard;
 
 import fr.smpguard.gui.Menu;
 import fr.smpguard.check.AutoTotemCheck;
-import org.bukkit.entity.EnderCrystal;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
@@ -38,6 +37,7 @@ final class GuardListener implements Listener {
     @EventHandler
     public void onJoin(PlayerJoinEvent e) {
         plugin.join(e.getPlayer());
+        plugin.client().onJoin(e.getPlayer());
     }
 
     @EventHandler
@@ -117,16 +117,53 @@ final class GuardListener implements Listener {
         plugin.autoTotem().onTotemAction(p, e, totem, AutoTotemCheck.isOwnInventory(e.getView().getTopInventory().getType()));
     }
 
-    // ---------------------------------------------------------------- cristaux de l'End
+    // ---------------------------------------------------------------- mods / clients interdits
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onCrystalPlace(EntityPlaceEvent e) {
-        if (e.getEntity() instanceof EnderCrystal c) plugin.crystal().onPlace(e.getPlayer(), c, e.getBlock());
+    @EventHandler
+    public void onChannel(org.bukkit.event.player.PlayerRegisterChannelEvent e) {
+        plugin.client().onChannel(e.getPlayer(), e.getChannel());
     }
 
-    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
-    public void onCrystalHit(EntityDamageByEntityEvent e) {
-        if (e.getEntity() instanceof EnderCrystal c && e.getDamager() instanceof Player p) plugin.crystal().onHit(p, c, e);
+    // ---------------------------------------------------------------- à travers les murs (freecam)
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onUse(org.bukkit.event.player.PlayerInteractEvent e) {
+        plugin.wall().onInteract(e);
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBreakCheck(BlockBreakEvent e) {
+        plugin.wall().onBreak(e);
+        if (!e.isCancelled()) plugin.breaks().onBreak(e);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onDig(org.bukkit.event.block.BlockDamageEvent e) {
+        plugin.breaks().onDamage(e);
+    }
+
+    // ---------------------------------------------------------------- combat
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onAttack(EntityDamageByEntityEvent e) {
+        plugin.combat().onAttack(e);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onSwing(org.bukkit.event.player.PlayerAnimationEvent e) {
+        if (e.getAnimationType() == org.bukkit.event.player.PlayerAnimationType.ARM_SWING) plugin.combat().onSwing(e.getPlayer());
+    }
+
+    // ---------------------------------------------------------------- déplacements : poussées légitimes
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onVelocity(org.bukkit.event.player.PlayerVelocityEvent e) {
+        plugin.move().onPush(e.getPlayer());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onHurt(EntityDamageEvent e) {
+        if (e.getEntity() instanceof Player p) plugin.move().onPush(p);
     }
 
     // ---------------------------------------------------------------- menus

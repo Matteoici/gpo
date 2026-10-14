@@ -3,7 +3,7 @@ version: '${version}'
 main: fr.smpguard.SmpGuard
 api-version: '26.2'
 softdepend: [SmpAdmin]
-description: Anticheat ESP / X-ray / Freecam, tolérant au lag, relié au panneau admin
+description: Anticheat : mods interdits (Axiom...), freecam, ESP, X-ray, combat, déplacements, tolérant au lag, relié au panneau admin
 commands:
   anticheat:
     description: Panneau anticheat
@@ -20,6 +20,9 @@ permissions:
   smpguard.admin:
     description: Reset des scores, reload
     default: op
+  smpguard.allow-mods:
+    description: Peut utiliser les mods interdits (ex. Axiom pour construire)
+    default: false
   smpguard.bypass:
     description: Jamais analysé (staff)
     default: false

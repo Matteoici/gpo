@@ -37,10 +37,8 @@ public final class Settings {
     // auto-totem
     public final double totemMinReactionMs;
     public final boolean totemBlockImpossible;
-    // cristaux
-    public final double crystalMinReactionMs, crystalInhumanRatio, crystalMaxAngle;
-    public final int crystalMaxPerSecond;
-    public final boolean crystalBlockImpossible;
+    /** config brute, pour les réglages des nouvelles détections */
+    private final FileConfiguration cfg;
     // anti-esp
     public final boolean hideBehindWalls;
     public final double hideDistance;
@@ -97,11 +95,7 @@ public final class Settings {
 
         totemMinReactionMs = c.getDouble("checks.auto-totem.min-reaction-ms", 90);
         totemBlockImpossible = c.getBoolean("checks.auto-totem.block-impossible", true);
-        crystalMinReactionMs = c.getDouble("checks.crystal.min-reaction-ms", 40);
-        crystalInhumanRatio = Math.max(0.3, Math.min(1, c.getDouble("checks.crystal.inhuman-ratio", 0.75)));
-        crystalMaxPerSecond = Math.max(5, c.getInt("checks.crystal.max-per-second", 12));
-        crystalMaxAngle = c.getDouble("checks.crystal.max-angle", 75);
-        crystalBlockImpossible = c.getBoolean("checks.crystal.block-impossible", true);
+        this.cfg = c;
 
         hideBehindWalls = c.getBoolean("anti-esp.hide-players-behind-walls", false);
         hideDistance = Math.max(8, c.getDouble("anti-esp.distance", 48));
@@ -109,6 +103,19 @@ public final class Settings {
 
         baitSeconds = Math.max(10, c.getInt("bait.default-seconds", 30));
         baitRadius = Math.max(6, c.getDouble("bait.radius", 12));
+    }
+
+    /** Réglage numérique d'une détection : checks.<check>.<path> */
+    public double num(Check c, String path, double def) {
+        return cfg.getDouble("checks." + c.key + "." + path, def);
+    }
+
+    public boolean flag(Check c, String path, boolean def) {
+        return cfg.getBoolean("checks." + c.key + "." + path, def);
+    }
+
+    public FileConfiguration raw() {
+        return cfg;
     }
 
     public Limits limits(Check c) {

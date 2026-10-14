@@ -1,5 +1,5 @@
 # =====================================================================
-#  SmpGuard - anticheat ESP / X-ray / Freecam
+#  SmpGuard 2.0 - anticheat (mods interdits, freecam, ESP, X-ray, combat, déplacements)
 #
 #  IMPORTANT : l'ESP et le freecam sont des triches d'affichage, côté client.
 #  Aucun plugin ne peut les prouver à 100 %. SmpGuard :
@@ -87,22 +87,118 @@ checks:
     sus-vl: 4
     decay-per-minute: 0.05
 
-  # Crystal aura : cristaux de l'End posés / cassés plus vite et plus précisément qu'un humain.
-  crystal:
+  # ============================== NOUVEAU (2.0) ==============================
+
+  # Mods / clients interdits, repérés dès la connexion par leurs "canaux" et le nom du client.
+  # C'est la seule façon fiable d'attraper les caméras libres intégrées à un mod (ex. Axiom).
+  # action : kick (expulsé tout de suite) ou alert (alerte au staff seulement).
+  # Le staff avec la permission smpguard.allow-mods n'est jamais concerné.
+  client:
     enabled: true
-    # réaction (ping retiré) en dessous de laquelle un cassage est "trop rapide"
-    min-reaction-ms: 40
-    # part des 12 derniers cassages trop rapides pour alerter (un bon joueur en a parfois 1 ou 2, pas 9)
-    inhuman-ratio: 0.75
-    # cristaux cassés par seconde, tenus 3 secondes de suite (un excellent joueur : 6 à 9)
-    max-per-second: 12
-    # angle (degrés) entre le regard et le cristal au-delà duquel c'est "hors champ"
-    max-angle: 75
-    # annule un cristal cassé dans le même tick que son apparition (prédiction d'identifiant, impossible sans triche)
-    block-impossible: true
+    alert-vl: 1
+    sus-vl: 1
+    decay-per-minute: 0
+    rules:
+      - name: "Axiom (caméra libre / noclip)"
+        channels: ["axiom:*"]
+        action: kick
+        reason: "<red><b>Axiom n'est pas autorisé sur ce serveur.</b>\n<gray>Sa caméra libre permet de voir à travers les murs.\n<gray>Retire le mod pour rejoindre."
+      - name: "Client de triche"
+        brands: ["*meteor*", "*wurst*", "*aristois*", "*liquidbounce*", "*impact*", "*future*", "*rusherhack*", "*thunderhack*",
+                 "*bleachhack*", "*konas*", "*salhack*", "*inertia*", "*lambda*", "*kami*", "*phobos*", "*boze*", "*3arthh4ck*",
+                 "*coffee*", "*vape*", "*novoline*", "*sigma*", "*prestige*", "*doomsday*", "*argon*", "*catalyst*"]
+        channels: ["meteor*:*", "wurst*:*", "liquidbounce*:*", "aristois*:*", "rusherhack*:*", "thunderhack*:*", "bleachhack*:*"]
+        action: kick
+        reason: "<red><b>Client de triche détecté.</b>\n<gray>Rejoins avec un client normal."
+      - name: "Freecam (mod)"
+        channels: ["freecam*:*", "*freecam*"]
+        action: kick
+        reason: "<red><b>Le mod Freecam n'est pas autorisé sur ce serveur.</b>"
+      - name: "Baritone (bot de minage)"
+        channels: ["baritone:*"]
+        action: alert
+
+  # Ouvre un coffre / casse un bloc qu'il ne peut PAS voir depuis ses yeux (mur plein entre les deux).
+  # C'est la signature d'une caméra libre (son corps est ailleurs que sa caméra) ou d'un ESP de coffres.
+  wall-interact:
+    enabled: true
+    # annule l'ouverture d'un coffre invisible (le pillage en freecam devient impossible)
+    cancel-containers: true
+    # annule le cassage d'un bloc invisible
+    cancel-breaks: true
+    points-container: 1.0
+    points-break: 0.5
+    # ouvre un coffre visible mais en regardant à plus de X° de lui (caméra ailleurs que la tête)
+    max-angle: 80
+    alert-vl: 2
+    sus-vl: 4
+    decay-per-minute: 0.1
+
+  # Frappe plus loin que la portée du jeu (3 blocs). Le lag de la cible est entièrement pris en compte.
+  reach:
+    enabled: true
+    margin: 0.4
+    # annule les coups au-delà de portée + cancel-above (triche évidente)
+    cancel: true
+    cancel-above: 1.2
     alert-vl: 3
     sus-vl: 6
+    decay-per-minute: 0.2
+
+  # Killaura : frappe hors de son champ de vision, à travers un mur, ou deux cibles opposées dans le même tick.
+  killaura:
+    enabled: true
+    max-angle: 65
+    multi-angle: 70
+    alert-vl: 3
+    sus-vl: 6
+    decay-per-minute: 0.15
+
+  # Autoclicker : plus de max-cps clics par seconde pendant "seconds" secondes (en l'air ou sur une entité, pas en minant).
+  autoclicker:
+    enabled: true
+    max-cps: 20
+    seconds: 3
+    alert-vl: 2
+    sus-vl: 4
     decay-per-minute: 0.1
+
+  # Fly : en l'air plus d'1,5 s sans tomber, ou monte plus haut qu'un saut sans rien pour le porter.
+  fly:
+    enabled: true
+    # pause après un coup / une explosion / une charge de vent / un rebond
+    push-grace-ms: 2500
+    alert-vl: 3
+    sus-vl: 6
+    decay-per-minute: 0.2
+
+  # Speed : plus rapide que le maximum possible (effets, bonus, glace pris en compte).
+  speed:
+    enabled: true
+    # vitesse max normale (sprint + sauts) en blocs par seconde, avant bonus
+    max-blocks-per-second: 7.9
+    alert-vl: 3
+    sus-vl: 6
+    decay-per-minute: 0.2
+
+  # NoFall : prétend toucher le sol en tombant dans le vide (pour annuler les dégâts de chute).
+  nofall:
+    enabled: true
+    alert-vl: 3
+    sus-vl: 6
+    decay-per-minute: 0.15
+
+  # FastBreak / Nuker : casse plus vite que le jeu ne le permet, trop de blocs par seconde, ou derrière lui.
+  fastbreak:
+    enabled: true
+    # cassé en moins de X fois le temps normal
+    min-ratio: 0.7
+    max-per-second: 9
+    max-angle: 90
+    cancel: true
+    alert-vl: 3
+    sus-vl: 6
+    decay-per-minute: 0.15
 
 # ---------------------------------------------------------------- Protection anti-ESP
 # Cache les joueurs qui ne sont pas visibles (derrière un mur) : l'ESP et le freecam

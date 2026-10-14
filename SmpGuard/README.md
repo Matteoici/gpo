@@ -1,4 +1,18 @@
-# SmpGuard : anticheat ESP / X-ray / Freecam
+# SmpGuard 2.0 : anticheat
+
+## Nouveautés 2.0
+| Détection | Ce qu'elle attrape |
+|---|---|
+| **Mod / client interdit** | Axiom (caméra libre), mod Freecam, clients de triche (Meteor, Wurst, LiquidBounce...) repérés à la connexion par leurs canaux et le nom du client. Expulsion immédiate (réglable). |
+| **À travers les murs** | Ouvrir un coffre ou casser un bloc invisible depuis ses yeux = caméra libre / ESP de coffres. L'ouverture est annulée. |
+| **Reach** | Coups au-delà de la portée du jeu, lag de la cible compris. |
+| **Killaura** | Coups hors du champ de vision, à travers un mur, ou deux cibles opposées dans le même tick. |
+| **Autoclicker** | Plus de 20 clics/s pendant 3 s. |
+| **Fly / Speed / NoFall** | Vérifiés avec les vrais blocs du serveur ; coups, explosions, glace, effets, eau, échelles, slime... pris en compte. |
+| **FastBreak / Nuker** | Blocs cassés trop vite (temps calculé par le jeu), trop nombreux, ou derrière soi. |
+
+La détection Crystal aura a été retirée (plus de crystal PvP sur le serveur).
+
 
 ## À lire d'abord : ce qui est possible et ce qui ne l'est pas
 
