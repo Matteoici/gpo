@@ -227,4 +227,10 @@ public final class SmpEvents extends JavaPlugin {
     public NamespacedKey spawnerKey() {
         return spawnerKey;
     }
+
+    /** Lien avec SmpTitles : compte une victoire (débloque les titres) si le plugin est installé. */
+    public static void titleWin(org.bukkit.entity.Player p, String counter) {
+        if (p == null || !org.bukkit.Bukkit.getPluginManager().isPluginEnabled("SmpTitles")) return;
+        org.bukkit.Bukkit.dispatchCommand(org.bukkit.Bukkit.getConsoleSender(), "titre win " + p.getName() + " " + counter);
+    }
 }

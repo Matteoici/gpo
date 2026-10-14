@@ -1,0 +1,51 @@
+# =====================================================================
+#  SmpTitles - titres débloqués en gagnant des événements, affichés devant le pseudo
+#
+#  Les plugins du serveur comptent les victoires tout seuls :
+#    koth (KOTH gagné), bounty (prime encaissée), quest-weekly (quête hebdo), quest (quête du jour),
+#    boss (Roi Citrouille vaincu, avec assez de dégâts)
+#  Pour un événement fait à la main : /titre win <joueur> event    (ou n'importe quel autre compteur)
+#  Pour donner un titre directement : /titre give <joueur> <id>
+#  Après une modification : /titre reload
+# =====================================================================
+
+# où le titre s'affiche
+show-in-chat: true     # devant le pseudo dans le chat (nom affiché)
+show-in-tab: true      # dans la liste TAB
+format: "<title> <dark_gray>|</dark_gray> "
+
+# nom des compteurs (affiché dans le menu)
+counters:
+  koth: "KOTH gagnés"
+  bounty: "Primes encaissées"
+  boss: "Rois Citrouille vaincus"
+  quest-weekly: "Quêtes de la semaine"
+  quest: "Quêtes du jour"
+  event: "Événements gagnés"
+
+# requires : compteur -> nombre à atteindre (tous doivent être atteints)
+titles:
+  koth_1:   {display: "<gold>♛ Conquérant", description: "Gagner un KOTH", requires: {koth: 1}}
+  koth_5:   {display: "<gradient:#ffd36b:#ff7a00><b>♛ Roi de la Colline", description: "Gagner 5 KOTH", requires: {koth: 5}}
+  koth_20:  {display: "<gradient:#ff4b1f:#ffd36b><b>♛ Empereur", description: "Gagner 20 KOTH", requires: {koth: 20}}
+  bounty_1: {display: "<red>☠ Chasseur", description: "Encaisser une prime", requires: {bounty: 1}}
+  bounty_10: {display: "<gradient:#ff416c:#ff4b2b><b>☠ Chasseur de Primes", description: "Encaisser 10 primes", requires: {bounty: 10}}
+  bounty_50: {display: "<gradient:#8e0e00:#ff4b2b><b>☠ Faucheur", description: "Encaisser 50 primes", requires: {bounty: 50}}
+  boss_1:   {display: "<#ff7a00>🎃 Briseur de Citrouille", description: "Vaincre le Roi Citrouille", requires: {boss: 1}}
+  boss_10:  {display: "<gradient:#ff7a00:#7a1fa2><b>🎃 Fléau du Roi", description: "Vaincre 10 fois le Roi Citrouille", requires: {boss: 10}}
+  quest_10: {display: "<green>✔ Travailleur", description: "Finir 10 quêtes de la semaine", requires: {quest-weekly: 10}}
+  quest_100: {display: "<gradient:#56ab2f:#a8e063><b>✔ Infatigable", description: "Finir 100 quêtes du jour", requires: {quest: 100}}
+  event_1:  {display: "<aqua>★ Champion", description: "Gagner un événement du staff", requires: {event: 1}}
+  event_5:  {display: "<gradient:#00c6ff:#0072ff><b>★ Légende", description: "Gagner 5 événements du staff", requires: {event: 5}}
+
+messages:
+  prefix: "<dark_gray>[<gold>Titres</gold>]</dark_gray> "
+  unlocked: "<gold>✦ Nouveau titre débloqué : <title> <gray>(/titres pour l'équiper)"
+  equipped: "<green>Titre équipé : <title>"
+  removed: "<yellow>Titre retiré."
+  locked: "<red>Tu n'as pas encore ce titre."
+  given: "<green>Titre <title> <green>donné à <white><player></white>."
+  taken: "<yellow>Titre retiré à <white><player></white>."
+  counted: "<gray><player> : <white><counter></white> = <white><n>"
+  unknown: "<red>Titre inconnu : <white><id>"
+  menu-title: "<dark_gray>Mes titres"

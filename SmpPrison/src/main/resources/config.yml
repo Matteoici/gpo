@@ -1,0 +1,56 @@
+# =====================================================================
+#  SmpPrison - prison pour les tricheurs
+#
+#  1) Construis une cellule au spawn et une mine fermée (avec des murs en bedrock / barrières).
+#  2) Dans la cellule : /prison setcellule      Dans la mine (point d'arrivée) : /prison setmine
+#     Coins de la zone minable : /prison pos1 puis /prison pos2 (un coin, puis le coin opposé)
+#     Où il ressort à la fin : /prison setsortie
+#  3) /prison <joueur> <durée> [raison]     durée : 30m, 5h, 2j, 1s (semaine), 3mo (mois), 500a (ans)
+#
+#  Le prisonnier perd l'accès à tout : son inventaire est mis de côté (rendu à la sortie), il ne peut
+#  ni se téléporter, ni taper de commande (sauf /travailler, /cellule, /peine), ni sortir de la prison,
+#  ni poser de bloc, ni ouvrir de coffre, ni prendre ou faire de dégâts. Il reste prisonnier s'il se déconnecte.
+#  Chaque bloc miné dans la mine retire du temps à sa peine.
+# =====================================================================
+
+# minutes retirées de la peine par bloc miné
+minutes-per-block: 1
+# la peine baisse aussi avec le temps passé connecté (1 minute par minute)
+time-passes-online: false
+# les blocs minés réapparaissent après X secondes
+regen-seconds: 20
+# distance max autour de la cellule (au-delà : renvoyé dans la cellule)
+cell-radius: 6
+# commandes autorisées pour un prisonnier (sans le /)
+allowed-commands: [travailler, work, mine, cellule, peine, msg, tell, r, w]
+# il peut parler dans le chat ?
+can-chat: true
+# pioche donnée en prison
+pickaxe:
+  material: STONE_PICKAXE
+  efficiency: 1
+# préfixe affiché devant son nom (chat / TAB)
+prefix: "<dark_gray>[<red>⛓ Prisonnier</red>]</dark_gray> "
+
+messages:
+  prefix: "<dark_gray>[<red>⛓ Prison</red>]</dark_gray> "
+  jailed: "<red>Tu as été envoyé en prison pour <white><time></white>. <gray>Raison : <white><reason></white><newline><yellow>Tape <white>/travailler</white> pour miner et réduire ta peine."
+  jailed-broadcast: "<red>⛓ <white><player></white> <gray>a été envoyé en prison (<white><reason></white>) pour <white><time></white>."
+  jailed-staff: "<green><player> est en prison pour <white><time></white>."
+  pending: "<yellow><player> est hors ligne : il ira en prison à sa prochaine connexion."
+  released: "<green>Tu es libre ! <gray>Ton inventaire t'a été rendu. Ne recommence pas."
+  released-broadcast: "<gray>⛓ <white><player></white> a purgé sa peine."
+  not-prisoner: "<red>Tu n'es pas en prison."
+  not-jailed: "<red><player> n'est pas en prison."
+  denied-command: "<red>Tu es en prison : seules <white>/travailler</white>, <white>/cellule</white> et <white>/peine</white> marchent."
+  denied: "<red>Tu es en prison."
+  escape: "<red>On ne s'échappe pas de prison."
+  to-mine: "<yellow>Au travail ! <gray>Chaque bloc miné retire <white><per></white> de ta peine."
+  to-cell: "<gray>Retour en cellule."
+  remaining: "<gray>Peine restante : <white><time></white> <dark_gray>(≈ <blocks> blocs)"
+  bar: "<red>⛓</red> <white>Peine : <time></white> <dark_gray>|</dark_gray> <gray>/travailler pour la réduire"
+  no-setup: "<red>La prison n'est pas configurée : /prison setcellule et /prison setmine."
+  set: "<green><what> enregistré(e) ici."
+  bad-time: "<red>Durée invalide. Exemples : 30m, 5h, 2j, 1s, 3mo, 500a"
+  list-empty: "<gray>Personne en prison."
+  list-line: "<white><player></white> <gray>- <time> - <reason>"

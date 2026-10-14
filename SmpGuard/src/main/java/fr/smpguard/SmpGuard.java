@@ -6,6 +6,7 @@ import fr.smpguard.check.BreakCheck;
 import fr.smpguard.check.ClientCheck;
 import fr.smpguard.check.CombatCheck;
 import fr.smpguard.check.MoveCheck;
+import fr.smpguard.check.OreBait;
 import fr.smpguard.check.WallCheck;
 import fr.smpguard.check.Culling;
 import fr.smpguard.check.EspAimCheck;
@@ -39,6 +40,7 @@ public final class SmpGuard extends JavaPlugin {
     private CombatCheck combat;
     private MoveCheck move;
     private BreakCheck breaks;
+    private OreBait oreBait;
     private NamespacedKey key;
     private final Map<UUID, Profile> profiles = new HashMap<>();
     private final Map<UUID, BaitTest> baits = new HashMap<>();
@@ -63,6 +65,7 @@ public final class SmpGuard extends JavaPlugin {
         combat = new CombatCheck(this);
         move = new MoveCheck(this);
         breaks = new BreakCheck(this);
+        oreBait = new OreBait(this);
 
         getServer().getPluginManager().registerEvents(new GuardListener(this), this);
         PluginCommand cmd = getCommand("anticheat");
@@ -99,6 +102,7 @@ public final class SmpGuard extends JavaPlugin {
         if (tick % FreecamCheck.PERIOD == 3) freecam.run();
         culling.tick();
         move.tick();
+        if (tick % 100 == 37) oreBait.tick();
         if (tick % 20 == 11) {
             combat.tickSecond();
             breaks.tickSecond();
@@ -132,6 +136,7 @@ public final class SmpGuard extends JavaPlugin {
         combat.forget(p);
         move.forget(p);
         breaks.forget(p);
+        oreBait.forget(p);
         for (Profile o : profiles.values()) o.tracks.remove(p.getUniqueId());
     }
 
@@ -238,6 +243,10 @@ public final class SmpGuard extends JavaPlugin {
 
     public MoveCheck move() {
         return move;
+    }
+
+    public OreBait oreBait() {
+        return oreBait;
     }
 
     public BreakCheck breaks() {

@@ -1,0 +1,435 @@
+package fr.smptitles;
+
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.Sound;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabExecutor;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
+import org.bukkit.inventory.ItemFlag;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.plugin.java.JavaPlugin;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+/**
+ * Titres : chaque joueur a des compteurs (KOTH gagnés, primes, boss...). Atteindre un palier débloque un titre.
+ * Le joueur choisit son titre avec /titres ; il s'affiche devant son pseudo (chat et TAB).
+ */
+public final class SmpTitles extends JavaPlugin implements Listener, TabExecutor {
+
+    private static final MiniMessage MM = MiniMessage.miniMessage();
+
+    private record Title(String id, String display, String description, Map<String, Integer> requires) {
+    }
+
+    private static final class Data {
+        final Map<String, Integer> counters = new LinkedHashMap<>();
+        final Set<String> unlocked = new LinkedHashSet<>();
+        /** titres donnés à la main avec un texte libre (ex. titres secrets du boss) */
+        final Map<String, String> custom = new LinkedHashMap<>();
+        String active;
+    }
+
+    private final Map<String, Title> titles = new LinkedHashMap<>();
+    private final Map<UUID, Data> data = new HashMap<>();
+    private File file;
+
+    @Override
+    public void onEnable() {
+        saveDefaultConfig();
+        file = new File(getDataFolder(), "players.yml");
+        loadTitles();
+        loadData();
+        getServer().getPluginManager().registerEvents(this, this);
+        for (String c : List.of("titres", "titre")) {
+            var cmd = getCommand(c);
+            if (cmd != null) {
+                cmd.setExecutor(this);
+                cmd.setTabCompleter(this);
+            }
+        }
+        for (Player p : Bukkit.getOnlinePlayers()) apply(p);
+    }
+
+    @Override
+    public void onDisable() {
+        saveData();
+    }
+
+    private static Component mm(String s) {
+        return MM.deserialize(s).decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE);
+    }
+
+    private String msg(String k) {
+        String s = getConfig().getString("messages." + k);
+        return s == null ? "<red>[" + k + "]" : s;
+    }
+
+    // ================================================================= données
+
+    private void loadTitles() {
+        titles.clear();
+        ConfigurationSection s = getConfig().getConfigurationSection("titles");
+        if (s == null) return;
+        for (String id : s.getKeys(false)) {
+            ConfigurationSection t = s.getConfigurationSection(id);
+            if (t == null) continue;
+            Map<String, Integer> req = new LinkedHashMap<>();
+            ConfigurationSection r = t.getConfigurationSection("requires");
+            if (r != null) for (String k : r.getKeys(false)) req.put(k.toLowerCase(Locale.ROOT), r.getInt(k));
+            titles.put(id.toLowerCase(Locale.ROOT), new Title(id.toLowerCase(Locale.ROOT), t.getString("display", id),
+                    t.getString("description", ""), req));
+        }
+    }
+
+    private void loadData() {
+        YamlConfiguration y = YamlConfiguration.loadConfiguration(file);
+        for (String k : y.getKeys(false)) {
+            ConfigurationSection s = y.getConfigurationSection(k);
+            if (s == null) continue;
+            Data d = new Data();
+            ConfigurationSection c = s.getConfigurationSection("counters");
+            if (c != null) for (String n : c.getKeys(false)) d.counters.put(n, c.getInt(n));
+            d.unlocked.addAll(s.getStringList("unlocked"));
+            ConfigurationSection cu = s.getConfigurationSection("custom");
+            if (cu != null) for (String n : cu.getKeys(false)) d.custom.put(n, cu.getString(n));
+            d.active = s.getString("active");
+            try {
+                data.put(UUID.fromString(k), d);
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+    }
+
+    private void saveData() {
+        YamlConfiguration y = new YamlConfiguration();
+        for (var e : data.entrySet()) {
+            String k = e.getKey().toString();
+            Data d = e.getValue();
+            for (var c : d.counters.entrySet()) y.set(k + ".counters." + c.getKey(), c.getValue());
+            y.set(k + ".unlocked", new ArrayList<>(d.unlocked));
+            for (var c : d.custom.entrySet()) y.set(k + ".custom." + c.getKey(), c.getValue());
+            y.set(k + ".active", d.active);
+        }
+        try {
+            y.save(file);
+        } catch (IOException ex) {
+            getLogger().warning("players.yml : " + ex.getMessage());
+        }
+    }
+
+    private Data of(UUID id) {
+        return data.computeIfAbsent(id, k -> new Data());
+    }
+
+    /** Texte du titre (config ou titre libre). */
+    private String display(Data d, String id) {
+        Title t = titles.get(id);
+        if (t != null) return t.display();
+        return d.custom.get(id);
+    }
+
+    // ================================================================= affichage
+
+    private void apply(Player p) {
+        Data d = data.get(p.getUniqueId());
+        String disp = d == null || d.active == null ? null : display(d, d.active);
+        if (disp == null) {
+            if (getConfig().getBoolean("show-in-chat", true)) p.displayName(null);
+            if (getConfig().getBoolean("show-in-tab", true)) p.playerListName(null);
+            return;
+        }
+        Component name = mm(getConfig().getString("format", "<title> ").replace("<title>", disp)).append(Component.text(p.getName()));
+        if (getConfig().getBoolean("show-in-chat", true)) p.displayName(name);
+        if (getConfig().getBoolean("show-in-tab", true)) p.playerListName(name);
+    }
+
+    @EventHandler
+    public void onJoin(PlayerJoinEvent e) {
+        Player p = e.getPlayer();
+        Bukkit.getScheduler().runTaskLater(this, () -> {
+            if (!p.isOnline()) return;
+            // titres débloqués depuis (nouveau palier ajouté dans la config...)
+            check(p.getUniqueId(), p);
+            apply(p);
+        }, 3L);
+    }
+
+    // ================================================================= compteurs et déblocage
+
+    private void win(OfflinePlayer op, String counter, int n) {
+        Data d = of(op.getUniqueId());
+        d.counters.merge(counter.toLowerCase(Locale.ROOT), n, Integer::sum);
+        check(op.getUniqueId(), op.getPlayer());
+        saveData();
+    }
+
+    private void check(UUID id, Player online) {
+        Data d = of(id);
+        for (Title t : titles.values()) {
+            if (d.unlocked.contains(t.id()) || t.requires().isEmpty()) continue;
+            boolean ok = true;
+            for (var r : t.requires().entrySet()) if (d.counters.getOrDefault(r.getKey(), 0) < r.getValue()) ok = false;
+            if (!ok) continue;
+            d.unlocked.add(t.id());
+            if (d.active == null) d.active = t.id();
+            if (online != null) announce(online, t.display());
+        }
+        if (online != null) apply(online);
+    }
+
+    private void announce(Player p, String display) {
+        p.sendMessage(mm(msg("prefix") + msg("unlocked").replace("<title>", display)));
+        p.playSound(p.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.8f, 1.2f);
+    }
+
+    // ================================================================= menu /titres
+
+    private final class Menu implements InventoryHolder {
+        final Inventory inv;
+        final Player viewer;
+        final List<String> ids = new ArrayList<>();
+
+        Menu(Player viewer) {
+            this.viewer = viewer;
+            this.inv = Bukkit.createInventory(this, 54, mm(msg("menu-title")));
+            draw();
+        }
+
+        @Override
+        public Inventory getInventory() {
+            return inv;
+        }
+
+        void draw() {
+            inv.clear();
+            ids.clear();
+            Data d = of(viewer.getUniqueId());
+            ItemStack pane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+            ItemMeta pm = pane.getItemMeta();
+            pm.setHideTooltip(true);
+            pane.setItemMeta(pm);
+            for (int i = 0; i < 54; i++) if (i < 9 || i >= 45) inv.setItem(i, pane);
+            // en-tête : compteurs
+            List<Component> lore = new ArrayList<>();
+            ConfigurationSection cn = getConfig().getConfigurationSection("counters");
+            if (cn != null) {
+                for (String k : cn.getKeys(false)) {
+                    lore.add(mm("<gray>" + cn.getString(k) + " : <white>" + d.counters.getOrDefault(k, 0)));
+                }
+            }
+            String act = d.active == null ? null : display(d, d.active);
+            lore.add(Component.empty());
+            lore.add(mm("<gray>Titre actuel : " + (act == null ? "<dark_gray>aucun" : act)));
+            inv.setItem(4, item(Material.NAME_TAG, "<gold><b>Mes titres", lore, false));
+            int slot = 9;
+            List<String> all = new ArrayList<>(titles.keySet());
+            for (String c : d.custom.keySet()) if (!all.contains(c)) all.add(c);
+            for (String id : all) {
+                if (slot >= 45) break;
+                boolean has = d.unlocked.contains(id) || d.custom.containsKey(id);
+                boolean active = id.equals(d.active);
+                Title t = titles.get(id);
+                List<Component> l = new ArrayList<>();
+                if (t != null && !t.description().isEmpty()) l.add(mm("<gray>" + t.description()));
+                if (!has && t != null) {
+                    for (var r : t.requires().entrySet()) {
+                        String label = cn == null ? r.getKey() : cn.getString(r.getKey(), r.getKey());
+                        int cur = Math.min(r.getValue(), d.counters.getOrDefault(r.getKey(), 0));
+                        l.add(mm("<dark_gray>" + label + " : " + cur + "/" + r.getValue()));
+                    }
+                }
+                l.add(Component.empty());
+                l.add(mm(active ? "<green>✔ Équipé <gray>(clic pour retirer)" : has ? "<yellow>▶ Clic : équiper" : "<red>🔒 Pas encore débloqué"));
+                String disp = display(d, id);
+                inv.setItem(slot, item(has ? (active ? Material.ENCHANTED_BOOK : Material.NAME_TAG) : Material.GRAY_DYE,
+                        has ? disp : "<dark_gray>" + MM.stripTags(disp == null ? id : disp), l, active));
+                ids.add(id);
+                slot++;
+            }
+            inv.setItem(49, item(Material.BARRIER, "<red>Fermer", List.of(), false));
+        }
+
+        void click(int slot) {
+            if (slot == 49) {
+                viewer.closeInventory();
+                return;
+            }
+            int idx = slot - 9;
+            if (idx < 0 || idx >= ids.size()) return;
+            String id = ids.get(idx);
+            Data d = of(viewer.getUniqueId());
+            if (!d.unlocked.contains(id) && !d.custom.containsKey(id)) {
+                viewer.sendMessage(mm(msg("prefix") + msg("locked")));
+                viewer.playSound(viewer.getLocation(), Sound.BLOCK_CHEST_LOCKED, 0.7f, 1.3f);
+                return;
+            }
+            if (id.equals(d.active)) {
+                d.active = null;
+                viewer.sendMessage(mm(msg("prefix") + msg("removed")));
+            } else {
+                d.active = id;
+                viewer.sendMessage(mm(msg("prefix") + msg("equipped").replace("<title>", display(d, id))));
+            }
+            viewer.playSound(viewer.getLocation(), Sound.UI_BUTTON_CLICK, 0.7f, 1.3f);
+            apply(viewer);
+            saveData();
+            draw();
+        }
+    }
+
+    private static ItemStack item(Material m, String name, List<Component> lore, boolean glow) {
+        ItemStack it = new ItemStack(m);
+        ItemMeta meta = it.getItemMeta();
+        meta.displayName(mm(name));
+        meta.lore(lore);
+        meta.addItemFlags(ItemFlag.values());
+        if (glow) meta.setEnchantmentGlintOverride(true);
+        it.setItemMeta(meta);
+        return it;
+    }
+
+    @EventHandler
+    public void onClick(InventoryClickEvent e) {
+        if (!(e.getView().getTopInventory().getHolder(false) instanceof Menu m)) return;
+        e.setCancelled(true);
+        if (e.getClickedInventory() == e.getView().getTopInventory()) m.click(e.getSlot());
+    }
+
+    @EventHandler
+    public void onDrag(InventoryDragEvent e) {
+        if (e.getView().getTopInventory().getHolder(false) instanceof Menu) e.setCancelled(true);
+    }
+
+    // ================================================================= commandes
+
+    @Override
+    public boolean onCommand(CommandSender s, Command cmd, String label, String[] a) {
+        if (cmd.getName().equalsIgnoreCase("titres")) {
+            if (s instanceof Player p) p.openInventory(new Menu(p).getInventory());
+            return true;
+        }
+        if (a.length == 0) {
+            s.sendMessage(mm("<gold>/titre win <joueur> <compteur> [n]</gold> <gray>- compte une victoire (koth, bounty, boss, event...)"));
+            s.sendMessage(mm("<gold>/titre give <joueur> <id> [texte]</gold> <gray>- donne un titre (texte = titre libre)"));
+            s.sendMessage(mm("<gold>/titre take <joueur> <id></gold> · <gold>/titre list</gold> · <gold>/titre reload"));
+            return true;
+        }
+        String sub = a[0].toLowerCase(Locale.ROOT);
+        switch (sub) {
+            case "reload" -> {
+                reloadConfig();
+                loadTitles();
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    check(p.getUniqueId(), p);
+                    apply(p);
+                }
+                s.sendMessage(mm("<green>SmpTitles rechargé (" + titles.size() + " titres)."));
+            }
+            case "list" -> {
+                for (Title t : titles.values()) s.sendMessage(mm("<gray>" + t.id() + " : " + t.display() + " <dark_gray>" + t.requires()));
+            }
+            case "win" -> {
+                if (a.length < 3) return true;
+                OfflinePlayer op = Bukkit.getOfflinePlayer(a[1]);
+                int n = 1;
+                if (a.length >= 4) {
+                    try {
+                        n = Integer.parseInt(a[3]);
+                    } catch (NumberFormatException ignored) {
+                    }
+                }
+                win(op, a[2], n);
+                if (!(s instanceof org.bukkit.command.ConsoleCommandSender)) {
+                    s.sendMessage(mm(msg("prefix") + msg("counted").replace("<player>", a[1]).replace("<counter>", a[2])
+                            .replace("<n>", String.valueOf(of(op.getUniqueId()).counters.getOrDefault(a[2].toLowerCase(Locale.ROOT), 0)))));
+                }
+            }
+            case "give" -> {
+                if (a.length < 3) return true;
+                OfflinePlayer op = Bukkit.getOfflinePlayer(a[1]);
+                String id = a[2].toLowerCase(Locale.ROOT);
+                Data d = of(op.getUniqueId());
+                String disp;
+                if (a.length > 3) {
+                    disp = String.join(" ", java.util.Arrays.copyOfRange(a, 3, a.length));
+                    if (d.custom.containsKey(id)) return true; // déjà donné
+                    d.custom.put(id, disp);
+                } else {
+                    Title t = titles.get(id);
+                    if (t == null) {
+                        s.sendMessage(mm(msg("prefix") + msg("unknown").replace("<id>", id)));
+                        return true;
+                    }
+                    if (!d.unlocked.add(id)) return true;
+                    disp = t.display();
+                }
+                if (d.active == null) d.active = id;
+                Player online = op.getPlayer();
+                if (online != null) {
+                    announce(online, disp);
+                    apply(online);
+                }
+                saveData();
+                if (!(s instanceof org.bukkit.command.ConsoleCommandSender)) {
+                    s.sendMessage(mm(msg("prefix") + msg("given").replace("<title>", disp).replace("<player>", a[1])));
+                }
+            }
+            case "take" -> {
+                if (a.length < 3) return true;
+                OfflinePlayer op = Bukkit.getOfflinePlayer(a[1]);
+                String id = a[2].toLowerCase(Locale.ROOT);
+                Data d = of(op.getUniqueId());
+                d.unlocked.remove(id);
+                d.custom.remove(id);
+                if (id.equals(d.active)) d.active = null;
+                if (op.getPlayer() != null) apply(op.getPlayer());
+                saveData();
+                s.sendMessage(mm(msg("prefix") + msg("taken").replace("<player>", a[1])));
+            }
+            default -> s.sendMessage(mm("<red>/titre win|give|take|list|reload"));
+        }
+        return true;
+    }
+
+    @Override
+    public List<String> onTabComplete(CommandSender s, Command cmd, String l, String[] a) {
+        List<String> out = new ArrayList<>();
+        if (!cmd.getName().equalsIgnoreCase("titre")) return out;
+        if (a.length == 1) out.addAll(List.of("win", "give", "take", "list", "reload"));
+        else if (a.length == 2) for (Player p : Bukkit.getOnlinePlayers()) out.add(p.getName());
+        else if (a.length == 3 && a[0].equalsIgnoreCase("win")) {
+            ConfigurationSection cn = getConfig().getConfigurationSection("counters");
+            if (cn != null) out.addAll(cn.getKeys(false));
+        } else if (a.length == 3) out.addAll(titles.keySet());
+        String last = a.length == 0 ? "" : a[a.length - 1].toLowerCase(Locale.ROOT);
+        out.removeIf(x -> !x.toLowerCase(Locale.ROOT).startsWith(last));
+        return out;
+    }
+}

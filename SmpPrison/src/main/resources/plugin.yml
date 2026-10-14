@@ -1,0 +1,22 @@
+name: SmpPrison
+version: '${version}'
+main: fr.smpprison.SmpPrison
+api-version: '26.2'
+description: Prison pour les tricheurs - ils travaillent à la mine pour réduire leur peine
+commands:
+  prison:
+    description: Mettre un joueur en prison / gérer la prison
+    usage: /prison <joueur> <durée> [raison] | libérer | info | liste | réduire | setcellule | setmine | setsortie | pos1 | pos2
+    aliases: [jail]
+    permission: smpprison.admin
+  travailler:
+    description: Aller travailler à la mine (prisonniers)
+    aliases: [work, mine]
+  cellule:
+    description: Retourner dans ta cellule (prisonniers)
+  peine:
+    description: Voir ta peine restante
+permissions:
+  smpprison.admin:
+    description: Gérer la prison
+    default: op

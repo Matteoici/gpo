@@ -627,6 +627,7 @@ public final class Koth {
             plugin.giveMoney(p, each);
             PlayerData d = plugin.data().of(p);
             d.kothWins++;
+            fr.smpevents.SmpEvents.titleWin(p, "koth");
             for (String c : rewardCommands) {
                 String line = c.replace("%player%", p.getName()).replace("<player>", p.getName());
                 Bukkit.dispatchCommand(Bukkit.getConsoleSender(), line.startsWith("/") ? line.substring(1) : line);

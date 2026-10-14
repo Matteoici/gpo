@@ -63,6 +63,21 @@ checks:
       ANCIENT_DEBRIS: 1.5
       EMERALD_ORE: 0.8
       DEEPSLATE_EMERALD_ORE: 0.8
+    # PIÈGE À X-RAY : de faux diamants / débris antiques, enfermés dans la roche, envoyés au joueur seul.
+    # Invisibles pour un joueur normal, visibles avec un X-ray. S'il "tombe" dessus bien plus souvent que
+    # le hasard ne le permet (probabilité calculée), c'est un X-ray. Le faux redevient de la pierre dès qu'il est découvert.
+    ore-bait:
+      enabled: true
+      max-fakes: 10
+      min-distance: 6
+      max-distance: 20
+      lifetime-seconds: 300
+      max-y: 40
+      window-minutes: 30
+      # découvertes minimum pour alerter
+      min-found: 3
+      # alerte si un mineur honnête avait moins de cette chance d'en trouver autant (0.001 = 1 sur 1000)
+      max-chance: 0.001
     alert-vl: 2
     sus-vl: 4
     decay-per-minute: 0.05

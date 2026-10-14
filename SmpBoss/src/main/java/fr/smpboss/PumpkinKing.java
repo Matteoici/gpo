@@ -1789,6 +1789,9 @@ public final class PumpkinKing {
                 continue;
             }
             plugin.loot().reward(p);
+            if (Bukkit.getPluginManager().isPluginEnabled("SmpTitles")) {
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "titre win " + p.getName() + " boss");
+            }
         }
         plugin.store().save(true);
     }

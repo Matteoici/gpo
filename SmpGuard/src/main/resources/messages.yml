@@ -73,6 +73,7 @@ detail:
   speed: "<speed> blocs/s pendant 2 s (max possible <max>)"
   fastbreak: "<block> cassé en <ticks> ticks au lieu de <expected>"
   nuker-angle: "a cassé un(e) <block> derrière lui (<angle>°)"
+  ore-bait: "a découvert <found> faux minerais invisibles (piège anti-X-ray) en <mined> blocs minés ; par hasard on en attendait <expected> (chance : <chance>)"
   nuker-rate: "<count> blocs non instantanés cassés en 1 seconde"
 
 # Explications dans le rapport

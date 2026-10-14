@@ -72,6 +72,7 @@ final class GuardListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBreak(BlockBreakEvent e) {
         plugin.xray().onBreak(e.getPlayer(), e.getBlock());
+        plugin.oreBait().onBreak(e.getPlayer(), e.getBlock());
     }
 
     /** Combat : les deux joueurs se voient tout de suite (anti-esp), et l'appât ne prend jamais de dégâts. */

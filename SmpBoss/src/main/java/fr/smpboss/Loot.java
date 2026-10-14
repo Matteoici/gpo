@@ -119,6 +119,12 @@ public final class Loot {
         p.sendMessage(parse(plugin.msg("loot.new-item").replace("<item>", itemMini)));
         if (title != null) {
             plugin.store().of(p.getUniqueId()).titles.add(title);
+            // le titre secret devient aussi un titre affichable (SmpTitles)
+            if (Bukkit.getPluginManager().isPluginEnabled("SmpTitles")) {
+                String id = "boss_" + Integer.toHexString(title.toLowerCase(Locale.ROOT).hashCode());
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "titre give " + p.getName() + " " + id + " "
+                        + Rarity.SECRET.name(title, 0));
+            }
             plugin.store().dirty();
             p.sendMessage(parse(plugin.msg("loot.new-title").replace("<title>", Rarity.SECRET.name(title, 0))));
         }

@@ -1,0 +1,17 @@
+name: SmpTitles
+version: '${version}'
+main: fr.smptitles.SmpTitles
+api-version: '26.2'
+description: Titres à débloquer (événements, boss, primes...) affichés devant le pseudo
+commands:
+  titres:
+    description: Choisir ton titre
+    aliases: [titles, mestitres]
+  titre:
+    description: Gérer les titres (staff)
+    usage: /titre give|take|win|list <joueur> ...
+    permission: smptitles.admin
+permissions:
+  smptitles.admin:
+    description: Donner / retirer des titres
+    default: op

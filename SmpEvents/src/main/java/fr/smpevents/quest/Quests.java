@@ -208,6 +208,7 @@ public final class Quests {
                     ph("money", plugin.settings().money(money))));
         }
         if (!def.weekly()) checkDailyBonus(p, d);
+        fr.smpevents.SmpEvents.titleWin(p, def.weekly() ? "quest-weekly" : "quest");
     }
 
     private void checkDailyBonus(Player p, PlayerData d) {

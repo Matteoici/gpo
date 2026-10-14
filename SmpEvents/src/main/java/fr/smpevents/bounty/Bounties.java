@@ -209,6 +209,7 @@ public final class Bounties implements Listener {
         kd.bountyClaims++;
         plugin.markDirty();
         save();
+        fr.smpevents.SmpEvents.titleWin(killer, "bounty");
         t.send(killer, "bounty.claimed", ph("player", victim.getName()), ph("total", s.money(total)));
         killer.playSound(Sound.sound(Key.key("minecraft", "entity.player.levelup"), Sound.Source.MASTER, 1f, 0.8f));
         Bukkit.broadcast(t.prefixed("bounty.broadcast-claimed", ph("killer", killer.getName()), ph("player", victim.getName()),
