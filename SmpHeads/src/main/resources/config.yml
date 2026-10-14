@@ -1,0 +1,22 @@
+# =====================================================================
+#  SmpHeads - un joueur tué par un autre joueur lâche sa tête
+#  Après une modification : /smpheads reload
+# =====================================================================
+
+# chance (%) que la tête tombe à chaque kill
+chance: 100
+
+# anti-farm : le même tueur ne récupère pas de nouvelle tête du même joueur avant X minutes
+same-victim-cooldown-minutes: 10
+
+# mondes où les têtes ne tombent pas (ex. arène d'event)
+disabled-worlds: []
+
+# message dans le chat quand une tête tombe (vide = aucun message)
+broadcast: "<dark_red>☠</dark_red> <white><killer></white> <gray>a récupéré la tête de</gray> <white><victim></white><gray> !"
+
+head:
+  name: "<gold><b>Tête de <victim>"
+  lore:
+    - "<gray>Tué par <white><killer></white>"
+    - "<dark_gray><date>"

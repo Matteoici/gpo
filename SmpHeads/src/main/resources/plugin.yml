@@ -1,0 +1,17 @@
+name: SmpHeads
+version: '${version}'
+main: fr.smpheads.SmpHeads
+api-version: '26.2'
+description: Un joueur tué par un autre joueur lâche sa tête
+commands:
+  smpheads:
+    description: Recharger la config de SmpHeads
+    usage: /smpheads reload
+    permission: smpheads.admin
+permissions:
+  smpheads.admin:
+    description: Recharger la config
+    default: op
+  smpheads.nodrop:
+    description: Ne lâche jamais sa tête
+    default: false
