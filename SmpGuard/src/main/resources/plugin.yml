@@ -22,7 +22,7 @@ permissions:
     default: op
   smpguard.allow-mods:
     description: Peut utiliser les mods interdits (ex. Axiom pour construire)
-    default: false
+    default: op
   smpguard.bypass:
     description: Jamais analysé (staff)
     default: false

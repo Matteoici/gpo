@@ -58,6 +58,10 @@ public final class BreakCheck {
         if (prof == null) return;
         Block b = e.getBlock();
         float speed = b.getBreakSpeed(p);
+        // le jeu divise la vitesse par 5 en l'air et sous l'eau : on prend toujours le cas le plus rapide,
+        // pour ne jamais accuser quelqu'un qui a sauté ou nagé pendant qu'il minait
+        if (!p.isOnGround()) speed *= 5;
+        if (p.isUnderWater()) speed *= 5;
         if (speed <= 0 || speed >= 1) return; // instantané : rien à mesurer
         State s = st(p);
         s.brokenThisSecond++;

@@ -106,7 +106,7 @@ checks:
       - name: "Client de triche"
         brands: ["*meteor*", "*wurst*", "*aristois*", "*liquidbounce*", "*impact*", "*future*", "*rusherhack*", "*thunderhack*",
                  "*bleachhack*", "*konas*", "*salhack*", "*inertia*", "*lambda*", "*kami*", "*phobos*", "*boze*", "*3arthh4ck*",
-                 "*coffee*", "*vape*", "*novoline*", "*sigma*", "*prestige*", "*doomsday*", "*argon*", "*catalyst*"]
+                 "*coffee*", "*vape*", "*novoline*", "*sigma*", "*prestige*", "*doomsday*", "*argon*"]
         channels: ["meteor*:*", "wurst*:*", "liquidbounce*:*", "aristois*:*", "rusherhack*:*", "thunderhack*:*", "bleachhack*:*"]
         action: kick
         reason: "<red><b>Client de triche détecté.</b>\n<gray>Rejoins avec un client normal."
