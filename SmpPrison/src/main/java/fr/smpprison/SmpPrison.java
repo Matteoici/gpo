@@ -104,7 +104,7 @@ public final class SmpPrison extends JavaPlugin implements Listener, TabExecutor
                 cmd.setTabCompleter(this);
             }
         }
-        Bukkit.getScheduler().runTaskTimer(this, this::tick, 20L, 10L);
+        Bukkit.getScheduler().runTaskTimer(this, this::safeTick, 20L, 10L);
         for (Player p : Bukkit.getOnlinePlayers()) if (prisoners.containsKey(p.getUniqueId())) enter(p);
     }
 
@@ -435,6 +435,21 @@ public final class SmpPrison extends JavaPlugin implements Listener, TabExecutor
     }
 
     private int ticks;
+
+    // une erreur répétée n'est écrite qu'une fois toutes les 10 minutes (jamais de logs qui remplissent le disque)
+    private long lastTickError;
+
+    private void safeTick() {
+        try {
+            tick();
+        } catch (Throwable t) {
+            long now = System.currentTimeMillis();
+            if (now - lastTickError > 600_000) {
+                lastTickError = now;
+                getLogger().warning("Erreur (affichée une fois toutes les 10 min) : " + t);
+            }
+        }
+    }
 
     private void tick() {
         ticks++;

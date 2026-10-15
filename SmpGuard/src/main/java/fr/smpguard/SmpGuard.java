@@ -76,7 +76,7 @@ public final class SmpGuard extends JavaPlugin {
         }
         for (Player p : Bukkit.getOnlinePlayers()) join(p);
 
-        Bukkit.getScheduler().runTaskTimer(this, this::tick, 1L, 1L);
+        Bukkit.getScheduler().runTaskTimer(this, this::safeTick, 1L, 1L);
         getLogger().info("SmpGuard actif. Rappel : active aussi l'anti-xray de Paper (voir README).");
     }
 
@@ -90,6 +90,21 @@ public final class SmpGuard extends JavaPlugin {
         reloadConfig();
         settings = new Settings(getConfig(), getLogger());
         texts.load();
+    }
+
+    // une erreur répétée n'est écrite qu'une fois toutes les 10 minutes (jamais de logs qui remplissent le disque)
+    private long lastTickError;
+
+    private void safeTick() {
+        try {
+            tick();
+        } catch (Throwable t) {
+            long now = System.currentTimeMillis();
+            if (now - lastTickError > 600_000) {
+                lastTickError = now;
+                getLogger().warning("Erreur (affichée une fois toutes les 10 min) : " + t);
+            }
+        }
     }
 
     private void tick() {
