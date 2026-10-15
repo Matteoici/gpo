@@ -13,6 +13,8 @@
 #  Chaque bloc miné dans la mine retire du temps à sa peine.
 # =====================================================================
 
+config-version: 2
+
 # minutes retirées de la peine par bloc miné
 minutes-per-block: 1
 # la peine baisse aussi avec le temps passé connecté (1 minute par minute)
@@ -25,10 +27,11 @@ cell-radius: 6
 allowed-commands: [travailler, work, mine, cellule, peine, msg, tell, r, w]
 # il peut parler dans le chat ?
 can-chat: true
-# pioche donnée en prison
+# pioche donnée en prison (incassable, remplacée automatiquement si tu changes ici)
+# netherite Efficacité V : ~2 s par bloc d'obsidienne, instantané sur la pierre
 pickaxe:
-  material: STONE_PICKAXE
-  efficiency: 1
+  material: NETHERITE_PICKAXE
+  efficiency: 5
 # préfixe affiché devant son nom (chat / TAB)
 prefix: "<dark_gray>[<red>⛓ Prisonnier</red>]</dark_gray> "
 

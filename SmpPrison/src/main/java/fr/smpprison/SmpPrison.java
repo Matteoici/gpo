@@ -94,6 +94,7 @@ public final class SmpPrison extends JavaPlugin implements Listener, TabExecutor
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        migrateConfig();
         dataFile = new File(getDataFolder(), "prison.yml");
         load();
         getServer().getPluginManager().registerEvents(this, this);
@@ -309,18 +310,46 @@ public final class SmpPrison extends JavaPlugin implements Listener, TabExecutor
         showBar(pl, p);
     }
 
+    private final org.bukkit.NamespacedKey PICK_KEY = new org.bukkit.NamespacedKey(this, "pickaxe");
+
+    /** Anciennes configs : pioche en pierre Efficacité I -> pioche en netherite Efficacité V. */
+    private void migrateConfig() {
+        if (getConfig().getInt("config-version", 1) >= 2) return;
+        if ("STONE_PICKAXE".equalsIgnoreCase(getConfig().getString("pickaxe.material", "STONE_PICKAXE"))
+                && getConfig().getInt("pickaxe.efficiency", 1) <= 1) {
+            getConfig().set("pickaxe.material", "NETHERITE_PICKAXE");
+            getConfig().set("pickaxe.efficiency", 5);
+        }
+        getConfig().set("config-version", 2);
+        saveConfig();
+    }
+
+    /** Donne la pioche de la config ; remplace une ancienne pioche de prisonnier (autre matière / enchant). */
     private void givePickaxe(Player pl) {
-        Material m = Material.matchMaterial(getConfig().getString("pickaxe.material", "STONE_PICKAXE"));
-        if (m == null) m = Material.STONE_PICKAXE;
-        for (ItemStack it : pl.getInventory().getContents()) if (it != null && it.getType() == m) return;
+        Material m = Material.matchMaterial(getConfig().getString("pickaxe.material", "NETHERITE_PICKAXE"));
+        if (m == null) m = Material.NETHERITE_PICKAXE;
+        int eff = getConfig().getInt("pickaxe.efficiency", 5);
+        PlayerInventory inv = pl.getInventory();
+        boolean ok = false;
+        for (int i = 0; i < inv.getSize(); i++) {
+            ItemStack it = inv.getItem(i);
+            if (it == null || !it.getType().name().endsWith("_PICKAXE")) continue;
+            if (!ok && it.getType() == m && it.getEnchantmentLevel(Enchantment.EFFICIENCY) == Math.max(0, eff)) {
+                ok = true;
+                continue;
+            }
+            inv.setItem(i, null); // vieille pioche de prison (son vrai inventaire est mis de côté)
+        }
+        if (ok) return;
         ItemStack pick = new ItemStack(m);
         ItemMeta meta = pick.getItemMeta();
         meta.displayName(mm("<gray>Pioche de prisonnier"));
         meta.setUnbreakable(true);
-        int eff = getConfig().getInt("pickaxe.efficiency", 1);
         if (eff > 0) meta.addEnchant(Enchantment.EFFICIENCY, eff, true);
+        meta.getPersistentDataContainer().set(PICK_KEY, org.bukkit.persistence.PersistentDataType.BYTE, (byte) 1);
         pick.setItemMeta(meta);
-        pl.getInventory().setItem(0, pick);
+        if (inv.getItem(0) == null) inv.setItem(0, pick);
+        else inv.addItem(pick);
     }
 
     private void release(UUID id, boolean announce) {
@@ -518,6 +547,7 @@ public final class SmpPrison extends JavaPlugin implements Listener, TabExecutor
                         send(pl, "no-setup");
                         return true;
                     }
+                    givePickaxe(pl);
                     teleport(pl, mine);
                     send(pl, "to-mine", "per", fmt(perBlock()));
                 }
@@ -680,15 +710,28 @@ public final class SmpPrison extends JavaPlugin implements Listener, TabExecutor
             if (inMine(e.getBlock().getLocation()) && !p.hasPermission("smpprison.admin")) e.setCancelled(true);
             return;
         }
-        Block b = e.getBlock();
-        if (!inMine(b.getLocation()) || regen.containsKey(b)) {
+        if (!canMine(e.getBlock())) {
             e.setCancelled(true);
             return;
         }
         e.setDropItems(false);
         e.setExpToDrop(0);
-        BlockData original = b.getBlockData().clone();
-        regen.put(b, original);
+    }
+
+    private boolean canMine(Block b) {
+        return inMine(b.getLocation()) && !regen.containsKey(b) && b.getType().getHardness() >= 0 && !b.getType().isAir();
+    }
+
+    /** Le bloc est vraiment cassé : il repoussera, et la peine baisse. */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onBroken(BlockBreakEvent e) {
+        Player p = e.getPlayer();
+        Prisoner pr = prisoners.get(p.getUniqueId());
+        if (pr == null || pr.pending || !inMine(e.getBlock().getLocation()) || regen.containsKey(e.getBlock())) return;
+        Block b = e.getBlock();
+        e.setDropItems(false);
+        e.setExpToDrop(0);
+        regen.put(b, b.getBlockData().clone());
         Bukkit.getScheduler().runTaskLater(this, () -> {
             BlockData d = regen.remove(b);
             if (d != null) b.setBlockData(d, false);
@@ -696,6 +739,34 @@ public final class SmpPrison extends JavaPlugin implements Listener, TabExecutor
         pr.minutes -= perBlock();
         p.sendActionBar(mm("<green>-" + fmt(perBlock()) + " <dark_gray>|</dark_gray> <gray>reste <white>" + fmt(pr.minutes)));
         if (pr.minutes <= 0) Bukkit.getScheduler().runTask(this, () -> release(pr.id, true));
+    }
+
+    /**
+     * La prison est souvent dans une zone protégée (WorldGuard au spawn...) : la protection annule la casse.
+     * Pour un prisonnier qui mine dans la mine, on passe en dernier et on autorise quand même.
+     */
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onBreakAllow(BlockBreakEvent e) {
+        Prisoner pr = prisoners.get(e.getPlayer().getUniqueId());
+        if (pr == null || pr.pending || !e.isCancelled()) return;
+        if (!canMine(e.getBlock())) return;
+        e.setCancelled(false);
+        e.setDropItems(false);
+        e.setExpToDrop(0);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onDigAllow(org.bukkit.event.block.BlockDamageEvent e) {
+        if (!e.isCancelled() || !isPrisoner(e.getPlayer()) || !inMine(e.getBlock().getLocation())) return;
+        e.setCancelled(false);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onLeftClickAllow(PlayerInteractEvent e) {
+        if (e.getAction() != Action.LEFT_CLICK_BLOCK || e.getClickedBlock() == null || !isPrisoner(e.getPlayer())) return;
+        if (!inMine(e.getClickedBlock().getLocation())) return;
+        e.setUseInteractedBlock(org.bukkit.event.Event.Result.ALLOW);
+        e.setUseItemInHand(org.bukkit.event.Event.Result.ALLOW);
     }
 
     @EventHandler(priority = EventPriority.HIGH)
