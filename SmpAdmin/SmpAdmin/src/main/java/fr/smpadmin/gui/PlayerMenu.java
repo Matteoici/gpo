@@ -144,6 +144,12 @@ public final class PlayerMenu extends Menu {
                 && viewer.hasPermission("smpguard.staff")) {
             button(34, item(Material.SHIELD, "gui.player.anticheat"), c -> viewer.performCommand("smpguard:anticheat check " + name));
         }
+        // prison (SmpPrison, s'il est installé)
+        if (org.bukkit.Bukkit.getPluginManager().isPluginEnabled("SmpPrison") && viewer.hasPermission("smpprison.admin")) {
+            button(28, Items.of(Material.IRON_BARS, fr.smpadmin.Texts.parse("<red><b>⛓ Prison"),
+                    java.util.List.of(fr.smpadmin.Texts.parse("<gray>L'envoyer en prison (durée + raison)"),
+                            fr.smpadmin.Texts.parse("<gray>ou le libérer"))), c -> new PrisonMenu(plugin, viewer, target, this::open).open());
+        }
         back(45, () -> new MainMenu(plugin, viewer, 0).open());
         close(49);
     }
