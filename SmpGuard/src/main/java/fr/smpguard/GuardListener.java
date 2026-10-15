@@ -167,6 +167,38 @@ final class GuardListener implements Listener {
         if (e.getEntity() instanceof Player p) plugin.move().onPush(p);
     }
 
+    /** Charge de vent (seule ou combo masse) : projette sans dégâts ni événement de vitesse. */
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onWindCharge(org.bukkit.event.entity.ProjectileHitEvent e) {
+        if (!(e.getEntity() instanceof org.bukkit.entity.AbstractWindCharge)) return;
+        for (Player p : e.getEntity().getLocation().getNearbyPlayers(6)) plugin.move().onPush(p);
+    }
+
+    /** Explosions (TNT, creeper, charge de vent...) : le souffle pousse aussi ceux qu'il ne blesse pas. */
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onExplode(org.bukkit.event.entity.EntityExplodeEvent e) {
+        for (Player p : e.getLocation().getNearbyPlayers(10)) plugin.move().onPush(p);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onBlockExplode(org.bukkit.event.block.BlockExplodeEvent e) {
+        for (Player p : e.getBlock().getLocation().getNearbyPlayers(10)) plugin.move().onPush(p);
+    }
+
+    /** Coup de masse : le tapeur rebondit et l'onde de choc projette les joueurs autour de la cible. */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onMace(EntityDamageByEntityEvent e) {
+        if (!(e.getDamager() instanceof Player p) || p.getInventory().getItemInMainHand().getType() != org.bukkit.Material.MACE) return;
+        plugin.move().onPush(p);
+        for (Player near : e.getEntity().getLocation().getNearbyPlayers(5)) plugin.move().onPush(near);
+    }
+
+    /** Fin de vol en élytres : il garde son élan quelques instants. */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onGlide(org.bukkit.event.entity.EntityToggleGlideEvent e) {
+        if (e.getEntity() instanceof Player p) plugin.move().onPush(p);
+    }
+
     // ---------------------------------------------------------------- menus
 
     @EventHandler(priority = EventPriority.HIGH)

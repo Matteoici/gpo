@@ -86,13 +86,16 @@ public final class CombatCheck {
         double range = 3.0;
         var attr = p.getAttribute(Attribute.ENTITY_INTERACTION_RANGE);
         if (attr != null) range = attr.getValue();
-        double margin = plugin.settings().num(Check.REACH, "margin", 0.4);
+        // tapeur rapide (chute à la masse, élytres) : le serveur a sa position d'un tick en retard -> on ajoute ce mouvement
+        Vector a0 = prof.at(0), a1 = prof.at(1);
+        double selfMove = a0 != null && a1 != null ? a0.distance(a1) : 0;
+        double margin = plugin.settings().num(Check.REACH, "margin", 0.4) + selfMove;
         double limit = range + margin;
         if (best > limit) {
             double over = best - limit;
             plugin.alerts().flag(p, prof, Check.REACH, Math.min(1.5, 0.4 + over / 0.3) * w,
                     plugin.texts().raw("detail.reach").replace("<distance>", fmt(best)).replace("<max>", fmt(limit)));
-            if (best > range + plugin.settings().num(Check.REACH, "cancel-above", 1.2) && plugin.settings().flag(Check.REACH, "cancel", true)) {
+            if (best > range + selfMove + plugin.settings().num(Check.REACH, "cancel-above", 1.2) && plugin.settings().flag(Check.REACH, "cancel", true)) {
                 e.setCancelled(true);
             }
         }
@@ -101,12 +104,13 @@ public final class CombatCheck {
         Vector aim = closest(eye, t.getBoundingBox());
         double angle = Sight.angle(p.getEyeLocation(), aim);
         double maxAngle = plugin.settings().num(Check.KILLAURA, "max-angle", 65);
-        if (best > 1.2 && angle > maxAngle) {
+        boolean fast = selfMove > 0.6 || p.isGliding();
+        if (best > 1.2 && angle > maxAngle && !fast) {
             plugin.alerts().flag(p, prof, Check.KILLAURA, 0.6 * w, plugin.texts().raw("detail.aura-angle")
                     .replace("<target>", name(t)).replace("<angle>", String.valueOf(Math.round(angle))));
         }
         // ---------------- killaura : à travers un mur plein
-        if (t instanceof LivingEntity le && !Sight.anyClear(p.getWorld(), new Vector[]{eye},
+        if (!fast && t instanceof LivingEntity le && !Sight.anyClear(p.getWorld(), new Vector[]{eye},
                 Sight.body(le.getLocation().toVector(), le.getHeight()))) {
             plugin.alerts().flag(p, prof, Check.KILLAURA, 0.7 * w, plugin.texts().raw("detail.aura-wall").replace("<target>", name(t)));
         }

@@ -160,10 +160,19 @@ public final class MoveCheck {
     }
 
     private boolean exempt(Player p, State s) {
-        if (!plugin.analysed(p) || p.isDead() || p.isSleeping() || p.getAllowFlight() || p.isFlying() || p.isGliding()
-                || p.isRiptiding() || p.isInsideVehicle() || plugin.frozen(p) || plugin.isBedrock(p) || p.isClimbing()) return true;
-        if (System.currentTimeMillis() - s.lastPush < plugin.settings().num(Check.FLY, "push-grace-ms", 2500)) return true;
-        return p.hasPotionEffect(PotionEffectType.LEVITATION) || p.hasPotionEffect(PotionEffectType.SLOW_FALLING);
+        if (!plugin.analysed(p) || p.isDead() || p.isSleeping() || plugin.frozen(p) || plugin.isBedrock(p) || p.isClimbing()) return true;
+        // élytres, trident, vol, monture, lévitation : exempté pendant ET un moment après (il garde son élan)
+        if (p.getAllowFlight() || p.isFlying() || p.isGliding() || p.isRiptiding() || p.isInsideVehicle()
+                || p.hasPotionEffect(PotionEffectType.LEVITATION) || p.hasPotionEffect(PotionEffectType.SLOW_FALLING)) {
+            s.lastPush = System.currentTimeMillis();
+            s.fastSeconds = 0;
+            return true;
+        }
+        if (System.currentTimeMillis() - s.lastPush < plugin.settings().num(Check.FLY, "push-grace-ms", 2500)) {
+            s.fastSeconds = 0;
+            return true;
+        }
+        return false;
     }
 
     private static int amp(Player p, PotionEffectType t) {
