@@ -12,11 +12,17 @@ commands:
   travailler:
     description: Aller travailler à la mine (prisonniers)
     aliases: [work, mine]
+    permission: smpprison.use
   cellule:
     description: Retourner dans ta cellule (prisonniers)
+    permission: smpprison.use
   peine:
     description: Voir ta peine restante
+    permission: smpprison.use
 permissions:
+  smpprison.use:
+    description: /travailler, /cellule, /peine (ne servent qu'aux prisonniers, sans danger pour les autres)
+    default: true
   smpprison.admin:
     description: Gérer la prison
     default: op

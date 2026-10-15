@@ -7,11 +7,15 @@ commands:
   titres:
     description: Choisir ton titre
     aliases: [titles, mestitres]
+    permission: smptitles.use
   titre:
     description: Gérer les titres (staff)
     usage: /titre give|take|win|list <joueur> ...
     permission: smptitles.admin
 permissions:
+  smptitles.use:
+    description: /titres (choisir son titre)
+    default: true
   smptitles.admin:
     description: Donner / retirer des titres
     default: op
