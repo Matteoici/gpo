@@ -11,7 +11,7 @@ commands:
     aliases: [quests, quete, missions, defis]
   classement:
     description: Classements du serveur
-    usage: /classement [placer|retirer|liste|scan]
+    usage: /classement [placer|retirer|liste|scan|reset]
     aliases: [classements, leaderboard, leaderboards, lb]
   koth:
     description: Roi de la colline
