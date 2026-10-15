@@ -48,14 +48,34 @@ public enum Board {
         };
     }
 
+    /** Remet ce classement à zéro pour ce joueur. false = impossible (argent réel, primes en cours). */
+    public boolean reset(PlayerData d) {
+        switch (this) {
+            case KILLS -> d.killsBase = d.kills;
+            case DEATHS -> d.deathsBase = d.deaths;
+            case MOBS -> d.mobsBase = d.mobs;
+            case PLAYTIME -> d.playtimeBase = d.playtimeMin;
+            case QUESTS -> d.questsDone = 0;
+            case KOTH -> d.kothWins = 0;
+            case HUNTERS -> {
+                d.bountyEarned = 0;
+                d.bountyClaims = 0;
+            }
+            default -> {
+                return false;
+            }
+        }
+        return true;
+    }
+
     /** Valeur d'un joueur (WANTED est calculé à part, depuis les primes en cours). */
     public double value(PlayerData d) {
         return switch (this) {
             case MONEY -> d.money;
-            case KILLS -> d.kills;
-            case DEATHS -> d.deaths;
-            case MOBS -> d.mobs;
-            case PLAYTIME -> d.playtimeMin;
+            case KILLS -> Math.max(0, d.kills - d.killsBase);
+            case DEATHS -> Math.max(0, d.deaths - d.deathsBase);
+            case MOBS -> Math.max(0, d.mobs - d.mobsBase);
+            case PLAYTIME -> Math.max(0, d.playtimeMin - d.playtimeBase);
             case QUESTS -> d.questsDone;
             case KOTH -> d.kothWins;
             case HUNTERS -> d.bountyEarned;

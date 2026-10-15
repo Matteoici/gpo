@@ -150,6 +150,39 @@ final class Commands implements CommandExecutor, TabCompleter {
                                     + h.x + " " + (h.y - 2.2) + " " + h.z)));
                 }
             }
+            case "reset", "remettre" -> {
+                // /classement reset <type|tout> confirmer
+                if (a.length < 2) {
+                    t().send(sender, "boards.reset-usage");
+                    return;
+                }
+                boolean all = a[1].equalsIgnoreCase("tout") || a[1].equalsIgnoreCase("all");
+                Board only = all ? null : Board.of(a[1]);
+                if (!all && only == null) {
+                    t().send(sender, "boards.unknown", ph("name", a[1]), ph("list", boardKeys() + ", tout"));
+                    return;
+                }
+                if (only == Board.MONEY || only == Board.WANTED) {
+                    t().send(sender, only == Board.MONEY ? "boards.reset-money" : "boards.reset-wanted");
+                    return;
+                }
+                if (a.length < 3 || !a[2].equalsIgnoreCase("confirmer")) {
+                    t().send(sender, "boards.reset-confirm", ph("board", all ? "tout" : only.key));
+                    return;
+                }
+                // on relit d'abord les joueurs connectés pour partir de leurs vraies valeurs
+                plugin.boards().updateOnline();
+                int n = 0;
+                for (fr.smpevents.PlayerData d : plugin.data().all()) {
+                    for (Board b : Board.values()) {
+                        if ((all || b == only) && b.reset(d)) n++;
+                    }
+                }
+                plugin.markDirty();
+                plugin.boards().recompute();
+                holos.renderAll();
+                t().send(sender, "boards.reset-done", ph("board", all ? "tous les classements" : only.key));
+            }
             case "scan" -> {
                 int n = plugin.boards().startScan(true);
                 t().send(sender, "boards.scan", ph("count", n));
@@ -366,7 +399,7 @@ final class Commands implements CommandExecutor, TabCompleter {
         if (a.length == 1) {
             switch (name) {
                 case "classement" -> {
-                    if (adm) out.addAll(List.of("placer", "retirer", "liste", "scan"));
+                    if (adm) out.addAll(List.of("placer", "retirer", "liste", "scan", "reset"));
                 }
                 case "koth" -> {
                     out.addAll(List.of("info", "suivre", "notif"));
@@ -391,6 +424,10 @@ final class Commands implements CommandExecutor, TabCompleter {
             switch (name) {
                 case "classement" -> {
                     if (adm && (a[0].equalsIgnoreCase("placer"))) for (Board b : Board.values()) out.add(b.key);
+                    if (adm && a[0].equalsIgnoreCase("reset")) {
+                        for (Board b : Board.values()) if (b != Board.MONEY && b != Board.WANTED) out.add(b.key);
+                        out.add("tout");
+                    }
                     if (adm && a[0].equalsIgnoreCase("retirer")) for (Holograms.Holo h : plugin.holograms().all()) out.add(h.id);
                 }
                 case "koth" -> {

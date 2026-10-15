@@ -93,6 +93,10 @@ public final class DataStore {
             d.kothWins = s.getLong("koth");
             d.bountyEarned = s.getLong("bounty-earned");
             d.bountyClaims = s.getLong("bounty-claims");
+            d.killsBase = s.getLong("base.kills");
+            d.deathsBase = s.getLong("base.deaths");
+            d.mobsBase = s.getLong("base.mobs");
+            d.playtimeBase = s.getLong("base.playtime");
             d.seen = s.getLong("seen");
             readUuidMap(s.getConfigurationSection("links.guilds"), d.guilds);
             readUuidMap(s.getConfigurationSection("links.allies"), d.allies);
@@ -151,6 +155,10 @@ public final class DataStore {
             setIf(y, p + "koth", d.kothWins);
             setIf(y, p + "bounty-earned", d.bountyEarned);
             setIf(y, p + "bounty-claims", d.bountyClaims);
+            setIf(y, p + "base.kills", d.killsBase);
+            setIf(y, p + "base.deaths", d.deathsBase);
+            setIf(y, p + "base.mobs", d.mobsBase);
+            setIf(y, p + "base.playtime", d.playtimeBase);
             setIf(y, p + "seen", d.seen);
             for (var e : d.guilds.entrySet()) y.set(p + "links.guilds." + e.getKey(), e.getValue());
             for (var e : d.allies.entrySet()) y.set(p + "links.allies." + e.getKey(), e.getValue());

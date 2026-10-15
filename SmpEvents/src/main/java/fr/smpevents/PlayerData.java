@@ -28,6 +28,8 @@ public final class PlayerData {
     public double money;
     public long kills, deaths, mobs, playtimeMin;
     public long questsDone, kothWins, bountyEarned, bountyClaims;
+    /** valeur des statistiques du jeu au dernier /classement reset (le classement affiche ce qui a été fait depuis) */
+    public long killsBase, deathsBase, mobsBase, playtimeBase;
     public long seen;
 
     // ---------------------------------------------------------------- liens (anti-abus) : id -> dernière fois vu
