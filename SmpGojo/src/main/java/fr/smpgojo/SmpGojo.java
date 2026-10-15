@@ -535,6 +535,21 @@ public final class SmpGojo extends JavaPlugin implements Listener {
         };
     }
 
+    /**
+     * Blocs factices (murs/sols des extensions de territoire) : envoyés aux joueurs, qui sont marqués
+     * pour que l'anticheat (SmpGuard) ne prenne pas un joueur bloqué par un faux mur pour un freecam / fly.
+     */
+    private static final NamespacedKey GUARD_EXEMPT = new NamespacedKey("smpguard", "exempt_until");
+
+    void fakeBlocks(java.util.Collection<Player> vs, java.util.Collection<org.bukkit.block.BlockState> blocks) {
+        long until = System.currentTimeMillis() + 15_000;
+        for (Player v : vs) {
+            if (!v.isOnline()) continue;
+            v.sendBlockChanges(blocks);
+            v.getPersistentDataContainer().set(GUARD_EXEMPT, PersistentDataType.LONG, until);
+        }
+    }
+
     void later(long delay, Runnable r) {
         if (delay <= 0) {
             r.run();

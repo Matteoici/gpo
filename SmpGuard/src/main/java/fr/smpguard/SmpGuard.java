@@ -199,6 +199,20 @@ public final class SmpGuard extends JavaPlugin {
         return Hooks.isFrozen(p);
     }
 
+    private static final org.bukkit.NamespacedKey EXEMPT = new org.bukkit.NamespacedKey("smpguard", "exempt_until");
+
+    /**
+     * Un autre plugin contrôle ses déplacements en ce moment : blocs factices (extensions de territoire SmpGojo),
+     * ou déplacement annulé / modifié par un plugin (gel, cinématique, zone interdite, bordure) il y a moins de 3 s.
+     * N'importe quel plugin peut poser la clé smpguard:exempt_until (LONG, en ms) sur le joueur.
+     */
+    public boolean scripted(Player p) {
+        Long until = p.getPersistentDataContainer().get(EXEMPT, org.bukkit.persistence.PersistentDataType.LONG);
+        if (until != null && until > System.currentTimeMillis()) return true;
+        Profile prof = profile(p);
+        return prof != null && System.currentTimeMillis() - prof.moveBlockedAt < 3000;
+    }
+
     // ================================================================= test appât
 
     public BaitTest bait(UUID target) {

@@ -587,7 +587,7 @@ final class Megumi {
         for (int k = 0; k < waves; k++) {
             List<BlockState> part = new ArrayList<>(floor.subList(Math.min(floor.size(), k * per), Math.min(floor.size(), (k + 1) * per)));
             pl.later(k, () -> {
-                for (Player v : vs) if (v.isOnline()) v.sendBlockChanges(part);
+                pl.fakeBlocks(vs, part);
             });
         }
         int ticks = seconds * 20;
@@ -626,7 +626,7 @@ final class Megumi {
             for (int k = 0; k < 6; k++) {
                 List<BlockState> part = new ArrayList<>(real.subList(Math.min(real.size(), k * n), Math.min(real.size(), (k + 1) * n)));
                 pl.later(k, () -> {
-                    for (Player v : vs) if (v.isOnline()) v.sendBlockChanges(part);
+                    pl.fakeBlocks(vs, part);
                 });
             }
             for (LivingEntity le : victims) {

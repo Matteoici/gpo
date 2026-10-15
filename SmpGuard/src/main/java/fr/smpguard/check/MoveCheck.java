@@ -160,7 +160,8 @@ public final class MoveCheck {
     }
 
     private boolean exempt(Player p, State s) {
-        if (!plugin.analysed(p) || p.isDead() || p.isSleeping() || plugin.frozen(p) || plugin.isBedrock(p) || p.isClimbing()) return true;
+        if (!plugin.analysed(p) || p.isDead() || p.isSleeping() || plugin.frozen(p) || plugin.isBedrock(p) || p.isClimbing()
+                || plugin.scripted(p)) return true;
         // élytres, trident, vol, monture, lévitation : exempté pendant ET un moment après (il garde son élan)
         if (p.getAllowFlight() || p.isFlying() || p.isGliding() || p.isRiptiding() || p.isInsideVehicle()
                 || p.hasPotionEffect(PotionEffectType.LEVITATION) || p.hasPotionEffect(PotionEffectType.SLOW_FALLING)) {

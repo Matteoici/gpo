@@ -308,7 +308,7 @@ final class Sukuna {
         for (int k = 0; k < waves; k++) {
             List<BlockState> part = new ArrayList<>(fake.subList(Math.min(fake.size(), k * per), Math.min(fake.size(), (k + 1) * per)));
             pl.later(k * 2L, () -> {
-                for (Player v : vs) if (v.isOnline()) v.sendBlockChanges(part);
+                pl.fakeBlocks(vs, part);
                 SmpGojo.sound(base, "block.deepslate_bricks.place", 2f, 0.5f);
                 pl.ruin.pop(base, 4, 8, 0.4);
             });
@@ -323,7 +323,7 @@ final class Sukuna {
             for (int k = 0; k < 8; k++) {
                 List<BlockState> part = new ArrayList<>(real.subList(Math.min(real.size(), k * n), Math.min(real.size(), (k + 1) * n)));
                 pl.later(k * 2L, () -> {
-                    for (Player v : vs) if (v.isOnline()) v.sendBlockChanges(part);
+                    pl.fakeBlocks(vs, part);
                 });
             }
             ThreadLocalRandom rnd = ThreadLocalRandom.current();

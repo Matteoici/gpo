@@ -101,7 +101,7 @@ final class Hakari {
         for (int k = 0; k < waves; k++) {
             List<BlockState> part = new ArrayList<>(fake.subList(Math.min(fake.size(), k * per), Math.min(fake.size(), (k + 1) * per)));
             pl.later(k, () -> {
-                for (Player v : vs) if (v.isOnline()) v.sendBlockChanges(part);
+                pl.fakeBlocks(vs, part);
             });
         }
         Runnable[] close = new Runnable[1];
@@ -109,7 +109,7 @@ final class Hakari {
             pl.pending.remove(close[0]);
             List<BlockState> real = new ArrayList<>();
             for (BlockState s : fake) real.add(s.getBlock().getState());
-            for (Player v : vs) if (v.isOnline()) v.sendBlockChanges(real);
+            pl.fakeBlocks(vs, real);
             if (pl.isEnabled()) SmpGojo.sound(c, "block.iron_door.close", 3f, 0.6f);
         };
         pl.pending.add(close[0]);

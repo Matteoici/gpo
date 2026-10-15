@@ -167,6 +167,25 @@ final class GuardListener implements Listener {
         if (e.getEntity() instanceof Player p) plugin.move().onPush(p);
     }
 
+    /** Destination demandée par le client, avant que les autres plugins y touchent. */
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onMoveFirst(org.bukkit.event.player.PlayerMoveEvent e) {
+        Profile prof = plugin.profile(e.getPlayer());
+        if (prof != null) prof.intendedTo = e.getTo().clone();
+    }
+
+    /** Un plugin a annulé ou changé le déplacement (gel, cinématique, zone interdite...) : ce n'est pas un freecam. */
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onMoveLast(org.bukkit.event.player.PlayerMoveEvent e) {
+        Profile prof = plugin.profile(e.getPlayer());
+        if (prof == null || prof.intendedTo == null) return;
+        org.bukkit.Location want = prof.intendedTo;
+        prof.intendedTo = null;
+        if (e.isCancelled() || want.getWorld() != e.getTo().getWorld() || want.distanceSquared(e.getTo()) > 1.0E-4) {
+            prof.moveBlockedAt = System.currentTimeMillis();
+        }
+    }
+
     /** Charge de vent (seule ou combo masse) : projette sans dégâts ni événement de vitesse. */
     @EventHandler(priority = EventPriority.MONITOR)
     public void onWindCharge(org.bukkit.event.entity.ProjectileHitEvent e) {

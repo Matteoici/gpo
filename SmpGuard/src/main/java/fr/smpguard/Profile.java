@@ -47,6 +47,9 @@ public final class Profile {
 
     // ---------------------------------------------------------------- freecam
     public double inputStillSeconds;
+    /** Destination voulue par le client (avant les autres plugins) et dernier déplacement bloqué par un plugin. */
+    public org.bukkit.Location intendedTo;
+    public long moveBlockedAt;
 
     // ---------------------------------------------------------------- xray
     public record Mined(long time, boolean nether) {

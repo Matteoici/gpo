@@ -654,7 +654,7 @@ final class Gojo {
             List<BlockState> part = shell.subList(Math.min(shell.size(), k * per), Math.min(shell.size(), (k + 1) * per));
             List<BlockState> copy = new ArrayList<>(part);
             pl.later(k, () -> {
-                for (Player v : vs) if (v.isOnline()) v.sendBlockChanges(copy);
+                pl.fakeBlocks(vs, copy);
             });
         }
         // victimes figées, submergées d'informations
@@ -684,7 +684,7 @@ final class Gojo {
             for (int k = 0; k < 6; k++) {
                 List<BlockState> part = new ArrayList<>(real.subList(Math.min(real.size(), k * n), Math.min(real.size(), (k + 1) * n)));
                 pl.later(k, () -> {
-                    for (Player v : vs) if (v.isOnline()) v.sendBlockChanges(part);
+                    pl.fakeBlocks(vs, part);
                 });
             }
             for (int k = 0; k < 120 && !shell.isEmpty(); k++) {
