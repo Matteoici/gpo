@@ -4,6 +4,8 @@
 #  Textes : messages.yml   |   Après une modification : /shopadmin reload
 # =====================================================================
 
+config-version: 2
+
 currency-symbol: "$"
 
 # ---------------------------------------------------------------- Prix affiché sur les objets
@@ -79,9 +81,17 @@ sell:
   # les outils / armures abîmés ne se vendent pas
   ignore-damaged-items: true
   # bonus de vente par grade : permission smpshop.multiplier.<nom>  (le plus grand compte)
+  # 1.15 = +15 % d'argent à chaque vente
   multipliers:
-    vip: 1.10
+    vip: 1.15
     mvp: 1.25
+
+# ---------------------------------------------------------------- Réduction en boutique par grade
+# permission smpshop.discount.<nom>  (la plus grande compte), en %. Pas sur les jetons d'événement.
+# Acheter pour revendre ne rapporte toujours rien (la revente = 30 % du prix boutique).
+shop-discounts:
+  vip: 10
+  mvp: 20
 
 # ---------------------------------------------------------------- Réparation des objets abîmés par DonutSell
 # L'ancien plugin écrivait le prix DANS les objets. On retire ces lignes automatiquement

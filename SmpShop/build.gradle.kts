@@ -3,19 +3,18 @@ plugins {
 }
 
 group = "fr.smpshop"
-version = "1.2.2"
+version = "1.3.0"
 
 repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
     maven("https://jitpack.io") // Vault
-    maven("https://repo.dmulloy2.net/repository/public/") // ProtocolLib
 }
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:26.2.build.+")
     compileOnly("com.github.MilkBowl:VaultAPI:1.7") { isTransitive = false }
-    compileOnly("com.comphenix.protocol:ProtocolLib:5.3.0") { isTransitive = false }
+    compileOnly("net.dmulloy2:ProtocolLib:5.4.0") { isTransitive = false } // Maven Central (le dépôt dmulloy2 ne répond plus)
 }
 
 java {

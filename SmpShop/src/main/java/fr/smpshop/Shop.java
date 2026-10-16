@@ -168,7 +168,7 @@ public final class Shop {
             if (c.currency() != Currency.MONEY) continue;
             for (Entry e : c.entries()) {
                 if (e.isCommand()) continue;
-                double buyUnit = e.price() / e.item().getAmount();
+                double buyUnit = e.price() / e.item().getAmount() * (1 - maxDiscount());
                 double sell = plugin.worth().basePrice(e.item().getType()) * plugin.worth().maxMultiplier();
                 if (sell >= buyUnit && buyUnit > 0) {
                     plugin.getLogger().warning("ATTENTION : " + e.item().getType() + " s'achète " + buyUnit + " mais se revend "
@@ -188,9 +188,30 @@ public final class Shop {
 
     // ================================================================= achat
 
-    /** Prix d'un lot de "packs" (un pack = la quantité "amount" de l'article). */
-    public double cost(Entry e, int packs) {
-        return e.price() * packs;
+    /** Prix d'un lot de "packs" (un pack = la quantité "amount" de l'article), réduction de grade comprise. */
+    public double cost(Player p, Category c, Entry e, int packs) {
+        double base = e.price() * packs;
+        if (c.currency() != Currency.MONEY) return base; // les jetons d'événement ne sont pas réduits
+        return Math.ceil(base * (1 - discount(p)) * 100) / 100.0;
+    }
+
+    /** Réduction en boutique selon les permissions smpshop.discount.<nom> (la plus grande compte), entre 0 et 0,9. */
+    public double discount(Player p) {
+        var sec = plugin.getConfig().getConfigurationSection("shop-discounts");
+        double best = 0;
+        if (sec == null || p == null) return 0;
+        for (String k : sec.getKeys(false)) {
+            double v = sec.getDouble(k, 0) / 100.0;
+            if (v > best && p.hasPermission("smpshop.discount." + k.toLowerCase(Locale.ROOT))) best = v;
+        }
+        return Math.min(0.9, best);
+    }
+
+    private double maxDiscount() {
+        var sec = plugin.getConfig().getConfigurationSection("shop-discounts");
+        double best = 0;
+        if (sec != null) for (String k : sec.getKeys(false)) best = Math.max(best, sec.getDouble(k, 0) / 100.0);
+        return Math.min(0.9, best);
     }
 
     public String priceText(Category c, double v) {
@@ -200,7 +221,7 @@ public final class Shop {
     public boolean buy(Player p, Category c, Entry e, int packs) {
         Texts t = plugin.texts();
         if (packs <= 0) return false;
-        double cost = cost(e, packs);
+        double cost = cost(p, c, e, packs);
         if (!e.isCommand()) {
             int total = e.item().getAmount() * packs;
             if (space(p, e.item()) < total) {

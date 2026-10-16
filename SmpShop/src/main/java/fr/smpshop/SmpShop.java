@@ -92,6 +92,7 @@ public final class SmpShop extends JavaPlugin {
 
     void loadAll() {
         reloadConfig();
+        migrateConfig();
         settings = new Settings(getConfig());
         texts.load();
         worth.load();
@@ -126,6 +127,23 @@ public final class SmpShop extends JavaPlugin {
 
     boolean displayEnabled() {
         return display;
+    }
+
+    /** Anciennes configs : ajoute la réduction de grade en boutique, et monte le bonus de vente vip de 10 % à 15 %. */
+    private void migrateConfig() {
+        var c = getConfig();
+        boolean changed = false;
+        if (!c.isConfigurationSection("shop-discounts")) {
+            c.set("shop-discounts.vip", 10);
+            c.set("shop-discounts.mvp", 20);
+            changed = true;
+        }
+        if (c.getInt("config-version", 1) < 2) {
+            if (Math.abs(c.getDouble("sell.multipliers.vip", 0) - 1.10) < 1e-9) c.set("sell.multipliers.vip", 1.15);
+            c.set("config-version", 2);
+            changed = true;
+        }
+        if (changed) saveConfig();
     }
 
     List<Component> displayLines(double unit, int amount) {

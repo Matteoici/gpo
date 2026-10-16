@@ -34,9 +34,11 @@ public final class CategoryMenu extends Menu {
             for (String s : e.lore()) lore.add(Texts.parse(s));
             if (!e.lore().isEmpty()) lore.add(Component.empty());
             int stack = stackPacks(e);
-            lore.addAll(t().list("shop.entry-lore", ph("price", shop.priceText(cat, e.price())),
+            lore.addAll(t().list("shop.entry-lore", ph("price", shop.priceText(cat, shop.cost(viewer, cat, e, 1))),
                     ph("amount", e.isCommand() ? 1 : e.item().getAmount()),
-                    ph("stack", shop.priceText(cat, shop.cost(e, stack))), ph("stack-count", e.isCommand() ? stack : stack * e.item().getAmount())));
+                    ph("stack", shop.priceText(cat, shop.cost(viewer, cat, e, stack))), ph("stack-count", e.isCommand() ? stack : stack * e.item().getAmount())));
+            double off = cat.currency() == Shop.Currency.MONEY ? shop.discount(viewer) : 0;
+            if (off > 0) lore.add(Texts.parse("<light_purple>✦ Réduction de grade : <white>-" + Math.round(off * 100) + "%"));
             ItemStack icon = e.item().clone();
             Component name = e.name() != null ? Texts.parse(e.name())
                     : t().get("shop.entry-name", Texts.pc("item", Component.translatable(e.item().translationKey())));

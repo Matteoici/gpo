@@ -38,7 +38,7 @@ final class PriceDisplay {
                     PacketContainer packet = event.getPacket();
                     if (event.getPacketType() == PacketType.Play.Server.SET_SLOT) {
                         ItemStack it = packet.getItemModifier().read(0);
-                        ItemStack out = decorate(shop, it);
+                        ItemStack out = decorate(shop, it, p);
                         if (out != it) {
                             PacketContainer copy = packet.shallowClone();
                             copy.getItemModifier().write(0, out);
@@ -49,7 +49,7 @@ final class PriceDisplay {
                         List<ItemStack> outList = new ArrayList<>(list.size());
                         boolean changed = false;
                         for (ItemStack it : list) {
-                            ItemStack out = decorate(shop, it);
+                            ItemStack out = decorate(shop, it, p);
                             if (out != it) changed = true;
                             outList.add(out);
                         }
@@ -67,9 +67,10 @@ final class PriceDisplay {
     }
 
     /** Copie de l'objet avec la ligne de prix, ou l'objet tel quel s'il ne se vend pas. */
-    static ItemStack decorate(SmpShop plugin, ItemStack it) {
+    static ItemStack decorate(SmpShop plugin, ItemStack it, Player viewer) {
         if (it == null || it.getType().isAir()) return it;
-        double unit = plugin.worth().unitPrice(it);
+        // prix réel pour CE joueur (bonus de vente de son grade compris)
+        double unit = plugin.worth().unitPrice(it) * (viewer == null ? 1 : plugin.worth().multiplier(viewer));
         if (unit <= 0) return it;
         ItemStack copy = it.clone();
         ItemMeta meta = copy.getItemMeta();
