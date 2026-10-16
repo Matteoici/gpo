@@ -73,6 +73,15 @@ public final class SmpSandevistan extends JavaPlugin implements Listener, TabExe
             saveResource("config.yml", true);
             reloadConfig();
         }
+        // v4 : les copies restent jusqu'à la fin de l'effet
+        if (getConfig().getInt("config-version", 1) < 4) {
+            getConfig().set("afterimages.persist", true);
+            getConfig().set("afterimages.max", 150);
+            getConfig().set("afterimages.min-distance", 1.2);
+            getConfig().set("afterimages.particle-silhouettes-max", 24);
+            getConfig().set("config-version", 4);
+            saveConfig();
+        }
         itemKey = new NamespacedKey(this, "implant");
         freezeKey = new NamespacedKey(this, "freeze");
         attackKey = new NamespacedKey(this, "attack_speed");

@@ -14,7 +14,7 @@
 #   - tes coups sont "en attente" (compteur au-dessus de la cible) et tombent en cascade quand le temps reprend
 # =====================================================================
 
-config-version: 3
+config-version: 4
 
 radius: 100
 duration-seconds: 10
@@ -47,9 +47,12 @@ afterimages:
   enabled: true
   copies: true                 # copies de toi (ton skin) avec un contour vert
   particle-silhouettes: true   # silhouettes vertes en particules (marchent partout, même au spawn protégé)
-  every-ticks: 2               # une image tous les X ticks quand tu bouges
-  life-ticks: 14               # durée de vie d'une image
-  max: 18                      # images en même temps
+  persist: true                # comme dans l'anime : les copies restent jusqu'à ce que tu coupes l'effet
+  min-distance: 1.2            # une copie tous les X blocs parcourus
+  every-ticks: 2
+  life-ticks: 14               # temps pour passer du vert clair au vert foncé (et durée de vie si persist: false)
+  max: 150                     # copies en même temps (au-delà, la plus ancienne part)
+  particle-silhouettes-max: 24 # silhouettes en particules (les plus récentes)
   hide-closer-than: 3.0        # tu ne vois pas tes images / silhouettes à moins de X blocs devant toi
   # couleur du contour selon l'âge de la copie (noms Minecraft : green, dark_green, aqua...)
   glow-colors: [green, green, dark_green]

@@ -388,7 +388,9 @@ final class Session {
                 glowTeam(names.get(stage)).addEntry(im.m.getUniqueId().toString());
             }
         }
-        while (!images.isEmpty() && images.peekFirst().dieAt <= tick) {
+        // comme dans l'anime : les copies restent là tant que le Sandevistan est actif (sauf si persist: false)
+        boolean persist = cfg().getBoolean("afterimages.persist", true);
+        while (!persist && !images.isEmpty() && images.peekFirst().dieAt <= tick) {
             Image im = images.pollFirst();
             imageIds.remove(im.m.getUniqueId());
             im.m.getWorld().spawnParticle(Particle.DUST, im.m.getLocation().add(0, 1, 0), 4, 0.2, 0.5, 0.2, 0,
@@ -408,9 +410,13 @@ final class Session {
         if (!cfg().getBoolean("afterimages.enabled", true)) return;
         int every = Math.max(1, cfg().getInt("afterimages.every-ticks", 2));
         if (tick % every != 0) return;
-        if (lastImage != null && lastImage.getWorld() == here.getWorld() && lastImage.distanceSquared(here) < 0.35 * 0.35) return;
+        if (lastImage != null && lastImage.getWorld() == here.getWorld() && lastImage.distanceSquared(here) < sq(cfg().getDouble("afterimages.min-distance", 1.2))) return;
         lastImage = here.clone();
         image(behind(), false);
+    }
+
+    private static double sq(double v) {
+        return v * v;
     }
 
     /** Position d'il y a ~3 ticks (derrière lui quand il bouge). */
@@ -423,7 +429,7 @@ final class Session {
     private void ghost(Location at) {
         if (!cfg().getBoolean("afterimages.particle-silhouettes", true)) return;
         ghosts.addLast(new Object[]{at.clone(), tick});
-        while (ghosts.size() > cfg().getInt("afterimages.max", 18) + 6) ghosts.pollFirst();
+        while (ghosts.size() > cfg().getInt("afterimages.particle-silhouettes-max", 24)) ghosts.pollFirst();
     }
 
     private void drawGhosts() {
@@ -510,7 +516,7 @@ final class Session {
     private boolean copyError;
 
     private void spawnCopy(Location at, boolean swing) {
-        int max = cfg().getInt("afterimages.max", 18);
+        int max = cfg().getInt("afterimages.max", 150);
         while (images.size() >= max) {
             Image old = images.pollFirst();
             imageIds.remove(old.m.getUniqueId());
