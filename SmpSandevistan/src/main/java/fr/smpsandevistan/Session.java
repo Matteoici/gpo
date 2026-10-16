@@ -374,9 +374,12 @@ final class Session {
     // ================================================================= images rémanentes
 
     private void afterimages() {
-        // les images vieillissent : vert -> cyan -> rose -> rouge, puis disparaissent
+        // les images vieillissent (vert clair -> vert foncé), puis disparaissent ; lui ne les voit pas devant son nez
         List<String> names = cfg().getStringList("afterimages.glow-colors");
         for (Image im : images) {
+            boolean face = inHisFace(im.m.getLocation().add(0, 1, 0));
+            if (face && user.canSee(im.m)) user.hideEntity(pl, im.m);
+            else if (!face && !user.canSee(im.m)) user.showEntity(pl, im.m);
             if (names.isEmpty()) break;
             int life = Math.max(1, im.dieAt - im.born);
             int stage = Math.min(names.size() - 1, (tick - im.born) * names.size() / life);
@@ -396,8 +399,12 @@ final class Session {
         Location here = user.getLocation();
         recent.addLast(here.clone());
         while (recent.size() > 4) recent.pollFirst();
-        user.getWorld().spawnParticle(Particle.DUST, here.clone().add(0, 1, 0), 3, 0.25, 0.5, 0.25, 0,
-                new Particle.DustOptions(trailColor(tick / 3), 1.3f));
+        Location trail = behind().add(0, 1, 0);
+        for (Player v : here.getWorld().getPlayers()) {
+            if (v == user && inHisFace(trail)) continue;
+            if (v.getLocation().distanceSquared(here) > 96 * 96) continue;
+            v.spawnParticle(Particle.DUST, trail, 3, 0.25, 0.5, 0.25, 0, new Particle.DustOptions(trailColor(tick / 3), 1.3f));
+        }
         if (!cfg().getBoolean("afterimages.enabled", true)) return;
         int every = Math.max(1, cfg().getInt("afterimages.every-ticks", 2));
         if (tick % every != 0) return;
@@ -430,42 +437,61 @@ final class Session {
             double yaw = Math.toRadians(at.getYaw());
             double rx = Math.cos(yaw), rz = Math.sin(yaw); // vers sa droite
             World w = at.getWorld();
+            List<Player> viewers = new ArrayList<>();
+            for (Player v : w.getPlayers()) {
+                if (v.getLocation().distanceSquared(at) > 96 * 96) continue;
+                if (v == user && inHisFace(at.clone().add(0, 1, 0))) continue;
+                viewers.add(v);
+            }
+            if (viewers.isEmpty()) continue;
             // jambes
             for (double y = 0.05; y <= 0.75; y += 0.14) {
-                pt(w, at, rx, rz, -0.12, y, dust);
-                pt(w, at, rx, rz, 0.12, y, dust);
+                pt(viewers, at, rx, rz, -0.12, y, dust);
+                pt(viewers, at, rx, rz, 0.12, y, dust);
             }
             // corps (contour) et bras
             for (double y = 0.8; y <= 1.42; y += 0.12) {
-                pt(w, at, rx, rz, -0.24, y, dust);
-                pt(w, at, rx, rz, 0.24, y, dust);
-                pt(w, at, rx, rz, -0.4, y - 0.05, dust);
-                pt(w, at, rx, rz, 0.4, y - 0.05, dust);
+                pt(viewers, at, rx, rz, -0.24, y, dust);
+                pt(viewers, at, rx, rz, 0.24, y, dust);
+                pt(viewers, at, rx, rz, -0.4, y - 0.05, dust);
+                pt(viewers, at, rx, rz, 0.4, y - 0.05, dust);
             }
-            for (double x = -0.24; x <= 0.24; x += 0.12) pt(w, at, rx, rz, x, 1.42, dust);
+            for (double x = -0.24; x <= 0.24; x += 0.12) pt(viewers, at, rx, rz, x, 1.42, dust);
             // tête
             for (double a = 0; a < Math.PI * 2; a += Math.PI / 5) {
-                pt(w, at, rx, rz, Math.cos(a) * 0.22, 1.68 + Math.sin(a) * 0.22, dust);
+                pt(viewers, at, rx, rz, Math.cos(a) * 0.22, 1.68 + Math.sin(a) * 0.22, dust);
             }
         }
     }
 
-    private static void pt(World w, Location at, double rx, double rz, double side, double y, Particle.DustOptions d) {
-        w.spawnParticle(Particle.DUST, at.getX() + rx * side, at.getY() + y, at.getZ() + rz * side, 1, 0, 0, 0, 0, d, true);
+    private static void pt(List<Player> viewers, Location at, double rx, double rz, double side, double y, Particle.DustOptions d) {
+        for (Player v : viewers) v.spawnParticle(Particle.DUST, at.getX() + rx * side, at.getY() + y, at.getZ() + rz * side, 1, 0, 0, 0, 0, d);
     }
 
-    /** Brume verte autour de sa caméra : le monde a l'air vert pour lui seul. */
+    /** Brume verte sur les bords de sa vue (jamais au centre) : le monde a l'air vert pour lui seul. */
     private void haze() {
         if (!cfg().getBoolean("screen.green-haze", true) || tick % 2 != 0) return;
         Location eye = user.getEyeLocation();
         Vector look = eye.getDirection();
-        int n = cfg().getInt("screen.green-haze-density", 10);
-        for (int i = 0; i < n; i++) {
+        int n = cfg().getInt("screen.green-haze-density", 6);
+        for (int i = 0, tries = 0; i < n && tries < n * 4; tries++) {
             Vector v = new Vector(RNG.nextGaussian(), RNG.nextGaussian() * 0.6, RNG.nextGaussian()).normalize();
-            if (v.dot(look) < 0.2) v.add(look.clone().multiply(0.8)).normalize(); // surtout devant lui
-            Location l = eye.clone().add(v.multiply(1.6 + RNG.nextDouble() * 4));
-            user.spawnParticle(Particle.DUST, l, 1, 0, 0, 0, 0, new Particle.DustOptions(trailColor(i), 0.6f));
+            double d = v.dot(look);
+            if (d > 0.55) continue; // le centre de l'écran reste dégagé
+            Location l = eye.clone().add(v.multiply(2.5 + RNG.nextDouble() * 4));
+            user.spawnParticle(Particle.DUST, l, 1, 0, 0, 0, 0, new Particle.DustOptions(trailColor(i), 0.5f));
+            i++;
         }
+    }
+
+    /** Ce point le gênerait-il (trop près de ses yeux, devant lui) ? */
+    private boolean inHisFace(Location l) {
+        Location eye = user.getEyeLocation();
+        if (l.getWorld() != eye.getWorld()) return false;
+        Vector to = l.toVector().subtract(eye.toVector());
+        double dist = to.length();
+        if (dist > cfg().getDouble("afterimages.hide-closer-than", 3.0)) return false;
+        return dist < 1.2 || to.multiply(1 / dist).dot(eye.getDirection()) > 0.2;
     }
 
     /** Une copie de lui, figée là où il est passé. */
@@ -514,6 +540,7 @@ final class Session {
             pl.spawningImage = false;
         }
         if (!m.isValid()) return; // une protection l'a quand même retirée : la silhouette en particules reste
+        if (inHisFace(m.getLocation().add(0, 1, 0))) user.hideEntity(pl, m);
         imageIds.add(m.getUniqueId());
         List<String> names = cfg().getStringList("afterimages.glow-colors");
         if (!names.isEmpty()) glowTeam(names.get(0)).addEntry(m.getUniqueId().toString());
