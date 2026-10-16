@@ -10,8 +10,9 @@
 # =====================================================================
 
 # où le titre s'affiche
-show-in-chat: true     # devant le pseudo dans le chat (nom affiché)
+show-in-chat: true     # devant chaque message dans le chat (marche avec n'importe quel plugin de chat)
 show-in-tab: true      # dans la liste TAB
+show-above-head: true  # au-dessus de la tête
 format: "<title> <dark_gray>|</dark_gray> "
 
 # nom des compteurs (affiché dans le menu)

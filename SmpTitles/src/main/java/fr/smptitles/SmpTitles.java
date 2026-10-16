@@ -80,6 +80,7 @@ public final class SmpTitles extends JavaPlugin implements Listener, TabExecutor
     @Override
     public void onDisable() {
         saveData();
+        for (Player p : Bukkit.getOnlinePlayers()) nameTag(p, null);
     }
 
     private static Component mm(String s) {
@@ -157,17 +158,48 @@ public final class SmpTitles extends JavaPlugin implements Listener, TabExecutor
 
     // ================================================================= affichage
 
+    /** Titre à mettre devant chaque message de chat (lu depuis le fil du chat, donc thread-safe). */
+    private final Map<UUID, Component> chatPrefix = new java.util.concurrent.ConcurrentHashMap<>();
+
     private void apply(Player p) {
         Data d = data.get(p.getUniqueId());
         String disp = d == null || d.active == null ? null : display(d, d.active);
-        if (disp == null) {
-            if (getConfig().getBoolean("show-in-chat", true)) p.displayName(null);
-            if (getConfig().getBoolean("show-in-tab", true)) p.playerListName(null);
+        Component prefix = disp == null ? null : mm(getConfig().getString("format", "<title> ").replace("<title>", disp));
+        // chat : ajouté devant le message, quel que soit le plugin de chat (voir onChat)
+        if (prefix != null && getConfig().getBoolean("show-in-chat", true)) chatPrefix.put(p.getUniqueId(), prefix);
+        else chatPrefix.remove(p.getUniqueId());
+        // TAB
+        if (getConfig().getBoolean("show-in-tab", true)) {
+            p.playerListName(prefix == null ? null : prefix.append(Component.text(p.getName())));
+        }
+        // au-dessus de la tête : préfixe d'équipe sur le tableau principal
+        nameTag(p, getConfig().getBoolean("show-above-head", true) ? prefix : null);
+    }
+
+    private static String teamName(UUID id) {
+        return "smpt_" + id.toString().replace("-", "").substring(0, 12);
+    }
+
+    private void nameTag(Player p, Component prefix) {
+        org.bukkit.scoreboard.Scoreboard sb = Bukkit.getScoreboardManager().getMainScoreboard();
+        String name = teamName(p.getUniqueId());
+        org.bukkit.scoreboard.Team team = sb.getTeam(name);
+        if (prefix == null) {
+            if (team != null) team.unregister();
             return;
         }
-        Component name = mm(getConfig().getString("format", "<title> ").replace("<title>", disp)).append(Component.text(p.getName()));
-        if (getConfig().getBoolean("show-in-chat", true)) p.displayName(name);
-        if (getConfig().getBoolean("show-in-tab", true)) p.playerListName(name);
+        if (team == null) team = sb.registerNewTeam(name);
+        team.prefix(prefix);
+        if (!team.hasEntry(p.getName())) team.addEntry(p.getName());
+    }
+
+    /** On passe en dernier : le titre est ajouté devant le message déjà mis en forme par le plugin de chat. */
+    @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onChat(io.papermc.paper.event.player.AsyncChatEvent e) {
+        Component pre = chatPrefix.get(e.getPlayer().getUniqueId());
+        if (pre == null) return;
+        io.papermc.paper.chat.ChatRenderer r = e.renderer();
+        e.renderer((source, displayName, message, viewer) -> pre.append(r.render(source, displayName, message, viewer)));
     }
 
     @EventHandler
@@ -179,6 +211,12 @@ public final class SmpTitles extends JavaPlugin implements Listener, TabExecutor
             check(p.getUniqueId(), p);
             apply(p);
         }, 3L);
+    }
+
+    @EventHandler
+    public void onQuit(org.bukkit.event.player.PlayerQuitEvent e) {
+        chatPrefix.remove(e.getPlayer().getUniqueId());
+        nameTag(e.getPlayer(), null);
     }
 
     // ================================================================= compteurs et déblocage
