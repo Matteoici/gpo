@@ -33,6 +33,14 @@ public final class SmpGuilds extends JavaPlugin {
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        // anciennes configs : la notification de terrain passe du gros titre au chat
+        if (getConfig().getInt("config-version", 1) < 2) {
+            if ("title".equalsIgnoreCase(getConfig().getString("claims.enter-notification", "title"))) {
+                getConfig().set("claims.enter-notification", "chat");
+            }
+            getConfig().set("config-version", 2);
+            saveConfig();
+        }
         settings = new Settings(this);
         settings.load();
         messages = new Messages(this);

@@ -98,13 +98,20 @@ public final class TerritoryListener implements Listener {
     }
 
     private void notifyEnter(Player p, Guild owner) {
-        String mode = plugin.settings().s("claims.enter-notification", "title");
+        String mode = plugin.settings().s("claims.enter-notification", "chat");
         if (mode.equalsIgnoreCase("none")) return;
         Messages m = plugin.messages();
         var title = owner == null ? m.get("territory.wilderness") : m.get("territory.enter", guild(owner));
         var sub = owner == null ? m.get("territory.wilderness-sub")
                 : m.get("territory.enter-sub", Messages.ph("description", owner.description.isEmpty() ? "" : owner.description));
-        if (mode.equalsIgnoreCase("actionbar")) {
+        if (mode.equalsIgnoreCase("chat")) {
+            // une ligne discrète dans le chat :  [Guildes] [TAG] Nom — description
+            String plainSub = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(sub).trim();
+            var line = m.prefix().append(title);
+            if (!plainSub.isEmpty()) line = line.append(net.kyori.adventure.text.Component.text(" — ",
+                    net.kyori.adventure.text.format.NamedTextColor.DARK_GRAY)).append(sub);
+            p.sendMessage(line);
+        } else if (mode.equalsIgnoreCase("actionbar")) {
             p.sendActionBar(title);
         } else {
             p.showTitle(Title.title(title, sub, Title.Times.times(Duration.ofMillis(200), Duration.ofMillis(1500), Duration.ofMillis(400))));
