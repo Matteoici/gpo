@@ -58,6 +58,11 @@ public final class Stall {
     public final List<Showcase> showcases = new ArrayList<>();
     public Auction auction;
 
+    /** Contenants posés par le locataire ("x,y,z") : rendus dans son colis s'il perd le stand. */
+    public final java.util.Set<String> containers = new java.util.LinkedHashSet<>();
+    /** false = stand loué avant ce suivi : on fouille tout l'intérieur du stand à la libération. */
+    public boolean tracksContainers;
+
     public long lastChange;                                // dernière modification par le locataire (ms)
     public double paid;                                    // ce qu'il a payé pour ce stand (remboursé s'il est inactif)
     public long totalSold;

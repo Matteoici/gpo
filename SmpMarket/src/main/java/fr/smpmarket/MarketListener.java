@@ -98,6 +98,15 @@ final class MarketListener implements Listener {
         }
     }
 
+    /** Le locataire pose un coffre / tonneau / shulker... : on le note pour le lui rendre s'il perd le stand. */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onPlaceContainer(BlockPlaceEvent e) {
+        Stall st = plugin.shops().stallAt(e.getBlock());
+        if (st == null || !st.isRented() || !st.canBuild(e.getPlayer().getUniqueId())) return;
+        if (!(e.getBlock().getState(false) instanceof org.bukkit.inventory.BlockInventoryHolder)) return;
+        if (st.containers.add(Auctions.key(e.getBlock()))) plugin.store().markDirty();
+    }
+
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlace(BlockPlaceEvent e) {
         Stall st = plugin.shops().stallAt(e.getBlock());

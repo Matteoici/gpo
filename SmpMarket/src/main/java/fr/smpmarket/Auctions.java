@@ -2,6 +2,8 @@ package fr.smpmarket;
 
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
@@ -256,10 +258,81 @@ public final class Auctions {
         plugin.store().markDirty();
     }
 
-    /** Libère le stand : le stock des vitrines part dans le colis de l'ancien locataire. */
+    static String key(org.bukkit.block.Block b) {
+        return b.getX() + "," + b.getY() + "," + b.getZ();
+    }
+
+    /**
+     * Coffres, tonneaux, shulkers, fours... posés dans le stand : le contenant ET son contenu partent dans le colis
+     * (une shulker garde ses objets à l'intérieur), puis le bloc est retiré. Les vitrines ne sont pas touchées.
+     */
+    private int collectContainers(Stall st) {
+        org.bukkit.World w = st.region == null ? null : Bukkit.getWorld(st.region.world());
+        if (w == null || st.owner == null) return 0;
+        java.util.List<org.bukkit.block.Block> blocks = new java.util.ArrayList<>();
+        if (st.tracksContainers) {
+            for (String k : st.containers) {
+                String[] p = k.split(",");
+                try {
+                    blocks.add(w.getBlockAt(Integer.parseInt(p[0]), Integer.parseInt(p[1]), Integer.parseInt(p[2])));
+                } catch (RuntimeException ignored) {
+                }
+            }
+        } else {
+            // stand loué avant le suivi : on fouille tout le stand
+            Cuboid r = st.region;
+            for (int x = r.minX(); x <= r.maxX(); x++)
+                for (int y = r.minY(); y <= r.maxY() + 2; y++)
+                    for (int z = r.minZ(); z <= r.maxZ(); z++) {
+                        org.bukkit.block.Block b = w.getBlockAt(x, y, z);
+                        if (st.insideCore(b.getLocation())) blocks.add(b); // l'intérieur seulement, pas les murs du marché
+                    }
+        }
+        int items = 0;
+        for (org.bukkit.block.Block b : blocks) {
+            if (!w.isChunkLoaded(b.getX() >> 4, b.getZ() >> 4)) w.getChunkAt(b.getX() >> 4, b.getZ() >> 4);
+            boolean showcase = false;
+            for (Showcase c : st.showcases) {
+                if (c.isAt(b.getX(), b.getY(), b.getZ()) || c.isAt(b.getX(), b.getY() - 1, b.getZ())) showcase = true;
+            }
+            if (showcase) continue;
+            org.bukkit.block.BlockState state = b.getState(false);
+            if (!(state instanceof org.bukkit.inventory.BlockInventoryHolder holder)) continue;
+            Material type = b.getType();
+            if (state instanceof org.bukkit.block.ShulkerBox box) {
+                // la shulker entière, avec ce qu'il y a dedans et son nom
+                ItemStack item = new ItemStack(type);
+                if (item.getItemMeta() instanceof org.bukkit.inventory.meta.BlockStateMeta meta) {
+                    meta.setBlockState(box);
+                    item.setItemMeta(meta);
+                }
+                plugin.store().addParcel(st.owner, item);
+                items++;
+                box.getInventory().clear();
+            } else {
+                org.bukkit.inventory.Inventory inv = state instanceof org.bukkit.block.Chest chest ? chest.getBlockInventory()
+                        : holder.getInventory();
+                for (ItemStack it : inv.getContents()) {
+                    if (it == null || it.getType().isAir()) continue;
+                    plugin.store().addParcel(st.owner, it.clone());
+                    items += it.getAmount();
+                }
+                inv.clear();
+                if (type.isItem()) {
+                    plugin.store().addParcel(st.owner, new ItemStack(type));
+                    items++;
+                }
+            }
+            b.setType(Material.AIR, false);
+        }
+        st.containers.clear();
+        return items;
+    }
+
+    /** Libère le stand : le stock des vitrines et les contenants posés partent dans le colis de l'ancien locataire. */
     public void evict(Stall st) {
         if (st.owner != null) {
-            int items = 0;
+            int items = collectContainers(st);
             for (Showcase c : st.showcases) {
                 if (c.stock > 0) {
                     plugin.store().addParcel(st.owner, c.template, c.stock);
@@ -286,6 +359,8 @@ public final class Auctions {
         st.skinValue = null;
         st.skinSignature = null;
         st.trusted.clear();
+        st.containers.clear();
+        st.tracksContainers = true; // le prochain locataire est suivi dès qu'il pose un contenant
         plugin.store().markDirty();
     }
 

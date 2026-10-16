@@ -150,6 +150,8 @@ public final class MarketStore {
             }
             if (s.npcSpot != null) y.set(b + "npc-spot", List.of(s.npcSpot[0], s.npcSpot[1], s.npcSpot[2], s.npcSpot[3]));
             for (Map.Entry<UUID, String> t : s.trusted.entrySet()) y.set(b + "trusted." + t.getKey(), t.getValue());
+            y.set(b + "containers", new ArrayList<>(s.containers));
+            y.set(b + "tracks-containers", s.tracksContainers);
             y.set(b + "total-sold", s.totalSold);
             y.set(b + "total-revenue", s.totalRevenue);
             y.set(b + "last-change", s.lastChange);
@@ -268,6 +270,9 @@ public final class MarketStore {
         s.npcSpot = spot.size() == 4 ? new double[]{spot.get(0), spot.get(1), spot.get(2), spot.get(3)} : null;
         ConfigurationSection t = c.getConfigurationSection("trusted");
         if (t != null) for (String k : t.getKeys(false)) s.trusted.put(UUID.fromString(k), t.getString(k, "?"));
+        s.containers.addAll(c.getStringList("containers"));
+        // stand libre : le suivi commence avec le prochain locataire ; stand déjà loué : fouille complète à la fin
+        s.tracksContainers = c.getBoolean("tracks-containers", s.owner == null);
         s.totalSold = c.getLong("total-sold");
         s.totalRevenue = c.getDouble("total-revenue");
         s.lastChange = c.getLong("last-change", System.currentTimeMillis());
