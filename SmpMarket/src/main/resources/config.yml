@@ -14,9 +14,9 @@ lease:
   renew-window-hours: 24
   # nombre maximum de stands par joueur (en comptant les enchères où il est en tête)
   max-per-player: 1
-  # un stand dont le locataire (et ses joueurs de confiance) ne s'est pas connecté depuis X heures,
-  # sans vente ni modification, est remboursé à son acheteur et remis aux enchères (0 = jamais).
-  # Un stand en rupture de stock n'est jamais repris tant que son propriétaire joue.
+  # un stand acheté qui n'expose AUCUN objet et n'a pas été modifié pendant X heures
+  # est remboursé à son acheteur et remis aux enchères (0 = jamais).
+  # Un stand avec au moins une vitrine (même en rupture de stock) n'est jamais repris.
   inactive-hours: 24
 
 # ---------------------------------------------------------------- Enchères
