@@ -1,0 +1,21 @@
+name: SmpSandevistan
+version: '${version}'
+main: fr.smpsandevistan.SmpSandevistan
+api-version: '26.2'
+description: "Sandevistan - le temps s'arrête autour de toi, toi tu bouges"
+commands:
+  sandevistan:
+    description: Activer / couper le Sandevistan
+    usage: /sandevistan [secondes] | item | reload
+    aliases: [sdv, sande]
+    permission: smpsandevistan.use
+permissions:
+  smpsandevistan.use:
+    description: Utiliser le Sandevistan (commande et implant)
+    default: op
+  smpsandevistan.nocooldown:
+    description: Pas de temps de recharge
+    default: op
+  smpsandevistan.bypass:
+    description: N'est jamais figé par le Sandevistan d'un autre
+    default: false

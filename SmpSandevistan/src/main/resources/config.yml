@@ -1,0 +1,40 @@
+# =====================================================================
+#  SmpSandevistan - le temps s'arrête dans un rayon autour de toi, toi tu bouges
+#
+#  /sandevistan [secondes]   active (ou coupe s'il est déjà actif)
+#  /sandevistan item         donne l'implant (clic droit = activer / couper)
+#  /sandevistan reload
+#  Permission : smpsandevistan.use (op par défaut)
+#
+#  Pendant l'effet : joueurs, monstres, flèches, TNT, objets au sol... tout est figé dans le rayon.
+#  Tes coups sont "en attente" et tombent tous d'un coup quand le temps reprend.
+# =====================================================================
+
+radius: 100
+duration-seconds: 10
+max-duration-seconds: 60
+cooldown-seconds: 20
+
+# bonus pour toi pendant l'effet
+speed-level: 3            # Vitesse III
+no-attack-cooldown: true  # tu frappes à toute vitesse
+
+# images rémanentes (copies de toi qui brillent derrière toi)
+afterimages:
+  enabled: true
+  every-ticks: 2          # une image tous les X ticks quand tu bouges
+  life-ticks: 12          # durée de vie d'une image
+  max: 14                 # images en même temps
+  # couleurs du contour (noms Minecraft : green, aqua, light_purple, yellow, red, blue, gold...)
+  glow-colors: [green, aqua, light_purple, yellow]
+  # couleurs des particules de la traînée (hexadécimal)
+  trail-colors: ["#00ff9c", "#00e5ff", "#ff2bd6", "#ffe600"]
+
+messages:
+  prefix: "<dark_gray>[<gradient:#00ff9c:#00e5ff>Sandevistan</gradient>]</dark_gray> "
+  on: "<gradient:#00ff9c:#00e5ff><b>SANDEVISTAN</b></gradient> <gray>activé : <white><n></white> entité(s) figée(s) dans <white><r></white> blocs."
+  off: "<gray>Le temps reprend. <white><hits></white> coup(s) libéré(s)."
+  cooldown: "<red>Implant en surchauffe : encore <white><s></white> s."
+  item: "<green>Implant Sandevistan donné."
+  reload: "<green>Config rechargée."
+  actionbar: "<gradient:#00ff9c:#00e5ff><b>SANDEVISTAN</b></gradient> <dark_gray>|</dark_gray> <bar> <white><s>s"

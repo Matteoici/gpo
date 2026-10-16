@@ -564,7 +564,7 @@ jobs:
           name: SmpBoss-jar
           path: ${{ steps.find.outputs.dir }}/build/libs/*.jar
 
-  smpgojo:
+  smpsandevistan:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -576,16 +576,11 @@ jobs:
       - name: Trouver le dossier du plugin
         id: find
         run: |
-          f=$(grep -rl --include=build.gradle.kts 'fr.smpgojo' . | head -n1)
+          f=$(grep -rl --include=build.gradle.kts 'fr.smpsandevistan' . | head -n1)
           echo "dir=$(dirname "$f")" >> "$GITHUB_OUTPUT"
-      - name: Build SmpGojo
+      - name: Build SmpSandevistan
         working-directory: ${{ steps.find.outputs.dir }}
-        run: |
-          set -o pipefail
-          gradle build --console=plain 2>&1 | tee build.log || {
-            grep -E "error:|Could not|What went wrong" -A3 build.log | head -40 | while IFS= read -r l; do echo "::error::$l"; done
-            exit 1
-          }
+        run: gradle build
       - name: Vérifier que le jar contient bien le plugin
         working-directory: ${{ steps.find.outputs.dir }}
         run: |
@@ -598,5 +593,5 @@ jobs:
           fi
       - uses: actions/upload-artifact@v4
         with:
-          name: SmpGojo-jar
+          name: SmpSandevistan-jar
           path: ${{ steps.find.outputs.dir }}/build/libs/*.jar
