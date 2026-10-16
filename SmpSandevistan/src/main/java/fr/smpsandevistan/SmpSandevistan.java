@@ -60,10 +60,19 @@ public final class SmpSandevistan extends JavaPlugin implements Listener, TabExe
     private final Map<UUID, Long> cooldowns = new HashMap<>();
     private final Map<Session, Long> durations = new HashMap<>();
     private final Set<UUID> snapping = new HashSet<>();
+    /** Vrai pendant qu'on fait apparaître une copie rémanente (pour passer outre WorldGuard / limiteurs de mobs). */
+    boolean spawningImage;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        // ancienne config (couleurs arc-en-ciel) : remplacée par la nouvelle, l'ancienne est gardée à côté
+        if (getConfig().getInt("config-version", 1) < 3) {
+            java.io.File f = new java.io.File(getDataFolder(), "config.yml");
+            f.renameTo(new java.io.File(getDataFolder(), "config-ancienne.yml"));
+            saveResource("config.yml", true);
+            reloadConfig();
+        }
         itemKey = new NamespacedKey(this, "implant");
         freezeKey = new NamespacedKey(this, "freeze");
         attackKey = new NamespacedKey(this, "attack_speed");
@@ -370,6 +379,12 @@ public final class SmpSandevistan extends JavaPlugin implements Listener, TabExe
         // un joueur figé qui part : il repart libre
         for (Session o : sessions.values()) o.forget(e.getPlayer().getUniqueId());
         cleanup(e.getPlayer());
+    }
+
+    /** WorldGuard (spawn) et les limiteurs de mobs annulent les apparitions : nos copies passent quand même. */
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onSpawn(org.bukkit.event.entity.EntitySpawnEvent e) {
+        if (spawningImage && e.getEntity() instanceof org.bukkit.entity.Mannequin && e.isCancelled()) e.setCancelled(false);
     }
 
     @EventHandler

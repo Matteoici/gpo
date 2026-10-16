@@ -82,6 +82,7 @@ final class Session {
         int pickup = -1;     // objets au sol
         Vector direction;    // boules de feu
         float flySpeed = -1; // joueurs en vol
+        Boolean glow;        // contour vert pendant l'arrêt
 
         Frozen(Entity e) {
             this.e = e;
@@ -118,11 +119,15 @@ final class Session {
     private final Deque<Image> images = new ArrayDeque<>();
     private final Set<UUID> imageIds = new HashSet<>();
     private final List<Location> sparks = new ArrayList<>();
+    /** Silhouettes vertes en particules laissées derrière lui : [position, né au tick]. */
+    private final Deque<Object[]> ghosts = new ArrayDeque<>();
     private BossBar bar;
     private BukkitTask task;
     private int tick, hits, combo;
     private long lastDash;
     private Location lastImage;
+    /** Ses dernières positions : les copies apparaissent un peu derrière lui, pas dans sa caméra. */
+    private final Deque<Location> recent = new ArrayDeque<>();
     private double wave;
     boolean releasing;
 
@@ -159,7 +164,9 @@ final class Session {
         sound(user, "entity.warden.sonic_charge", 0.6f, 2f);
         sound(user, "block.amethyst_block.resonate", 1f, 0.6f);
         sound(user, "ambient.underwater.enter", 1f, 1.2f); // tout devient étouffé
-        user.getWorld().spawnParticle(Particle.END_ROD, user.getLocation().add(0, 1, 0), 60, 0.4, 0.9, 0.4, 0.35);
+        user.getWorld().spawnParticle(Particle.DUST, user.getLocation().add(0, 1, 0), 80, 0.6, 1.0, 0.6, 0,
+                new Particle.DustOptions(Color.fromRGB(0x00ff9c), 1.8f));
+        user.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, user.getLocation().add(0, 1, 0), 30, 0.6, 1.0, 0.6, 0);
         boostUser(true);
         if (cfg().getBoolean("screen.tint", true)) tint(true);
         if (cfg().getBoolean("screen.freeze-sky", true)) user.setPlayerTime(user.getWorld().getTime(), false);
@@ -222,6 +229,8 @@ final class Session {
         intro();
         hud();
         afterimages();
+        drawGhosts();
+        haze();
         frozenSparks();
         user.setFallDistance(0);
         // l'anticheat ne prend pas sa vitesse ni ses dashs pour de la triche
@@ -249,8 +258,8 @@ final class Session {
             double clean = tick / 10.0;
             for (char ch : word.toCharArray()) sb.append(RNG.nextDouble() < clean ? ch : noise.charAt(RNG.nextInt(noise.length())));
             String txt = tick < 12 ? sb.toString() : word;
-            user.showTitle(Title.title(pl.mm("<gradient:#00ff9c:#00e5ff:#ff2bd6><b>" + txt + "</b></gradient>"),
-                    pl.mm("<dark_gray>// <gray>temps dilaté</gray> //"),
+            user.showTitle(Title.title(pl.mm("<gradient:#b2ff59:#00ff9c:#00c853><b>" + txt + "</b></gradient>"),
+                    pl.mm("<dark_green>// <green>temps dilaté</green> //"),
                     Title.Times.times(Duration.ZERO, Duration.ofMillis(tick < 14 ? 300 : 500), Duration.ofMillis(400))));
         }
     }
@@ -261,13 +270,13 @@ final class Session {
         String s = String.format(Locale.US, "%.1f", left / 1000.0);
         if (bar != null && tick % 2 == 0) {
             bar.progress(Math.max(0f, Math.min(1f, progress)));
-            bar.color(progress > 0.5f ? BossBar.Color.GREEN : progress > 0.2f ? BossBar.Color.YELLOW : BossBar.Color.RED);
-            bar.name(pl.mm("<gradient:#00ff9c:#00e5ff><b>SANDEVISTAN</b></gradient> <dark_gray>|</dark_gray> <white>" + s
-                    + "s <dark_gray>|</dark_gray> <gray>" + frozen.size() + " figé(s)"));
+            bar.color(BossBar.Color.GREEN);
+            bar.name(pl.mm("<gradient:#b2ff59:#00ff9c><b>SANDEVISTAN</b></gradient> <dark_green>|</dark_green> <green>" + s
+                    + "s <dark_green>|</dark_green> <green>" + frozen.size() + " figé(s)"));
         }
         if (tick % 2 == 0) {
-            String combo = this.combo > 0 ? "<gradient:#ff2bd6:#ffe600><b>COMBO x" + this.combo + "</b></gradient>"
-                    : "<dark_gray>F <gray>: dash   <dark_gray>clic <gray>: renvoyer les projectiles";
+            String combo = this.combo > 0 ? "<gradient:#b2ff59:#00ff9c><b>COMBO x" + this.combo + "</b></gradient>"
+                    : "<dark_green>F <green>: dash   <dark_green>clic <green>: renvoyer les projectiles";
             user.sendActionBar(pl.mm(combo));
         }
         if (tick % 20 == 0) sound(user, "entity.warden.heartbeat", 1f, 1.25f);
@@ -310,6 +319,11 @@ final class Session {
         } else if (e instanceof LivingEntity le) {
             f.ai = le.hasAI();
             le.setAI(false);
+        }
+        if (cfg().getBoolean("frozen-glow", true) && !(e instanceof Player)) {
+            f.glow = e.isGlowing();
+            e.setGlowing(true);
+            glowTeam("green").addEntry(e.getUniqueId().toString());
         }
         if (e instanceof TNTPrimed t) f.fuse = t.getFuseTicks();
         if (e instanceof Item it) {
@@ -375,11 +389,13 @@ final class Session {
             Image im = images.pollFirst();
             imageIds.remove(im.m.getUniqueId());
             im.m.getWorld().spawnParticle(Particle.DUST, im.m.getLocation().add(0, 1, 0), 4, 0.2, 0.5, 0.2, 0,
-                    new Particle.DustOptions(Color.fromRGB(0xff2bd6), 0.9f));
+                    new Particle.DustOptions(fade(1), 0.9f));
             im.m.remove();
         }
         // traînée
         Location here = user.getLocation();
+        recent.addLast(here.clone());
+        while (recent.size() > 4) recent.pollFirst();
         user.getWorld().spawnParticle(Particle.DUST, here.clone().add(0, 1, 0), 3, 0.25, 0.5, 0.25, 0,
                 new Particle.DustOptions(trailColor(tick / 3), 1.3f));
         if (!cfg().getBoolean("afterimages.enabled", true)) return;
@@ -387,12 +403,87 @@ final class Session {
         if (tick % every != 0) return;
         if (lastImage != null && lastImage.getWorld() == here.getWorld() && lastImage.distanceSquared(here) < 0.35 * 0.35) return;
         lastImage = here.clone();
-        image(here, false);
+        image(behind(), false);
+    }
+
+    /** Position d'il y a ~3 ticks (derrière lui quand il bouge). */
+    Location behind() {
+        Location l = recent.peekFirst();
+        return l != null ? l.clone() : user.getLocation();
+    }
+
+    /** Une silhouette verte en particules (tête, corps, bras, jambes), qui s'éteint en vieillissant. */
+    private void ghost(Location at) {
+        if (!cfg().getBoolean("afterimages.particle-silhouettes", true)) return;
+        ghosts.addLast(new Object[]{at.clone(), tick});
+        while (ghosts.size() > cfg().getInt("afterimages.max", 18) + 6) ghosts.pollFirst();
+    }
+
+    private void drawGhosts() {
+        int life = Math.max(2, cfg().getInt("afterimages.life-ticks", 14)) + 6;
+        while (!ghosts.isEmpty() && tick - (int) ghosts.peekFirst()[1] > life) ghosts.pollFirst();
+        if (tick % 2 != 0) return;
+        for (Object[] g : ghosts) {
+            Location at = (Location) g[0];
+            double age = (tick - (int) g[1]) / (double) life;
+            Particle.DustOptions dust = new Particle.DustOptions(fade(age), (float) (0.75 - 0.3 * age));
+            double yaw = Math.toRadians(at.getYaw());
+            double rx = Math.cos(yaw), rz = Math.sin(yaw); // vers sa droite
+            World w = at.getWorld();
+            // jambes
+            for (double y = 0.05; y <= 0.75; y += 0.14) {
+                pt(w, at, rx, rz, -0.12, y, dust);
+                pt(w, at, rx, rz, 0.12, y, dust);
+            }
+            // corps (contour) et bras
+            for (double y = 0.8; y <= 1.42; y += 0.12) {
+                pt(w, at, rx, rz, -0.24, y, dust);
+                pt(w, at, rx, rz, 0.24, y, dust);
+                pt(w, at, rx, rz, -0.4, y - 0.05, dust);
+                pt(w, at, rx, rz, 0.4, y - 0.05, dust);
+            }
+            for (double x = -0.24; x <= 0.24; x += 0.12) pt(w, at, rx, rz, x, 1.42, dust);
+            // tête
+            for (double a = 0; a < Math.PI * 2; a += Math.PI / 5) {
+                pt(w, at, rx, rz, Math.cos(a) * 0.22, 1.68 + Math.sin(a) * 0.22, dust);
+            }
+        }
+    }
+
+    private static void pt(World w, Location at, double rx, double rz, double side, double y, Particle.DustOptions d) {
+        w.spawnParticle(Particle.DUST, at.getX() + rx * side, at.getY() + y, at.getZ() + rz * side, 1, 0, 0, 0, 0, d, true);
+    }
+
+    /** Brume verte autour de sa caméra : le monde a l'air vert pour lui seul. */
+    private void haze() {
+        if (!cfg().getBoolean("screen.green-haze", true) || tick % 2 != 0) return;
+        Location eye = user.getEyeLocation();
+        Vector look = eye.getDirection();
+        int n = cfg().getInt("screen.green-haze-density", 10);
+        for (int i = 0; i < n; i++) {
+            Vector v = new Vector(RNG.nextGaussian(), RNG.nextGaussian() * 0.6, RNG.nextGaussian()).normalize();
+            if (v.dot(look) < 0.2) v.add(look.clone().multiply(0.8)).normalize(); // surtout devant lui
+            Location l = eye.clone().add(v.multiply(1.6 + RNG.nextDouble() * 4));
+            user.spawnParticle(Particle.DUST, l, 1, 0, 0, 0, 0, new Particle.DustOptions(trailColor(i), 0.6f));
+        }
     }
 
     /** Une copie de lui, figée là où il est passé. */
     void image(Location at, boolean swing) {
         if (!cfg().getBoolean("afterimages.enabled", true)) return;
+        ghost(at);
+        if (!cfg().getBoolean("afterimages.copies", true)) return;
+        try {
+            spawnCopy(at, swing);
+        } catch (RuntimeException ex) {
+            if (!copyError) pl.getLogger().warning("Copie rémanente impossible (les silhouettes restent) : " + ex);
+            copyError = true;
+        }
+    }
+
+    private boolean copyError;
+
+    private void spawnCopy(Location at, boolean swing) {
         int max = cfg().getInt("afterimages.max", 18);
         while (images.size() >= max) {
             Image old = images.pollFirst();
@@ -400,7 +491,10 @@ final class Session {
             old.m.remove();
         }
         int life = Math.max(2, cfg().getInt("afterimages.life-ticks", 14));
-        Mannequin m = at.getWorld().spawn(at, Mannequin.class, e -> {
+        pl.spawningImage = true;
+        Mannequin m;
+        try {
+            m = at.getWorld().spawn(at, Mannequin.class, e -> {
             e.setPersistent(false);
             e.setProfile(ResolvableProfile.resolvableProfile(user.getPlayerProfile()));
             e.setImmovable(true);
@@ -415,7 +509,11 @@ final class Session {
             e.getEquipment().setItemInOffHand(user.getInventory().getItemInOffHand());
             if (user.isSneaking()) e.setPose(Pose.SNEAKING, true);
             e.setGlowing(true);
-        });
+            });
+        } finally {
+            pl.spawningImage = false;
+        }
+        if (!m.isValid()) return; // une protection l'a quand même retirée : la silhouette en particules reste
         imageIds.add(m.getUniqueId());
         List<String> names = cfg().getStringList("afterimages.glow-colors");
         if (!names.isEmpty()) glowTeam(names.get(0)).addEntry(m.getUniqueId().toString());
@@ -437,14 +535,22 @@ final class Session {
         return t;
     }
 
+    /** Couleurs du Sandevistan (vert néon par défaut, comme dans Edgerunners). */
     private Color trailColor(int i) {
-        List<String> hex = cfg().getStringList("afterimages.trail-colors");
-        if (hex.isEmpty()) return Color.LIME;
+        List<String> hex = cfg().getStringList("palette");
+        if (hex.isEmpty()) hex = List.of("#00ff9c", "#39ff14", "#00e676", "#b2ff59");
         try {
             return Color.fromRGB(Integer.parseInt(hex.get(Math.floorMod(i, hex.size())).replace("#", ""), 16));
         } catch (RuntimeException e) {
-            return Color.LIME;
+            return Color.fromRGB(0x00ff9c);
         }
+    }
+
+    /** Vert qui s'éteint avec l'âge (0 = neuf, 1 = sur le point de disparaître). */
+    private static Color fade(double age) {
+        age = Math.max(0, Math.min(1, age));
+        int g = (int) (255 - 175 * age), b = (int) (156 - 110 * age);
+        return Color.fromRGB(0, g, b);
     }
 
     // ================================================================= dash (touche F)
@@ -493,14 +599,14 @@ final class Session {
         target.getWorld().spawnParticle(Particle.DUST, l, 8, 0.15, 0.2, 0.15, 0,
                 new Particle.DustOptions(trailColor(combo), 1.2f));
         sound(user, "entity.player.attack.crit", 0.7f, 1.4f + Math.min(0.6f, combo * 0.03f));
-        image(user.getLocation(), true); // une image qui frappe
+        image(behind(), true); // une image qui frappe
         if (cfg().getBoolean("hits.counter", true)) label(target, p);
     }
 
     /** Compteur au-dessus de la cible : nombre de coups et dégâts en attente. */
     private void label(Entity target, Pending p) {
-        String text = "<gradient:#ff2bd6:#ffe600><b>x" + p.hits + "</b></gradient> <gray>" + String.format(Locale.US, "%.1f", p.damage)
-                + " <red>❤";
+        String text = "<gradient:#b2ff59:#00ff9c><b>x" + p.hits + "</b></gradient> <green>" + String.format(Locale.US, "%.1f", p.damage)
+                + " <dark_green>❤";
         if (p.label == null || !p.label.isValid()) {
             Location at = target.getLocation().add(0, target.getHeight() + 0.45, 0);
             p.label = target.getWorld().spawn(at, TextDisplay.class, d -> {
@@ -533,7 +639,8 @@ final class Session {
             Vector to = pr.getLocation().toVector().subtract(eye.toVector());
             if (to.length() > reach || to.length() < 0.01 || to.clone().normalize().dot(look) < 0.55) continue;
             deflected.add(pr.getUniqueId());
-            pr.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, pr.getLocation(), 12, 0.1, 0.1, 0.1, 0.2);
+            pr.getWorld().spawnParticle(Particle.DUST, pr.getLocation(), 14, 0.15, 0.15, 0.15, 0,
+                    new Particle.DustOptions(Color.fromRGB(0xb2ff59), 1.1f));
             sound(user, "item.shield.block", 0.8f, 1.7f);
             sound(user, "block.anvil.land", 0.25f, 2f);
             combo++;
@@ -552,6 +659,7 @@ final class Session {
         for (Image im : images) im.m.remove();
         images.clear();
         imageIds.clear();
+        ghosts.clear();
         boostUser(false);
         tint(false);
         if (user.isOnline()) {
@@ -612,7 +720,7 @@ final class Session {
         le.setVelocity(away);
         Location l = le.getLocation().add(0, le.getHeight() / 2, 0);
         le.getWorld().spawnParticle(Particle.SWEEP_ATTACK, l, Math.min(6, 1 + p.hits / 2), 0.3, 0.3, 0.3, 0);
-        le.getWorld().spawnParticle(Particle.DUST, l, 20, 0.3, 0.4, 0.3, 0, new Particle.DustOptions(Color.fromRGB(0xb0001e), 1.4f));
+        le.getWorld().spawnParticle(Particle.DUST, l, 20, 0.3, 0.4, 0.3, 0, new Particle.DustOptions(trailColor(p.hits), 1.4f));
         le.getWorld().playSound(Sound.sound(Key.key("minecraft", "entity.player.attack.sweep"), Sound.Source.PLAYER, 1f, 0.8f), l.getX(), l.getY(), l.getZ());
         if (p.hits >= 5) le.getWorld().playSound(Sound.sound(Key.key("minecraft", "entity.generic.explode"), Sound.Source.PLAYER, 0.5f, 1.8f), l.getX(), l.getY(), l.getZ());
     }
@@ -637,6 +745,11 @@ final class Session {
             p.resetPlayerTime();
         }
         if (!e.isValid() && !(e instanceof Player)) return;
+        if (f.glow != null) {
+            e.setGlowing(f.glow);
+            Team t = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(e.getUniqueId().toString());
+            if (t != null && t.getName().startsWith("sdv_")) t.removeEntry(e.getUniqueId().toString());
+        }
         e.setGravity(f.gravity);
         if (f.ai != null && e instanceof LivingEntity le) le.setAI(f.ai);
         if (f.pickup >= 0 && e instanceof Item it) it.setPickupDelay(f.pickup);

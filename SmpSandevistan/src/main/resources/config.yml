@@ -14,7 +14,7 @@
 #   - tes coups sont "en attente" (compteur au-dessus de la cible) et tombent en cascade quand le temps reprend
 # =====================================================================
 
-config-version: 2
+config-version: 3
 
 radius: 100
 duration-seconds: 10
@@ -27,23 +27,31 @@ no-attack-cooldown: true  # tu frappes à toute vitesse
 # les joueurs figés ne peuvent même plus tourner la tête
 freeze-camera: true
 
+# couleurs du Sandevistan (hexadécimal) : vert néon comme dans Edgerunners
+palette: ["#00ff9c", "#39ff14", "#00e676", "#b2ff59"]
+
+# tout ce qui est figé (monstres, flèches, objets...) a un contour vert
+frozen-glow: true
+
 screen:
   title: true             # "SANDEVISTAN" qui glitch au démarrage
   bossbar: true           # temps restant
-  tint: true              # teinte sur les bords de l'écran
+  green-haze: true        # brume verte autour de ta caméra : le monde a l'air vert
+  green-haze-density: 10
+  tint: false             # bords de l'écran teintés (ROUGE : limite du jeu, désactivé pour rester vert)
   tint-strength: 0.45     # 0.05 à 0.95
   freeze-sky: true        # le soleil / les nuages s'arrêtent aussi
   wave-radius: 40         # onde de choc au démarrage
 
 afterimages:
   enabled: true
-  every-ticks: 2          # une image tous les X ticks quand tu bouges
-  life-ticks: 14          # durée de vie d'une image
-  max: 18                 # images en même temps
-  # couleur du contour selon l'âge de l'image (noms Minecraft : green, aqua, light_purple, yellow, red, blue, gold...)
-  glow-colors: [green, aqua, light_purple, red]
-  # couleurs des particules (hexadécimal)
-  trail-colors: ["#00ff9c", "#00e5ff", "#ff2bd6", "#ffe600"]
+  copies: true                 # copies de toi (ton skin) avec un contour vert
+  particle-silhouettes: true   # silhouettes vertes en particules (marchent partout, même au spawn protégé)
+  every-ticks: 2               # une image tous les X ticks quand tu bouges
+  life-ticks: 14               # durée de vie d'une image
+  max: 18                      # images en même temps
+  # couleur du contour selon l'âge de la copie (noms Minecraft : green, dark_green, aqua...)
+  glow-colors: [green, green, dark_green]
 
 dash:
   enabled: true
@@ -65,9 +73,9 @@ aftermath:
   nausea-seconds: 3
 
 messages:
-  prefix: "<dark_gray>[<gradient:#00ff9c:#00e5ff>Sandevistan</gradient>]</dark_gray> "
-  on: "<gray>Le temps s'arrête : <white><n></white> entité(s) figée(s) dans <white><r></white> blocs."
-  off: "<gray>Le temps reprend. <white><hits></white> coup(s) libéré(s)."
+  prefix: "<dark_green>[<gradient:#b2ff59:#00ff9c>Sandevistan</gradient>]</dark_green> "
+  on: "<green>Le temps s'arrête : <white><n></white> entité(s) figée(s) dans <white><r></white> blocs."
+  off: "<green>Le temps reprend. <white><hits></white> coup(s) libéré(s)."
   cooldown: "<red>Implant en surchauffe : encore <white><s></white> s."
   item: "<green>Implant Sandevistan donné."
   reload: "<green>Config rechargée."
