@@ -7,14 +7,14 @@
 #  Permission : smpsandevistan.use (op par défaut)
 #
 #  Pendant l'effet :
-#   - tout est figé dans le rayon : joueurs (même la caméra), monstres, flèches, TNT, objets...
+#   - tout est au ralenti dans le rayon : joueurs, monstres, flèches, TNT, objets qui tombent...
 #   - toi : Vitesse, coups sans recharge, images rémanentes, traînée de couleurs
 #   - touche F : dash (tu traverses l'espace, des images tout le long)
 #   - clic près d'une flèche / boule de feu figée : elle repartira vers son tireur
 #   - tes coups sont "en attente" (compteur au-dessus de la cible) et tombent en cascade quand le temps reprend
 # =====================================================================
 
-config-version: 4
+config-version: 5
 
 radius: 100
 duration-seconds: 10
@@ -24,13 +24,16 @@ cooldown-seconds: 20
 # bonus pendant l'effet
 speed-level: 3            # Vitesse III
 no-attack-cooldown: true  # tu frappes à toute vitesse
-# les joueurs figés ne peuvent même plus tourner la tête
-freeze-camera: true
+# vitesse du temps pour tout le monde sauf toi, comme dans Edgerunners :
+# 0.05 = 20 fois plus lent (joueurs, monstres, flèches, chutes, TNT...). 0.01 = presque arrêté.
+time-scale: 0.05
+# les joueurs ralentis peuvent encore agir (au ralenti : frapper, miner...). false = ils ne peuvent rien faire
+slowed-players-can-act: true
 
 # couleurs du Sandevistan (hexadécimal) : vert néon comme dans Edgerunners
 palette: ["#00ff9c", "#39ff14", "#00e676", "#b2ff59"]
 
-# tout ce qui est figé (monstres, flèches, objets...) a un contour vert
+# tout ce qui est ralenti (monstres, flèches, objets...) a un contour vert
 frozen-glow: true
 
 screen:
@@ -78,7 +81,7 @@ aftermath:
 
 messages:
   prefix: "<dark_green>[<gradient:#b2ff59:#00ff9c>Sandevistan</gradient>]</dark_green> "
-  on: "<green>Le temps s'arrête : <white><n></white> entité(s) figée(s) dans <white><r></white> blocs."
+  on: "<green>Le temps ralentit : <white><n></white> entité(s) au ralenti dans <white><r></white> blocs."
   off: "<green>Le temps reprend. <white><hits></white> coup(s) libéré(s)."
   cooldown: "<red>Implant en surchauffe : encore <white><s></white> s."
   item: "<green>Implant Sandevistan donné."

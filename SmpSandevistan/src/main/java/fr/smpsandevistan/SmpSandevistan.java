@@ -82,6 +82,15 @@ public final class SmpSandevistan extends JavaPlugin implements Listener, TabExe
             getConfig().set("config-version", 4);
             saveConfig();
         }
+        // v5 : ralenti au lieu d'un arrêt total
+        if (getConfig().getInt("config-version", 1) < 5) {
+            getConfig().set("time-scale", 0.05);
+            getConfig().set("slowed-players-can-act", true);
+            getConfig().set("freeze-camera", null);
+            getConfig().set("messages.on", "<green>Le temps ralentit : <white><n></white> entité(s) au ralenti dans <white><r></white> blocs.");
+            getConfig().set("config-version", 5);
+            saveConfig();
+        }
         itemKey = new NamespacedKey(this, "implant");
         freezeKey = new NamespacedKey(this, "freeze");
         attackKey = new NamespacedKey(this, "attack_speed");
@@ -188,6 +197,8 @@ public final class SmpSandevistan extends JavaPlugin implements Listener, TabExe
         Session.removeModifier(p, Attribute.MOVEMENT_SPEED, freezeKey);
         Session.removeModifier(p, Attribute.JUMP_STRENGTH, freezeKey);
         Session.removeModifier(p, Attribute.GRAVITY, freezeKey);
+        Session.removeModifier(p, Attribute.BLOCK_BREAK_SPEED, freezeKey);
+        Session.removeModifier(p, Attribute.ATTACK_SPEED, freezeKey);
         Session.removeModifier(p, Attribute.ATTACK_SPEED, attackKey);
         if (!p.hasGravity()) p.setGravity(true);
     }
@@ -263,22 +274,9 @@ public final class SmpSandevistan extends JavaPlugin implements Listener, TabExe
         return freezer(p) != null;
     }
 
-    @EventHandler(priority = EventPriority.LOWEST)
-    public void onMove(PlayerMoveEvent e) {
-        Session s = freezer(e.getPlayer());
-        if (s == null) return;
-        Location from = e.getFrom(), to = e.getTo();
-        boolean lockHead = getConfig().getBoolean("freeze-camera", true);
-        boolean moved = from.getX() != to.getX() || from.getY() != to.getY() || from.getZ() != to.getZ();
-        boolean turned = from.getYaw() != to.getYaw() || from.getPitch() != to.getPitch();
-        if (!moved && !(lockHead && turned)) return;
-        Location spot = s.frozenSpot(e.getPlayer());
-        Location back = (spot != null ? spot : from).clone();
-        if (!lockHead) {
-            back.setYaw(to.getYaw());
-            back.setPitch(to.getPitch());
-        }
-        e.setTo(back);
+    /** Joueur ralenti à qui on bloque aussi les actions (si slowed-players-can-act: false). */
+    private boolean blockedPlayer(Player p) {
+        return !getConfig().getBoolean("slowed-players-can-act", true) && frozenPlayer(p);
     }
 
     // ================================================================= commandes de l'utilisateur pendant l'effet
@@ -311,11 +309,7 @@ public final class SmpSandevistan extends JavaPlugin implements Listener, TabExe
     public void onDamageBy(EntityDamageByEntityEvent e) {
         Entity d = e.getDamager();
         Player attacker = d instanceof Player p ? p : d instanceof Projectile pr && pr.getShooter() instanceof Player p ? p : null;
-        if (attacker != null && frozenPlayer(attacker)) {
-            e.setCancelled(true);
-            return;
-        }
-        if (d instanceof Projectile pr && pr.getShooter() instanceof Entity sh && freezer(sh) != null) {
+        if (attacker != null && blockedPlayer(attacker)) {
             e.setCancelled(true);
             return;
         }
@@ -343,42 +337,42 @@ public final class SmpSandevistan extends JavaPlugin implements Listener, TabExe
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onInteract(PlayerInteractEvent e) {
-        if (frozenPlayer(e.getPlayer())) e.setCancelled(true);
+        if (blockedPlayer(e.getPlayer())) e.setCancelled(true);
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onInteractEntity(PlayerInteractEntityEvent e) {
-        if (frozenPlayer(e.getPlayer()) || isImage(e.getRightClicked())) e.setCancelled(true);
+        if (blockedPlayer(e.getPlayer()) || isImage(e.getRightClicked())) e.setCancelled(true);
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onBreak(BlockBreakEvent e) {
-        if (frozenPlayer(e.getPlayer())) e.setCancelled(true);
+        if (blockedPlayer(e.getPlayer())) e.setCancelled(true);
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onPlace(BlockPlaceEvent e) {
-        if (frozenPlayer(e.getPlayer())) e.setCancelled(true);
+        if (blockedPlayer(e.getPlayer())) e.setCancelled(true);
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onDrop(PlayerDropItemEvent e) {
-        if (frozenPlayer(e.getPlayer())) e.setCancelled(true);
+        if (blockedPlayer(e.getPlayer())) e.setCancelled(true);
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onConsume(PlayerItemConsumeEvent e) {
-        if (frozenPlayer(e.getPlayer())) e.setCancelled(true);
+        if (blockedPlayer(e.getPlayer())) e.setCancelled(true);
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onLaunch(ProjectileLaunchEvent e) {
-        if (e.getEntity().getShooter() instanceof Entity sh && freezer(sh) != null) e.setCancelled(true);
+        if (e.getEntity().getShooter() instanceof Player sh && blockedPlayer(sh)) e.setCancelled(true);
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onOpen(InventoryOpenEvent e) {
-        if (e.getPlayer() instanceof Player p && frozenPlayer(p)) e.setCancelled(true);
+        if (e.getPlayer() instanceof Player p && blockedPlayer(p)) e.setCancelled(true);
     }
 
     @EventHandler

@@ -83,6 +83,7 @@ final class Session {
         Vector direction;    // boules de feu
         float flySpeed = -1; // joueurs en vol
         Boolean glow;        // contour vert pendant l'arrêt
+        double fuseAcc;      // TNT : la mèche brûle au ralenti
 
         Frozen(Entity e) {
             this.e = e;
@@ -272,7 +273,7 @@ final class Session {
             bar.progress(Math.max(0f, Math.min(1f, progress)));
             bar.color(BossBar.Color.GREEN);
             bar.name(pl.mm("<gradient:#b2ff59:#00ff9c><b>SANDEVISTAN</b></gradient> <dark_green>|</dark_green> <green>" + s
-                    + "s <dark_green>|</dark_green> <green>" + frozen.size() + " figé(s)"));
+                    + "s <dark_green>|</dark_green> <green>" + frozen.size() + " ralenti(s)"));
         }
         if (tick % 2 == 0) {
             String combo = this.combo > 0 ? "<gradient:#b2ff59:#00ff9c><b>COMBO x" + this.combo + "</b></gradient>"
@@ -299,26 +300,39 @@ final class Session {
         }
     }
 
+    /** Vitesse du temps pour les autres (0.05 = 20 fois plus lent). */
+    double scale() {
+        return Math.max(0.005, Math.min(1, cfg().getDouble("time-scale", 0.05)));
+    }
+
     private void freeze(Entity e) {
         Frozen f = new Frozen(e);
+        double k = scale();
         f.velocity = e.getVelocity();
         f.gravity = e.hasGravity();
-        e.setVelocity(ZERO);
-        e.setGravity(false);
         if (e instanceof Player p) {
-            // le client ne peut plus bouger du tout : vitesse, saut et gravité à zéro, ciel arrêté
-            modifier(p, Attribute.MOVEMENT_SPEED, pl.freezeKey, -1, AttributeModifier.Operation.ADD_SCALAR);
-            modifier(p, Attribute.JUMP_STRENGTH, pl.freezeKey, -1, AttributeModifier.Operation.ADD_SCALAR);
-            modifier(p, Attribute.GRAVITY, pl.freezeKey, -1, AttributeModifier.Operation.ADD_SCALAR);
+            // ralenti côté client : il marche, saute, tombe, frappe et mine k fois moins vite
+            double mul = k - 1;
+            modifier(p, Attribute.MOVEMENT_SPEED, pl.freezeKey, mul, AttributeModifier.Operation.MULTIPLY_SCALAR_1);
+            modifier(p, Attribute.JUMP_STRENGTH, pl.freezeKey, mul, AttributeModifier.Operation.MULTIPLY_SCALAR_1);
+            modifier(p, Attribute.GRAVITY, pl.freezeKey, k * k - 1, AttributeModifier.Operation.MULTIPLY_SCALAR_1);
+            modifier(p, Attribute.ATTACK_SPEED, pl.freezeKey, mul, AttributeModifier.Operation.MULTIPLY_SCALAR_1);
+            modifier(p, Attribute.BLOCK_BREAK_SPEED, pl.freezeKey, mul, AttributeModifier.Operation.MULTIPLY_SCALAR_1);
+            p.setVelocity(p.getVelocity().multiply(k)); // même sa chute en cours ralentit
             if (p.isFlying()) {
                 f.flySpeed = p.getFlySpeed();
-                p.setFlySpeed(0);
+                p.setFlySpeed((float) Math.max(0.001, f.flySpeed * k));
             }
             if (p.isGliding()) p.setGliding(false);
             if (cfg().getBoolean("screen.freeze-sky", true)) p.setPlayerTime(p.getWorld().getTime(), false);
-        } else if (e instanceof LivingEntity le) {
-            f.ai = le.hasAI();
-            le.setAI(false);
+        } else {
+            // le reste est déplacé par nous, au ralenti, en suivant sa trajectoire (flèches, chutes, élan...)
+            e.setVelocity(ZERO);
+            e.setGravity(false);
+            if (e instanceof LivingEntity le) {
+                f.ai = le.hasAI();
+                le.setAI(false);
+            }
         }
         if (cfg().getBoolean("frozen-glow", true) && !(e instanceof Player)) {
             f.glow = e.isGlowing();
@@ -337,9 +351,9 @@ final class Session {
         frozen.put(e.getUniqueId(), f);
     }
 
-    /** Garde tout immobile (rien ne glisse, la TNT n'avance pas, la tête des joueurs figés ne tourne pas). */
+    /** Ralenti : chaque tick, les entités avancent de "k" tick sur leur trajectoire (gravité et frottement compris). */
     private void hold() {
-        boolean lockHead = cfg().getBoolean("freeze-camera", true);
+        double k = scale();
         var it = frozen.values().iterator();
         while (it.hasNext()) {
             Frozen f = it.next();
@@ -348,27 +362,57 @@ final class Session {
                 if (!(e instanceof Player)) it.remove();
                 continue;
             }
-            if (e instanceof TNTPrimed t && f.fuse >= 0) t.setFuseTicks(f.fuse);
-            if (e.getVelocity().lengthSquared() > 1e-6) e.setVelocity(ZERO);
-            if (e.getWorld() != f.at.getWorld()) continue;
-            Location now = e.getLocation();
-            boolean moved = now.distanceSquared(f.at) > (e instanceof Player ? 0.04 : 0.0025);
-            boolean turned = e instanceof Player && lockHead
-                    && (Math.abs(now.getYaw() - f.at.getYaw()) > 1 || Math.abs(now.getPitch() - f.at.getPitch()) > 1);
-            if (moved || turned) {
-                Location back = f.at.clone();
-                if (e instanceof Player && !lockHead) {
-                    back.setYaw(now.getYaw());
-                    back.setPitch(now.getPitch());
+            if (e instanceof Player) continue; // les joueurs sont ralentis par leurs attributs
+            if (e instanceof TNTPrimed t && f.fuse >= 0) {
+                f.fuseAcc += k;
+                if (f.fuseAcc >= 1) {
+                    f.fuse = Math.max(1, f.fuse - (int) f.fuseAcc);
+                    f.fuseAcc -= (int) f.fuseAcc;
                 }
-                pl.snapBack(e, back);
+                t.setFuseTicks(f.fuse);
             }
+            if (e.getVelocity().lengthSquared() > 1e-8) e.setVelocity(ZERO);
+            Vector v = f.velocity;
+            if (v == null) continue;
+            Location here = e.getLocation();
+            boolean ground = !here.clone().add(0, -0.05, 0).getBlock().isPassable();
+            double g = f.gravity ? gravity(e) : 0;
+            if (!(ground && v.getY() <= 0)) v.setY(v.getY() - g * k);
+            double drag = e instanceof LivingEntity && ground ? 0.546 : drag(e);
+            v.multiply(Math.pow(drag, k));
+            if (ground && v.getY() < 0) v.setY(0);
+            if (v.lengthSquared() < 1e-7) continue;
+            Location next = here.clone().add(v.clone().multiply(k));
+            if (!next.getBlock().isPassable()) {
+                if (e instanceof Projectile) { // planté dans un bloc
+                    f.velocity = ZERO.clone();
+                    continue;
+                }
+                Location flat = here.clone().add(v.getX() * k, 0, v.getZ() * k);
+                if (flat.getBlock().isPassable()) {
+                    next = flat;
+                    v.setY(0);
+                } else {
+                    f.velocity = ZERO.clone();
+                    continue;
+                }
+            }
+            pl.snapBack(e, next);
         }
     }
 
-    Location frozenSpot(Entity e) {
-        Frozen f = frozen.get(e.getUniqueId());
-        return f == null ? null : f.at;
+    private static double gravity(Entity e) {
+        if (e instanceof Fireball) return 0;
+        if (e instanceof org.bukkit.entity.AbstractArrow) return 0.05;
+        if (e instanceof Projectile) return 0.03;
+        if (e instanceof LivingEntity) return 0.08;
+        return 0.04;
+    }
+
+    private static double drag(Entity e) {
+        if (e instanceof Fireball) return 1;
+        if (e instanceof Projectile) return 0.99;
+        return 0.98;
     }
 
     // ================================================================= images rémanentes
@@ -774,8 +818,11 @@ final class Session {
             removeModifier(p, Attribute.MOVEMENT_SPEED, pl.freezeKey);
             removeModifier(p, Attribute.JUMP_STRENGTH, pl.freezeKey);
             removeModifier(p, Attribute.GRAVITY, pl.freezeKey);
+            removeModifier(p, Attribute.ATTACK_SPEED, pl.freezeKey);
+            removeModifier(p, Attribute.BLOCK_BREAK_SPEED, pl.freezeKey);
             if (f.flySpeed >= 0) p.setFlySpeed(f.flySpeed);
             p.resetPlayerTime();
+            return; // les joueurs gardent leur vitesse et leur gravité normales
         }
         if (!e.isValid() && !(e instanceof Player)) return;
         if (f.glow != null) {
