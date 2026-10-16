@@ -247,14 +247,39 @@ public final class SmpSandevistan extends JavaPlugin implements Listener, TabExe
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onMove(PlayerMoveEvent e) {
-        if (!frozenPlayer(e.getPlayer())) return;
+        Session s = freezer(e.getPlayer());
+        if (s == null) return;
         Location from = e.getFrom(), to = e.getTo();
-        if (from.getX() != to.getX() || from.getY() != to.getY() || from.getZ() != to.getZ()) {
-            Location back = from.clone();
+        boolean lockHead = getConfig().getBoolean("freeze-camera", true);
+        boolean moved = from.getX() != to.getX() || from.getY() != to.getY() || from.getZ() != to.getZ();
+        boolean turned = from.getYaw() != to.getYaw() || from.getPitch() != to.getPitch();
+        if (!moved && !(lockHead && turned)) return;
+        Location spot = s.frozenSpot(e.getPlayer());
+        Location back = (spot != null ? spot : from).clone();
+        if (!lockHead) {
             back.setYaw(to.getYaw());
             back.setPitch(to.getPitch());
-            e.setTo(back);
         }
+        e.setTo(back);
+    }
+
+    // ================================================================= commandes de l'utilisateur pendant l'effet
+
+    /** Touche F (changer de main) : dash. */
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onDash(org.bukkit.event.player.PlayerSwapHandItemsEvent e) {
+        Session s = sessions.get(e.getPlayer().getUniqueId());
+        if (s == null || !getConfig().getBoolean("dash.enabled", true)) return;
+        e.setCancelled(true);
+        s.dash();
+    }
+
+    /** Coup dans le vide près d'un projectile figé : il est renvoyé. */
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onSwing(org.bukkit.event.player.PlayerAnimationEvent e) {
+        if (e.getAnimationType() != org.bukkit.event.player.PlayerAnimationType.ARM_SWING) return;
+        Session s = sessions.get(e.getPlayer().getUniqueId());
+        if (s != null && getConfig().getBoolean("deflect.enabled", true)) s.deflect();
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
