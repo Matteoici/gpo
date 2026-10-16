@@ -524,6 +524,110 @@ public final class SmpPrison extends JavaPlugin implements Listener, TabExecutor
         return b == null && mine != null && l.getWorld() == mine.getWorld() && l.distance(mine) <= 30;
     }
 
+    // ================================================================= zone interdite aux autres joueurs
+
+    /** Mine + cellule + une marge autour : personne d'autre que les prisonniers et le staff n'y entre ni n'y touche. */
+    private boolean protectedZone(Location l) {
+        if (l == null || l.getWorld() == null) return false;
+        double margin = getConfig().getDouble("protect-margin", 4);
+        if (cell != null && l.getWorld() == cell.getWorld()
+                && l.distance(cell) <= getConfig().getDouble("cell-radius", 6) + margin) return true;
+        BoundingBox b = mineBox();
+        if (b != null && pos1.getWorld() == l.getWorld() && b.clone().expand(margin, margin + 2, margin).contains(l.toVector())) return true;
+        return b == null && mine != null && l.getWorld() == mine.getWorld() && l.distance(mine) <= 30 + margin;
+    }
+
+    private boolean outsider(Player p) {
+        return !isPrisoner(p) && !p.hasPermission("smpprison.admin");
+    }
+
+    private void kickOut(Player p) {
+        Location out = exit != null && !protectedZone(exit) ? exit : p.getWorld().getSpawnLocation();
+        if (protectedZone(out)) return; // sortie et spawn dans la zone : on le laisse simplement repartir
+        allowTp.add(p.getUniqueId());
+        try {
+            p.teleport(out);
+        } finally {
+            allowTp.remove(p.getUniqueId());
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onOutsiderMove(org.bukkit.event.player.PlayerMoveEvent e) {
+        if (e.getFrom().getBlockX() == e.getTo().getBlockX() && e.getFrom().getBlockY() == e.getTo().getBlockY()
+                && e.getFrom().getBlockZ() == e.getTo().getBlockZ()) return;
+        Player p = e.getPlayer();
+        if (!protectedZone(e.getTo()) || !outsider(p)) return;
+        if (protectedZone(e.getFrom())) {
+            // déjà dedans (connexion, libéré à l'intérieur...) : dehors
+            Bukkit.getScheduler().runTask(this, () -> kickOut(p));
+            return;
+        } else {
+            Location back = e.getFrom().clone();
+            back.setYaw(e.getTo().getYaw());
+            back.setPitch(e.getTo().getPitch());
+            e.setTo(back); // mur invisible
+        }
+        p.sendActionBar(mm(msg("outsider")));
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onOutsiderTeleport(PlayerTeleportEvent e) {
+        if (allowTp.contains(e.getPlayer().getUniqueId())) return;
+        if (protectedZone(e.getTo()) && !protectedZone(e.getFrom()) && outsider(e.getPlayer())) {
+            e.setCancelled(true); // perle, /tpa, /home...
+            send(e.getPlayer(), "outsider");
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onOutsiderPlace(BlockPlaceEvent e) {
+        if (protectedZone(e.getBlock().getLocation()) && outsider(e.getPlayer())) {
+            e.setCancelled(true);
+            send(e.getPlayer(), "outsider");
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onOutsiderBreak(BlockBreakEvent e) {
+        if (protectedZone(e.getBlock().getLocation()) && outsider(e.getPlayer())) {
+            e.setCancelled(true);
+            send(e.getPlayer(), "outsider");
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onOutsiderBucket(org.bukkit.event.player.PlayerBucketEmptyEvent e) {
+        if (protectedZone(e.getBlock().getLocation()) && outsider(e.getPlayer())) e.setCancelled(true);
+    }
+
+    /** Lave / eau versée juste dehors qui coule dedans. */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onFlowIn(org.bukkit.event.block.BlockFromToEvent e) {
+        if (protectedZone(e.getToBlock().getLocation()) && !protectedZone(e.getBlock().getLocation())) e.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onPistonIn(org.bukkit.event.block.BlockPistonExtendEvent e) {
+        for (Block b : e.getBlocks()) {
+            if (protectedZone(b.getRelative(e.getDirection()).getLocation())) {
+                e.setCancelled(true);
+                return;
+            }
+        }
+        if (protectedZone(e.getBlock().getRelative(e.getDirection()).getLocation())) e.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onExplodeIn(org.bukkit.event.entity.EntityExplodeEvent e) {
+        e.blockList().removeIf(b -> protectedZone(b.getLocation()));
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBlockExplodeIn(org.bukkit.event.block.BlockExplodeEvent e) {
+        e.blockList().removeIf(b -> protectedZone(b.getLocation()));
+    }
+
     private boolean isPrisoner(Player p) {
         Prisoner pr = prisoners.get(p.getUniqueId());
         return pr != null && !pr.pending;
