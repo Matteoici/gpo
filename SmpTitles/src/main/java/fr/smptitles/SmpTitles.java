@@ -161,19 +161,37 @@ public final class SmpTitles extends JavaPlugin implements Listener, TabExecutor
     /** Titre à mettre devant chaque message de chat (lu depuis le fil du chat, donc thread-safe). */
     private final Map<UUID, Component> chatPrefix = new java.util.concurrent.ConcurrentHashMap<>();
 
+    /** Nom TAB d'origine (grade mis par un autre plugin...) et dernier nom TAB qu'on a mis nous-mêmes. */
+    private final Map<UUID, Component> tabBase = new HashMap<>();
+    private final Map<UUID, Component> tabSet = new HashMap<>();
+
     private void apply(Player p) {
         Data d = data.get(p.getUniqueId());
         String disp = d == null || d.active == null ? null : display(d, d.active);
-        Component prefix = disp == null ? null : mm(getConfig().getString("format", "<title> ").replace("<title>", disp));
-        // chat : ajouté devant le message, quel que soit le plugin de chat (voir onChat)
-        if (prefix != null && getConfig().getBoolean("show-in-chat", true)) chatPrefix.put(p.getUniqueId(), prefix);
+        Component title = disp == null ? null : mm(getConfig().getString("format", "<title> ").replace("<title>", disp));
+        // chat : inséré devant le pseudo dans le message déjà mis en forme (voir onChat)
+        if (title != null && getConfig().getBoolean("show-in-chat", true)) chatPrefix.put(p.getUniqueId(), title);
         else chatPrefix.remove(p.getUniqueId());
-        // TAB
-        if (getConfig().getBoolean("show-in-tab", true)) {
-            p.playerListName(prefix == null ? null : prefix.append(Component.text(p.getName())));
-        }
-        // au-dessus de la tête : préfixe d'équipe sur le tableau principal
-        nameTag(p, getConfig().getBoolean("show-above-head", true) ? prefix : null);
+        if (getConfig().getBoolean("show-in-tab", true)) tab(p, title);
+        nameTag(p, getConfig().getBoolean("show-above-head", true) ? title : null);
+    }
+
+    /** TAB : on garde ce qu'un autre plugin a mis (grade) et on glisse le titre juste devant le pseudo. */
+    private void tab(Player p, Component title) {
+        UUID id = p.getUniqueId();
+        Component cur = p.playerListName();
+        Component last = tabSet.get(id);
+        Component base = last != null && last.equals(cur) ? tabBase.getOrDefault(id, cur) : cur;
+        tabBase.put(id, base);
+        Component out = title == null ? base : beforeName(base, p.getName(), title);
+        if (!out.equals(cur)) p.playerListName(out);
+        tabSet.put(id, out);
+    }
+
+    /** Insère "title" juste devant le pseudo (après le grade) ; tout devant si le pseudo n'y est pas tel quel. */
+    static Component beforeName(Component c, String name, Component title) {
+        Component r = c.replaceText(b -> b.matchLiteral(name).once().replacement(m -> title.append(m)));
+        return r.equals(c) ? title.append(c) : r;
     }
 
     private static String teamName(UUID id) {
@@ -188,18 +206,26 @@ public final class SmpTitles extends JavaPlugin implements Listener, TabExecutor
             if (team != null) team.unregister();
             return;
         }
+        org.bukkit.scoreboard.Team other = sb.getEntryTeam(p.getName());
+        if (other != null && !other.getName().equals(name)) {
+            // déjà dans l'équipe d'un autre plugin (grade au-dessus de la tête) : on ne la lui vole pas
+            if (team != null) team.unregister();
+            return;
+        }
         if (team == null) team = sb.registerNewTeam(name);
         team.prefix(prefix);
         if (!team.hasEntry(p.getName())) team.addEntry(p.getName());
     }
 
     /** On passe en dernier : le titre est ajouté devant le message déjà mis en forme par le plugin de chat. */
+    /** On passe en dernier : le titre est glissé devant le pseudo, dans le message déjà mis en forme (grade compris). */
     @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST, ignoreCancelled = true)
     public void onChat(io.papermc.paper.event.player.AsyncChatEvent e) {
-        Component pre = chatPrefix.get(e.getPlayer().getUniqueId());
-        if (pre == null) return;
+        Component title = chatPrefix.get(e.getPlayer().getUniqueId());
+        if (title == null) return;
+        String name = e.getPlayer().getName();
         io.papermc.paper.chat.ChatRenderer r = e.renderer();
-        e.renderer((source, displayName, message, viewer) -> pre.append(r.render(source, displayName, message, viewer)));
+        e.renderer((source, displayName, message, viewer) -> beforeName(r.render(source, displayName, message, viewer), name, title));
     }
 
     @EventHandler
@@ -211,11 +237,17 @@ public final class SmpTitles extends JavaPlugin implements Listener, TabExecutor
             check(p.getUniqueId(), p);
             apply(p);
         }, 3L);
+        // les plugins de grade mettent souvent le nom TAB un peu après : on repasse derrière eux
+        Bukkit.getScheduler().runTaskLater(this, () -> {
+            if (p.isOnline()) apply(p);
+        }, 60L);
     }
 
     @EventHandler
     public void onQuit(org.bukkit.event.player.PlayerQuitEvent e) {
         chatPrefix.remove(e.getPlayer().getUniqueId());
+        tabBase.remove(e.getPlayer().getUniqueId());
+        tabSet.remove(e.getPlayer().getUniqueId());
         nameTag(e.getPlayer(), null);
     }
 

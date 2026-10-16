@@ -10,7 +10,8 @@
 # =====================================================================
 
 # où le titre s'affiche
-show-in-chat: true     # devant chaque message dans le chat (marche avec n'importe quel plugin de chat)
+# le titre se place juste devant le pseudo, après le grade s'il y en a un :  [VIP] ♛ Conquérant | Pseudo
+show-in-chat: true     # dans le chat (marche avec n'importe quel plugin de chat)
 show-in-tab: true      # dans la liste TAB
 show-above-head: true  # au-dessus de la tête
 format: "<title> <dark_gray>|</dark_gray> "
