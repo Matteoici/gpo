@@ -55,11 +55,27 @@ public final class Auctions {
                 continue;
             }
             if (a != null && a.endsAt > 0 && now >= a.endsAt) resolve(st);
-            else if (st.isRented() && s().inactiveMs > 0 && st.lastChange > 0 && now - st.lastChange >= s().inactiveMs
+            else if (st.isRented() && s().inactiveMs > 0 && st.lastChange > 0 && now - lastActivity(st) >= s().inactiveMs
                     && (st.auction == null || !st.auction.hasBid())) {
                 reclaimInactive(st);
             }
         }
+    }
+
+    /**
+     * Dernière activité du stand : modification, vente, ou passage en jeu du locataire (ou d'un joueur de confiance).
+     * Un stand en rupture de stock n'est donc jamais repris tant que son propriétaire joue.
+     */
+    private long lastActivity(Stall st) {
+        long last = st.lastChange;
+        java.util.List<UUID> people = new java.util.ArrayList<>(st.trusted.keySet());
+        if (st.owner != null) people.add(st.owner);
+        for (UUID id : people) {
+            org.bukkit.OfflinePlayer op = Bukkit.getOfflinePlayer(id);
+            if (op.isOnline()) return System.currentTimeMillis();
+            last = Math.max(last, op.getLastSeen());
+        }
+        return last;
     }
 
     /** Stand acheté mais pas modifié depuis X heures : on rembourse le locataire et le stand repart aux enchères. */

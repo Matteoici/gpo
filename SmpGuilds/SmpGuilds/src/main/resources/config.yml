@@ -69,6 +69,9 @@ claims:
   allies-can-build: false
   # notification en entrant dans un terrain : title, actionbar ou none
   enter-notification: title
+  # prévenir aussi les joueurs extérieurs qu'ils entrent chez une guilde ?
+  # false = seuls les membres et alliés voient la notification (une base enterrée ne se trouve plus en marchant dessus)
+  notify-outsiders: false
   # entretien quotidien : la trésorerie paie X par chunk et par jour, sinon la guilde perd des terrains
   upkeep:
     enabled: false

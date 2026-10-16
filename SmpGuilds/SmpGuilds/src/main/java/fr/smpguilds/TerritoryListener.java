@@ -82,6 +82,12 @@ public final class TerritoryListener implements Listener {
             }
             owner = plugin.guilds().at(to);
         }
+        // Les autres joueurs ne sont pas prévenus qu'ils entrent chez une guilde : sinon une base enterrée
+        // se trouve en marchant au-dessus. Seuls ses membres (et alliés) voient leurs terrains.
+        if (owner != null && !plugin.settings().b("claims.notify-outsiders", false)) {
+            Guild mine = plugin.guilds().of(p);
+            if (mine == null || (mine != owner && !plugin.guilds().areAllies(mine, owner))) owner = null;
+        }
         UUID now = owner == null ? null : owner.id;
         boolean known = lastTerritory.containsKey(p.getUniqueId());
         UUID before = lastTerritory.get(p.getUniqueId());

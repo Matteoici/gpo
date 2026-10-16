@@ -317,6 +317,7 @@ public final class Shops {
         c.sold += qty;
         c.revenue += net;
         st.totalSold += qty;
+        st.touch(); // une vente = le stand sert
         st.totalRevenue += net;
         give(buyer, c.template, qty);
         plugin.store().markDirty();
