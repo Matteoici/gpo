@@ -117,4 +117,50 @@ final class DropListener implements Listener {
         DropEvent ev = ev();
         if (ev != null && ev.isLoot(e.getInventory().getHolder())) ev.checkEmpty();
     }
+
+    // ------------------------------------------------------------ objets ordinaires déjà reçus avec l'étiquette "Largage aérien"
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onJoinClean(PlayerJoinEvent e) {
+        clean(e.getPlayer().getInventory());
+        clean(e.getPlayer().getEnderChest());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onOpenClean(org.bukkit.event.inventory.InventoryOpenEvent e) {
+        clean(e.getInventory());
+        clean(e.getPlayer().getInventory());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onPickupClean(org.bukkit.event.entity.EntityPickupItemEvent e) {
+        org.bukkit.inventory.ItemStack it = e.getItem().getItemStack();
+        if (strip(it)) e.getItem().setItemStack(it);
+    }
+
+    private static void clean(org.bukkit.inventory.Inventory inv) {
+        if (inv == null) return;
+        org.bukkit.inventory.ItemStack[] content = inv.getContents();
+        for (int i = 0; i < content.length; i++) {
+            org.bukkit.inventory.ItemStack it = content[i];
+            if (it != null && strip(it)) inv.setItem(i, it);
+        }
+    }
+
+    /**
+     * Retire l'étiquette d'un objet ORDINAIRE (pas de nom, pas d'enchantement, une seule ligne = l'étiquette),
+     * pour qu'il s'empile de nouveau avec les objets normaux. Les objets spéciaux du largage la gardent.
+     */
+    static boolean strip(org.bukkit.inventory.ItemStack it) {
+        if (it == null || !it.hasItemMeta()) return false;
+        org.bukkit.inventory.meta.ItemMeta meta = it.getItemMeta();
+        if (meta.hasDisplayName() || meta.hasEnchants()) return false;
+        java.util.List<net.kyori.adventure.text.Component> lore = meta.lore();
+        if (lore == null || lore.size() != 1) return false;
+        String line = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(lore.get(0));
+        if (!line.contains("Largage aérien")) return false;
+        meta.lore(null);
+        it.setItemMeta(meta);
+        return true;
+    }
 }

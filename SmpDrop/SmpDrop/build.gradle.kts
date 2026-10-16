@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "fr.smpdrop"
-version = "1.0.2"
+version = "1.0.3"
 
 repositories {
     mavenCentral()
@@ -13,7 +13,8 @@ repositories {
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:26.2.build.+")
+    // le build 134 de Paper référence une bibliothèque (adventure 5.2.0) pas encore publiée : on reste avant
+    compileOnly("io.papermc.paper:paper-api") { version { strictly("[26.2.build.0, 26.2.build.134-stable)") } }
     compileOnly("me.clip:placeholderapi:2.11.6") { isTransitive = false }
 }
 

@@ -95,7 +95,9 @@ public final class LootEntry {
     public List<ItemStack> create(Random r) {
         int amount = minAmount + (maxAmount > minAmount ? r.nextInt(maxAmount - minAmount + 1) : 0);
         ItemStack proto = new ItemStack(material, 1);
-        ItemMeta meta = proto.getItemMeta();
+        // objet ordinaire (diamants, fer, nourriture...) : aucune étiquette, sinon il ne s'empile plus avec les normaux
+        boolean special = name != null || !lore.isEmpty() || !enchants.isEmpty() || potion != null;
+        ItemMeta meta = special ? proto.getItemMeta() : null;
         if (meta != null) {
             if (name != null) meta.displayName(Texts.parse(name));
             List<Component> l = new ArrayList<>();
