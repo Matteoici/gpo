@@ -611,6 +611,52 @@ public final class GuildActions {
         showBorder(p, pos, Particle.SMOKE);
     }
 
+    /**
+     * Hauteur protégée : /guild hauteur <au-dessus> [en-dessous] depuis la hauteur où on se trouve.
+     * Ex. dans une base enterrée : /guild hauteur 20 -> protégé du fond du monde jusqu'à 20 blocs au-dessus de soi ;
+     * au-dessus, les autres ne voient plus le terrain et peuvent construire. /guild hauteur tout -> toute la hauteur.
+     */
+    public void setHeight(Player p, String[] args) {
+        Guild g = require(p, GuildPerm.CLAIM);
+        if (g == null) return;
+        if (args.length < 2) {
+            m().send(p, "claims.height-usage", ph("current", heightText(g)));
+            return;
+        }
+        String a = args[1].toLowerCase(java.util.Locale.ROOT);
+        if (a.equals("tout") || a.equals("all") || a.equals("reset") || a.equals("max")) {
+            g.zoneMinY = null;
+            g.zoneMaxY = null;
+        } else {
+            int above, below = -1;
+            try {
+                above = Integer.parseInt(a);
+                if (args.length >= 3) below = Integer.parseInt(args[2]);
+            } catch (NumberFormatException e) {
+                m().send(p, "claims.height-usage", ph("current", heightText(g)));
+                return;
+            }
+            int min = s().i("claims.min-height", 5);
+            if (above < min || (below >= 0 && below + above < min)) {
+                m().send(p, "claims.height-too-small", ph("min", min));
+                return;
+            }
+            int y = p.getLocation().getBlockY();
+            g.zoneMaxY = y + above;
+            g.zoneMinY = below < 0 ? null : y - below;
+        }
+        gm().save(g);
+        gm().log(g, p.getName() + " a réglé la hauteur des terrains : " + heightText(g));
+        m().send(p, "claims.height-set", ph("current", heightText(g)));
+    }
+
+    public static String heightText(Guild g) {
+        if (g.zoneMinY == null && g.zoneMaxY == null) return "toute la hauteur";
+        String lo = g.zoneMinY == null ? "fond du monde" : "Y " + g.zoneMinY;
+        String hi = g.zoneMaxY == null ? "ciel" : "Y " + g.zoneMaxY;
+        return lo + " → " + hi;
+    }
+
     public void unclaimAll(Player p) {
         Guild g = require(p);
         if (g == null) return;

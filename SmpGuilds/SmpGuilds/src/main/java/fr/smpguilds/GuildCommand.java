@@ -51,7 +51,7 @@ public final class GuildCommand implements TabExecutor {
 
     private static final List<String> SUBS = List.of("help", "create", "disband", "info", "list", "top", "invite", "join",
             "apply", "applications", "accept", "deny", "kick", "leave", "promote", "demote", "transfer", "description",
-            "tag", "rename", "color", "banner", "open", "sethome", "home", "claim", "unclaim", "unclaimall", "autoclaim",
+            "tag", "rename", "color", "banner", "open", "sethome", "home", "claim", "unclaim", "unclaimall", "autoclaim", "hauteur",
             "map", "deposit", "withdraw", "bank", "vault", "ally", "unally", "allies", "war", "members", "levels", "log",
             "settings", "chat", "admin");
 
@@ -223,6 +223,7 @@ public final class GuildCommand implements TabExecutor {
             case "sethome" -> a().setHome(p);
             case "home" -> a().home(p);
             case "claim" -> a().claim(p, false);
+            case "hauteur", "height" -> a().setHeight(p, args);
             case "unclaim" -> a().unclaim(p);
             case "unclaimall" -> {
                 if (args.length >= 2 && args[1].equalsIgnoreCase("confirm")) {

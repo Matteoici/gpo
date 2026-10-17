@@ -89,8 +89,11 @@ public final class GuildManager {
         return get(claims.get(pos));
     }
 
+    /** Guilde qui protège cet endroit (chunk claim ET dans la hauteur choisie par la guilde). */
     public Guild at(Location loc) {
-        return loc.getWorld() == null ? null : at(ChunkPos.of(loc));
+        if (loc.getWorld() == null) return null;
+        Guild g = at(ChunkPos.of(loc));
+        return g != null && g.inZone(loc.getY()) ? g : null;
     }
 
     public Level level(Guild g) {
@@ -332,6 +335,8 @@ public final class GuildManager {
         y.set("wars-lost", g.warsLost);
         y.set("last-upkeep", g.lastUpkeep);
         y.set("claims", g.claims.stream().map(ChunkPos::serialize).toList());
+        y.set("zone.min-y", g.zoneMinY);
+        y.set("zone.max-y", g.zoneMaxY);
         y.set("allies", g.allies.stream().map(UUID::toString).toList());
         g.applications.forEach((u, a) -> {
             y.set("applications." + u + ".message", a.message());
@@ -412,6 +417,8 @@ public final class GuildManager {
         g.warsLost = y.getInt("wars-lost", 0);
         g.lastUpkeep = y.getLong("last-upkeep", System.currentTimeMillis());
         for (String c : y.getStringList("claims")) g.claims.add(ChunkPos.parse(c));
+        if (y.isInt("zone.min-y")) g.zoneMinY = y.getInt("zone.min-y");
+        if (y.isInt("zone.max-y")) g.zoneMaxY = y.getInt("zone.max-y");
         for (String a : y.getStringList("allies")) g.allies.add(UUID.fromString(a));
         ConfigurationSection as = y.getConfigurationSection("applications");
         if (as != null) {

@@ -42,6 +42,13 @@ public final class Guild {
     public int warsLost;
     public long lastUpkeep = System.currentTimeMillis();
     public final Set<ChunkPos> claims = new LinkedHashSet<>();
+    /** Hauteur protégée des terrains (null = du fond du monde jusqu'au ciel). */
+    public Integer zoneMinY, zoneMaxY;
+
+    /** Cette hauteur fait-elle partie des terrains de la guilde ? */
+    public boolean inZone(double y) {
+        return (zoneMinY == null || y >= zoneMinY) && (zoneMaxY == null || y < zoneMaxY + 1);
+    }
     public final Set<UUID> allies = new LinkedHashSet<>();
     public final Map<UUID, Application> applications = new LinkedHashMap<>();
     public ItemStack[] vault = new ItemStack[54];

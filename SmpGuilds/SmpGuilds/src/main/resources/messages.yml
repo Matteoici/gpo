@@ -135,6 +135,9 @@ claims:
   map-legend: "<white>⬛ toi  <green>■ ta guilde  <aqua>■ alliés  <red>■ ennemis  <dark_gray>▪ libre"
   autoclaim-on: "<green>Auto-claim activé : marche pour claim les chunks libres."
   autoclaim-off: "<yellow>Auto-claim désactivé."
+  height-usage: "<gray>Hauteur des terrains : <white><current></white><newline><yellow>/guild hauteur <au-dessus> [en-dessous]</yellow> <gray>depuis ta hauteur actuelle (ex. <white>/guild hauteur 20</white>), ou <yellow>/guild hauteur tout</yellow>."
+  height-set: "<green>Hauteur des terrains : <white><current></white><gray>. En dehors, le terrain n'est ni protégé ni signalé."
+  height-too-small: "<red>Il faut au moins <white><min></white> blocs de hauteur."
 
 bank:
   deposited: "<green>+<gold><amount> $</gold> déposés. <gray>Trésorerie : <gold><bank> $"
@@ -247,6 +250,7 @@ help:
     - "<click:run_command:'/guild top'><yellow>/guild top</yellow></click> <gray>classement"
     - "<yellow>/guild kick | promote | demote | transfer <joueur>"
     - "<yellow>/guild claim | unclaim | autoclaim | map"
+    - "<yellow>/guild hauteur <au-dessus> [en-dessous] | tout <gray>- hauteur protégée des terrains"
     - "<yellow>/guild home | sethome"
     - "<yellow>/guild deposit | withdraw <montant></yellow> <gray>trésorerie (10k, 1.5m...)"
     - "<yellow>/guild vault</yellow> <gray>coffre partagé"
