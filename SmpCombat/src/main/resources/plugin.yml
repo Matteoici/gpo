@@ -5,7 +5,7 @@ api-version: '26.2'
 description: "Combat façon Deepwoken : EN DANGER, pas de téléportation ni de boutique, se déconnecter = mourir"
 commands:
   combat:
-    description: Ton état de combat (staff : /combat clear <joueur>, /combat reload)
+    description: "Ton état de combat (staff : /combat clear <joueur>, /combat reload)"
     usage: /combat [clear <joueur>|reload]
     aliases: [danger, ct]
 permissions:
