@@ -21,10 +21,11 @@ minutes-per-block: 1
 time-passes-online: false
 # les blocs minés réapparaissent après X secondes
 regen-seconds: 20
-# zone interdite aux autres joueurs : la mine + la cellule + X blocs autour.
+# zone interdite aux autres joueurs : la MINE + X blocs autour (la cellule aussi si protect-cell: true).
 # Personne d'autre que les prisonniers et le staff (smpprison.admin) ne peut y entrer, y poser ou casser un bloc,
 # y verser de la lave, y pousser des blocs avec un piston ou la faire exploser.
 protect-margin: 4
+protect-cell: false
 # distance max autour de la cellule (au-delà : renvoyé dans la cellule)
 cell-radius: 6
 # commandes autorisées pour un prisonnier (sans le /)

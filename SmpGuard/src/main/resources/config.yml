@@ -226,6 +226,13 @@ anti-esp:
   # nombre maximum de lancers de rayons par tick (protège les performances)
   budget-per-tick: 400
 
+# ---------------------------------------------------------------- Vie des joueurs cachée
+# Les mods "health indicator" lisent la vie exacte que le serveur envoie pour chaque joueur.
+# Activé : chaque joueur ne reçoit plus que SA vie ; celle des autres paraît toujours pleine.
+# Nécessite ProtocolLib. Le staff avec smpguard.see-health voit la vraie vie.
+hide-health:
+  enabled: true
+
 # ---------------------------------------------------------------- Test appât (/anticheat bait)
 # Un faux joueur, visible UNIQUEMENT par le suspect, se déplace dans la roche autour de lui.
 # Un joueur normal ne peut pas le voir ; avec un ESP, il le voit à travers les murs.

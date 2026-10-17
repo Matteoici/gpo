@@ -2,7 +2,7 @@ name: SmpGuard
 version: '${version}'
 main: fr.smpguard.SmpGuard
 api-version: '26.2'
-softdepend: [SmpAdmin]
+softdepend: [SmpAdmin, ProtocolLib]
 description: Anticheat - mods interdits (Axiom...), freecam, ESP, X-ray, combat, déplacements, tolérant au lag, relié au panneau admin
 commands:
   anticheat:
@@ -11,6 +11,9 @@ commands:
     aliases: [ac, guard, smpguard]
     permission: smpguard.staff
 permissions:
+  smpguard.see-health:
+    description: Voit la vraie vie des autres joueurs
+    default: false
   smpguard.staff:
     description: Panneau anticheat, rapports, test appât
     default: op

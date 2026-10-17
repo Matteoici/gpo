@@ -64,6 +64,8 @@ public final class Settings {
     public final boolean hideBehindWalls;
     public final double hideDistance;
     public final int raysPerTick;
+    // vie des autres joueurs cachée (anti "health indicator")
+    public final boolean hideHealth;
     // appât
     public final int baitSeconds;
     public final double baitRadius;
@@ -124,6 +126,7 @@ public final class Settings {
         hideDistance = Math.max(8, c.getDouble("anti-esp.distance", 48));
         raysPerTick = Math.max(50, c.getInt("anti-esp.budget-per-tick", 400));
 
+        hideHealth = c.getBoolean("hide-health.enabled", true);
         baitSeconds = Math.max(10, c.getInt("bait.default-seconds", 30));
         baitRadius = Math.max(6, c.getDouble("bait.radius", 12));
     }

@@ -526,11 +526,11 @@ public final class SmpPrison extends JavaPlugin implements Listener, TabExecutor
 
     // ================================================================= zone interdite aux autres joueurs
 
-    /** Mine + cellule + une marge autour : personne d'autre que les prisonniers et le staff n'y entre ni n'y touche. */
+    /** La mine (+ une marge) : personne d'autre que les prisonniers et le staff n'y entre ni n'y touche. La cellule si protect-cell. */
     private boolean protectedZone(Location l) {
         if (l == null || l.getWorld() == null) return false;
         double margin = getConfig().getDouble("protect-margin", 4);
-        if (cell != null && l.getWorld() == cell.getWorld()
+        if (getConfig().getBoolean("protect-cell", false) && cell != null && l.getWorld() == cell.getWorld()
                 && l.distance(cell) <= getConfig().getDouble("cell-radius", 6) + margin) return true;
         BoundingBox b = mineBox();
         if (b != null && pos1.getWorld() == l.getWorld() && b.clone().expand(margin, margin + 2, margin).contains(l.toVector())) return true;

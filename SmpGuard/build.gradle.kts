@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "fr.smpguard"
-version = "3.0.0"
+version = "3.1.0"
 
 repositories {
     mavenCentral()
@@ -13,6 +13,7 @@ repositories {
 dependencies {
     // le build 134 de Paper référence une bibliothèque (adventure 5.2.0) pas encore publiée : on reste avant
     compileOnly("io.papermc.paper:paper-api") { version { strictly("[26.2.build.0, 26.2.build.134-stable)") } }
+    compileOnly("net.dmulloy2:ProtocolLib:5.4.0") { isTransitive = false } // vie cachée (Maven Central)
 }
 
 java {

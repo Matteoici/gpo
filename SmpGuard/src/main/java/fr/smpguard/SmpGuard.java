@@ -78,6 +78,16 @@ public final class SmpGuard extends JavaPlugin {
         for (Player p : Bukkit.getOnlinePlayers()) join(p);
 
         Bukkit.getScheduler().runTaskTimer(this, this::safeTick, 1L, 1L);
+        if (getServer().getPluginManager().getPlugin("ProtocolLib") != null) {
+            try {
+                HealthHider.register(this);
+                getLogger().info("Vie des autres joueurs cachée aux clients (mods d'affichage des cœurs inutiles).");
+            } catch (Throwable t) {
+                getLogger().warning("Impossible de cacher la vie des joueurs (ProtocolLib incompatible ?) : " + t);
+            }
+        } else {
+            getLogger().warning("ProtocolLib absent : la vie des joueurs reste visible pour les mods (installe ProtocolLib).");
+        }
         getLogger().info("SmpGuard actif. Rappel : active aussi l'anti-xray de Paper (voir README).");
     }
 
