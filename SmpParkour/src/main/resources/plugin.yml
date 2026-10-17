@@ -1,0 +1,18 @@
+name: SmpParkour
+version: '${version}'
+main: fr.smpparkour.SmpParkour
+api-version: '26.2'
+description: "Parcours : génération automatique, chrono, checkpoints, classements, récompenses"
+commands:
+  parkour:
+    description: Parcours
+    usage: /parkour [liste|rejoindre|checkpoint|recommencer|quitter|top]
+    aliases: [pk, parcours]
+    permission: smpparkour.use
+permissions:
+  smpparkour.use:
+    description: Jouer aux parcours
+    default: true
+  smpparkour.admin:
+    description: Créer, générer, supprimer des parcours
+    default: op

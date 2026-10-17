@@ -1,0 +1,62 @@
+# =====================================================================
+#  SmpParkour - parcours avec chrono, checkpoints, classement et récompenses
+#
+#  JOUEURS : /parkour (liste)  /parkour rejoindre <nom>  /parkour top <nom>
+#            pendant la course : objets dans la barre (checkpoint / recommencer / quitter)
+#            ou /parkour checkpoint | recommencer | quitter
+#
+#  STAFF (smpparkour.admin) :
+#   Construire automatiquement un parcours devant toi (dans la direction où tu regardes) :
+#     /parkour generer <nom> <sauts> [facile|moyen|dur] [theme]
+#     thèmes : neon, quartz, nether, end, foret, glace
+#   Ou un parcours construit à la main :
+#     /parkour creer <nom>   puis debout sur chaque endroit :
+#     /parkour depart <nom>  /parkour checkpoint-ajouter <nom>  /parkour arrivee <nom>
+#   /parkour classement <nom>   hologramme du top 10 à ta position
+#   /parkour supprimer <nom>    (un parcours généré est aussi démonté)
+#   /parkour reload
+# =====================================================================
+
+# tomber X blocs sous le dernier checkpoint = retour au checkpoint
+fall-depth: 6
+# toucher l'eau ou la lave = retour au checkpoint
+reset-in-liquid: true
+# effets qui faussent la course (refusés au départ, la course s'arrête s'ils apparaissent)
+forbidden-effects: [SPEED, JUMP_BOOST, LEVITATION, SLOW_FALLING]
+
+# objets donnés pendant la course (cases 7, 8, 9 de la barre ; tes objets sont rendus à la fin)
+items:
+  checkpoint: {slot: 6, material: LIME_DYE, name: "<green><b>↺ Dernier checkpoint</b>"}
+  restart: {slot: 7, material: ORANGE_DYE, name: "<gold><b>⟲ Recommencer</b>"}
+  quit: {slot: 8, material: RED_DYE, name: "<red><b>✖ Quitter</b>"}
+
+# récompenses (commandes console, %player% = joueur, %course% = parcours, %time% = temps)
+rewards:
+  first-completion:
+    - "eco give %player% 1000"
+  every-completion:
+    - "eco give %player% 100"
+  # la récompense "every-completion" n'est donnée qu'une fois toutes les X heures par parcours
+  every-cooldown-hours: 12
+  # nouveau record du parcours : annoncé à tout le serveur
+  broadcast-records: true
+
+generator:
+  max-jumps: 250
+  checkpoint-every: 10
+  # hauteur gagnée en moyenne : 0 = plat, 1 = monte souvent
+  climb: 0.45
+
+messages:
+  prefix: "<dark_gray>[<gradient:#7cff6b:#00d4ff>Parkour</gradient>]</dark_gray> "
+  started: "<green>Départ ! <gray>Chrono lancé."
+  checkpoint: "<aqua>Checkpoint <white><n>/<total></white> <gray>— <white><time>"
+  back: "<gray>Retour au checkpoint."
+  finished: "<gold><b>ARRIVÉE !</b> <white><time></white> <gray>(<fails> chute(s))"
+  personal-best: "<green>Nouveau record perso ! <gray>(avant : <white><old></white>)"
+  record: "<gradient:#ffd36b:#ff7a00><b>RECORD</b></gradient> <white><player></white> <gray>bat le record de <white><course></white> en <gold><time></gold> !"
+  quit: "<yellow>Course abandonnée."
+  cancelled: "<red>Course annulée : <white><reason></white>."
+  effects: "<red>Retire tes effets (vitesse, saut...) pour faire le parcours."
+  no-course: "<red>Parcours inconnu : <white><name></white>."
+  actionbar: "<gradient:#7cff6b:#00d4ff><b>⏱ <time></b></gradient> <dark_gray>|</dark_gray> <gray>CP <white><cp>/<total></white> <dark_gray>|</dark_gray> <gray>chutes <white><fails>"
