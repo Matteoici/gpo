@@ -33,9 +33,9 @@ final class HealthHider {
     private HealthHider() {
     }
 
-    static void register(SmpGuard plugin) {
+    static void register(SmpGuard guard) {
         // instantané de la vie de chaque joueur, mis à jour sur le fil principal
-        Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+        Bukkit.getScheduler().runTaskTimer(guard, () -> {
             PLAYERS.clear();
             for (Player p : Bukkit.getOnlinePlayers()) {
                 var max = p.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
@@ -44,11 +44,11 @@ final class HealthHider {
             }
         }, 1L, 1L);
 
-        ProtocolLibrary.getProtocolManager().addPacketListener(new PacketAdapter(plugin, ListenerPriority.HIGHEST,
+        ProtocolLibrary.getProtocolManager().addPacketListener(new PacketAdapter(guard, ListenerPriority.HIGHEST,
                 PacketType.Play.Server.ENTITY_METADATA) {
             @Override
             public void onPacketSending(PacketEvent event) {
-                if (!plugin.settings().hideHealth) return;
+                if (!guard.settings().hideHealth) return;
                 Player viewer = event.getPlayer();
                 if (viewer == null || viewer.hasPermission("smpguard.see-health")) return;
                 try {
