@@ -1,0 +1,97 @@
+# =====================================================================
+#  SmpCombat - combat façon Deepwoken
+#
+#  Un coup donné ou reçu d'un joueur = EN DANGER pendant "danger-seconds" (relancé à chaque coup).
+#  En danger : écran teinté de rouge, barre "EN DANGER" avec le chrono et le nombre d'adversaires,
+#  pas de téléportation (commandes, plugins), pas de boutique / home / spawn / tpa..., et se déconnecter = mourir
+#  (le kill revient au dernier adversaire, l'inventaire tombe sur place).
+#
+#  Remplace ton ancien plugin de "combat log" : retire-le du dossier plugins.
+#  /combat : ton état    /combat clear <joueur> : enlever le danger (staff)    /combat reload
+# =====================================================================
+
+danger-seconds: 20
+# les monstres mettent aussi en danger (comme dans Deepwoken) ; false = seulement le PvP
+mobs-trigger: false
+
+# se déconnecter en danger
+combat-log:
+  kill: true                 # le joueur meurt (inventaire au sol, kill pour le dernier adversaire)
+  broadcast: true
+
+# téléportations autorisées en danger (le reste est bloqué : commandes, /home, /spawn, /tpa, plugins...)
+allowed-teleports: [ENDER_PEARL, CHORUS_FRUIT, NETHER_PORTAL, END_PORTAL, END_GATEWAY, UNKNOWN, EXIT_BED, DISMOUNT]
+# petites téléportations faites par un plugin (dash, corrections) : autorisées jusqu'à X blocs
+max-plugin-teleport: 12
+
+# commandes interdites en danger (début de la commande, sans le /)
+blocked-commands:
+  - shop
+  - boutique
+  - sell
+  - vendre
+  - ah
+  - market
+  - marche
+  - home
+  - homes
+  - sethome
+  - spawn
+  - tpa
+  - tpahere
+  - tpaccept
+  - tpyes
+  - tp
+  - warp
+  - warps
+  - back
+  - rtp
+  - wild
+  - ec
+  - enderchest
+  - echest
+  - kit
+  - repair
+  - fix
+  - heal
+  - feed
+  - fly
+  - hat
+  - trash
+  - guild home
+  - g home
+  - f home
+  - guilde home
+  - parkour
+  - pk
+# coffre de l'End (bloc) interdit en danger
+block-ender-chest: true
+# élytres interdites en danger (fuite)
+block-elytra: false
+
+# effets
+screen-tint: true            # bords de l'écran en rouge
+tint-strength: 0.55
+bossbar: true
+flavor: true                 # phrase d'ambiance en bas de l'écran
+heartbeat: true              # battements de cœur quand la vie est basse
+
+messages:
+  prefix: "<dark_red>[<red>☠</red>]</dark_red> "
+  enter: "<red><b>EN DANGER</b> <gray>— pas de téléportation, pas de boutique. <dark_gray>Se déconnecter = mourir."
+  leave: "<gray>Tu n'es plus en danger."
+  bossbar: "<dark_red>☠ <red><b>EN DANGER</b></red> <dark_red>☠</dark_red> <dark_gray>|</dark_gray> <white><s>s</white> <dark_gray>|</dark_gray> <red>⚔ <n>"
+  blocked-command: "<red>Impossible en danger : <white>/<cmd></white>. <gray>(encore <white><s>s</white>)"
+  blocked-teleport: "<red>Impossible de te téléporter en danger. <gray>(encore <white><s>s</white>)"
+  blocked-echest: "<red>Ton coffre de l'End est scellé tant que tu es en danger."
+  blocked-elytra: "<red>Tu ne peux pas t'envoler en danger."
+  logged: "<dark_red>☠ <red><player></red> <gray>a fui le combat... et y a laissé sa vie."
+  status-safe: "<green>Tu n'es pas en danger."
+  status-danger: "<red>Tu es en danger encore <white><s>s</white> (<white><n></white> adversaire(s))."
+  cleared: "<green>Danger retiré pour <white><player></white>."
+  flavor:
+    - "<dark_red><i>Le danger se resserre autour de toi comme un étau."
+    - "<dark_red><i>Fuir maintenant, c'est mourir."
+    - "<dark_red><i>Ton cœur cogne. Quelqu'un te veut mort."
+    - "<dark_red><i>Il n'y a plus de chemin de retour."
+    - "<dark_red><i>Chaque seconde compte. Ne baisse pas ta garde."

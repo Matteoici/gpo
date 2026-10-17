@@ -442,6 +442,9 @@ public final class SmpPrison extends JavaPlugin implements Listener, TabExecutor
 
     private void teleport(Player pl, Location to) {
         allowTp.add(pl.getUniqueId());
+        // SmpCombat : la prison passe même si le joueur est "en danger"
+        pl.getPersistentDataContainer().set(new org.bukkit.NamespacedKey("smpcombat", "allow_tp_until"),
+                org.bukkit.persistence.PersistentDataType.LONG, System.currentTimeMillis() + 2000);
         try {
             pl.teleport(to);
         } finally {
