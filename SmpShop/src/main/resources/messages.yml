@@ -23,6 +23,7 @@ display:
   stack: "<dark_gray>x<amount> : <green><price>"
 
 shop:
+  in-combat: "<red>⚔ Pas de boutique en plein combat ! <gray>Encore <white><seconds>s</white>."
   open-category: "<yellow>▶ Clic pour ouvrir"
   your-tokens: "<gray>Tes jetons : <#ff7a00><tokens>"
   entry-name: "<white><item>"

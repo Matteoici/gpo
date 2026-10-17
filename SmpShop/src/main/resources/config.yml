@@ -8,6 +8,12 @@ config-version: 2
 
 currency-symbol: "$"
 
+# ---------------------------------------------------------------- Combat
+# après un coup donné ou reçu d'un JOUEUR, /shop est bloqué pendant X secondes (0 = jamais bloqué)
+# (une boutique déjà ouverte se ferme). Permission pour passer outre : smpshop.combat.bypass
+combat:
+  block-seconds: 15
+
 # ---------------------------------------------------------------- Prix affiché sur les objets
 display:
   # affiche "Vente : $X" sous chaque objet qui se vend.

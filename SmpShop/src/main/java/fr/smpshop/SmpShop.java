@@ -2,6 +2,7 @@ package fr.smpshop;
 
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.PluginCommand;
@@ -144,6 +145,28 @@ public final class SmpShop extends JavaPlugin {
             changed = true;
         }
         if (changed) saveConfig();
+    }
+
+    // ================================================================= combat (pas de boutique en plein fight)
+
+    private final java.util.Map<java.util.UUID, Long> lastFight = new java.util.concurrent.ConcurrentHashMap<>();
+
+    void tagCombat(Player p) {
+        lastFight.put(p.getUniqueId(), System.currentTimeMillis());
+    }
+
+    void untag(Player p) {
+        lastFight.remove(p.getUniqueId());
+    }
+
+    /** Secondes de combat restantes (0 = libre). */
+    public int combatLeft(Player p) {
+        long secs = getConfig().getLong("combat.block-seconds", 15);
+        if (secs <= 0 || p.hasPermission("smpshop.combat.bypass")) return 0;
+        Long t = lastFight.get(p.getUniqueId());
+        if (t == null) return 0;
+        long left = t + secs * 1000 - System.currentTimeMillis();
+        return left <= 0 ? 0 : (int) ((left + 999) / 1000);
     }
 
     List<Component> displayLines(double unit, int amount) {

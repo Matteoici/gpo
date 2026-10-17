@@ -35,6 +35,34 @@ final class ShopListener implements Listener {
         this.plugin = plugin;
     }
 
+    // ================================================================= combat
+
+    /** Coup entre deux joueurs : les deux sont "en combat" ; une boutique ouverte se ferme. */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onFight(org.bukkit.event.entity.EntityDamageByEntityEvent e) {
+        if (!(e.getEntity() instanceof Player victim)) return;
+        Player attacker = e.getDamager() instanceof Player p ? p
+                : e.getDamager() instanceof org.bukkit.entity.Projectile pr && pr.getShooter() instanceof Player p ? p : null;
+        if (attacker == null || attacker == victim) return;
+        for (Player p : new Player[]{attacker, victim}) {
+            plugin.tagCombat(p);
+            if (p.getOpenInventory().getTopInventory().getHolder(false) instanceof Menu && plugin.combatLeft(p) > 0) {
+                p.closeInventory();
+                plugin.texts().send(p, "shop.in-combat", Texts.ph("seconds", plugin.combatLeft(p)));
+            }
+        }
+    }
+
+    @EventHandler
+    public void onDeathUntag(org.bukkit.event.entity.PlayerDeathEvent e) {
+        plugin.untag(e.getEntity());
+    }
+
+    @EventHandler
+    public void onQuitUntag(org.bukkit.event.player.PlayerQuitEvent e) {
+        plugin.untag(e.getPlayer());
+    }
+
     // ================================================================= menus
 
     @EventHandler(priority = EventPriority.HIGH)

@@ -28,6 +28,9 @@ commands:
     usage: /shopadmin <reload|inspect|clean>
     permission: smpshop.admin
 permissions:
+  smpshop.combat.bypass:
+    description: Ouvrir la boutique même en combat
+    default: false
   smpshop.admin:
     description: Recharger, inspecter, donner des jetons
     default: op

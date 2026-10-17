@@ -51,6 +51,11 @@ final class Commands implements CommandExecutor, TabCompleter {
         }
         switch (name) {
             case "shop" -> {
+                int fight = plugin.combatLeft(p);
+                if (fight > 0) {
+                    t().send(p, "shop.in-combat", ph("seconds", fight));
+                    return true;
+                }
                 if (a.length > 0) {
                     Shop.Category c = plugin.shop().category(a[0]);
                     if (c != null) {
