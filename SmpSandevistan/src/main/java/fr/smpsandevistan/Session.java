@@ -362,7 +362,12 @@ final class Session {
                 if (!(e instanceof Player)) it.remove();
                 continue;
             }
-            if (e instanceof Player) continue; // les joueurs sont ralentis par leurs attributs
+            if (e instanceof Player pp) {
+                // les joueurs sont ralentis par leurs attributs ; l'anticheat ne doit pas prendre ça pour de la triche
+                pp.getPersistentDataContainer().set(new NamespacedKey("smpguard", "exempt_until"), PersistentDataType.LONG,
+                        System.currentTimeMillis() + 5000);
+                continue;
+            }
             if (e instanceof TNTPrimed t && f.fuse >= 0) {
                 f.fuseAcc += k;
                 if (f.fuseAcc >= 1) {

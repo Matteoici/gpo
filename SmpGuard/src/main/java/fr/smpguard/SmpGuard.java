@@ -49,6 +49,7 @@ public final class SmpGuard extends JavaPlugin {
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        migrateConfig();
         key = new NamespacedKey(this, "guard");
         settings = new Settings(getConfig(), getLogger());
         texts = new Texts(this);
@@ -84,6 +85,36 @@ public final class SmpGuard extends JavaPlugin {
     public void onDisable() {
         for (BaitTest b : baits.values().toArray(new BaitTest[0])) b.cancel();
         if (culling != null) culling.showAll();
+    }
+
+    /**
+     * v3 : alertes uniquement pour la triche sérieuse. Les anciens seuils (une alerte au moindre moment bizarre)
+     * sont remplacés : score plus élevé ET plusieurs incidents distincts en peu de temps.
+     */
+    private void migrateConfig() {
+        var c = getConfig();
+        if (c.getInt("config-version", 1) >= 3) return;
+        for (Check ch : Check.values()) {
+            if (ch == Check.BAIT) continue;
+            String b = "checks." + ch.key + ".";
+            double[] d = Settings.defaults(ch);
+            c.set(b + "alert-vl", d[0]);
+            c.set(b + "sus-vl", d[1]);
+            c.set(b + "decay-per-minute", d[2]);
+            c.set(b + "min-events", (int) d[3]);
+            c.set(b + "window-seconds", (int) d[4]);
+        }
+        c.set("checks.freecam.min-seconds", 8);
+        c.set("checks.speed.max-blocks-per-second", 8.6);
+        c.set("checks.fly.push-grace-ms", 3500);
+        c.set("checks.autoclicker.max-cps", 25);
+        c.set("checks.autoclicker.seconds", 5);
+        c.set("checks.reach.margin", 0.6);
+        c.set("checks.killaura.max-angle", 75);
+        c.set("alerts.cooldown-seconds", 60);
+        c.set("config-version", 3);
+        saveConfig();
+        getLogger().info("Config mise à jour (v3) : alertes seulement pour la triche sérieuse et répétée.");
     }
 
     void reload() {

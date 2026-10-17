@@ -57,16 +57,23 @@ public final class Alerts {
         Settings.Limits lim = plugin.settings().limits(check);
         if (lim == null || !lim.enabled() || amount <= 0) return;
         int i = check.ordinal();
+        long now = System.currentTimeMillis();
+        // un incident = un moment distinct (plusieurs signaux dans la même seconde comptent pour un)
+        var ev = prof.events[i];
+        if (ev.isEmpty() || now - ev.peekLast() > 1000) ev.addLast(now);
+        while (!ev.isEmpty() && now - ev.peekFirst() > lim.windowMs()) ev.pollFirst();
+        while (ev.size() > 64) ev.pollFirst();
         prof.vl[i] += amount;
         prof.peak[i] = Math.max(prof.peak[i], prof.vl[i]);
         double vl = prof.vl[i];
-        long now = System.currentTimeMillis();
-        if (vl >= lim.alertVl() && now - prof.lastAlert[i] >= plugin.settings().alertCooldownMs) {
+        // alerte seulement si c'est sérieux : score élevé ET répété plusieurs fois récemment
+        boolean serious = vl >= lim.alertVl() && ev.size() >= lim.minEvents();
+        if (serious && now - prof.lastAlert[i] >= plugin.settings().alertCooldownMs) {
             prof.lastAlert[i] = now;
             prof.alerts++;
             alert(p, prof, check, vl, lim, detail);
         }
-        if (vl >= lim.susVl() && !prof.susSent && plugin.settings().autoSus) {
+        if (serious && vl >= lim.susVl() && !prof.susSent && plugin.settings().autoSus) {
             prof.susSent = true;
             Hooks.markSuspect(p.getName(), "[Anticheat] " + plugin.texts().raw("checks." + check.key) + " (VL "
                     + String.format(Locale.US, "%.1f", vl) + ")");

@@ -12,7 +12,28 @@ import java.util.logging.Logger;
 public final class Settings {
 
     /** Seuils d'une détection. */
-    public record Limits(boolean enabled, double alertVl, double susVl, double decayPerMinute) {
+    public record Limits(boolean enabled, double alertVl, double susVl, double decayPerMinute, int minEvents, long windowMs) {
+    }
+
+    /**
+     * Valeurs par défaut "sérieuses" : une alerte demande un score élevé ET plusieurs incidents distincts
+     * en peu de temps (un seul moment bizarre ne suffit jamais).
+     * {alert-vl, sus-vl, decay-per-minute, min-events, window-seconds}
+     */
+    static double[] defaults(Check c) {
+        return switch (c) {
+            case FLY, SPEED, NOFALL -> new double[]{10, 20, 1.5, 6, 300};
+            case REACH, KILLAURA -> new double[]{8, 16, 1.0, 5, 300};
+            case AUTOCLICKER -> new double[]{4, 8, 0.5, 3, 300};
+            case FASTBREAK -> new double[]{6, 12, 1.0, 4, 300};
+            case FREECAM -> new double[]{4, 8, 0.3, 3, 900};
+            case WALL -> new double[]{4, 8, 0.3, 3, 900};
+            case ESP_AIM -> new double[]{5, 10, 0.3, 3, 900};
+            case AUTO_TOTEM -> new double[]{3, 6, 0.1, 2, 1800};
+            case XRAY -> new double[]{2, 4, 0.05, 1, 3600};
+            case CLIENT -> new double[]{1, 1, 0, 1, 3600};
+            case BAIT -> new double[]{1, 2, 0.02, 1, 3600};
+        };
     }
 
     // lag
@@ -63,11 +84,13 @@ public final class Settings {
 
         for (Check ch : Check.values()) {
             String b = "checks." + ch.key + ".";
-            limits.put(ch, new Limits(c.getBoolean(b + "enabled", true), c.getDouble(b + "alert-vl", 3),
-                    c.getDouble(b + "sus-vl", 6), c.getDouble(b + "decay-per-minute", 0.1)));
+            double[] d = defaults(ch);
+            limits.put(ch, new Limits(c.getBoolean(b + "enabled", true), c.getDouble(b + "alert-vl", d[0]),
+                    c.getDouble(b + "sus-vl", d[1]), c.getDouble(b + "decay-per-minute", d[2]),
+                    Math.max(1, c.getInt(b + "min-events", (int) d[3])), (long) (c.getDouble(b + "window-seconds", d[4]) * 1000)));
         }
         // le test appât est lancé à la main : ses seuils sont fixes
-        limits.put(Check.BAIT, new Limits(true, 1, 2, 0.02));
+        limits.put(Check.BAIT, new Limits(true, 1, 2, 0.02, 1, 3_600_000));
 
         aimMinDist = c.getDouble("checks.esp-aim.min-distance", 6);
         aimMaxDist = c.getDouble("checks.esp-aim.max-distance", 40);
@@ -91,7 +114,7 @@ public final class Settings {
             }
         }
 
-        freecamMinSeconds = Math.max(2, c.getDouble("checks.freecam.min-seconds", 4));
+        freecamMinSeconds = Math.max(4, c.getDouble("checks.freecam.min-seconds", 8));
 
         totemMinReactionMs = c.getDouble("checks.auto-totem.min-reaction-ms", 90);
         totemBlockImpossible = c.getBoolean("checks.auto-totem.block-impossible", true);

@@ -49,7 +49,7 @@ public final class FreecamCheck {
             double weight = plugin.lag().weight(prof);
             Input in = p.getCurrentInput();
             boolean pressing = in != null && (in.isForward() || in.isBackward() || in.isLeft() || in.isRight());
-            if (!pressing || weight < 0.3 || prof.historySize() < PERIOD + 1) {
+            if (!pressing || weight < 0.6 || prof.historySize() < PERIOD + 1) {
                 prof.inputStillSeconds = 0;
                 continue;
             }
@@ -124,12 +124,16 @@ public final class FreecamCheck {
             if (e instanceof org.bukkit.entity.LivingEntity || e instanceof org.bukkit.entity.Boat
                     || e instanceof org.bukkit.entity.Minecart) return true;
         }
-        double[] heights = {0.1, 1.0, Math.max(1.1, p.getHeight() - 0.1)};
-        double[] offsets = {0.45, 0.8};
+        double[] heights = {0.1, 0.6, 1.0, Math.max(1.1, p.getHeight() - 0.1)};
+        double[] offsets = {0.35, 0.45, 0.8, 1.1};
+        double[] sides = {0, -0.3, 0.3};
+        Vector side = new Vector(-dir.getZ(), 0, dir.getX());
         for (double h : heights) {
             for (double d : offsets) {
-                Block b = l.clone().add(dir.clone().multiply(d)).add(0, h, 0).getBlock();
-                if (b.isCollidable() || b.isLiquid()) return true;
+                for (double sd : sides) {
+                    Block b = l.clone().add(dir.clone().multiply(d)).add(side.clone().multiply(sd)).add(0, h, 0).getBlock();
+                    if (b.isCollidable() || b.isLiquid() || !b.isPassable()) return true;
+                }
             }
         }
         // bord d'un vide avec un bloc en dessous qui retient (ex. plaque de pression, neige...) : on reste prudent

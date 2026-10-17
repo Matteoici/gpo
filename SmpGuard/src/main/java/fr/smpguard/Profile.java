@@ -21,6 +21,15 @@ public final class Profile {
     public final double[] vl = new double[Check.values().length];
     public final long[] lastAlert = new long[Check.values().length];
     public final double[] peak = new double[Check.values().length];
+    /** Heures des derniers incidents de chaque détection (pour exiger plusieurs incidents distincts). */
+    public final ArrayDeque<Long>[] events = newEvents();
+
+    @SuppressWarnings("unchecked")
+    private static ArrayDeque<Long>[] newEvents() {
+        ArrayDeque<Long>[] a = new ArrayDeque[Check.values().length];
+        for (int i = 0; i < a.length; i++) a[i] = new ArrayDeque<>();
+        return a;
+    }
     public int alerts;
     public boolean susSent;
     public final Deque<String> recent = new ArrayDeque<>(); // dernières alertes (pour le rapport)

@@ -212,6 +212,29 @@ final class GuardListener implements Listener {
         for (Player near : e.getEntity().getLocation().getNearbyPlayers(5)) plugin.move().onPush(near);
     }
 
+    /** Fusée d'élytres : énorme poussée, normale. */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onRocket(com.destroystokyo.paper.event.player.PlayerElytraBoostEvent e) {
+        plugin.move().onPush(e.getPlayer());
+    }
+
+    /** Trident Impulsion : propulsé, normal. */
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onRiptide(org.bukkit.event.player.PlayerRiptideEvent e) {
+        plugin.move().onPush(e.getPlayer());
+    }
+
+    /** Pistons qui poussent / soulèvent les joueurs (ascenseurs, pièges...). */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onPiston(org.bukkit.event.block.BlockPistonExtendEvent e) {
+        for (Player p : e.getBlock().getLocation().getNearbyPlayers(4)) plugin.move().onPush(p);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onPistonBack(org.bukkit.event.block.BlockPistonRetractEvent e) {
+        for (Player p : e.getBlock().getLocation().getNearbyPlayers(4)) plugin.move().onPush(p);
+    }
+
     /** Fin de vol en élytres : il garde son élan quelques instants. */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onGlide(org.bukkit.event.entity.EntityToggleGlideEvent e) {
