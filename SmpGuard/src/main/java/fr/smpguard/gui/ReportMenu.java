@@ -41,8 +41,9 @@ public final class ReportMenu extends Menu {
                 ph("gamemode", target.getGameMode().name().toLowerCase(Locale.ROOT))};
         set(4, Items.head(target, t().get("gui.report.header.name", r), t().list("gui.report.header.lore", r)));
 
-        int[] slots = {10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25};
+        int[] slots = {10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34};
         for (Check c : Check.values()) {
+            if (c.ordinal() >= slots.length) break;
             Settings.Limits lim = plugin.settings().limits(c);
             double vl = prof.vl[c.ordinal()];
             TagResolver[] cr = {pp("check", t().raw("checks." + c.key)), pp("bar", Bars.bar(vl, lim.alertVl())),
@@ -53,6 +54,16 @@ public final class ReportMenu extends Menu {
             var it = item(c.icon, "gui.report.check", cr);
             set(slots[c.ordinal()], vl >= lim.alertVl() ? Items.glow(it) : it);
         }
+
+        // client du joueur (Vanilla, Fabric, Lunar...) et mods qui s'annoncent
+        String cn = fr.smpguard.ClientInfo.name(plugin, target);
+        java.util.List<String> mods = fr.smpguard.ClientInfo.mods(target);
+        java.util.List<net.kyori.adventure.text.Component> lore = new java.util.ArrayList<>();
+        lore.add(fr.smpguard.Texts.parse("<gray>Marque : <white>" + String.valueOf(target.getClientBrandName()).replace("<", "")));
+        lore.add(fr.smpguard.Texts.parse("<gray>Mods annoncés : <white>" + mods.size()));
+        for (int i = 0; i < Math.min(12, mods.size()); i++) lore.add(fr.smpguard.Texts.parse(" <dark_gray>- <white>" + mods.get(i)));
+        if (mods.size() > 12) lore.add(fr.smpguard.Texts.parse(" <dark_gray>... +" + (mods.size() - 12)));
+        set(49, Items.of(Material.COMPASS, fr.smpguard.Texts.parse("<aqua><b>Client :</b> " + fr.smpguard.ClientInfo.color(cn) + cn), lore));
 
         boolean admin = Bukkit.getPluginManager().getPlugin("SmpAdmin") != null;
         if (admin) {

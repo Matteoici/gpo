@@ -254,6 +254,12 @@ checks:
     max-angle: 110
     max-per-second: 14
 
+# ---------------------------------------------------------------- Client de chaque joueur
+# /anticheat clients : client de tous les joueurs connectés   /anticheat client <joueur> : détails
+client-info:
+  # le staff (smpguard.alerts) voit "Pseudo — Fabric (3 mods)" à chaque connexion
+  join-notice: true
+
 # ---------------------------------------------------------------- Protection anti-ESP
 # Cache les joueurs qui ne sont pas visibles (derrière un mur) : l'ESP et le freecam
 # ne peuvent plus les voir, puisque le client ne reçoit même pas leur position.

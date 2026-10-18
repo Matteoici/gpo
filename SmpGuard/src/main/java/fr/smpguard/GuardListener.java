@@ -39,6 +39,11 @@ final class GuardListener implements Listener {
         plugin.join(e.getPlayer());
         plugin.client().onJoin(e.getPlayer());
         plugin.probe().onJoin(e.getPlayer());
+        // la marque du client arrive juste après la connexion : on prévient le staff 3 s plus tard
+        Player joined = e.getPlayer();
+        org.bukkit.Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (joined.isOnline()) ClientInfo.announce(plugin, joined);
+        }, 60L);
     }
 
     @EventHandler

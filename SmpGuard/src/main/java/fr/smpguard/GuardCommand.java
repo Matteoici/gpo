@@ -17,7 +17,7 @@ import static fr.smpguard.Texts.ph;
 
 final class GuardCommand implements TabExecutor {
 
-    private static final List<String> SUBS = List.of("check", "bait", "alerts", "status", "reset", "reload");
+    private static final List<String> SUBS = List.of("check", "clients", "client", "sonde", "bait", "alerts", "status", "reset", "reload");
 
     private final SmpGuard plugin;
 
@@ -59,6 +59,27 @@ final class GuardCommand implements TabExecutor {
                 sender.sendMessage(Texts.parse(ok ? "<green>Sonde lancée sur <white>" + target.getName()
                         + "</white> : résultat dans les alertes s'il a un mod (CheatUtils...)."
                         : "<yellow>Sonde impossible maintenant (déjà en cours ou menu ouvert)."));
+            }
+            case "clients" -> {
+                sender.sendMessage(Texts.parse("<aqua><b>Clients des joueurs</b> <gray>(survole un nom pour les détails)"));
+                java.util.Map<String, Integer> count = new java.util.TreeMap<>();
+                for (Player o : Bukkit.getOnlinePlayers()) {
+                    sender.sendMessage(ClientInfo.line(plugin, o));
+                    count.merge(ClientInfo.name(plugin, o), 1, Integer::sum);
+                }
+                StringBuilder sb = new StringBuilder("<gray>Total : ");
+                count.forEach((k, v) -> sb.append(ClientInfo.color(k)).append(k).append(" <white>").append(v).append("  "));
+                sender.sendMessage(Texts.parse(sb.toString()));
+            }
+            case "client" -> {
+                Player target = target(sender, args, "/anticheat client <joueur>");
+                if (target == null) return true;
+                String n = ClientInfo.name(plugin, target);
+                List<String> mods = ClientInfo.mods(target);
+                sender.sendMessage(Texts.parse("<aqua><b>" + target.getName() + "</b> <gray>joue sur " + ClientInfo.color(n) + n));
+                sender.sendMessage(Texts.parse("<gray>Marque envoyée : <white>" + String.valueOf(target.getClientBrandName()).replace("<", "")));
+                sender.sendMessage(Texts.parse("<gray>Mods annoncés (" + mods.size() + ") : <white>" + (mods.isEmpty() ? "aucun" : String.join(", ", mods))));
+                sender.sendMessage(Texts.parse("<dark_gray>Beaucoup de mods (et les clients de triche) ne s'annoncent pas : la sonde (/anticheat sonde) et les détections font le reste."));
             }
             case "alerts", "alertes" -> {
                 if (!(sender instanceof Player p)) return true;

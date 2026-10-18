@@ -68,6 +68,8 @@ public final class PanelMenu extends Menu {
             TagResolver[] r = {ph("player", p.getName()), ph("ping", prof.avgPing()), ph("jitter", Math.round(prof.jitter())),
                     ph("weight", weight), ph("alerts", prof.alerts)};
             List<Component> lore = new ArrayList<>(t().list("gui.panel.player.lore-top", r));
+            String cn = fr.smpguard.ClientInfo.name(plugin, p);
+            lore.add(fr.smpguard.Texts.parse("<gray>Client : " + fr.smpguard.ClientInfo.color(cn) + cn));
             lore.addAll(scoreLines(this, plugin, prof));
             lore.addAll(t().list("gui.panel.player.lore-bottom", r));
             ItemStack head = Items.head(p, t().get("gui.panel.player.name", r), lore);
