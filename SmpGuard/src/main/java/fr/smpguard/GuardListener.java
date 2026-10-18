@@ -44,6 +44,13 @@ final class GuardListener implements Listener {
         org.bukkit.Bukkit.getScheduler().runTaskLater(plugin, () -> {
             if (joined.isOnline()) ClientInfo.announce(plugin, joined);
         }, 60L);
+        // Xaero's Minimap : mode "fair-play" imposé par le serveur (pas de radar des joueurs/mobs, pas de mode grotte).
+        // Le mod lit ce code caché dans un message ; les autres clients n'affichent rien de visible.
+        if (plugin.settings().raw().getBoolean("xaero-fairplay", true)) {
+            org.bukkit.Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                if (joined.isOnline()) joined.sendMessage(net.kyori.adventure.text.Component.text("\u00a7f\u00a7a\u00a7i\u00a7r\u00a7x\u00a7a\u00a7e\u00a7r\u00a7o"));
+            }, 40L);
+        }
     }
 
     @EventHandler

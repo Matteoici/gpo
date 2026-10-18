@@ -254,6 +254,11 @@ checks:
     max-angle: 110
     max-per-second: 14
 
+# ---------------------------------------------------------------- Xaero's Minimap
+# Impose le mode "fair-play" de Xaero's Minimap à la connexion : plus de radar des joueurs / mobs ni de mode grotte
+# (sinon la minimap sert d'ESP et d'X-ray léger). Invisible pour les joueurs sans ce mod.
+xaero-fairplay: true
+
 # ---------------------------------------------------------------- GrimAC
 # Si GrimAC est installé, il remplace ces détections (sa simulation de la physique est plus précise) :
 # SmpGuard se tait dessus pour éviter les doubles alertes. Tout le reste de SmpGuard continue.
