@@ -81,7 +81,7 @@ public final class ProbeCheck {
     /** À la connexion : on sonde une fois le joueur installé (pas pendant le chargement). */
     public void onJoin(Player p) {
         if (!enabled()) return;
-        long delay = Math.max(5, plugin.settings().raw().getLong("checks.client.probe.delay-seconds", 25)) * 20L;
+        long delay = Math.max(5, plugin.settings().raw().getLong("checks.client.probe.delay-seconds", 10)) * 20L;
         Bukkit.getScheduler().runTaskLater(plugin, () -> probe(p, false), delay);
     }
 

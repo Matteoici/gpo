@@ -82,8 +82,59 @@ public final class ClientCheck {
                 String brand = p.getClientBrandName();
                 if (brand != null) evaluate(p, null, brand.toLowerCase(Locale.ROOT));
                 for (String c : p.getListeningPluginChannels()) evaluate(p, c.toLowerCase(Locale.ROOT), null);
+                strict(p, delay == 200L);
             }, delay);
         }
+    }
+
+    /**
+     * Mode strict : seuls les clients autorisés (vanilla, Lunar, Badlion, Feather, LabyMod... voir config) entrent.
+     * Fabric / Forge / NeoForge / Quilt = refusés : c'est là que tournent CheatUtils, Meteor, Wurst, les freecams...
+     * Un client qui se dit "vanilla" mais écoute des canaux de mods = faux vanilla, refusé aussi.
+     */
+    private void strict(Player p, boolean last) {
+        var cfg = plugin.settings().raw();
+        if (!cfg.getBoolean("checks.client.strict.enabled", true)) return;
+        if (p.hasPermission("smpguard.allow-mods") || p.hasPermission("smpguard.bypass") || plugin.isBedrock(p)) return;
+        String brand = p.getClientBrandName();
+        if (brand == null) {
+            if (last && cfg.getBoolean("checks.client.strict.kick-unknown-brand", false)) kickStrict(p, "client inconnu");
+            return;
+        }
+        String b = brand.toLowerCase(Locale.ROOT);
+        boolean allowed = false;
+        for (String a : cfg.getStringList("checks.client.strict.allowed-brands")) if (glob(a).matcher(b).matches()) allowed = true;
+        if (cfg.getStringList("checks.client.strict.allowed-brands").isEmpty()) allowed = b.equals("vanilla");
+        if (!allowed) {
+            kickStrict(p, "client « " + brand + " »");
+            return;
+        }
+        if (b.equals("vanilla")) {
+            List<Pattern> ok = new ArrayList<>();
+            for (String a : cfg.getStringList("checks.client.strict.allowed-channels")) ok.add(glob(a));
+            for (String c : p.getListeningPluginChannels()) {
+                String ch = c.toLowerCase(Locale.ROOT);
+                boolean fine = ch.startsWith("minecraft:");
+                for (Pattern pt : ok) if (pt.matcher(ch).matches()) fine = true;
+                if (!fine) {
+                    kickStrict(p, "faux client vanilla (canal " + ch + ")");
+                    return;
+                }
+            }
+        }
+    }
+
+    private void kickStrict(Player p, String how) {
+        if (!fired.computeIfAbsent(p.getUniqueId(), k -> new HashSet<>()).add("strict")) return;
+        Profile prof = plugin.profile(p);
+        String detail = plugin.texts().raw("detail.client").replace("<mod>", "Client moddé (mode strict)").replace("<how>", how)
+                .replace("<action>", plugin.texts().raw("detail.client-kicked"));
+        if (prof != null) plugin.alerts().flag(p, prof, Check.CLIENT, Math.max(1, plugin.settings().limits(Check.CLIENT).alertVl()), detail);
+        String reason = plugin.settings().raw().getString("checks.client.strict.reason",
+                "<red><b>Client moddé refusé.</b>\n<gray>Seuls les clients normaux sont acceptés (vanilla, Lunar, Badlion, Feather, LabyMod).\n<gray>Retire Fabric / Forge pour rejoindre.");
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            if (p.isOnline()) p.kick(Texts.parse(reason.replace("\\n", "\n")));
+        });
     }
 
     private void evaluate(Player p, String channel, String brand) {

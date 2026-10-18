@@ -113,13 +113,23 @@ checks:
     alert-vl: 1
     sus-vl: 1
     decay-per-minute: 0
+    # MODE STRICT : seuls les clients normaux entrent. Fabric / Forge / NeoForge / Quilt sont refusés à la connexion
+    # (CheatUtils, Meteor, Wurst, freecams, x-ray... tournent tous dessus). Un "vanilla" qui écoute des canaux de mods
+    # est un faux vanilla : refusé aussi. Le staff avec smpguard.allow-mods passe (ex. pour Axiom / WorldEdit).
+    strict:
+      enabled: true
+      allowed-brands: ["vanilla", "*lunar*", "*badlion*", "*feather*", "*labymod*"]
+      # canaux autorisés pour un client vanilla (en plus de minecraft:*)
+      allowed-channels: ["bungeecord:*", "velocity:*", "voicechat:*", "worldedit:*", "lunar*:*", "badlion*:*", "feather*:*", "labymod*:*"]
+      kick-unknown-brand: false
+      reason: "<red><b>Client moddé refusé.</b>\n<gray>Seuls les clients normaux sont acceptés (vanilla, Lunar, Badlion, Feather, LabyMod).\n<gray>Retire Fabric / Forge pour rejoindre."
     # Sonde des mods côté client (CheatUtils...) : 25 s après la connexion, un panneau invisible s'ouvre 2 ticks.
     # Un client avec le mod "traduit" la clé (preuve) ; CheatUtils avec sa protection se déconnecte direct
     # (une fois = à surveiller, deux fois = alerte). Un joueur normal ne voit qu'un clignement.
     # Staff : /anticheat sonde <joueur>
     probe:
       enabled: true
-      delay-seconds: 25
+      delay-seconds: 10
       action: kick
       reason: "<red><b>Client de triche détecté.</b>\n<gray>Rejoins avec un client normal."
       # 4 clés max par sonde ; une clé inconnue ne peut jamais donner de faux positif
