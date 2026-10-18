@@ -44,6 +44,9 @@ checks:
   nofall: "<aqua>NoFall"
   fastbreak: "<green>FastBreak / Nuker"
   bait: "<red>Test appât"
+  inventory-move: "<gold>InvMove (marche dans un menu)"
+  criticals: "<red>Criticals (faux coups critiques)"
+  scaffold: "<green>Scaffold / AirPlace"
 
 # Détail d'une alerte (texte brut)
 detail:
@@ -75,6 +78,14 @@ detail:
   nuker-angle: "a cassé un(e) <block> derrière lui (<angle>°)"
   ore-bait: "a découvert <found> faux minerais invisibles (piège anti-X-ray) en <mined> blocs minés ; par hasard on en attendait <expected> (chance : <chance>)"
   nuker-rate: "<count> blocs non instantanés cassés en 1 seconde"
+  probe-disconnect: "s'est déconnecté <ms> ms après la sonde des mods, sans répondre (protection d'un client de triche type CheatUtils) - <count> fois en 7 jours"
+  inventory-move: "marche avec un menu ouvert (<menu>) : le jeu relâche les touches dans un menu, seul un mod InvMove fait ça"
+  criticals: "coup critique sans vraie chute (hauteur bougée de <height> bloc) : faux saut envoyé au serveur"
+  airplace: "a posé <block> contre du vide (impossible sans triche) - pose annulée"
+  scaffold-angle: "a posé un bloc en regardant à <angle>° de son appui"
+  scaffold-rate: "plus de <count> blocs posés en une seconde"
+  boatfly: "bateau qui vole (monte ou flotte en l'air sans rien dessous)"
+  step: "monté de <height> bloc en un seul tick sans sauter (StepUp)"
 
 # Explications dans le rapport
 explain:

@@ -113,6 +113,21 @@ checks:
     alert-vl: 1
     sus-vl: 1
     decay-per-minute: 0
+    # Sonde des mods côté client (CheatUtils...) : 25 s après la connexion, un panneau invisible s'ouvre 2 ticks.
+    # Un client avec le mod "traduit" la clé (preuve) ; CheatUtils avec sa protection se déconnecte direct
+    # (une fois = à surveiller, deux fois = alerte). Un joueur normal ne voit qu'un clignement.
+    # Staff : /anticheat sonde <joueur>
+    probe:
+      enabled: true
+      delay-seconds: 25
+      action: kick
+      reason: "<red><b>Client de triche détecté.</b>\n<gray>Rejoins avec un client normal."
+      # 4 clés max par sonde ; une clé inconnue ne peut jamais donner de faux positif
+      keys:
+        - {key: "key.category.cheatutils.common", mod: "CheatUtils"}
+        - {key: "key.meteor-client.open-gui", mod: "Meteor Client"}
+        - {key: "key.wurst.zoom", mod: "Wurst"}
+        - {key: "key.freecam.toggle", mod: "Freecam"}
     rules:
       - name: "Axiom (caméra libre / noclip)"
         channels: ["axiom:*"]
@@ -214,6 +229,20 @@ checks:
     alert-vl: 3
     sus-vl: 6
     decay-per-minute: 0.15
+
+  # InvMove : marche avec un coffre / menu ouvert (impossible avec le jeu normal)
+  inventory-move:
+    enabled: true
+
+  # Criticals : coups critiques sans vraie chute (faux sauts envoyés au serveur)
+  criticals:
+    enabled: true
+
+  # Scaffold / AirPlace : bloc posé contre du vide (annulé), en regardant ailleurs, ou trop vite
+  scaffold:
+    enabled: true
+    max-angle: 110
+    max-per-second: 14
 
 # ---------------------------------------------------------------- Protection anti-ESP
 # Cache les joueurs qui ne sont pas visibles (derrière un mur) : l'ESP et le freecam

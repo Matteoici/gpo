@@ -46,7 +46,7 @@ public final class MoveCheck {
         double airStartY, fallStartY;
         long lastPush;
         int iceUntil;
-        boolean rose;
+        boolean rose, prevGround;
     }
 
     private final SmpGuard plugin;
@@ -142,6 +142,18 @@ public final class MoveCheck {
                     s.rose = false;
                 }
             }
+
+            // ---------------- step : monté de plus d'un demi-bloc+ en UN tick, du sol au sol, sans sauter (StepUp)
+            if (plugin.settings().limits(Check.FLY).enabled()) {
+                Vector n0 = prof.at(0), n1 = prof.at(1);
+                var stepAttr = p.getAttribute(Attribute.STEP_HEIGHT);
+                double step = stepAttr == null ? 0.6 : stepAttr.getValue();
+                if (n0 != null && n1 != null && s.prevGround && ground && !special && n0.getY() - n1.getY() > step + 0.08) {
+                    plugin.alerts().flag(p, prof, Check.FLY, 0.7 * w, plugin.texts().raw("detail.step")
+                            .replace("<height>", String.format(Locale.US, "%.2f", n0.getY() - n1.getY())));
+                }
+            }
+            s.prevGround = ground;
 
             // ---------------- nofall : "je touche le sol" en pleine chute dans le vide (au moins 4 blocs)
             if (plugin.settings().limits(Check.NOFALL).enabled() && !glider) {

@@ -52,6 +52,14 @@ final class GuardCommand implements TabExecutor {
                 }
                 plugin.startBait(sender, target, sec);
             }
+            case "sonde", "probe" -> {
+                Player target = target(sender, args, "/anticheat sonde <joueur>");
+                if (target == null) return true;
+                boolean ok = plugin.probe().probe(target, true);
+                sender.sendMessage(Texts.parse(ok ? "<green>Sonde lancée sur <white>" + target.getName()
+                        + "</white> : résultat dans les alertes s'il a un mod (CheatUtils...)."
+                        : "<yellow>Sonde impossible maintenant (déjà en cours ou menu ouvert)."));
+            }
             case "alerts", "alertes" -> {
                 if (!(sender instanceof Player p)) return true;
                 t.send(p, plugin.alerts().toggle(p) ? "alerts-on" : "alerts-off");

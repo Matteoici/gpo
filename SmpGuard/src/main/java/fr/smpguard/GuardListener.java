@@ -38,11 +38,34 @@ final class GuardListener implements Listener {
     public void onJoin(PlayerJoinEvent e) {
         plugin.join(e.getPlayer());
         plugin.client().onJoin(e.getPlayer());
+        plugin.probe().onJoin(e.getPlayer());
     }
 
     @EventHandler
     public void onQuit(PlayerQuitEvent e) {
+        plugin.probe().onQuit(e.getPlayer()); // avant d'oublier son profil
         plugin.quit(e.getPlayer());
+    }
+
+    /** Réponse du client à la sonde des mods (panneau invisible). */
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onProbeSign(io.papermc.paper.event.packet.UncheckedSignChangeEvent e) {
+        plugin.probe().onSign(e);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onCrit(EntityDamageByEntityEvent e) {
+        plugin.extra().onAttack(e);
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onScaffold(org.bukkit.event.block.BlockPlaceEvent e) {
+        plugin.extra().onPlace(e);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onBoat(org.bukkit.event.vehicle.VehicleMoveEvent e) {
+        plugin.extra().onVehicleMove(e);
     }
 
     // ---------------------------------------------------------------- pauses (les positions "sautent")

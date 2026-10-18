@@ -30,6 +30,9 @@ public final class Settings {
             case WALL -> new double[]{4, 8, 0.3, 3, 900};
             case ESP_AIM -> new double[]{5, 10, 0.3, 3, 900};
             case AUTO_TOTEM -> new double[]{3, 6, 0.1, 2, 1800};
+            case INVMOVE -> new double[]{3, 6, 0.3, 2, 900};
+            case CRITICALS -> new double[]{5, 10, 0.5, 5, 300};
+            case SCAFFOLD -> new double[]{4, 8, 0.5, 3, 300};
             case XRAY -> new double[]{2, 4, 0.05, 1, 3600};
             case CLIENT -> new double[]{1, 1, 0, 1, 3600};
             case BAIT -> new double[]{1, 2, 0.02, 1, 3600};

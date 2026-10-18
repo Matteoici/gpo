@@ -39,6 +39,8 @@ public final class SmpGuard extends JavaPlugin {
     private WallCheck wall;
     private CombatCheck combat;
     private MoveCheck move;
+    private fr.smpguard.check.ExtraCheck extra;
+    private fr.smpguard.check.ProbeCheck probe;
     private BreakCheck breaks;
     private OreBait oreBait;
     private NamespacedKey key;
@@ -65,6 +67,8 @@ public final class SmpGuard extends JavaPlugin {
         wall = new WallCheck(this);
         combat = new CombatCheck(this);
         move = new MoveCheck(this);
+        extra = new fr.smpguard.check.ExtraCheck(this);
+        probe = new fr.smpguard.check.ProbeCheck(this);
         breaks = new BreakCheck(this);
         oreBait = new OreBait(this);
 
@@ -158,6 +162,7 @@ public final class SmpGuard extends JavaPlugin {
         if (tick % FreecamCheck.PERIOD == 3) freecam.run();
         culling.tick();
         move.tick();
+        if (tick % 10 == 5) extra.tickInvMove();
         if (tick % 100 == 37) oreBait.tick();
         if (tick % 20 == 11) {
             combat.tickSecond();
@@ -191,6 +196,7 @@ public final class SmpGuard extends JavaPlugin {
         client.forget(p);
         combat.forget(p);
         move.forget(p);
+        extra.forget(p);
         breaks.forget(p);
         oreBait.forget(p);
         for (Profile o : profiles.values()) o.tracks.remove(p.getUniqueId());
@@ -313,6 +319,14 @@ public final class SmpGuard extends JavaPlugin {
 
     public MoveCheck move() {
         return move;
+    }
+
+    public fr.smpguard.check.ExtraCheck extra() {
+        return extra;
+    }
+
+    public fr.smpguard.check.ProbeCheck probe() {
+        return probe;
     }
 
     public OreBait oreBait() {

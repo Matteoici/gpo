@@ -17,6 +17,9 @@ public enum Check {
     NOFALL("nofall", Material.HAY_BLOCK),
     FASTBREAK("fastbreak", Material.DIAMOND_PICKAXE),
     AUTO_TOTEM("auto-totem", Material.TOTEM_OF_UNDYING),
+    INVMOVE("inventory-move", Material.CHEST_MINECART),
+    CRITICALS("criticals", Material.IRON_SWORD),
+    SCAFFOLD("scaffold", Material.SCAFFOLDING),
     BAIT("bait", Material.ZOMBIE_HEAD);
 
     public final String key;
