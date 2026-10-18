@@ -160,6 +160,7 @@ final class Session {
     // ================================================================= début
 
     int start() {
+        pl.exemptGrim(user, true);
         user.stopAllSounds(); // un silence, puis l'implant
         sound(user, "block.beacon.power_select", 1f, 0.5f);
         sound(user, "entity.warden.sonic_charge", 0.6f, 2f);
@@ -311,6 +312,7 @@ final class Session {
         f.velocity = e.getVelocity();
         f.gravity = e.hasGravity();
         if (e instanceof Player p) {
+            pl.exemptGrim(p, true);
             // ralenti côté client : il marche, saute, tombe, frappe et mine k fois moins vite
             double mul = k - 1;
             modifier(p, Attribute.MOVEMENT_SPEED, pl.freezeKey, mul, AttributeModifier.Operation.MULTIPLY_SCALAR_1);
@@ -744,6 +746,10 @@ final class Session {
         ghosts.clear();
         boostUser(false);
         tint(false);
+        Player u = user;
+        Bukkit.getScheduler().runTaskLater(pl, () -> {
+            if (u.isOnline() && !pl.isUser(u)) pl.exemptGrim(u, false);
+        }, 60L);
         if (user.isOnline()) {
             user.resetPlayerTime();
             if (bar != null) user.hideBossBar(bar);
@@ -827,6 +833,7 @@ final class Session {
             removeModifier(p, Attribute.BLOCK_BREAK_SPEED, pl.freezeKey);
             if (f.flySpeed >= 0) p.setFlySpeed(f.flySpeed);
             p.resetPlayerTime();
+            Bukkit.getScheduler().runTaskLater(pl, () -> pl.exemptGrim(p, false), 60L);
             return; // les joueurs gardent leur vitesse et leur gravité normales
         }
         if (!e.isValid() && !(e instanceof Player)) return;

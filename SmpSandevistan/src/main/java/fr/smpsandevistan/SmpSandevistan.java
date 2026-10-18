@@ -182,6 +182,29 @@ public final class SmpSandevistan extends JavaPlugin implements Listener, TabExe
         if (s.user.isOnline()) send(s.user, "off", "hits", String.valueOf(hits));
     }
 
+    // ================================================================= GrimAC : pas de fausse alerte pendant l'effet
+
+    private final Map<UUID, org.bukkit.permissions.PermissionAttachment> grimExempt = new HashMap<>();
+
+    /** Le joueur (utilisateur ou ralenti) bouge hors des règles normales : Grim le laisse tranquille. */
+    void exemptGrim(Player p, boolean on) {
+        if (on) {
+            if (grimExempt.containsKey(p.getUniqueId())) return;
+            var att = p.addAttachment(this);
+            att.setPermission("grim.exempt", true);
+            grimExempt.put(p.getUniqueId(), att);
+        } else {
+            var att = grimExempt.remove(p.getUniqueId());
+            if (att != null) {
+                try {
+                    p.removeAttachment(att);
+                } catch (IllegalArgumentException ignored) {
+                }
+            }
+            // un petit délai : Grim recalcule après le retour à la normale
+        }
+    }
+
     /** Remet une entité figée à sa place sans que notre propre blocage de téléportation l'en empêche. */
     void snapBack(Entity e, Location to) {
         snapping.add(e.getUniqueId());
@@ -381,6 +404,7 @@ public final class SmpSandevistan extends JavaPlugin implements Listener, TabExe
         if (s != null) end(s);
         // un joueur figé qui part : il repart libre
         for (Session o : sessions.values()) o.forget(e.getPlayer().getUniqueId());
+        grimExempt.remove(e.getPlayer().getUniqueId());
         cleanup(e.getPlayer());
     }
 

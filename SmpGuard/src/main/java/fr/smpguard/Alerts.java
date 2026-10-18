@@ -56,6 +56,7 @@ public final class Alerts {
     public void flag(Player p, Profile prof, Check check, double amount, String detail) {
         Settings.Limits lim = plugin.settings().limits(check);
         if (lim == null || !lim.enabled() || amount <= 0) return;
+        if (grimHandles(check)) return; // GrimAC s'en occupe (simulation exacte) : pas de doublon
         int i = check.ordinal();
         long now = System.currentTimeMillis();
         // un incident = un moment distinct (plusieurs signaux dans la même seconde comptent pour un)
@@ -103,6 +104,17 @@ public final class Alerts {
                 + " | " + conf + "% | " + detail + " | " + lag;
         prof.note(plain);
         log(plain);
+    }
+
+    /** GrimAC présent et réglé pour remplacer cette détection (config grim.replace) ? */
+    private boolean grimHandles(Check check) {
+        var cfg = plugin.settings().raw();
+        if (!cfg.getBoolean("grim.enabled", true)) return false;
+        var grim = Bukkit.getPluginManager().getPlugin("GrimAC");
+        if (grim == null || !grim.isEnabled()) return false;
+        return cfg.getStringList("grim.replace").isEmpty()
+                ? (check == Check.FLY || check == Check.SPEED || check == Check.NOFALL || check == Check.REACH)
+                : cfg.getStringList("grim.replace").contains(check.key);
     }
 
     /** Message au staff (résultat du test appât, etc.). */

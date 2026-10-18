@@ -254,6 +254,13 @@ checks:
     max-angle: 110
     max-per-second: 14
 
+# ---------------------------------------------------------------- GrimAC
+# Si GrimAC est installé, il remplace ces détections (sa simulation de la physique est plus précise) :
+# SmpGuard se tait dessus pour éviter les doubles alertes. Tout le reste de SmpGuard continue.
+grim:
+  enabled: true
+  replace: [fly, speed, nofall, reach]
+
 # ---------------------------------------------------------------- Client de chaque joueur
 # /anticheat clients : client de tous les joueurs connectés   /anticheat client <joueur> : détails
 client-info:
