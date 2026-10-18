@@ -107,6 +107,13 @@ public final class SmpGuard extends JavaPlugin {
      */
     private void migrateConfig() {
         var c = getConfig();
+        // v4 : tous les clients autorisés (mode strict coupé)
+        if (c.getInt("config-version", 1) == 3) {
+            c.set("checks.client.strict.enabled", false);
+            c.set("config-version", 4);
+            saveConfig();
+            return;
+        }
         if (c.getInt("config-version", 1) >= 3) return;
         for (Check ch : Check.values()) {
             if (ch == Check.BAIT) continue;
@@ -126,7 +133,8 @@ public final class SmpGuard extends JavaPlugin {
         c.set("checks.reach.margin", 0.6);
         c.set("checks.killaura.max-angle", 75);
         c.set("alerts.cooldown-seconds", 60);
-        c.set("config-version", 3);
+        c.set("checks.client.strict.enabled", false);
+        c.set("config-version", 4);
         saveConfig();
         getLogger().info("Config mise à jour (v3) : alertes seulement pour la triche sérieuse et répétée.");
     }

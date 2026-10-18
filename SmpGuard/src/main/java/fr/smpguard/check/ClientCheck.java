@@ -94,7 +94,7 @@ public final class ClientCheck {
      */
     private void strict(Player p, boolean last) {
         var cfg = plugin.settings().raw();
-        if (!cfg.getBoolean("checks.client.strict.enabled", true)) return;
+        if (!cfg.getBoolean("checks.client.strict.enabled", false)) return;
         if (p.hasPermission("smpguard.allow-mods") || p.hasPermission("smpguard.bypass") || plugin.isBedrock(p)) return;
         String brand = p.getClientBrandName();
         if (brand == null) {

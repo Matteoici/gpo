@@ -117,7 +117,7 @@ checks:
     # (CheatUtils, Meteor, Wurst, freecams, x-ray... tournent tous dessus). Un "vanilla" qui écoute des canaux de mods
     # est un faux vanilla : refusé aussi. Le staff avec smpguard.allow-mods passe (ex. pour Axiom / WorldEdit).
     strict:
-      enabled: true
+      enabled: false
       allowed-brands: ["vanilla", "*lunar*", "*badlion*", "*feather*", "*labymod*"]
       # canaux autorisés pour un client vanilla (en plus de minecraft:*)
       allowed-channels: ["bungeecord:*", "velocity:*", "voicechat:*", "worldedit:*", "lunar*:*", "badlion*:*", "feather*:*", "labymod*:*"]
