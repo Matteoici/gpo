@@ -12,6 +12,9 @@ commands:
     aliases: [mk, stand, stands, stalls]
     permission: smpmarket.use
 permissions:
+  smpmarket.teleport:
+    description: Se téléporter aux stands (menus du marché, recherche). Mettre à false pour un grade.
+    default: true
   smpmarket.use:
     description: Utiliser le marché
     default: true

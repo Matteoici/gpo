@@ -204,6 +204,11 @@ public final class MarketCommand implements TabExecutor {
     }
 
     public static void teleport(SmpMarket plugin, Player p, Stall st) {
+        // un grade peut être privé de téléportation vers les stands (permission LuckPerms)
+        if (!p.hasPermission("smpmarket.teleport")) {
+            plugin.texts().send(p, "stall.no-teleport");
+            return;
+        }
         Location l = st.entrance();
         if (l == null) return;
         p.teleportAsync(l);

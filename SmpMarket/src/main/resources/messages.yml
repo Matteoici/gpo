@@ -142,6 +142,7 @@ stall:
   none: "<red>Tu n'as pas de stand. <gray>Gagne une enchère : <aqua>/marche encheres"
   unknown: "<red>Stand inconnu : <white><stall>"
   teleported: "<gray>Bienvenue au stand <white><shop></white> !"
+  no-teleport: "<red>Ton grade ne te permet pas de te téléporter aux stands. <gray>Vas-y à pied !"
   renamed: "<green>Ta boutique s'appelle maintenant <white><shop></white>."
   bad-name: "<red>Nom invalide (1 à 28 caractères)."
   bad-slogan: "<red>Slogan trop long (32 caractères max)."
