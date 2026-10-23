@@ -17,6 +17,7 @@ role:
 error:
   no-guild: "<red>Tu n'es dans aucune guilde. <gray>Tape <white>/guild</white> pour en créer ou en rejoindre une."
   no-permission: "<red>Ton rang ne te permet pas de faire ça."
+  no-home-permission: "<red>Ton grade ne te permet pas de te téléporter au QG de la guilde."
   player-only: "<red>Cette commande doit être utilisée en jeu."
   unknown-command: "<red>Commande inconnue. <gray>Tape <white>/guild help</white>."
   usage: "<red>Utilisation : <white><usage>"

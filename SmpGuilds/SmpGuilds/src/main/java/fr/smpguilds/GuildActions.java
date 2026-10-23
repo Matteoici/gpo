@@ -524,6 +524,11 @@ public final class GuildActions {
     }
 
     public void home(Player p) {
+        // permission du serveur (LuckPerms) : un grade peut être privé de téléportation de guilde
+        if (!p.hasPermission("smpguilds.home")) {
+            m().send(p, "error.no-home-permission");
+            return;
+        }
         Guild g = require(p, GuildPerm.HOME);
         if (g == null) return;
         if (g.home == null || g.home.getWorld() == null) {

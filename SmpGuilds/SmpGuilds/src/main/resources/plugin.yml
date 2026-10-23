@@ -20,6 +20,9 @@ commands:
     aliases: [ca, ally, allies]
     permission: smpguilds.use
 permissions:
+  smpguilds.home:
+    description: Se téléporter au QG de la guilde (/guild home et le menu). Mettre à false pour un grade.
+    default: true
   smpguilds.use:
     description: Utiliser les guildes
     default: true
