@@ -55,6 +55,7 @@ public final class SmpMarket extends JavaPlugin {
         input = new ChatInput(this);
 
         getServer().getPluginManager().registerEvents(new MarketListener(this), this);
+        getServer().getPluginManager().registerEvents(new SpawnerFix(this), this);
         PluginCommand cmd = getCommand("marche");
         if (cmd != null) {
             MarketCommand mc = new MarketCommand(this);
