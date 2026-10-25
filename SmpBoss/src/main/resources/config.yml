@@ -84,6 +84,27 @@ boss:
   feast-heal-percent: 1.0
   scythe-radius: 6.5
 
+# ---------------------------------------------------------------- Arène infernale
+# /boss arene construire [taille] : construit l'arène là où tu es (l'autel au centre, crâne-portail au nord)
+# /boss arene definir <rayon> : protège une arène que tu as collée toi-même (WorldEdit)
+arena:
+  # brume rouge, spores et braises pour les joueurs dans l'arène
+  ambience: true
+  # blocs posés par tick pendant la construction (baisse si le serveur rame)
+  blocks-per-tick: 4000
+  protection:
+    enabled: true
+    # personne ne casse / pose (sauf permission smpboss.arena.bypass), pas de feu, pas d'explosions
+    blocks: true
+    # pas de PvP (coups, flèches, potions, loups...)
+    pvp: true
+    # aucun monstre n'apparaît (sauf le boss et ses serviteurs) et ceux qui entrent disparaissent
+    mobs: true
+    # tomber dans la lave du décor = renvoyé sur le sol (sans dégâts)
+    lava-rescue: true
+    # le magma des fissures ne brûle pas les pieds
+    decor-safe: true
+
 # ---------------------------------------------------------------- Butin
 loot:
   # il faut avoir fait au moins X % des dégâts pour être récompensé

@@ -38,6 +38,7 @@ public final class SmpBoss extends JavaPlugin {
     private Cosmetics cosmetics;
     private InvButtons invButtons;
     private PumpkinKing king;
+    private Arena arena;
     private Location altar;
     private long lastEnd;
     private final Set<RelicMenu> openMenus = new HashSet<>();
@@ -66,6 +67,11 @@ public final class SmpBoss extends JavaPlugin {
         loadAltar();
         registerRecipe();
         getServer().getPluginManager().registerEvents(new BossListener(this), this);
+        arena = new Arena(this);
+        ArenaGuard guard = new ArenaGuard(this, arena);
+        getServer().getPluginManager().registerEvents(guard, this);
+        Bukkit.getScheduler().runTaskTimer(this, arena::ambience, 40L, 10L);
+        Bukkit.getScheduler().runTaskTimer(this, guard::sweep, 100L, 100L);
         invButtons = new InvButtons(this);
         getServer().getPluginManager().registerEvents(invButtons, this);
         Bukkit.getScheduler().runTaskTimer(this, invButtons::tick, 40L, 40L);
@@ -84,6 +90,7 @@ public final class SmpBoss extends JavaPlugin {
     @Override
     public void onDisable() {
         if (king != null) king.cleanup();
+        if (arena != null) arena.shutdown();
         if (relics != null) relics.removeAll();
         for (Player p : Bukkit.getOnlinePlayers()) {
             if (invButtons != null) {
@@ -142,6 +149,16 @@ public final class SmpBoss extends JavaPlugin {
         } catch (IOException e) {
             getLogger().warning("Sauvegarde de l'autel impossible : " + e.getMessage());
         }
+    }
+
+    /** L'arène construite place l'autel en son centre. */
+    void setAltar(Location l) {
+        altar = l.clone();
+        saveAltar();
+    }
+
+    public Arena arena() {
+        return arena;
     }
 
     public boolean isAltar(Block b) {
@@ -219,6 +236,7 @@ public final class SmpBoss extends JavaPlugin {
                 king = new PumpkinKing(this, altar);
                 king.start(sender instanceof Player p ? p : Bukkit.getOnlinePlayers().stream().findFirst().orElse(null));
             }
+            case "arene", "arène", "arena" -> arena.command(sender, a);
             case "stop" -> {
                 if (king != null) king.leave("boss.stopped");
                 lastEnd = 0;
@@ -274,6 +292,7 @@ public final class SmpBoss extends JavaPlugin {
                 sender.sendMessage(parse("<gold><b>Roi Citrouille"));
                 sender.sendMessage(parse("<aqua>/boss autel</aqua> <gray>- le bloc que tu regardes devient l'autel"));
                 sender.sendMessage(parse("<aqua>/boss invoquer</aqua> · <aqua>/boss stop</aqua> · <aqua>/boss reload"));
+                sender.sendMessage(parse("<aqua>/boss arene</aqua> <gray>- construire / protéger l'arène infernale du boss"));
                 sender.sendMessage(parse("<aqua>/boss give <joueur> <graine|citrouille|faucille|relique:id> [n]"));
                 sender.sendMessage(parse("<gray>Autel : " + (altar == null ? "<red>pas placé" : altar.getBlockX() + " " + altar.getBlockY()
                         + " " + altar.getBlockZ()) + "<gray> · Boss : " + (king != null && king.active() ? "<green>en cours" : "aucun")));
@@ -286,7 +305,11 @@ public final class SmpBoss extends JavaPlugin {
     public List<String> onTabComplete(CommandSender sender, Command cmd, String label, String[] a) {
         List<String> out = new ArrayList<>();
         if (!cmd.getName().equalsIgnoreCase("boss")) return out;
-        if (a.length == 1) out.addAll(List.of("autel", "invoquer", "stop", "give", "reload"));
+        if (a.length == 1) out.addAll(List.of("autel", "invoquer", "stop", "give", "reload", "arene"));
+        else if (a.length == 2 && a[0].toLowerCase(Locale.ROOT).startsWith("ar"))
+            out.addAll(List.of("construire", "annuler", "tp", "definir", "supprimer"));
+        else if (a.length == 3 && a[0].toLowerCase(Locale.ROOT).startsWith("ar") && a[1].equalsIgnoreCase("construire"))
+            out.addAll(List.of("16", "20", "24", "28"));
         else if (a.length == 2 && a[0].equalsIgnoreCase("give")) for (Player p : Bukkit.getOnlinePlayers()) out.add(p.getName());
         else if (a.length == 3 && a[0].equalsIgnoreCase("give")) {
             out.addAll(List.of("graine", "citrouille", "faucille"));
