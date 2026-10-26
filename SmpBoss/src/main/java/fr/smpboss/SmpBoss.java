@@ -393,7 +393,9 @@ public final class SmpBoss extends JavaPlugin {
         if (!cmd.getName().equalsIgnoreCase("boss")) return out;
         if (a.length == 1) out.addAll(List.of("autel", "invoquer", "stop", "give", "reload", "arene", "topguildes"));
         else if (a.length == 2 && a[0].toLowerCase(Locale.ROOT).startsWith("ar"))
-            out.addAll(List.of("construire", "annuler", "tp", "definir", "supprimer"));
+            out.addAll(List.of("construire", "annuler", "tp", "setspawn", "portail", "definir", "supprimer"));
+        else if (a.length == 3 && a[0].toLowerCase(Locale.ROOT).startsWith("ar") && a[1].equalsIgnoreCase("portail"))
+            out.addAll(List.of("pos1", "pos2", "supprimer"));
         else if (a.length == 3 && a[0].toLowerCase(Locale.ROOT).startsWith("ar") && a[1].equalsIgnoreCase("construire"))
             out.addAll(List.of("16", "20", "24", "28"));
         else if (a.length == 4 && a[0].toLowerCase(Locale.ROOT).startsWith("ar") && a[1].equalsIgnoreCase("construire"))

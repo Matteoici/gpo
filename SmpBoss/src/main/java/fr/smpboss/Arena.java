@@ -59,6 +59,13 @@ public final class Arena {
     private final Map<String, BlockData> dataCache = new HashMap<>();
     private final Map<UUID, WorldBorder> tints = new HashMap<>();
     private final Set<UUID> exiting = new HashSet<>();
+    // point d'arrivée choisi par l'admin (sinon : sur le sol, côté crâne)
+    private Location customSpawn;
+    // zone "portail" (au spawn par exemple) : y entrer = téléporté dans l'arène
+    private String portalWorld;
+    private int[] portal; // minX, minY, minZ, maxX, maxY, maxZ
+    private Location portalPos1, portalPos2;
+    private final Map<UUID, Long> portalCooldown = new HashMap<>();
 
     Arena(SmpBoss plugin) {
         this.plugin = plugin;
@@ -72,6 +79,15 @@ public final class Arena {
     private void load() {
         if (!file.exists()) return;
         YamlConfiguration y = YamlConfiguration.loadConfiguration(file);
+        if (y.isSet("spawn.world") && Bukkit.getWorld(y.getString("spawn.world")) != null) {
+            customSpawn = new Location(Bukkit.getWorld(y.getString("spawn.world")), y.getDouble("spawn.x"), y.getDouble("spawn.y"),
+                    y.getDouble("spawn.z"), (float) y.getDouble("spawn.yaw"), (float) y.getDouble("spawn.pitch"));
+        }
+        if (y.isSet("portal.world")) {
+            portalWorld = y.getString("portal.world");
+            List<Integer> b = y.getIntegerList("portal.box");
+            if (b.size() == 6) portal = new int[]{b.get(0), b.get(1), b.get(2), b.get(3), b.get(4), b.get(5)};
+        }
         if (!y.getBoolean("defined", false)) return;
         worldName = y.getString("world", "world");
         cx = y.getInt("x");
@@ -92,6 +108,18 @@ public final class Arena {
             y.set("z", cz);
             y.set("floor-radius", floorRadius);
             y.set("protect-radius", protectRadius);
+        }
+        if (customSpawn != null && customSpawn.getWorld() != null) {
+            y.set("spawn.world", customSpawn.getWorld().getName());
+            y.set("spawn.x", customSpawn.getX());
+            y.set("spawn.y", customSpawn.getY());
+            y.set("spawn.z", customSpawn.getZ());
+            y.set("spawn.yaw", customSpawn.getYaw());
+            y.set("spawn.pitch", customSpawn.getPitch());
+        }
+        if (portal != null && portalWorld != null) {
+            y.set("portal.world", portalWorld);
+            y.set("portal.box", List.of(portal[0], portal[1], portal[2], portal[3], portal[4], portal[5]));
         }
         try {
             y.save(file);
@@ -156,6 +184,7 @@ public final class Arena {
 
     /** Entrée : sur le sol de l'arène, côté crâne, regard vers l'autel. */
     public Location entrance() {
+        if (customSpawn != null && customSpawn.getWorld() != null) return customSpawn.clone();
         World w = world();
         if (w == null) return null;
         Location l = new Location(w, cx + 0.5, cy + 1, cz - (floorRadius - 3) + 0.5);
@@ -223,6 +252,7 @@ public final class Arena {
 
     /** Toutes les 10 ticks : brume rouge, spores, braises au-dessus de la lave. */
     void ambience() {
+        portalParticles();
         if (!defined || !plugin.getConfig().getBoolean("arena.ambience", true)) return;
         World w = world();
         if (w == null) return;
@@ -287,6 +317,20 @@ public final class Arena {
                 sender.sendMessage(parse("<green>Zone d'arène définie ici : sol de rayon " + floorRadius + ", protection sur "
                         + protectRadius + " blocs. <gray>(pour une arène collée avec WorldEdit · /boss autel pour l'autel)"));
             }
+            case "setspawn", "spawn" -> {
+                if (!(sender instanceof Player p)) return;
+                if (a.length >= 3 && (a[2].equalsIgnoreCase("reset") || a[2].equalsIgnoreCase("defaut"))) {
+                    customSpawn = null;
+                    save();
+                    sender.sendMessage(parse("<green>Point d'arrivée de l'arène remis par défaut (sur le sol, côté crâne)."));
+                    return;
+                }
+                customSpawn = p.getLocation().clone();
+                save();
+                sender.sendMessage(parse("<green>Point d'arrivée de l'arène placé ici <gray>(là où tu regardes compte aussi). "
+                        + "<white>/arene</white><gray>, le portail du spawn et /boss arene tp y mènent."));
+            }
+            case "portail", "portal" -> portalCommand(sender, a);
             case "supprimer", "remove" -> {
                 defined = false;
                 save();
@@ -298,12 +342,91 @@ public final class Arena {
                 sender.sendMessage(parse("<aqua>/boss arene annuler</aqua> <gray>- remet le terrain comme avant la construction"));
                 sender.sendMessage(parse("<aqua>/boss arene tp [joueur]</aqua> <gray>- envoie dans l'arène (les joueurs : <white>/arene</white>)"));
                 sender.sendMessage(parse("<aqua>/boss arene definir <rayon> [marge]</aqua> <gray>- protège une arène collée avec WorldEdit"));
+                sender.sendMessage(parse("<aqua>/boss arene setspawn [reset]</aqua> <gray>- le point d'arrivée = là où tu es"));
+                sender.sendMessage(parse("<aqua>/boss arene portail pos1|pos2|supprimer</aqua> <gray>- une zone (au spawn) où entrer = tp dans l'arène"));
                 sender.sendMessage(parse("<aqua>/boss arene supprimer</aqua> <gray>- coupe la protection"));
                 if (defined) {
                     sender.sendMessage(parse("<gray>Arène : " + worldName + " " + cx + " " + cy + " " + cz + " · sol " + floorRadius
                             + " · protection " + protectRadius));
                 }
             }
+        }
+    }
+
+    // ================================================================= portail du spawn
+
+    private void portalCommand(CommandSender sender, String[] a) {
+        String what = a.length >= 3 ? a[2].toLowerCase(java.util.Locale.ROOT) : "";
+        if (what.equals("supprimer") || what.equals("remove")) {
+            portal = null;
+            portalWorld = null;
+            save();
+            sender.sendMessage(parse("<yellow>Zone portail supprimée."));
+            return;
+        }
+        if (!(sender instanceof Player p) || !(what.equals("pos1") || what.equals("pos2"))) {
+            sender.sendMessage(parse("<gold>/boss arene portail pos1</gold> <gray>(un coin)</gray> <gold>puis pos2</gold> <gray>(le coin opposé) · "
+                    + "<gold>/boss arene portail supprimer"));
+            return;
+        }
+        Location l = p.getLocation().getBlock().getLocation();
+        if (what.equals("pos1")) portalPos1 = l;
+        else portalPos2 = l;
+        sender.sendMessage(parse("<gold>Portail " + what + " : <white>" + l.getBlockX() + " " + l.getBlockY() + " " + l.getBlockZ()));
+        if (portalPos1 != null && portalPos2 != null && portalPos1.getWorld() == portalPos2.getWorld()) {
+            portalWorld = portalPos1.getWorld().getName();
+            portal = new int[]{Math.min(portalPos1.getBlockX(), portalPos2.getBlockX()), Math.min(portalPos1.getBlockY(), portalPos2.getBlockY()),
+                    Math.min(portalPos1.getBlockZ(), portalPos2.getBlockZ()), Math.max(portalPos1.getBlockX(), portalPos2.getBlockX()),
+                    Math.max(portalPos1.getBlockY(), portalPos2.getBlockY()) + 1, Math.max(portalPos1.getBlockZ(), portalPos2.getBlockZ())};
+            save();
+            sender.sendMessage(parse("<green>Zone portail créée <gray>(" + (portal[3] - portal[0] + 1) + "×" + (portal[5] - portal[2] + 1)
+                    + ") : entrer dedans = téléporté dans l'arène."));
+        }
+    }
+
+    private boolean inPortal(Location l) {
+        if (portal == null || portalWorld == null || l.getWorld() == null || !l.getWorld().getName().equals(portalWorld)) return false;
+        int x = l.getBlockX(), y = l.getBlockY(), z = l.getBlockZ();
+        return x >= portal[0] && x <= portal[3] && y >= portal[1] && y <= portal[4] && z >= portal[2] && z <= portal[5];
+    }
+
+    /** Appelé quand un joueur change de bloc. */
+    void checkPortal(Player p, Location to) {
+        if (!inPortal(to)) return;
+        long now = System.currentTimeMillis();
+        Long last = portalCooldown.get(p.getUniqueId());
+        if (last != null && now - last < 3000) return;
+        portalCooldown.put(p.getUniqueId(), now);
+        Location e = entrance();
+        if (e == null) {
+            p.sendActionBar(parse("<red>L'arène n'est pas encore construite."));
+            return;
+        }
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            if (!p.isOnline()) return;
+            // pas d'autorisation SmpCombat ici : un joueur "en danger" ne fuit pas par le portail
+            p.teleport(e);
+            p.getWorld().playSound(e, org.bukkit.Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 0.6f);
+            p.sendActionBar(parse("<dark_red><b>☠ L'arène du Roi Citrouille</b>"));
+        });
+    }
+
+    /** Toutes les 10 ticks : la zone portail scintille de rouge. */
+    void portalParticles() {
+        if (portal == null || portalWorld == null) return;
+        World w = Bukkit.getWorld(portalWorld);
+        if (w == null) return;
+        Location c = new Location(w, (portal[0] + portal[3] + 1) / 2.0, portal[1], (portal[2] + portal[5] + 1) / 2.0);
+        boolean near = false;
+        for (Player p : w.getPlayers()) if (p.getLocation().distanceSquared(c) < 48 * 48) near = true;
+        if (!near) return;
+        ThreadLocalRandom r = ThreadLocalRandom.current();
+        Particle.DustOptions red = new Particle.DustOptions(Color.fromRGB(200, 20, 20), 1.3f);
+        int n = Math.min(40, 6 + (portal[3] - portal[0] + 1) * (portal[5] - portal[2] + 1) / 2);
+        for (int i = 0; i < n; i++) {
+            Location l = new Location(w, portal[0] + r.nextDouble() * (portal[3] - portal[0] + 1), portal[1] + r.nextDouble() * 2.2,
+                    portal[2] + r.nextDouble() * (portal[5] - portal[2] + 1));
+            w.spawnParticle(i % 3 == 0 ? Particle.PORTAL : Particle.DUST, l, 1, 0, 0, 0, 0, i % 3 == 0 ? null : red);
         }
     }
 

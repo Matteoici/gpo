@@ -284,6 +284,15 @@ final class ArenaGuard implements Listener {
         }
     }
 
+    // ================================================================= portail du spawn (entrée)
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onMove(org.bukkit.event.player.PlayerMoveEvent e) {
+        Location t = e.getTo();
+        if (e.getFrom().getBlockX() == t.getBlockX() && e.getFrom().getBlockY() == t.getBlockY() && e.getFrom().getBlockZ() == t.getBlockZ()) return;
+        arena.checkPortal(e.getPlayer(), t);
+    }
+
     // ================================================================= portail de sortie
 
     @EventHandler(priority = EventPriority.LOW)
