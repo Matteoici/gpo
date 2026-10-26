@@ -1995,9 +1995,24 @@ public final class PumpkinKing {
         invulnerable = impact + 60;
         boss.setAI(false);
         swing();
-        titleAll("boss.title-judgment", "boss.subtitle-judgment");
         announce("judgment");
+        sound(base, "event.raid.horn", 8f, 0.7f);
         sound(base, "entity.wither.spawn", 6f, 0.4f);
+        // titre qui s'écrit lettre par lettre, puis la phrase
+        String word = "JUGEMENT DERNIER";
+        repeat(2, word.length() + 1, i -> {
+            String shown = word.substring(0, Math.min(word.length(), i + 1));
+            String hidden = "<dark_gray>" + "·".repeat(Math.max(0, word.length() - shown.length()));
+            for (Player p : nearby(base, 90)) {
+                p.showTitle(Title.title(parse("<dark_red><b>☠ " + shown + "</b>" + hidden + " <dark_red><b>☠"),
+                        parse(i >= word.length() ? plugin.msg("boss.subtitle-judgment") : ""),
+                        Title.Times.times(java.time.Duration.ZERO, java.time.Duration.ofMillis(i >= word.length() ? 2500 : 400),
+                                java.time.Duration.ofMillis(500))));
+                if (i < word.length() && shown.charAt(shown.length() - 1) != ' ') {
+                    p.playSound(p.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_BASS, 1f, 0.5f + i * 0.04f);
+                }
+            }
+        }, null);
         sound(base, "entity.ender_dragon.growl", 6f, 0.4f);
         sound(base, "block.end_portal.spawn", 6f, 0.5f);
         for (Player p : nearby(base, 80)) p.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 70, 0, false, false, false));
@@ -2012,6 +2027,38 @@ public final class PumpkinKing {
             l.setYaw(start.getYaw() + i * 6);
             boss.teleport(l);
             w.spawnParticle(Particle.SOUL_FIRE_FLAME, l.clone().add(0, 0.5, 0), 8, 0.7, 0.3, 0.7, 0.03, null, true);
+            // double spirale d'âmes qui monte avec lui
+            for (int k = 0; k < 2; k++) {
+                for (double y = 0; y < 10; y += 0.5) {
+                    double a = y * 0.9 + i * 0.35 + Math.PI * k;
+                    double rr = 1.2 + scale * 0.4;
+                    w.spawnParticle(k == 0 ? Particle.SOUL_FIRE_FLAME : Particle.FLAME,
+                            base.clone().add(Math.cos(a) * rr, y + t * 9, Math.sin(a) * rr), 1, 0, 0, 0, 0, null, true);
+                }
+            }
+        }, null);
+        // cercle magique qui tourne au sol pendant la charge
+        Particle.DustOptions runeRed = new Particle.DustOptions(Color.fromRGB(200, 0, 0), 1.8f);
+        Particle.DustOptions runeGold = new Particle.DustOptions(Color.fromRGB(255, 170, 0), 1.4f);
+        repeat(2, 30, i -> {
+            double rot = i * 0.06;
+            for (double[] ringDef : new double[][]{{11, 90}, {8, 70}, {5, 46}}) {
+                for (int k = 0; k < (int) ringDef[1]; k++) {
+                    double a = Math.PI * 2 * k / ringDef[1] + (ringDef[0] == 8 ? -rot : rot);
+                    w.spawnParticle(Particle.DUST, base.clone().add(Math.cos(a) * ringDef[0], 0.15, Math.sin(a) * ringDef[0]), 1, 0, 0, 0, 0,
+                            ringDef[0] == 8 ? runeGold : runeRed, true);
+                }
+            }
+            // pentagramme
+            for (int k = 0; k < 5; k++) {
+                double a1 = rot + Math.PI * 2 * k / 5, a2 = rot + Math.PI * 2 * (k + 2) / 5;
+                Vector p1 = new Vector(Math.cos(a1) * 11, 0, Math.sin(a1) * 11), p2 = new Vector(Math.cos(a2) * 11, 0, Math.sin(a2) * 11);
+                for (double t = 0; t <= 1; t += 0.04) {
+                    Vector v = p1.clone().multiply(1 - t).add(p2.clone().multiply(t));
+                    w.spawnParticle(Particle.DUST, base.clone().add(v.getX(), 0.15, v.getZ()), 1, 0, 0, 0, 0, runeRed, true);
+                }
+            }
+            if (i % 5 == 0) w.spawnParticle(Particle.SOUL, base.clone().add(0, 0.3, 0), 30, 6, 0.1, 6, 0.02, null, true);
         }, null);
         // la citrouille géante grossit au-dessus de lui
         Location orb = high.clone().add(0, scale * 2.4 + size * 0.6 + 2, 0);
@@ -2027,12 +2074,68 @@ public final class PumpkinKing {
             e.setTransformation(centered(0.2f, new Quaternionf()));
         });
         props.add(pumpkin);
+        // grossit jusqu'à dépasser sa taille, puis se stabilise (pulsation)
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             if (!pumpkin.isValid()) return;
             pumpkin.setInterpolationDelay(0);
-            pumpkin.setInterpolationDuration(lockAt);
-            pumpkin.setTransformation(centered(size, new Quaternionf().rotateY(1.2f).rotateX(0.25f)));
+            pumpkin.setInterpolationDuration(lockAt - 12);
+            pumpkin.setTransformation(centered(size * 1.15f, new Quaternionf().rotateY(1.2f).rotateX(0.25f)));
         }, 2L);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (!pumpkin.isValid()) return;
+            pumpkin.setInterpolationDelay(0);
+            pumpkin.setInterpolationDuration(8);
+            pumpkin.setTransformation(centered(size, new Quaternionf().rotateY(1.4f).rotateX(0.2f)));
+            orb.getWorld().spawnParticle(Particle.EXPLOSION_EMITTER, orb, 2, 1, 1, 1, 0, null, true);
+            sound(orb, "block.respawn_anchor.set_spawn", 6f, 0.5f);
+            sound(orb, "entity.warden.sonic_boom", 5f, 0.8f);
+            shake(base, 80);
+        }, lockAt - 10L);
+        // les éclats : 16 petites citrouilles volent depuis le bord de l'arène vers la géante
+        double edge = cfg("arena-radius", 18);
+        for (int k = 0; k < 16; k++) {
+            double a0 = Math.PI * 2 * k / 16;
+            Location from = ground(altar.clone().add(0.5 + Math.cos(a0) * edge, 0, 0.5 + Math.sin(a0) * edge)).add(0, 1.5, 0);
+            int delay = 4 + k;
+            later(delay, () -> {
+                BlockDisplay shard = w.spawn(from, BlockDisplay.class, e -> {
+                    e.setPersistent(false);
+                    e.getPersistentDataContainer().set(bossKey, PersistentDataType.BYTE, (byte) 4);
+                    e.setBlock(Material.JACK_O_LANTERN.createBlockData());
+                    e.setBrightness(new Display.Brightness(15, 15));
+                    e.setTeleportDuration(1);
+                    e.setViewRange(8f);
+                    e.setTransformation(centered(1.2f, new Quaternionf()));
+                });
+                props.add(shard);
+                w.spawnParticle(Particle.LARGE_SMOKE, from, 12, 0.4, 0.4, 0.4, 0.03, null, true);
+                sound(from, "entity.zombie_villager.converted", 1.5f, 0.6f);
+                int steps = 26;
+                repeat(1, steps, j -> {
+                    double t = (j + 1) / (double) steps;
+                    Vector straight = orb.toVector().subtract(from.toVector()).multiply(t * t);
+                    Location l = from.clone().add(straight).add(0, Math.sin(Math.PI * t) * 6, 0);
+                    l.setYaw(j * 25f);
+                    shard.teleport(l);
+                    w.spawnParticle(Particle.FLAME, l, 3, 0.15, 0.15, 0.15, 0.01, null, true);
+                    w.spawnParticle(Particle.SOUL_FIRE_FLAME, l, 1, 0.1, 0.1, 0.1, 0.01, null, true);
+                }, () -> {
+                    shard.remove();
+                    props.remove(shard);
+                    w.spawnParticle(Particle.FLAME, orb, 20, 1.5, 1.5, 1.5, 0.08, null, true);
+                    sound(orb, "block.fire.extinguish", 2f, 0.6f);
+                });
+            });
+        }
+        // tout le monde lève les yeux vers la citrouille
+        later(lockAt - 10, () -> {
+            for (Player p : nearby(base, 60)) {
+                try {
+                    p.lookAt(orb.getX(), orb.getY(), orb.getZ(), io.papermc.paper.entity.LookAnchor.EYES);
+                } catch (RuntimeException ignored) {
+                }
+            }
+        });
         // 8 citrouilles en orbite autour
         List<BlockDisplay> moons = new ArrayList<>();
         for (int k = 0; k < 8; k++) {
@@ -2153,6 +2256,27 @@ public final class PumpkinKing {
                 }
                 if (i % 10 == 0) sound(pos, "entity.blaze.burn", 5f, 0.4f);
                 if (i == fall - 12) sound(lock, "entity.ender_dragon.flap", 6f, 0.5f);
+                // rayons de visée rouges vers le bord du cercle
+                if (t < 0.5 && i % 2 == 0) {
+                    Particle.DustOptions laser = new Particle.DustOptions(Color.fromRGB(255, 0, 0), 1.2f);
+                    for (int k = 0; k < 6; k++) {
+                        double a = Math.PI * 2 * k / 6 + i * 0.03;
+                        Location rim = lock.clone().add(Math.cos(a) * radius, 0.2, Math.sin(a) * radius);
+                        Vector v = rim.toVector().subtract(pos.toVector());
+                        double len = v.length();
+                        v.normalize();
+                        for (double d = size * 0.5; d < len; d += 0.9) {
+                            w.spawnParticle(Particle.DUST, pos.clone().add(v.clone().multiply(d)), 1, 0, 0, 0, 0, laser, true);
+                        }
+                    }
+                }
+                // un instant de silence total juste avant l'impact
+                if (i == fall - 6) {
+                    for (Player p : nearby(lock, 90)) {
+                        p.stopAllSounds();
+                        p.playSound(p.getLocation(), org.bukkit.Sound.BLOCK_BEACON_DEACTIVATE, 1.5f, 0.5f);
+                    }
+                }
             }, () -> {
                 pumpkin.remove();
                 props.remove(pumpkin);
@@ -2279,7 +2403,26 @@ public final class PumpkinKing {
         repeat(3, 12, i -> {
             for (Player p : nearby(c, 90)) p.playHurtAnimation((float) rnd.nextDouble(360));
         }, null);
-        for (Player p : nearby(c, 90)) p.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, 80, 0, false, false, false));
+        for (Player p : nearby(c, 90)) {
+            p.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, 80, 0, false, false, false));
+            p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 30, 2, false, false, false)); // le souffle coupe les jambes
+        }
+        // retombées : cendres et braises qui tombent doucement, anneau de flammes d'âmes sur le bord du cratère
+        Particle.DustOptions ember = new Particle.DustOptions(Color.fromRGB(255, 90, 10), 1.0f);
+        repeat(4, 30, i -> {
+            for (int k = 0; k < 25; k++) {
+                double a = rnd.nextDouble(Math.PI * 2), rr = Math.sqrt(rnd.nextDouble()) * (radius + 14);
+                Location l = c.clone().add(Math.cos(a) * rr, 3 + rnd.nextDouble(14), Math.sin(a) * rr);
+                if (k % 3 == 2) w.spawnParticle(Particle.DUST, l, 1, 0, 0, 0, 0, ember, true);
+                else w.spawnParticle(k % 3 == 0 ? Particle.WHITE_ASH : Particle.ASH, l, 1, 0, -0.05, 0, 0, null, true);
+            }
+            int pts = (int) (radius * 5);
+            for (int k = 0; k < pts; k++) {
+                double a = Math.PI * 2 * k / pts + i * 0.02;
+                w.spawnParticle(Particle.SOUL_FIRE_FLAME, c.clone().add(Math.cos(a) * radius, 0.2, Math.sin(a) * radius), 1, 0, 0.15, 0, 0.005, null, true);
+            }
+            if (i % 6 == 0) sound(c, "entity.warden.heartbeat", 4f, 0.5f);
+        }, null);
         // --- dans le cercle : mort instantanée (même avec un totem) ; autour : projeté loin
         for (Player p : nearby(c, radius + 22)) {
             double d = horizontalDist(p.getLocation(), c);
