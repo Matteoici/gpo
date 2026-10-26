@@ -263,6 +263,53 @@ public final class SmpBoss extends JavaPlugin {
         saveAltar();
     }
 
+    // ================================================================= échanges (GpoTrade, par réflexion)
+
+    /** Reliques que le joueur peut mettre dans un échange (pas le sac, qui garde ses objets). */
+    public List<String> tradeableRelics(Player p) {
+        List<String> out = new ArrayList<>();
+        for (String id : store.of(p.getUniqueId()).relics) {
+            Relic r = relics.get(id);
+            if (r != null && !r.backpack()) out.add(id);
+        }
+        return out;
+    }
+
+    public ItemStack relicDisplay(String id) {
+        Relic r = relics.get(id);
+        return r == null ? null : items.relicItem(r);
+    }
+
+    /** La relique quitte la collection et devient un objet (pour l'échange). null si impossible. */
+    public ItemStack takeRelicForTrade(Player p, String id) {
+        Relic r = relics.get(id);
+        PlayerData d = store.of(p.getUniqueId());
+        if (r == null || r.backpack() || !d.relics.remove(r.id())) return null;
+        d.equipped.remove(r.id());
+        store.dirty();
+        relics.apply(p);
+        return items.relicItem(r);
+    }
+
+    /** Les objets-reliques de l'inventaire que le joueur n'a pas encore vont dans sa collection. */
+    public int claimRelicItems(Player p) {
+        int n = 0;
+        var inv = p.getInventory();
+        for (int i = 0; i < inv.getSize(); i++) {
+            ItemStack it = inv.getItem(i);
+            String id = items.relicId(it);
+            if (id == null || id.equals("backpack-display")) continue;
+            Relic r = relics.get(id);
+            if (r == null || store.of(p.getUniqueId()).relics.contains(r.id())) continue;
+            if (!relics.claim(p, r)) continue;
+            if (it.getAmount() > 1) it.setAmount(it.getAmount() - 1);
+            else inv.setItem(i, null);
+            p.sendMessage(parse(msg("relics.claimed").replace("<relic>", r.rarity().name(r.name(), 0))));
+            n++;
+        }
+        return n;
+    }
+
     public GuildTop guildTop() {
         return guildTop;
     }

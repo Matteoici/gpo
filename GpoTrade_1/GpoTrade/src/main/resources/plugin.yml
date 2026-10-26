@@ -2,7 +2,7 @@ name: GpoTrade
 version: '${version}'
 main: fr.gpotrade.TradePlugin
 api-version: '26.2'
-softdepend: [Vault]
+softdepend: [Vault, SmpBoss]
 description: Fenêtre d'échange inspirée de Grand Piece Online
 commands:
   trade:

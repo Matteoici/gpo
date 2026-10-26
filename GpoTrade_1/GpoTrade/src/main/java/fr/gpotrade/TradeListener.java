@@ -33,6 +33,16 @@ final class TradeListener implements Listener {
     @EventHandler
     public void onClick(InventoryClickEvent e) {
         Inventory top = e.getView().getTopInventory();
+        if (top.getHolder() instanceof RelicHook.Picker pick) {
+            e.setCancelled(true);
+            if (e.getClickedInventory() != top || pick.picked) return;
+            int slot = e.getRawSlot();
+            if (slot < 0 || slot >= pick.ids.size()) return;
+            pick.picked = true;
+            pick.session.pickRelic(pick.index, pick.ids.get(slot));
+            Bukkit.getScheduler().runTask(plugin, () -> e.getWhoClicked().closeInventory());
+            return;
+        }
         if (!(top.getHolder() instanceof TradeHolder h)) return;
         TradeSession s = h.session();
         int me = h.index();
@@ -56,6 +66,9 @@ final class TradeListener implements Listener {
             } else if (slot == TradeSession.CHAT) {
                 e.setCancelled(true);
                 s.openChat(me);
+            } else if (slot == TradeSession.RELICS && RelicHook.available()) {
+                e.setCancelled(true);
+                s.openRelicPicker(me);
             } else if (slot == TradeSession.MONEY_OWN) {
                 e.setCancelled(true);
                 if (!plugin.moneyEnabled()) return;
@@ -92,6 +105,10 @@ final class TradeListener implements Listener {
     @EventHandler
     public void onDrag(InventoryDragEvent e) {
         Inventory top = e.getView().getTopInventory();
+        if (top.getHolder() instanceof RelicHook.Picker) {
+            e.setCancelled(true);
+            return;
+        }
         if (!(top.getHolder() instanceof TradeHolder h)) return;
         boolean touchesTop = false;
         for (int raw : e.getRawSlots()) {
@@ -109,6 +126,8 @@ final class TradeListener implements Listener {
     public void onClose(InventoryCloseEvent e) {
         if (e.getInventory().getHolder() instanceof TradeHolder h) {
             h.session().onClosed(h.index());
+        } else if (e.getInventory().getHolder() instanceof RelicHook.Picker pick) {
+            pick.session.closeRelicPicker(pick.index);
         }
     }
 

@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "fr.gpotrade"
-version = "2.0.0"
+version = "2.1.0"
 
 repositories {
     mavenCentral()
@@ -12,7 +12,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:26.2.build.+")
+    compileOnly("io.papermc.paper:paper-api") { version { strictly("[26.2.build.0, 26.2.build.134-stable)") } }
     compileOnly("com.github.MilkBowl:VaultAPI:1.7") {
         isTransitive = false // évite le conflit avec l'ancien Bukkit embarqué par Vault
     }

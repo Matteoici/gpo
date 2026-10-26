@@ -42,6 +42,8 @@ final class TradeSession {
     static final int[] OTHER = {15, 16, 17, 24, 25, 26, 33, 34, 35};
     static final int HEAD_OWN = 1, STATUS = 4, HEAD_OTHER = 7, TIMER = 22, CHAT = 31;
     static final int MONEY_OWN = 36, STATUS_OWN = 37, STATUS_OTHER = 43, MONEY_OTHER = 44;
+    /** Bouton "ajouter une relique" (SmpBoss) */
+    static final int RELICS = 38;
 
     static boolean isOwn(int slot) {
         int r = slot / 9, c = slot % 9;
@@ -69,6 +71,8 @@ final class TradeSession {
     private final boolean[] chatting = new boolean[2];
     /** Le joueur est en train d'écrire un montant (et pas un message). */
     private final boolean[] typingMoney = new boolean[2];
+    /** Le joueur choisit une relique (fenêtre de choix ouverte). */
+    private final boolean[] picking = new boolean[2];
     private final long[] money = new long[2];
     /** Moment où chaque joueur a fermé sa fenêtre (0 = ouverte). */
     private final long[] closedSince = new long[2];
@@ -143,6 +147,14 @@ final class TradeSession {
             for (int s = 46; s <= 48; s++) inv.setItem(s, accept);
             for (int s = 50; s <= 52; s++) inv.setItem(s, decline);
 
+            if (RelicHook.available()) {
+                inv.setItem(RELICS, item(Material.NETHER_STAR, plain("✦ Ajouter une relique", NamedTextColor.LIGHT_PURPLE)
+                                .decorate(TextDecoration.BOLD),
+                        List.of(plain("Mets une relique de ta collection", NamedTextColor.GRAY),
+                                plain("dans l'échange (/reliques).", NamedTextColor.GRAY),
+                                plain("Elle va directement dans la", NamedTextColor.GRAY),
+                                plain("collection de l'autre joueur.", NamedTextColor.GRAY))));
+            }
             if (plugin.moneyEnabled()) {
                 inv.setItem(MONEY_OWN, moneyItem(money[i], true));
                 inv.setItem(MONEY_OTHER, moneyItem(money[o], false));
@@ -362,6 +374,62 @@ final class TradeSession {
         Bukkit.getScheduler().runTask(plugin, () -> p.closeInventory());
     }
 
+    /** Bouton relique : fenêtre de choix parmi les reliques de sa collection. */
+    void openRelicPicker(int i) {
+        if (finished) return;
+        Player p = players[i];
+        List<String> ids = RelicHook.ids(p);
+        if (ids.isEmpty()) {
+            p.sendMessage(Component.text("Tu n'as aucune relique à échanger.", NamedTextColor.RED));
+            return;
+        }
+        RelicHook.Picker holder = new RelicHook.Picker(this, i);
+        int size = Math.min(54, Math.max(9, ((ids.size() + 8) / 9) * 9));
+        Inventory inv = Bukkit.createInventory(holder, size, Component.text("Choisis une relique à échanger"));
+        holder.inventory = inv;
+        for (String id : ids) {
+            if (holder.ids.size() >= size) break;
+            ItemStack it = RelicHook.display(id);
+            if (it == null) continue;
+            inv.setItem(holder.ids.size(), it);
+            holder.ids.add(id);
+        }
+        picking[i] = true;
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            if (p.isOnline() && !finished) p.openInventory(inv);
+        });
+    }
+
+    /** Relique choisie : elle quitte la collection et entre dans l'offre. */
+    void pickRelic(int i, String id) {
+        if (finished) return;
+        Player p = players[i];
+        boolean free = false;
+        for (int s : OWN) {
+            ItemStack cur = invs[i].getItem(s);
+            if (cur == null || cur.getType().isAir()) free = true;
+        }
+        if (!free) {
+            p.sendMessage(Component.text("Ta grille d'échange est pleine.", NamedTextColor.RED));
+            return;
+        }
+        ItemStack relic = RelicHook.take(p, id);
+        if (relic == null) {
+            p.sendMessage(Component.text("Impossible de prendre cette relique.", NamedTextColor.RED));
+            return;
+        }
+        addToOffer(i, relic);
+        p.playSound(p.getLocation(), Sound.ENTITY_ITEM_PICKUP, 0.8f, 0.8f);
+        touch(i);
+    }
+
+    /** Fin du choix : on revient dans la fenêtre d'échange. */
+    void closeRelicPicker(int i) {
+        if (!picking[i]) return;
+        picking[i] = false;
+        Bukkit.getScheduler().runTask(plugin, () -> reopen(i));
+    }
+
     /** Fixe le montant exact offert par le joueur i (ramené à son solde si besoin). */
     void setMoney(int i, long amount) {
         if (finished || !plugin.moneyEnabled()) return;
@@ -404,6 +472,10 @@ final class TradeSession {
         resetAccept();
         closedSince[i] = System.currentTimeMillis();
         Player p = players[i];
+        if (picking[i]) {
+            Bukkit.getScheduler().runTask(plugin, this::render);
+            return;
+        }
         if (typingMoney[i]) {
             p.sendMessage(Component.text("✎ Écris le montant à donner dans le chat (ex. 1500, 2.5k, 1m). "
                     + "« annuler » pour revenir.", NamedTextColor.GOLD));
@@ -545,6 +617,8 @@ final class TradeSession {
         ItemStack[] offerB = take(1);
         give(players[0], offerB);
         give(players[1], offerA);
+        RelicHook.claimAll(players[0]);
+        RelicHook.claimAll(players[1]);
 
         String sym = plugin.symbol();
         plugin.tradeLog().write("#" + id + " " + players[0].getName() + " a donné [" + TradeLog.describe(offerA, money[0], sym)
@@ -568,6 +642,7 @@ final class TradeSession {
         hideBar();
         for (int i = 0; i < 2; i++) {
             give(players[i], take(i));
+            RelicHook.claimAll(players[i]);
             players[i].sendMessage(Component.text(reason, NamedTextColor.RED));
             players[i].playSound(players[i].getLocation(), Sound.BLOCK_CHEST_CLOSE, 0.6f, 0.8f);
         }
