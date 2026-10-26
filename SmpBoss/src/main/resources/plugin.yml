@@ -13,6 +13,11 @@ commands:
     description: Tes reliques
     usage: /reliques
     aliases: [relics, relique, cosmetiques, cosmetique, butin]
+  arene:
+    description: Aller dans l'arène du boss
+    usage: /arene
+    aliases: [arena, arène]
+    permission: smpboss.arena.join
   sac:
     description: Ouvrir ton sac (relique)
     usage: /sac
@@ -21,6 +26,9 @@ permissions:
   smpboss.admin:
     description: Gérer les boss
     default: op
+  smpboss.arena.join:
+    description: /arene
+    default: true
   smpboss.arena.bypass:
     description: Casser / poser des blocs dans l'arène du boss
     default: op

@@ -7,6 +7,7 @@ import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
 import org.bukkit.World;
+import org.bukkit.WorldBorder;
 import org.bukkit.block.Banner;
 import org.bukkit.block.Block;
 import org.bukkit.block.banner.Pattern;
@@ -27,6 +28,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
@@ -54,6 +57,8 @@ public final class Arena {
     private List<String> jobOld;
     private final Map<UUID, long[]> confirm = new HashMap<>();
     private final Map<String, BlockData> dataCache = new HashMap<>();
+    private final Map<UUID, WorldBorder> tints = new HashMap<>();
+    private final Set<UUID> exiting = new HashSet<>();
 
     Arena(SmpBoss plugin) {
         this.plugin = plugin;
@@ -149,11 +154,11 @@ public final class Arena {
         return out;
     }
 
-    /** Entrée : sur le pont, devant la gueule du crâne, regard vers l'autel. */
+    /** Entrée : sur le sol de l'arène, côté crâne, regard vers l'autel. */
     public Location entrance() {
         World w = world();
         if (w == null) return null;
-        Location l = new Location(w, cx + 0.5, cy + 1, cz - (floorRadius + 3) + 0.5);
+        Location l = new Location(w, cx + 0.5, cy + 1, cz - (floorRadius - 3) + 0.5);
         l.setYaw(0);
         l.setPitch(5);
         return l;
@@ -164,7 +169,57 @@ public final class Arena {
                 System.currentTimeMillis() + 2000);
     }
 
+    /** Sortie (portail au fond de la gueule du crâne) : le /spawn d'Essentials, sinon le spawn du monde. */
+    public void exit(Player p) {
+        if (!exiting.add(p.getUniqueId())) return;
+        Bukkit.getScheduler().runTaskLater(plugin, () -> exiting.remove(p.getUniqueId()), 40L);
+        String cmd = plugin.getConfig().getString("arena.exit-command", "spawn %player%");
+        allowTeleport(p);
+        boolean ok = false;
+        if (cmd != null && !cmd.isBlank()) ok = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd.replace("%player%", p.getName()));
+        if (!ok || contains(p.getLocation())) {
+            allowTeleport(p);
+            p.teleport(Bukkit.getWorlds().get(0).getSpawnLocation());
+        }
+    }
+
+    /** Joueur : /arene. Le combat (SmpCombat) peut l'en empêcher. */
+    public void join(Player p) {
+        Location e = entrance();
+        if (e == null) {
+            p.sendMessage(parse("<red>L'arène n'est pas encore construite."));
+            return;
+        }
+        p.teleport(e);
+    }
+
     // ================================================================= ambiance
+
+    /** Écran teinté de rouge dans l'arène (bordure du monde virtuelle, rien que pour le joueur) ; pas d'élytres. */
+    void tint() {
+        boolean on = plugin.getConfig().getBoolean("arena.red-tint", true);
+        double strength = Math.max(0.05, Math.min(0.95, plugin.getConfig().getDouble("arena.red-tint-strength", 0.6)));
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            boolean in = defined && contains(p.getLocation());
+            if (in && p.isGliding() && plugin.getConfig().getBoolean("arena.protection.no-elytra", true)) p.setGliding(false);
+            WorldBorder mine = tints.get(p.getUniqueId());
+            if (in && on) {
+                // une autre teinte (SmpCombat "en danger"...) a la priorité ; on revient après
+                if (p.getWorldBorder() == null) {
+                    WorldBorder b = Bukkit.createWorldBorder();
+                    b.setCenter(p.getLocation());
+                    b.setSize(10_000);
+                    b.setWarningDistance((int) (5_000 / (1 - strength)));
+                    p.setWorldBorder(b);
+                    tints.put(p.getUniqueId(), b);
+                }
+            } else if (mine != null) {
+                tints.remove(p.getUniqueId());
+                if (p.getWorldBorder() == mine) p.setWorldBorder(null);
+            }
+        }
+        tints.keySet().removeIf(id -> Bukkit.getPlayer(id) == null);
+    }
 
     /** Toutes les 10 ticks : brume rouge, spores, braises au-dessus de la lave. */
     void ambience() {
@@ -204,7 +259,11 @@ public final class Arena {
             case "construire", "build" -> build(sender, a);
             case "annuler", "undo" -> undo(sender);
             case "tp" -> {
-                if (!(sender instanceof Player p)) return;
+                Player p = a.length >= 3 ? Bukkit.getPlayerExact(a[2]) : sender instanceof Player s ? s : null;
+                if (p == null) {
+                    sender.sendMessage(parse("<red>/boss arene tp [joueur]"));
+                    return;
+                }
                 Location e = entrance();
                 if (e == null) {
                     sender.sendMessage(parse("<red>Pas d'arène. <gray>/boss arene construire"));
@@ -237,7 +296,7 @@ public final class Arena {
                 sender.sendMessage(parse("<dark_red><b>Arène du boss"));
                 sender.sendMessage(parse("<aqua>/boss arene construire [taille]</aqua> <gray>- construit l'arène infernale ici (taille 14-40, défaut 20)"));
                 sender.sendMessage(parse("<aqua>/boss arene annuler</aqua> <gray>- remet le terrain comme avant la construction"));
-                sender.sendMessage(parse("<aqua>/boss arene tp</aqua> <gray>- entrée de l'arène"));
+                sender.sendMessage(parse("<aqua>/boss arene tp [joueur]</aqua> <gray>- envoie dans l'arène (les joueurs : <white>/arene</white>)"));
                 sender.sendMessage(parse("<aqua>/boss arene definir <rayon> [marge]</aqua> <gray>- protège une arène collée avec WorldEdit"));
                 sender.sendMessage(parse("<aqua>/boss arene supprimer</aqua> <gray>- coupe la protection"));
                 if (defined) {
@@ -283,10 +342,10 @@ public final class Arena {
         long[] c = confirm.get(p.getUniqueId());
         if (c == null || c[0] < System.currentTimeMillis() || c[1] != size) {
             confirm.put(p.getUniqueId(), new long[]{System.currentTimeMillis() + 20_000, size});
-            int total = size + 24;
+            int total = size + 27;
             sender.sendMessage(parse("<gold><b>Construire l'arène infernale ici ?</b>"));
-            sender.sendMessage(parse("<gray>Centre = le bloc sous tes pieds (ce sera l'autel). Rayon total ≈ <white>" + total
-                    + "</white> blocs, le crâne-portail est au <white>nord</white>. Tout ce qui est dans ce rayon (30 blocs de haut) est remplacé."));
+            sender.sendMessage(parse("<gray>Centre = le bloc sous tes pieds (ce sera l'autel). C'est une bulle fermée de rayon ≈ <white>" + total
+                    + "</white> blocs et " + (size + 25) + " de haut, le crâne-portail est au <white>nord</white>. Tout ce qui est dedans est remplacé."));
             sender.sendMessage(parse("<gray>Une sauvegarde est faite : <aqua>/boss arene annuler</aqua> remet tout comme avant."));
             sender.sendMessage(parse("<yellow>Retape <white>/boss arene construire " + size + "</white> dans les 20 secondes pour confirmer."));
             return;
@@ -299,7 +358,7 @@ public final class Arena {
         }
         Block base = p.getLocation().getBlock().getRelative(0, -1, 0);
         World w = base.getWorld();
-        if (base.getY() - 25 < w.getMinHeight() || base.getY() + 40 > w.getMaxHeight()) {
+        if (base.getY() - 25 < w.getMinHeight() || base.getY() + size + 28 > w.getMaxHeight()) {
             sender.sendMessage(parse("<red>Trop près du fond ou du plafond du monde."));
             return;
         }
@@ -386,7 +445,7 @@ public final class Arena {
             p.sendMessage(parse("<gray>L'autel est le bloc d'obsidienne pleureuse au centre : la nuit, clic droit dessus avec une "
                     + "<gold>Citrouille sacrificielle</gold> pour réveiller le Roi Citrouille. Rayon du boss réglé sur <white>"
                     + Math.max(8, d.r - 1) + "</white>."));
-            p.sendMessage(parse("<gray>Zone protégée : pas de casse/pose, pas de PvP, aucun monstre à part le boss. <aqua>/boss arene tp</aqua> = entrée."));
+            p.sendMessage(parse("<gray>Zone protégée : pas de casse/pose, pas de PvP, aucun monstre à part le boss. <aqua>/arene</aqua> pour y aller, le portail au fond du crâne pour sortir."));
         }
     }
 
@@ -485,6 +544,11 @@ public final class Arena {
     }
 
     void shutdown() {
+        for (var en : tints.entrySet()) {
+            Player p = Bukkit.getPlayer(en.getKey());
+            if (p != null && p.getWorldBorder() == en.getValue()) p.setWorldBorder(null);
+        }
+        tints.clear();
         if (job != null) job.cancel();
         // arrêt du serveur en plein chantier : on garde quand même de quoi annuler
         if (jobPos != null && !jobPos.isEmpty()) writeBackup(jobWorld, jobPos, jobOld);

@@ -71,6 +71,7 @@ public final class SmpBoss extends JavaPlugin {
         ArenaGuard guard = new ArenaGuard(this, arena);
         getServer().getPluginManager().registerEvents(guard, this);
         Bukkit.getScheduler().runTaskTimer(this, arena::ambience, 40L, 10L);
+        Bukkit.getScheduler().runTaskTimer(this, arena::tint, 40L, 10L);
         Bukkit.getScheduler().runTaskTimer(this, guard::sweep, 100L, 100L);
         invButtons = new InvButtons(this);
         getServer().getPluginManager().registerEvents(invButtons, this);
@@ -204,6 +205,10 @@ public final class SmpBoss extends JavaPlugin {
         String name = cmd.getName().toLowerCase(Locale.ROOT);
         if (name.equals("reliques")) {
             if (sender instanceof Player p) new RelicMenu(this, p).open();
+            return true;
+        }
+        if (name.equals("arene")) {
+            if (sender instanceof Player p) arena.join(p);
             return true;
         }
         if (name.equals("sac")) {

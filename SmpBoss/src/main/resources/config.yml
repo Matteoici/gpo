@@ -90,6 +90,11 @@ boss:
 arena:
   # brume rouge, spores et braises pour les joueurs dans l'arène
   ambience: true
+  # bords de l'écran teintés de rouge dans l'arène (0.05 = léger, 0.95 = très rouge)
+  red-tint: true
+  red-tint-strength: 0.6
+  # le portail au fond du crâne fait sortir avec cette commande (console)
+  exit-command: "spawn %player%"
   # blocs posés par tick pendant la construction (baisse si le serveur rame)
   blocks-per-tick: 4000
   protection:
@@ -104,6 +109,9 @@ arena:
     lava-rescue: true
     # le magma des fissures ne brûle pas les pieds
     decor-safe: true
+    # pas d'élytres ni de charges de vent (sinon combos masse)
+    no-elytra: true
+    no-wind-charge: true
 
 # ---------------------------------------------------------------- Butin
 loot:

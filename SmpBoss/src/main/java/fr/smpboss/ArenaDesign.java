@@ -20,19 +20,23 @@ import java.util.Set;
 final class ArenaDesign {
 
     final int r;            // rayon du sol de combat
-    final int outer;        // rayon du bord rocheux
+    final int outer;        // rayon du bord rocheux (jusqu'à la paroi de la bulle)
+    final int dome, domeH;  // bulle fermée : rayon et hauteur intérieurs
     final int protect;      // rayon de la zone protégée
     final int front;        // z de la face avant du crâne (négatif)
     final Map<Long, String> blocks = new LinkedHashMap<>();
     final Set<Long> soft = new HashSet<>();       // posés seulement s'il n'y a rien (air / liquide)
     final List<int[]> banners = new ArrayList<>(); // x, y, z des bannières à décorer
+    int[] portal;                                   // bas du portail de sortie
     private final Map<Long, Integer> rimHeight = new HashMap<>();
 
     ArenaDesign(int r) {
         this.r = r;
-        this.outer = r + 12;
+        this.dome = r + 24;
+        this.domeH = r + 22;
+        this.outer = dome;
         this.front = -(r + 6);
-        this.protect = r + 24;
+        this.protect = dome + 4;
         build();
     }
 
@@ -128,12 +132,13 @@ final class ArenaDesign {
 
     // ================================================================= zones
 
-    private boolean inSkullBox(int x, int z) {
-        return Math.abs(x) <= 14 && z <= front + 3 && z >= front - 17;
+    private boolean footprint(int x, int z) {
+        return x * x + z * z <= (dome + 3) * (dome + 3);
     }
 
-    private boolean footprint(int x, int z) {
-        return x * x + z * z <= outer * outer || inSkullBox(x, z);
+    /** < 1 = dans la bulle (forme de dôme un peu "carré" pour garder de la hauteur sur les bords). */
+    private static double domeF(double d, int y, double a, double b) {
+        return Math.pow(d / a, 3) + Math.pow(Math.max(0, y) / b, 3);
     }
 
     private int rim(int x, int z) {
@@ -144,19 +149,20 @@ final class ArenaDesign {
     // ================================================================= construction
 
     private void build() {
-        int box = outer + 2;
-        int minZ = front - 18;
-        // 1) on vide le volume au-dessus du sol
+        int box = dome + 3;
+        // 1) on vide l'intérieur de la bulle
         for (int x = -box; x <= box; x++) {
-            for (int z = Math.min(minZ, -box); z <= box; z++) {
+            for (int z = -box; z <= box; z++) {
                 if (!footprint(x, z)) continue;
-                int top = inSkullBox(x, z) ? 36 : 30;
-                for (int y = 1; y <= top; y++) set(x, y, z, "air");
+                double d = Math.sqrt(x * x + z * z);
+                for (int y = 1; y <= domeH + 3; y++) {
+                    if (domeF(d, y, dome, domeH) < 1) set(x, y, z, "air");
+                }
             }
         }
         // 2) fondations + sol de chaque colonne
         for (int x = -box; x <= box; x++) {
-            for (int z = Math.min(minZ, -box); z <= box; z++) {
+            for (int z = -box; z <= box; z++) {
                 if (!footprint(x, z)) continue;
                 column(x, z);
             }
@@ -170,6 +176,7 @@ final class ArenaDesign {
         for (int i = 0; i < treeAngles.length; i++) tree(Math.toRadians(treeAngles[i]), i);
         bridge();
         skull();
+        bubble();
         connect();
     }
 
@@ -254,10 +261,10 @@ final class ArenaDesign {
 
     /** Bord rocheux qui remonte en cratère. */
     private void terrain(int x, int z, double d) {
-        double t = Math.max(0, Math.min(1, (d - (r + 4.6)) / 7.4));
-        int h = (int) Math.round(0.3 + t * 3.2 + smooth(x, z) * 1.2);
-        if (!(x * x + z * z <= outer * outer)) h = (int) Math.round(1 + smooth(x, z));
-        h = Math.max(0, Math.min(5, h));
+        // le bord remonte en cratère jusqu'à la paroi de la bulle
+        double t = Math.max(0, Math.min(1, (d - (r + 4.6)) / (dome - (r + 4.6))));
+        int h = (int) Math.round(0.3 + t * t * 9 + t * 2 + smooth(x, z) * 1.2);
+        h = Math.max(0, Math.min(12, h));
         rimHeight.put(key(x, 0, z), h);
         for (int y = -1; y < h; y++) {
             set(x, y, z, pick(hash(x, y, z, 21), "blackstone", 5, "netherrack", 4, "basalt", 1));
@@ -281,7 +288,7 @@ final class ArenaDesign {
         } else if (dh < 0.034) {
             deco = "red_candle[candles=" + (1 + (int) (hash(x, 2, z, 25) * 4)) + ",lit=true]";
         }
-        if (deco != null && d < outer - 0.5) set(x, h + 1, z, deco);
+        if (deco != null && d < dome - 1.5) set(x, h + 1, z, deco);
     }
 
     /** Lumières invisibles au-dessus du sol (le combat se fait la nuit). */
@@ -289,6 +296,13 @@ final class ArenaDesign {
         for (int x = -r; x <= r; x += 6) {
             for (int z = -r; z <= r; z += 6) {
                 if (x * x + z * z <= (r - 1) * (r - 1)) set(x, 3, z, "light[level=13]");
+            }
+        }
+        // le cratère autour, un peu plus sombre
+        for (int x = -dome; x <= dome; x += 8) {
+            for (int z = -dome; z <= dome; z += 8) {
+                double d = Math.sqrt(x * x + z * z);
+                if (d > r + 6 && d < dome - 4) set(x, rim(x, z) + 4, z, "light[level=11]");
             }
         }
     }
@@ -300,7 +314,7 @@ final class ArenaDesign {
             for (int x = -outer; x <= outer; x++) {
                 for (int z = -outer; z <= outer; z++) {
                     double d = Math.sqrt(x * x + z * z);
-                    if (d <= r + 4 || d > outer - 1.2) continue;
+                    if (d <= r + 4 || d > r + 11) continue;
                     double a = Math.atan2(z, x) + 0.12 * Math.sin(d * 0.5);
                     if (Math.abs(angDiff(a, ca)) * d > 1.1) continue;
                     for (int y = 1; y <= 7; y++) set(x, y, z, "air");
@@ -493,7 +507,7 @@ final class ArenaDesign {
                 for (int w = -2; w <= 12; w++) {
                     if (!skullSolid(u, v, w)) continue;
                     int x = u, y = v, z = front - w;
-                    if (mouthHole(u, v)) {
+                    if (mouthHole(u, v) && w <= 5) {
                         set(x, y, z, "air");
                         continue;
                     }
@@ -535,13 +549,21 @@ final class ArenaDesign {
             }
         }
         // sol du tunnel de la gueule + dents
-        for (int w = -2; w <= 15; w++) {
+        for (int w = -2; w <= 5; w++) {
             for (int u = -2; u <= 2; u++) {
                 set(u, 0, front - w, "polished_blackstone_bricks");
                 set(u, -1, front - w, "blackstone");
-                if (w > 10) for (int y = 1; y <= 5; y++) set(u, y, front - w, "air");
             }
         }
+        // au fond de la gueule : le portail de sortie (cadre en obsidienne pour qu'il tienne)
+        int pz = front - 6;
+        for (int u = -2; u <= 2; u++) {
+            for (int v = 0; v <= 6; v++) {
+                boolean inside = Math.abs(u) <= 1 && v >= 1 && v <= 4;
+                set(u, v, pz, inside ? "nether_portal[axis=x]" : "obsidian");
+            }
+        }
+        portal = new int[]{0, 1, pz};
         int w0 = firstSolidW(1, 6);
         if (w0 != Integer.MIN_VALUE) {
             set(-1, 6, front - w0, "bone_block");
@@ -590,6 +612,43 @@ final class ArenaDesign {
             if (s != null && !s.equals("air") && !s.startsWith("light")) return w;
         }
         return Integer.MIN_VALUE;
+    }
+
+    // ================================================================= bulle
+
+    /**
+     * Dôme fermé : on ne voit plus l'extérieur. Paroi intérieure rouge sang (verrues du Nether, briques rouges,
+     * points de champilampe), coque extérieure en roche noire, lianes pleureuses qui pendent du plafond.
+     */
+    private void bubble() {
+        int box = dome + 3;
+        List<int[]> ceiling = new ArrayList<>();
+        for (int x = -box; x <= box; x++) {
+            for (int z = -box; z <= box; z++) {
+                double d = Math.sqrt(x * x + z * z);
+                for (int y = -8; y <= domeH + 3; y++) {
+                    if (domeF(d, y, dome, domeH) < 1) continue;
+                    if (domeF(d, y, dome + 2.3, domeH + 2.3) >= 1) continue;
+                    boolean inner = domeF(d, y, dome + 1.1, domeH + 1.1) < 1;
+                    String m;
+                    if (!inner) m = pick(hash(x, y, z, 61), "blackstone", 3, "basalt", 1);
+                    else if (y < 7) m = pick(hash(x, y, z, 62), "blackstone", 4, "netherrack", 3, "magma_block", 1);
+                    else m = pick(hash(x, y, z, 63), "nether_wart_block", 62, "red_nether_bricks", 14, "crimson_hyphae[axis=y]", 12,
+                            "shroomlight", 5, "magma_block", 7);
+                    set(x, y, z, m);
+                    if (inner && y > domeH * 0.4 && domeF(d, y - 1, dome, domeH) < 1) ceiling.add(new int[]{x, y, z});
+                }
+            }
+        }
+        for (int[] c : ceiling) {
+            if (hash(c[0], c[1], c[2], 64) > 0.06) continue;
+            int len = 2 + (int) (hash(c[0], c[1], c[2], 65) * 7);
+            for (int i = 1; i <= len; i++) {
+                String below = get(c[0], c[1] - i, c[2]);
+                if (below != null && !below.equals("air")) break;
+                set(c[0], c[1] - i, c[2], i == len ? "weeping_vines[age=25]" : "weeping_vines_plant");
+            }
+        }
     }
 
     // ================================================================= murets / barrières reliés

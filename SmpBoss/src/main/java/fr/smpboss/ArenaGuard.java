@@ -255,6 +255,53 @@ final class ArenaGuard implements Listener {
         e.getAffectedEntities().removeIf(le -> le instanceof Player p && !p.equals(thrower) && arena.contains(p.getLocation()));
     }
 
+    // ================================================================= élytres / charges de vent
+
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    public void onGlide(org.bukkit.event.entity.EntityToggleGlideEvent e) {
+        if (e.isGliding() && e.getEntity() instanceof Player p && on("no-elytra") && arena.contains(p.getLocation())) {
+            e.setCancelled(true);
+            p.sendActionBar(parse("<red>Pas d'élytres dans l'arène."));
+        }
+    }
+
+    private boolean windCharge(org.bukkit.inventory.ItemStack it) {
+        return it != null && it.getType() == Material.WIND_CHARGE;
+    }
+
+    @EventHandler(priority = EventPriority.LOW)
+    public void onWindUse(PlayerInteractEvent e) {
+        if (!on("no-wind-charge") || !windCharge(e.getItem()) || !arena.contains(e.getPlayer().getLocation())) return;
+        e.setUseItemInHand(Event.Result.DENY);
+        e.getPlayer().sendActionBar(parse("<red>Pas de charges de vent dans l'arène."));
+    }
+
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    public void onLaunch(org.bukkit.event.entity.ProjectileLaunchEvent e) {
+        if (e.getEntity() instanceof org.bukkit.entity.AbstractWindCharge && e.getEntity().getShooter() instanceof Player p
+                && on("no-wind-charge") && arena.contains(p.getLocation())) {
+            e.setCancelled(true);
+        }
+    }
+
+    // ================================================================= portail de sortie
+
+    @EventHandler(priority = EventPriority.LOW)
+    public void onPortalTouch(org.bukkit.event.entity.EntityPortalEnterEvent e) {
+        if (!arena.contains(e.getLocation())) return;
+        if (e.getEntity() instanceof Player p) arena.exit(p);
+    }
+
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    public void onPortal(org.bukkit.event.player.PlayerPortalEvent e) {
+        if (arena.contains(e.getFrom())) e.setCancelled(true); // on sort par /spawn, pas vers le Nether
+    }
+
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    public void onEntityPortal(org.bukkit.event.entity.EntityPortalEvent e) {
+        if (arena.contains(e.getFrom())) e.setCancelled(true);
+    }
+
     // ================================================================= lave / magma du décor
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
