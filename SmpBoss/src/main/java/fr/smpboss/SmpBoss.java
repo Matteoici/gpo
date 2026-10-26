@@ -373,6 +373,8 @@ public final class SmpBoss extends JavaPlugin {
             case "reload" -> {
                 reloadConfig();
                 relics.load();
+                cosmetics.loadModels();
+                cosmetics.removeAll();
                 for (Player pl : Bukkit.getOnlinePlayers()) cosmetics.refresh(pl);
                 registerRecipe();
                 for (Player p : Bukkit.getOnlinePlayers()) relics.apply(p);

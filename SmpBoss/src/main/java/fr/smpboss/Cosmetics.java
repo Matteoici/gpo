@@ -9,7 +9,8 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
 import org.bukkit.World;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.block.data.type.Lantern;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.ItemDisplay;
@@ -22,26 +23,29 @@ import org.bukkit.util.Vector;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
+import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Les cosmétiques visibles des reliques équipées, construits en blocs (aucun pack de textures requis) :
- * sac à dos de la Récolte, couronne flottante, lanterne à la ceinture, feu follet d'âme sur l'épaule,
- * amulette sur le torse, feuilles d'automne sous les bottes, empreintes de flammes.
+ * Les cosmétiques visibles des reliques équipées, construits en blocs miniatures (aucun pack de textures requis).
+ * Les modèles sont décrits dans cosmetics.yml (coordonnées depuis les pieds : x = gauche, y = haut, z = avant).
  *
- * Chaque modèle est un groupe d'affichages qui suivent le joueur à chaque tick (position prédite pour ne pas
- * traîner derrière lui) et tournent avec son corps (rotation du corps estimée comme dans le jeu).
- * Repère d'un modèle : +Z = devant le joueur, +Y = haut, +X = sa gauche.
+ * Avec ProtocolLib, les modèles sont accrochés au joueur côté client (comme des passagers) : ils le suivent
+ * sans aucun retard. Sinon ils sont replacés à chaque tick. Cachés en vol plané, à la nage et au lit.
  */
 final class Cosmetics {
 
     private enum Anchor {
-        BACK, CHEST, HIP, HEAD, SHOULDER, SHOULDER_R, ORBIT
+        BODY, HEAD, ORBIT
     }
 
     private record Model(String visual, Anchor anchor, List<Display> parts) {
@@ -58,12 +62,15 @@ final class Cosmetics {
 
     private static final Color[] LEAVES = {Color.fromRGB(0xd9771f), Color.fromRGB(0xb5481c), Color.fromRGB(0xe8b23a),
             Color.fromRGB(0x8a3b12), Color.fromRGB(0xf0c75e)};
+    /** Hauteur du point d'accroche des passagers sur un joueur debout. */
+    private static final float ATTACH = 1.8f;
 
     private final SmpBoss plugin;
     private final NamespacedKey tag;
     private final Map<UUID, Worn> worn = new HashMap<>();
-    /** ProtocolLib présent : les cosmétiques sont accrochés au joueur (aucun retard). Sinon : suivis à chaque tick. */
     private final Mounts mounts;
+    private YamlConfiguration models = new YamlConfiguration();
+    private int clock;
 
     Cosmetics(SmpBoss plugin) {
         this.plugin = plugin;
@@ -78,36 +85,21 @@ final class Cosmetics {
             }
         }
         this.mounts = m;
+        loadModels();
     }
 
-    /** Position du modèle par rapport au haut du joueur (point d'accroche des passagers), repère du modèle. */
-    private static Vector3f attachOffset(Anchor a) {
-        return switch (a) {
-            case BACK -> new Vector3f(0, -0.7f, -0.1f);
-            case CHEST -> new Vector3f(0, -0.6f, 0.14f);
-            case HIP -> new Vector3f(0, -1.02f, 0.02f);
-            case HEAD -> new Vector3f(0, 0.02f, 0);
-            case SHOULDER -> new Vector3f(0.33f, -0.2f, 0);
-            case SHOULDER_R -> new Vector3f(-0.33f, -0.2f, 0);
-            case ORBIT -> new Vector3f(0, -0.75f, 0);
-        };
-    }
-
-    private static void shift(Model m) {
-        Vector3f off = attachOffset(m.anchor());
-        for (Display d : m.parts()) {
-            Transformation t = d.getTransformation();
-            d.setTransformation(new Transformation(new Vector3f(t.getTranslation()).add(off), t.getLeftRotation(), t.getScale(),
-                    t.getRightRotation()));
+    /** cosmetics.yml du dossier du plugin s'il existe, sinon celui du plugin. */
+    void loadModels() {
+        File f = new File(plugin.getDataFolder(), "cosmetics.yml");
+        if (f.exists()) {
+            models = YamlConfiguration.loadConfiguration(f);
+            return;
         }
-    }
-
-    private float yawFor(Player p, Model m, Worn w) {
-        return switch (m.anchor()) {
-            case HEAD -> p.getLocation().getYaw();
-            case ORBIT -> (w.t * 4f) % 360f;
-            default -> w.bodyYaw;
-        };
+        try (InputStream in = plugin.getResource("cosmetics.yml")) {
+            if (in != null) models = YamlConfiguration.loadConfiguration(new InputStreamReader(in, StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            plugin.getLogger().warning("cosmetics.yml illisible : " + e.getMessage());
+        }
     }
 
     // ================================================================= quels visuels
@@ -115,8 +107,10 @@ final class Cosmetics {
     /** Les visuels que le joueur doit porter maintenant. */
     private List<String> wanted(Player p) {
         List<String> out = new ArrayList<>();
-        if (!plugin.getConfig().getBoolean("cosmetics.enabled", true)) return out; // désactivés : les reliques gardent leurs bonus
+        if (!plugin.getConfig().getBoolean("cosmetics.enabled", true)) return out;
         if (p.isDead() || p.getGameMode() == GameMode.SPECTATOR || p.isInvisible()) return out;
+        // poses où le modèle ne tiendrait pas sur le corps
+        if (p.isGliding() || p.isSwimming() || p.isSleeping() || p.isRiptiding()) return out;
         if (plugin.store().of(p.getUniqueId()).hideCosmetics) return out;
         for (String id : plugin.store().of(p.getUniqueId()).equipped) {
             Relic r = plugin.relics().get(id);
@@ -133,6 +127,7 @@ final class Cosmetics {
         String key = String.join(",", want);
         Worn w = worn.get(p.getUniqueId());
         if (w != null && w.key.equals(key) && p.getWorld().getUID().equals(w.world) && valid(w)) return;
+        if (w == null && want.isEmpty()) return;
         remove(p.getUniqueId());
         if (want.isEmpty()) return;
         Worn n = new Worn();
@@ -142,17 +137,22 @@ final class Cosmetics {
         n.world = p.getWorld().getUID();
         for (String v : want) {
             Model m = build(p, v);
-            if (m == null) continue;
-            if (mounts != null) shift(m);
-            n.models.add(m);
+            if (m != null) n.models.add(m);
         }
         worn.put(p.getUniqueId(), n);
         updateVisibility(p, n);
+        if (mounts != null) mounts.send(p, ids(n));
     }
 
     private static boolean valid(Worn w) {
         for (Model m : w.models) for (Display d : m.parts()) if (!d.isValid()) return false;
         return true;
+    }
+
+    private static List<Integer> ids(Worn w) {
+        List<Integer> ids = new ArrayList<>();
+        for (Model m : w.models) for (Display d : m.parts()) ids.add(d.getEntityId());
+        return ids;
     }
 
     void remove(UUID id) {
@@ -169,6 +169,14 @@ final class Cosmetics {
 
     /** Toutes les ticks. */
     void tick() {
+        // toutes les 10 ticks : quelqu'un a changé de pose (vol plané, nage...) ? on remet / enlève ses modèles
+        if (++clock % 10 == 0) {
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                Worn w = worn.get(p.getUniqueId());
+                String key = String.join(",", wanted(p));
+                if (w == null ? !key.isEmpty() : !w.key.equals(key)) refresh(p);
+            }
+        }
         for (var e : new ArrayList<>(worn.entrySet())) {
             Player p = Bukkit.getPlayer(e.getKey());
             Worn w = e.getValue();
@@ -193,31 +201,39 @@ final class Cosmetics {
             if (moving) w.bodyYaw += diff * 0.35f;
             else if (Math.abs(diff) > 50) w.bodyYaw = head - Math.signum(diff) * 50;
             w.bodyYaw = wrap(w.bodyYaw);
-            // position prédite d'un tick (sinon les modèles traînent derrière le joueur)
-            Location base = now.clone();
-            if (delta.lengthSquared() < 1) base.add(delta);
             w.last = now;
             if (mounts != null) {
-                // accrochés au joueur côté client : on ne fait que tourner les modèles (et les garder près de lui côté serveur)
-                List<Integer> ids = new ArrayList<>();
+                // accrochés au joueur côté client : on ne fait que les tourner (et les garder près de lui côté serveur)
                 for (Model m : w.models) {
-                    float yaw = yawFor(p, m, w);
+                    float yaw = yaw(p, m, w);
                     for (Display d : m.parts()) {
                         if (d.getLocation().distanceSquared(now) > 64) d.teleport(now);
                         d.setRotation(yaw, 0);
-                        ids.add(d.getEntityId());
                     }
                 }
-                if (w.t % 5 == 1) mounts.send(p, ids);
+                if (w.t % 5 == 1) mounts.send(p, ids(w));
             } else {
+                // sans ProtocolLib : position prédite d'un tick (sinon les modèles traînent derrière le joueur)
+                Location base = now.clone();
+                if (delta.lengthSquared() < 1) base.add(delta);
                 for (Model m : w.models) {
-                    Location at = anchor(p, base, m.anchor(), w);
+                    Location at = base.clone();
+                    at.setYaw(yaw(p, m, w));
+                    at.setPitch(0);
                     for (Display d : m.parts()) d.teleport(at);
                 }
             }
             effects(p, w, moving, now);
             if (w.t % 20 == 0) updateVisibility(p, w);
         }
+    }
+
+    private static float yaw(Player p, Model m, Worn w) {
+        return switch (m.anchor()) {
+            case HEAD -> p.getLocation().getYaw();
+            case ORBIT -> (w.t * 4f) % 360f;
+            default -> w.bodyYaw;
+        };
     }
 
     /** Un joueur caché (vanish) : ses cosmétiques le sont aussi. */
@@ -233,51 +249,12 @@ final class Cosmetics {
         }
     }
 
-    private Location anchor(Player p, Location feet, Anchor a, Worn w) {
-        boolean sneak = p.isSneaking();
-        float yaw = w.bodyYaw;
+    /** Un point du repère du joueur (x = gauche, y = haut, z = avant) dans le monde. */
+    private static Location world(Location feet, float yaw, double x, double y, double z) {
         double rad = Math.toRadians(yaw);
         Vector fwd = new Vector(-Math.sin(rad), 0, Math.cos(rad));
         Vector left = new Vector(Math.cos(rad), 0, Math.sin(rad));
-        Location out;
-        float pitch = 0;
-        switch (a) {
-            case BACK -> {
-                out = feet.clone().add(0, sneak ? 0.93 : 1.1, 0).add(fwd.clone().multiply(sneak ? -0.3 : -0.15));
-                pitch = sneak ? 28 : 0;
-            }
-            case CHEST -> {
-                out = feet.clone().add(0, sneak ? 1.0 : 1.2, 0).add(fwd.clone().multiply(sneak ? 0.32 : 0.14));
-                pitch = sneak ? 28 : 0;
-            }
-            case HIP -> out = feet.clone().add(0, sneak ? 0.62 : 0.78, 0).add(fwd.clone().multiply(sneak ? 0.1 : 0.02));
-            case HEAD -> {
-                yaw = feet.getYaw();
-                out = feet.clone().add(0, p.getEyeHeight() + 0.36 + Math.sin(w.t * 0.08) * 0.025, 0);
-            }
-            case SHOULDER -> {
-                double bob = Math.sin(w.t * 0.1) * 0.08;
-                double circle = w.t * 0.05;
-                out = feet.clone().add(0, (sneak ? 1.6 : 1.9) + bob, 0)
-                        .add(left.clone().multiply(0.58 + Math.cos(circle) * 0.08))
-                        .add(fwd.clone().multiply(-0.3 + Math.sin(circle) * 0.08));
-                yaw = (w.t * 3f) % 360f; // le feu follet tourne sur lui-même
-            }
-            case SHOULDER_R -> {
-                double bob = Math.sin(w.t * 0.1 + 1.5) * 0.07;
-                out = feet.clone().add(0, (sneak ? 1.6 : 1.88) + bob, 0).add(left.clone().multiply(-0.58)).add(fwd.clone().multiply(-0.25));
-                // le crâne regarde devant lui, en hochant un peu
-                yaw = w.bodyYaw + (float) Math.sin(w.t * 0.05) * 20f;
-            }
-            case ORBIT -> {
-                out = feet.clone().add(0, (sneak ? 0.9 : 1.05) + Math.sin(w.t * 0.07) * 0.08, 0);
-                yaw = (w.t * 4f) % 360f; // les orbes tournent autour du joueur
-            }
-            default -> out = feet.clone();
-        }
-        out.setYaw(yaw);
-        out.setPitch(pitch);
-        return out;
+        return feet.clone().add(left.multiply(x)).add(fwd.multiply(z)).add(0, y, 0);
     }
 
     private void effects(Player p, Worn w, boolean moving, Location now) {
@@ -312,11 +289,11 @@ final class Cosmetics {
                 }
                 case "wisp" -> {
                     if (w.t % 4 == 0 && !m.parts().isEmpty()) {
-                        Location l = anchor(p, now, m.anchor(), w).add(0, 0.15, 0);
+                        Location l = world(now, w.bodyYaw, 0.36, 1.72, 0);
                         world.spawnParticle(Particle.SOUL_FIRE_FLAME, l, 1, 0.05, 0.05, 0.05, 0.003);
                     }
                     if (w.t % 13 == 0 && !m.parts().isEmpty()) {
-                        world.spawnParticle(Particle.SOUL, anchor(p, now, m.anchor(), w), 1, 0.1, 0.1, 0.1, 0.01);
+                        world.spawnParticle(Particle.SOUL, world(now, w.bodyYaw, 0.36, 1.6, 0), 1, 0.1, 0.1, 0.1, 0.01);
                     }
                 }
                 case "crown" -> {
@@ -362,7 +339,7 @@ final class Cosmetics {
                 }
                 case "skull" -> {
                     if (w.t % 10 == 0 && !m.parts().isEmpty()) {
-                        world.spawnParticle(Particle.SOUL, anchor(p, now, m.anchor(), w).add(0, 0.1, 0), 1, 0.05, 0.05, 0.05, 0.005);
+                        world.spawnParticle(Particle.SOUL, world(now, w.bodyYaw, -0.36, 1.62, 0), 1, 0.05, 0.05, 0.05, 0.005);
                     }
                 }
                 case "orbs" -> {
@@ -376,7 +353,7 @@ final class Cosmetics {
                 }
                 case "lantern" -> {
                     if (w.t % 30 == 0 && !m.parts().isEmpty()) {
-                        world.spawnParticle(Particle.SMALL_FLAME, anchor(p, now, m.anchor(), w).add(0, -0.45, 0), 1, 0.05, 0.02, 0.05, 0.002);
+                        world.spawnParticle(Particle.SMALL_FLAME, world(now, w.bodyYaw, -0.27, 0.48, 0.02), 1, 0.05, 0.02, 0.05, 0.002);
                     }
                 }
                 default -> {
@@ -392,186 +369,83 @@ final class Cosmetics {
         return a;
     }
 
-    // ================================================================= modèles
+    // ================================================================= modèles (cosmetics.yml)
 
     private Model build(Player p, String visual) {
         Location at = p.getLocation();
         List<Display> parts = new ArrayList<>();
-        Anchor anchor;
-        switch (visual) {
-            case "backpack" -> {
-                anchor = Anchor.BACK;
-                String model = plugin.getConfig().getString("models.backpack", "");
-                if (model != null && !model.isBlank()) {
-                    // modèle du pack de textures (si un jour il y en a un)
-                    ItemStack it = new ItemStack(Material.BUNDLE);
-                    NamespacedKey k = NamespacedKey.fromString(model);
-                    if (k != null) {
-                        ItemMeta meta = it.getItemMeta();
-                        meta.setItemModel(k);
-                        it.setItemMeta(meta);
-                    }
-                    parts.add(item(at, it, 0, 0, -0.15f, 0.55f, null));
-                } else {
-                    // corps en tissu, rabat orange, boucle dorée, poche, couverture roulée, bretelles, mini citrouille
-                    parts.add(block(at, Material.BROWN_WOOL, 0, -0.02f, -0.13f, 0.46f, 0.5f, 0.24f, null));
-                    parts.add(block(at, Material.ORANGE_WOOL, 0, 0.245f, -0.13f, 0.48f, 0.05f, 0.26f, null));
-                    parts.add(block(at, Material.ORANGE_WOOL, 0, 0.15f, -0.262f, 0.48f, 0.18f, 0.03f, null));
-                    parts.add(block(at, Material.GOLD_BLOCK, 0, 0.085f, -0.282f, 0.07f, 0.06f, 0.02f, null));
-                    parts.add(block(at, Material.BROWN_TERRACOTTA, 0, -0.15f, -0.27f, 0.32f, 0.15f, 0.06f, null));
-                    parts.add(block(at, Material.RED_WOOL, 0, 0.33f, -0.12f, 0.56f, 0.12f, 0.12f, null));
-                    parts.add(block(at, Material.BLACK_WOOL, 0.18f, 0.33f, -0.12f, 0.03f, 0.135f, 0.135f, null));
-                    parts.add(block(at, Material.BLACK_WOOL, -0.18f, 0.33f, -0.12f, 0.03f, 0.135f, 0.135f, null));
-                    for (float x : new float[]{0.15f, -0.15f}) {
-                        parts.add(block(at, Material.BROWN_TERRACOTTA, x, 0.325f, 0.135f, 0.07f, 0.02f, 0.3f, null));
-                        parts.add(block(at, Material.BROWN_TERRACOTTA, x, 0.17f, 0.278f, 0.07f, 0.3f, 0.02f, null));
-                    }
-                    parts.add(block(at, Material.JACK_O_LANTERN, 0.28f, -0.12f, -0.12f, 0.15f, 0.15f, 0.15f, null));
+        ConfigurationSection def = models.getConfigurationSection(visual);
+        Anchor anchor = Anchor.BODY;
+        if (def != null) {
+            try {
+                anchor = Anchor.valueOf(def.getString("anchor", "body").toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException ignored) {
+            }
+            // modèle du pack de textures pour le sac (si un jour il y en a un)
+            String packModel = visual.equals("backpack") ? plugin.getConfig().getString("models.backpack", "") : "";
+            if (packModel != null && !packModel.isBlank()) {
+                ItemStack it = new ItemStack(Material.BUNDLE);
+                NamespacedKey k = NamespacedKey.fromString(packModel);
+                if (k != null) {
+                    ItemMeta meta = it.getItemMeta();
+                    meta.setItemModel(k);
+                    it.setItemMeta(meta);
                 }
-            }
-            case "crown" -> {
-                anchor = Anchor.HEAD;
-                float h = 0.255f;
-                parts.add(block(at, Material.GOLD_BLOCK, 0, 0, h, 0.54f, 0.1f, 0.03f, null));
-                parts.add(block(at, Material.GOLD_BLOCK, 0, 0, -h, 0.54f, 0.1f, 0.03f, null));
-                parts.add(block(at, Material.GOLD_BLOCK, h, 0, 0, 0.03f, 0.1f, 0.48f, null));
-                parts.add(block(at, Material.GOLD_BLOCK, -h, 0, 0, 0.03f, 0.1f, 0.48f, null));
-                // pointes : losanges dorés (coins + milieu de chaque côté, celui de devant plus grand)
-                Quaternionf diamondZ = new Quaternionf().rotateZ((float) Math.toRadians(45));
-                Quaternionf diamondX = new Quaternionf().rotateX((float) Math.toRadians(45));
-                parts.add(block(at, Material.GOLD_BLOCK, 0, 0.1f, h, 0.1f, 0.1f, 0.03f, diamondZ));
-                parts.add(block(at, Material.GOLD_BLOCK, 0, 0.08f, -h, 0.07f, 0.07f, 0.03f, diamondZ));
-                parts.add(block(at, Material.GOLD_BLOCK, h, 0.08f, 0, 0.03f, 0.07f, 0.07f, diamondX));
-                parts.add(block(at, Material.GOLD_BLOCK, -h, 0.08f, 0, 0.03f, 0.07f, 0.07f, diamondX));
-                for (float x : new float[]{h, -h}) {
-                    for (float z : new float[]{h, -h}) {
-                        parts.add(block(at, Material.GOLD_BLOCK, x, 0.075f, z, 0.06f, 0.06f, 0.06f,
-                                new Quaternionf().rotateY((float) Math.toRadians(45)).rotateX((float) Math.toRadians(35))));
-                    }
+                parts.add(item(at, it, new Vector3f(0, 1.05f, -0.24f), 0.55f, new Quaternionf()));
+            } else {
+                for (Map<?, ?> part : def.getMapList("parts")) {
+                    Display d = part(at, part);
+                    if (d != null) parts.add(d);
                 }
-                // pierres : rubis devant, émeraudes sur les côtés, saphir derrière
-                parts.add(block(at, Material.REDSTONE_BLOCK, 0, 0, h + 0.022f, 0.06f, 0.06f, 0.02f, null));
-                parts.add(block(at, Material.EMERALD_BLOCK, h + 0.022f, 0, 0, 0.02f, 0.05f, 0.05f, null));
-                parts.add(block(at, Material.EMERALD_BLOCK, -h - 0.022f, 0, 0, 0.02f, 0.05f, 0.05f, null));
-                parts.add(block(at, Material.LAPIS_BLOCK, 0, 0, -h - 0.022f, 0.05f, 0.05f, 0.02f, null));
-            }
-            case "lantern" -> {
-                anchor = Anchor.HIP;
-                Lantern data = (Lantern) Material.LANTERN.createBlockData();
-                data.setHanging(true);
-                // le bloc de lanterne fait 6 px de large : on centre le modèle sur la hanche droite
-                BlockDisplay d = blockData(at, data, -0.33f, -0.12f, 0.03f, 0.4f, 0.4f, 0.4f, null);
-                d.setBrightness(new Display.Brightness(15, 15));
-                parts.add(d);
-                parts.add(block(at, Material.BROWN_TERRACOTTA, -0.3f, 0.08f, 0.03f, 0.08f, 0.05f, 0.14f, null));
-            }
-            case "wisp" -> {
-                anchor = Anchor.SHOULDER;
-                BlockDisplay d = blockData(at, Material.SOUL_LANTERN.createBlockData(), 0, 0, 0, 0.42f, 0.42f, 0.42f, null);
-                d.setBrightness(new Display.Brightness(15, 15));
-                d.setGlowing(true);
-                d.setGlowColorOverride(Color.fromRGB(0x5ff3ff));
-                parts.add(d);
-            }
-            case "amulet" -> {
-                anchor = Anchor.CHEST;
-                parts.add(block(at, Material.GOLD_BLOCK, 0.065f, 0.1f, 0, 0.02f, 0.24f, 0.02f,
-                        new Quaternionf().rotateZ((float) Math.toRadians(24))));
-                parts.add(block(at, Material.GOLD_BLOCK, -0.065f, 0.1f, 0, 0.02f, 0.24f, 0.02f,
-                        new Quaternionf().rotateZ((float) Math.toRadians(-24))));
-                parts.add(block(at, Material.GOLD_BLOCK, 0, -0.04f, 0.005f, 0.1f, 0.1f, 0.025f,
-                        new Quaternionf().rotateZ((float) Math.toRadians(45))));
-                parts.add(block(at, Material.ORANGE_STAINED_GLASS, 0, -0.04f, 0.02f, 0.06f, 0.06f, 0.02f,
-                        new Quaternionf().rotateZ((float) Math.toRadians(45))));
-                parts.add(item(at, new ItemStack(Material.GOLDEN_CARROT), 0, -0.04f, 0.035f, 0.13f, null));
-            }
-            case "horns" -> {
-                anchor = Anchor.HEAD;
-                // deux cornes de démon qui partent des tempes, se courbent vers l'extérieur puis vers le haut
-                for (int s = -1; s <= 1; s += 2) {
-                    float x = s * 0.2f;
-                    parts.add(block(at, Material.POLISHED_BLACKSTONE, x, -0.12f, 0.06f, 0.11f, 0.14f, 0.11f,
-                            new Quaternionf().rotateZ((float) Math.toRadians(-s * 35))));
-                    parts.add(block(at, Material.BLACKSTONE, x + s * 0.08f, -0.01f, 0.05f, 0.08f, 0.13f, 0.08f,
-                            new Quaternionf().rotateZ((float) Math.toRadians(-s * 20))));
-                    parts.add(block(at, Material.RED_NETHER_BRICKS, x + s * 0.11f, 0.1f, 0.03f, 0.06f, 0.11f, 0.06f,
-                            new Quaternionf().rotateZ((float) Math.toRadians(s * 8)).rotateX((float) Math.toRadians(-15))));
-                    parts.add(block(at, Material.REDSTONE_BLOCK, x + s * 0.1f, 0.19f, 0.0f, 0.035f, 0.07f, 0.035f,
-                            new Quaternionf().rotateZ((float) Math.toRadians(s * 18)).rotateX((float) Math.toRadians(-25))));
-                }
-            }
-            case "hellcrown" -> {
-                anchor = Anchor.HEAD;
-                float h = 0.255f;
-                parts.add(block(at, Material.NETHERITE_BLOCK, 0, 0, h, 0.54f, 0.11f, 0.03f, null));
-                parts.add(block(at, Material.NETHERITE_BLOCK, 0, 0, -h, 0.54f, 0.11f, 0.03f, null));
-                parts.add(block(at, Material.NETHERITE_BLOCK, h, 0, 0, 0.03f, 0.11f, 0.48f, null));
-                parts.add(block(at, Material.NETHERITE_BLOCK, -h, 0, 0, 0.03f, 0.11f, 0.48f, null));
-                // pointes acérées en flammes figées
-                for (float x : new float[]{-0.18f, 0, 0.18f}) {
-                    for (float z : new float[]{h, -h}) {
-                        float tall = x == 0 ? 0.17f : 0.12f;
-                        parts.add(block(at, Material.BLACKSTONE, x, 0.05f + tall / 2, z, 0.05f, tall, 0.03f,
-                                new Quaternionf().rotateZ((float) Math.toRadians(x * 60))));
-                    }
-                }
-                for (float z : new float[]{-0.15f, 0.15f}) {
-                    for (float x : new float[]{h, -h}) {
-                        parts.add(block(at, Material.BLACKSTONE, x, 0.11f, z, 0.03f, 0.12f, 0.05f, null));
-                    }
-                }
-                BlockDisplay gem = block(at, Material.SHROOMLIGHT, 0, 0, h + 0.022f, 0.07f, 0.07f, 0.02f,
-                        new Quaternionf().rotateZ((float) Math.toRadians(45)));
-                gem.setBrightness(new Display.Brightness(15, 15));
-                parts.add(gem);
-                parts.add(block(at, Material.REDSTONE_BLOCK, h + 0.022f, 0, 0, 0.02f, 0.05f, 0.05f, null));
-                parts.add(block(at, Material.REDSTONE_BLOCK, -h - 0.022f, 0, 0, 0.02f, 0.05f, 0.05f, null));
-                parts.add(block(at, Material.REDSTONE_BLOCK, 0, 0, -h - 0.022f, 0.05f, 0.05f, 0.02f, null));
-            }
-            case "wings" -> {
-                anchor = Anchor.BACK;
-                // ailes de démon : os noirs et membranes rouge sombre, repliées en V dans le dos
-                for (int s = -1; s <= 1; s += 2) {
-                    Quaternionf open = new Quaternionf().rotateY((float) Math.toRadians(s * 28)).rotateZ((float) Math.toRadians(-s * 12));
-                    parts.add(block(at, Material.RED_WOOL, s * 0.42f, 0.12f, -0.32f, 0.62f, 0.6f, 0.02f, open));
-                    parts.add(block(at, Material.BLACK_CONCRETE, s * 0.42f, 0.44f, -0.315f, 0.66f, 0.05f, 0.04f, open));
-                    for (int k = 0; k < 3; k++) {
-                        float x = s * (0.2f + k * 0.18f);
-                        parts.add(block(at, Material.BLACK_CONCRETE, x, 0.1f - k * 0.06f, -0.3f - k * 0.08f, 0.025f, 0.6f - k * 0.1f, 0.025f,
-                                new Quaternionf().rotateY((float) Math.toRadians(s * 28)).rotateZ((float) Math.toRadians(-s * (10 + k * 8)))));
-                    }
-                    parts.add(block(at, Material.BONE_BLOCK, s * 0.74f, 0.5f, -0.48f, 0.05f, 0.08f, 0.05f, open));
-                }
-            }
-            case "cape" -> {
-                anchor = Anchor.BACK;
-                Quaternionf tilt = new Quaternionf().rotateX((float) Math.toRadians(-8));
-                parts.add(block(at, Material.BLACK_WOOL, 0, -0.32f, -0.06f, 0.56f, 1.05f, 0.03f, tilt));
-                parts.add(block(at, Material.RED_WOOL, 0, -0.3f, -0.042f, 0.5f, 1.0f, 0.01f, tilt));
-                parts.add(block(at, Material.GOLD_BLOCK, 0.2f, 0.2f, 0.05f, 0.07f, 0.07f, 0.03f, null));
-                parts.add(block(at, Material.GOLD_BLOCK, -0.2f, 0.2f, 0.05f, 0.07f, 0.07f, 0.03f, null));
-                parts.add(block(at, Material.BLACK_WOOL, 0, 0.22f, -0.05f, 0.56f, 0.05f, 0.28f, null));
-            }
-            case "skull" -> {
-                anchor = Anchor.SHOULDER_R;
-                parts.add(item(at, new ItemStack(Material.WITHER_SKELETON_SKULL), 0, 0, 0, 0.45f, null));
-            }
-            case "orbs" -> {
-                anchor = Anchor.ORBIT;
-                for (int k = 0; k < 3; k++) {
-                    double a = k * Math.PI * 2 / 3;
-                    BlockDisplay d = block(at, Material.MAGMA_BLOCK, (float) (Math.cos(a) * 0.75), 0, (float) (Math.sin(a) * 0.75), 0.18f, 0.18f, 0.18f,
-                            new Quaternionf().rotateY((float) a).rotateX(0.6f));
-                    d.setBrightness(new Display.Brightness(15, 15));
-                    parts.add(d);
-                }
-            }
-            default -> {
-                // "boots", "flames", "embers", "halo" : uniquement des particules
-                anchor = Anchor.HIP;
             }
         }
+        // sinon : visuel fait uniquement de particules (boots, flames, embers, halo)
         return new Model(visual, anchor, parts);
+    }
+
+    private static float[] vec(Object o, float def) {
+        float[] out = {def, def, def};
+        if (o instanceof List<?> l) {
+            for (int i = 0; i < 3 && i < l.size(); i++) if (l.get(i) instanceof Number n) out[i] = n.floatValue();
+        }
+        return out;
+    }
+
+    private Display part(Location at, Map<?, ?> m) {
+        float[] c = vec(m.get("at"), 0), r = vec(m.get("rot"), 0);
+        // accroché au joueur : le repère part du haut du joueur, pas de ses pieds
+        Vector3f center = new Vector3f(c[0], c[1] - (mounts != null ? ATTACH : 0), c[2]);
+        Quaternionf q = new Quaternionf().rotateY((float) Math.toRadians(r[1])).rotateX((float) Math.toRadians(r[0]))
+                .rotateZ((float) Math.toRadians(r[2]));
+        Display d;
+        if (m.get("item") != null) {
+            Material mat = Material.matchMaterial(String.valueOf(m.get("item")));
+            if (mat == null) return null;
+            float s = m.get("scale") instanceof Number n ? n.floatValue() : 0.4f;
+            d = item(at, new ItemStack(mat), center, s, q);
+        } else if (m.get("block") != null) {
+            BlockData data;
+            try {
+                String b = String.valueOf(m.get("block"));
+                data = Bukkit.createBlockData(b.contains(":") ? b : "minecraft:" + b);
+            } catch (IllegalArgumentException e) {
+                plugin.getLogger().warning("cosmetics.yml : bloc inconnu " + m.get("block"));
+                return null;
+            }
+            float[] s = vec(m.get("size"), 0.1f);
+            d = block(at, data, center, new Vector3f(s[0], s[1], s[2]), q);
+        } else {
+            return null;
+        }
+        if (Boolean.TRUE.equals(m.get("bright"))) d.setBrightness(new Display.Brightness(15, 15));
+        if (m.get("glow") != null) {
+            try {
+                d.setGlowColorOverride(Color.fromRGB(Integer.parseInt(String.valueOf(m.get("glow")).replace("#", ""), 16)));
+                d.setGlowing(true);
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+        return d;
     }
 
     // ================================================================= briques
@@ -584,30 +458,24 @@ final class Cosmetics {
         d.setShadowRadius(0);
     }
 
-    private BlockDisplay block(Location at, Material m, float cx, float cy, float cz, float sx, float sy, float sz, Quaternionf rot) {
-        return blockData(at, m.createBlockData(), cx, cy, cz, sx, sy, sz, rot);
-    }
-
-    /** Un pavé centré en (cx, cy, cz), de taille (sx, sy, sz), tourné de rot autour de son centre. */
-    private BlockDisplay blockData(Location at, BlockData data, float cx, float cy, float cz, float sx, float sy, float sz, Quaternionf rot) {
-        Quaternionf q = rot == null ? new Quaternionf() : rot;
-        Vector3f half = new Vector3f(sx / 2, sy / 2, sz / 2);
+    /** Un pavé centré en "center", de taille "size", tourné de q autour de son centre. */
+    private BlockDisplay block(Location at, BlockData data, Vector3f center, Vector3f size, Quaternionf q) {
+        Vector3f half = new Vector3f(size).mul(0.5f);
         q.transform(half);
-        Vector3f translation = new Vector3f(cx, cy, cz).sub(half);
+        Vector3f translation = new Vector3f(center).sub(half);
         return at.getWorld().spawn(at, BlockDisplay.class, d -> {
             common(d);
             d.setBlock(data);
-            d.setTransformation(new Transformation(translation, q, new Vector3f(sx, sy, sz), new Quaternionf()));
+            d.setTransformation(new Transformation(translation, q, size, new Quaternionf()));
         });
     }
 
-    private ItemDisplay item(Location at, ItemStack it, float cx, float cy, float cz, float scale, Quaternionf rot) {
+    private ItemDisplay item(Location at, ItemStack it, Vector3f center, float scale, Quaternionf q) {
         return at.getWorld().spawn(at, ItemDisplay.class, d -> {
             common(d);
             d.setItemStack(it);
             d.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
-            d.setTransformation(new Transformation(new Vector3f(cx, cy, cz), rot == null ? new Quaternionf() : rot,
-                    new Vector3f(scale, scale, scale), new Quaternionf()));
+            d.setTransformation(new Transformation(center, q, new Vector3f(scale, scale, scale), new Quaternionf()));
         });
     }
 }
