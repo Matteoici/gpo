@@ -610,7 +610,7 @@ public final class PumpkinKing {
                         Material.MOSS_BLOCK.createBlockData(), true);
                 sound(at, "block.big_dripleaf.tilt_down", 1.5f, 0.6f);
                 for (Player v : nearby(at, r + 0.3)) {
-                    v.damage(cfg("damage.vines", 4) * mult(), boss);
+                    hit(v, cfg("damage.vines", 4) * mult());
                     v.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 45, 6, false, false, true));
                     root(v, 45);
                 }
@@ -648,7 +648,7 @@ public final class PumpkinKing {
                 if (Math.abs(d - r) > 0.9 || hit.contains(p.getUniqueId())) continue;
                 if (!p.isOnGround()) continue; // sauté par-dessus
                 hit.add(p.getUniqueId());
-                p.damage(cfg("damage.flame-wave", 7) * mult(), boss);
+                hit(p, cfg("damage.flame-wave", 7) * mult());
                 p.setFireTicks(60);
             }
         }, null));
@@ -724,7 +724,7 @@ public final class PumpkinKing {
                     l.getWorld().spawnParticle(Particle.FLAME, l.clone().add(0, 2, 0), 30, 0.2, 2, 0.2, 0.02, null, true);
                     sound(l, "entity.blaze.hurt", 1.2f, 0.5f);
                     for (Player p : nearby(l, 2.2 * zs())) {
-                        p.damage(cfg("damage.seed-rain", 6) * mult(), boss);
+                        hit(p, cfg("damage.seed-rain", 6) * mult());
                         p.setFireTicks(40);
                     }
                 });
@@ -751,7 +751,7 @@ public final class PumpkinKing {
             sound(c, "entity.warden.sonic_boom", 3f, 0.8f);
             c.getWorld().spawnParticle(Particle.EXPLOSION_EMITTER, c, 1, 0, 0, 0, 0, null, true);
             for (Player p : nearby(c, slamR)) {
-                p.damage(cfg("damage.slam", 12) * mult(), boss);
+                hit(p, cfg("damage.slam", 12) * mult());
                 p.setVelocity(p.getLocation().toVector().subtract(c.toVector()).setY(0).normalize().multiply(1.2).setY(0.8));
             }
             if (boss != null && boss.isValid() && !ended) boss.setAI(true);
@@ -763,7 +763,7 @@ public final class PumpkinKing {
         at.getWorld().spawnParticle(Particle.FLAME, at.clone().add(0, 0.5, 0), 40, r * 0.4, 0.3, r * 0.4, 0.05, null, true);
         sound(at, "entity.generic.explode", 2f, 0.9f);
         for (Player p : nearby(at, r)) {
-            p.damage(dmg * mult(), boss);
+            hit(p, dmg * mult());
             if (fire) p.setFireTicks(40);
             Vector kb = p.getLocation().toVector().subtract(at.toVector()).setY(0);
             if (kb.lengthSquared() > 0.01) p.setVelocity(kb.normalize().multiply(0.6).setY(0.35));
@@ -771,7 +771,24 @@ public final class PumpkinKing {
     }
 
     private double mult() {
-        return cfg("damage.multiplier", 1.35) * (enraged ? 1.25 : 1.0) * (phase == 3 ? cfg("damage.phase-3-multiplier", 1.6) : phase == 2 ? 1.15 : 1.0);
+        return cfg("damage.multiplier", 1.35) * (enraged ? 1.25 : 1.0) * (phase == 3 ? cfg("damage.phase-3-multiplier", 1.6)
+                : phase == 2 ? cfg("damage.phase-2-multiplier", 1.4) : cfg("damage.phase-1-multiplier", 1.4));
+    }
+
+    /**
+     * Un coup du boss. Une partie traverse l'armure (dégâts magiques : seuls les enchantements Protection comptent),
+     * sinon une armure en netherite enchantée ne prend presque rien.
+     */
+    private void hit(Player p, double amount) {
+        if (boss == null || p.isDead()) return;
+        double pierce = Math.max(0, Math.min(1, phase == 3 ? cfg("damage.armor-pierce-phase-3", 0.0) : cfg("damage.armor-pierce", 0.3)));
+        double normal = amount * (1 - pierce);
+        if (normal > 0) p.damage(normal, boss);
+        if (pierce > 0 && !p.isDead()) {
+            p.setNoDamageTicks(0); // sinon le 2e morceau du coup serait ignoré (temps d'invulnérabilité)
+            p.damage(amount * pierce, org.bukkit.damage.DamageSource.builder(org.bukkit.damage.DamageType.MAGIC)
+                    .withCausingEntity(boss).withDirectEntity(boss).build());
+        }
     }
 
     /** Lignes de citrouilles qui jaillissent du sol vers chaque joueur. */
@@ -805,7 +822,7 @@ public final class PumpkinKing {
                 if (k % 2 == 0) sound(l, "block.big_dripleaf.break", 1.4f, 0.5f);
                 for (Player p : nearby(l, 1.6 * Math.sqrt(zs()))) {
                     if (!hit.add(p.getUniqueId())) continue;
-                    p.damage(cfg("damage.spikes", 7) * mult(), boss);
+                    hit(p, cfg("damage.spikes", 7) * mult());
                     p.setVelocity(p.getVelocity().setY(0.95));
                 }
             }, null));
@@ -870,7 +887,7 @@ public final class PumpkinKing {
                 }
                 for (Player p : nearby(c, r)) {
                     if (!hit.add(p.getUniqueId())) continue;
-                    p.damage(cfg("damage.scythe", 10) * mult(), boss);
+                    hit(p, cfg("damage.scythe", 10) * mult());
                     Vector kb = p.getLocation().toVector().subtract(c.toVector()).setY(0);
                     if (kb.lengthSquared() > 0.01) p.setVelocity(kb.normalize().multiply(1.3).setY(0.5));
                 }
@@ -927,7 +944,7 @@ public final class PumpkinKing {
                 cur.getWorld().spawnParticle(Particle.BLOCK, cur, 15, 0.8, 0.1, 0.8, 0, Material.DIRT.createBlockData(), true);
                 for (Player p : nearby(next, (1.4 + scale * 0.35) * Math.sqrt(zs()))) {
                     if (!hit.add(p.getUniqueId())) continue;
-                    p.damage(cfg("damage.charge", 9) * mult(), boss);
+                    hit(p, cfg("damage.charge", 9) * mult());
                     p.setVelocity(d.clone().multiply(1.2).add(new Vector(0, 0.7, 0)));
                     sound(p.getLocation(), "entity.player.attack.knockback", 1.5f, 0.7f);
                 }
@@ -1023,7 +1040,7 @@ public final class PumpkinKing {
             sound(dest, "entity.dragon_fireball.explode", 3f, 0.6f);
             shake(dest, 22);
             for (Player p : nearby(dest, r)) {
-                p.damage(cfg("damage.meteor", 14) * mult(), boss);
+                hit(p, cfg("damage.meteor", 14) * mult());
                 p.setFireTicks(80);
                 Vector kb = p.getLocation().toVector().subtract(dest.toVector()).setY(0);
                 if (kb.lengthSquared() < 0.01) kb = new Vector(0.1, 0, 0);
@@ -1131,7 +1148,7 @@ public final class PumpkinKing {
                                     0.3, 0.02, null, true);
                             for (Player p : nearby(l, 1.8)) {
                                 if (!hit.add(p.getUniqueId())) continue;
-                                p.damage(cfg("damage.sword-finisher", 11) * mult(), boss);
+                                hit(p, cfg("damage.sword-finisher", 11) * mult());
                                 p.setVelocity(new Vector(0, 1.05, 0));
                             }
                         });
@@ -1146,7 +1163,7 @@ public final class PumpkinKing {
                     for (Player p : nearby(c, reach + 0.6)) {
                         Vector to = p.getLocation().toVector().subtract(c.toVector()).setY(0);
                         if (to.lengthSquared() > 0.5 && to.normalize().dot(dir) < 0.2) continue;
-                        p.damage(cfg("damage.sword", 7) * mult(), boss);
+                        hit(p, cfg("damage.sword", 7) * mult());
                         p.setVelocity(dir.clone().multiply(0.9).setY(0.35));
                     }
                 }
@@ -1190,7 +1207,7 @@ public final class PumpkinKing {
                     if (k % 3 == 0) sound(l, "block.fire.extinguish", 1f, 0.6f);
                     for (Player p : nearby(l, 1.5 * Math.sqrt(zs()))) {
                         if (!hit.add(p.getUniqueId())) continue;
-                        p.damage(cfg("damage.fissure", 8) * mult(), boss);
+                        hit(p, cfg("damage.fissure", 8) * mult());
                         p.setFireTicks(80);
                         p.setVelocity(p.getVelocity().setY(0.75));
                     }
@@ -1257,7 +1274,7 @@ public final class PumpkinKing {
                     target.getWorld().spawnParticle(Particle.EXPLOSION, target.clone().add(0, 0.5, 0), 2, 0.5, 0.2, 0.5, 0, null, true);
                     target.getWorld().spawnParticle(Particle.SOUL, target.clone().add(0, 0.4, 0), 20, 1, 0.2, 1, 0.03, null, true);
                     sound(target, "entity.warden.sonic_boom", 1.2f, 1.7f);
-                    for (Player v : nearby(target, 2.3 * zs())) v.damage(cfg("damage.eclipse", 8) * mult(), boss);
+                    for (Player v : nearby(target, 2.3 * zs())) hit(v, cfg("damage.eclipse", 8) * mult());
                 });
             }
         }, () -> later(18, () -> {
@@ -1333,7 +1350,7 @@ public final class PumpkinKing {
                     for (Player p : nearby(c, radius + 1)) {
                         Vector to = p.getLocation().toVector().subtract(c.toVector()).setY(0);
                         if (to.getX() * n.getX() + to.getZ() * n.getZ() < -0.5 || !hit.add(p.getUniqueId())) continue;
-                        p.damage(cfg("damage.soul-blade", 15) * mult(), boss);
+                        hit(p, cfg("damage.soul-blade", 15) * mult());
                         p.setVelocity(n.clone().multiply(1.1).setY(0.6));
                     }
                 }, () -> {
@@ -1396,7 +1413,7 @@ public final class PumpkinKing {
                                 Location pl = p.getLocation();
                                 if (Math.abs(pl.getX() - l.getX()) <= 1.6 && Math.abs(pl.getZ() - l.getZ()) <= 1.6 && Math.abs(pl.getY() - l.getY()) < 3
                                         && hit.add(p.getUniqueId()) && !nearby(pl, 0.1).isEmpty()) {
-                                    p.damage(cfg("damage.carillon", 9) * mult(), boss);
+                                    hit(p, cfg("damage.carillon", 9) * mult());
                                 }
                             }
                         });
@@ -1460,7 +1477,7 @@ public final class PumpkinKing {
                     sound(lock, "block.anvil.land", 3f, 0.5f);
                     shake(lock, 30);
                     for (Player p : nearby(lock, 4.5 * zs())) {
-                        p.damage(cfg("damage.leap", 14) * mult(), boss);
+                        hit(p, cfg("damage.leap", 14) * mult());
                         Vector kb = p.getLocation().toVector().subtract(lock.toVector()).setY(0);
                         if (kb.lengthSquared() < 0.01) kb = new Vector(0.1, 0, 0);
                         p.setVelocity(kb.normalize().multiply(1.3).setY(0.9));
@@ -1481,7 +1498,7 @@ public final class PumpkinKing {
                                 for (Player p : nearby(lock, r + 1)) {
                                     double d = horizontalDist(p.getLocation(), lock);
                                     if (Math.abs(d - r) > 0.9 || !p.isOnGround() || !hit.add(p.getUniqueId())) continue;
-                                    p.damage(cfg("damage.leap-ring", 6) * mult(), boss);
+                                    hit(p, cfg("damage.leap-ring", 6) * mult());
                                     p.setVelocity(p.getVelocity().setY(0.5));
                                 }
                             }, null);
@@ -1545,7 +1562,7 @@ public final class PumpkinKing {
                     heart.getWorld().spawnParticle(Particle.DUST, l, 1, 0, 0, 0, 0, new Particle.DustOptions(Color.fromRGB(60, 200, 230), 0.9f), true);
                 }
                 if (i % 5 == 0) {
-                    p.damage(cfg("damage.feast", 3) * mult(), boss);
+                    hit(p, cfg("damage.feast", 3) * mult());
                     hp = Math.min(maxHp, hp + maxHp * cfg("feast-heal-percent", 1.0) / 100.0);
                     heart.getWorld().spawnParticle(Particle.HEART, heart, 2, 0.6, 0.6, 0.6, 0, null, true);
                 }
@@ -1639,7 +1656,7 @@ public final class PumpkinKing {
             shake(c, arena + 15);
             for (Player p : nearby(c, arena + 10)) {
                 if (spared.contains(p.getUniqueId())) continue;
-                p.damage(cfg("damage.nova", 22) * mult(), boss);
+                hit(p, cfg("damage.nova", 22) * mult());
                 p.setFireTicks(100);
                 Vector kb = p.getLocation().toVector().subtract(c.toVector()).setY(0);
                 if (kb.lengthSquared() < 0.01) kb = new Vector(0.1, 0, 0);
@@ -1693,7 +1710,7 @@ public final class PumpkinKing {
                         Integer last = cd.get(p.getUniqueId());
                         if (last != null && i - last < 12) continue;
                         cd.put(p.getUniqueId(), i);
-                        p.damage(cfg("damage.cross", 7) * mult(), boss);
+                        hit(p, cfg("damage.cross", 7) * mult());
                         p.setFireTicks(60);
                     }
                 }
@@ -1762,7 +1779,7 @@ public final class PumpkinKing {
                 Integer last = cd.get(p.getUniqueId());
                 if (last != null && i - last < 15) continue;
                 cd.put(p.getUniqueId(), i);
-                p.damage(cfg("damage.cage-touch", 5) * mult(), boss);
+                hit(p, cfg("damage.cage-touch", 5) * mult());
                 p.setFireTicks(40);
                 Vector in = c.toVector().subtract(p.getLocation().toVector()).setY(0);
                 if (in.lengthSquared() > 0.01) p.setVelocity(in.normalize().multiply(0.7).setY(0.3));
@@ -1777,7 +1794,7 @@ public final class PumpkinKing {
             c.getWorld().spawnParticle(Particle.BLOCK, c.clone().add(0, 0.5, 0), 120, 1.5, 0.6, 1.5, 0, Material.PUMPKIN.createBlockData(), true);
             sound(c, "entity.generic.explode", 3f, 0.6f);
             for (Player p : nearby(c, 2.6 * Math.sqrt(zs()))) {
-                p.damage(cfg("damage.cage", 16) * mult(), boss);
+                hit(p, cfg("damage.cage", 16) * mult());
                 p.setVelocity(new Vector(0, 1.1, 0));
                 p.setFireTicks(80);
             }
@@ -1823,7 +1840,7 @@ public final class PumpkinKing {
                     Integer last = cd.get(p.getUniqueId());
                     if (last != null && i - last < 18) continue;
                     cd.put(p.getUniqueId(), i);
-                    p.damage(cfg("damage.tornado", 6) * mult(), boss);
+                    hit(p, cfg("damage.tornado", 6) * mult());
                     p.setFireTicks(60);
                     ThreadLocalRandom r = ThreadLocalRandom.current();
                     p.setVelocity(new Vector(r.nextDouble(-0.5, 0.5), 1.25, r.nextDouble(-0.5, 0.5)));
@@ -1856,7 +1873,7 @@ public final class PumpkinKing {
                         at.getWorld().spawnParticle(Particle.LAVA, at, 6, r * 0.4, 0.2, r * 0.4, 0, null, true);
                         sound(at, "entity.evoker_fangs.attack", 1.5f, 0.6f);
                         for (Player v : nearby(at, r)) {
-                            v.damage(cfg("damage.hands", 8) * mult(), boss);
+                            hit(v, cfg("damage.hands", 8) * mult());
                             v.setVelocity(v.getVelocity().setY(0.85));
                         }
                     });
@@ -2079,7 +2096,7 @@ public final class PumpkinKing {
             }
         }, null);
         for (Player p : nearby(c, r)) {
-            if (dmg > 0) p.damage(dmg * mult(), boss);
+            if (dmg > 0) hit(p, dmg * mult());
             Vector kb = p.getLocation().toVector().subtract(c.toVector()).setY(0);
             if (kb.lengthSquared() < 0.01) kb = new Vector(0.1, 0, 0);
             p.setVelocity(kb.normalize().multiply(push).setY(0.55));

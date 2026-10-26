@@ -80,8 +80,14 @@ boss:
     cage-touch: 5
     tornado: 6
     hands: 8
-    # tous les dégâts sont multipliés par ça en phase 3
+    # multiplicateur des dégâts par phase
+    phase-1-multiplier: 1.4
+    phase-2-multiplier: 1.4
     phase-3-multiplier: 1.6
+    # part de chaque coup qui traverse l'armure (seuls les enchantements Protection la réduisent)
+    # 0.3 = 30 % ; sans ça, une armure en netherite enchantée ne prend presque rien
+    armor-pierce: 0.3
+    armor-pierce-phase-3: 0.0
   # phase 2 quand il lui reste 70 % de vie ; à 0 il fait le mort puis revient en phase 3 (voir phase-3-health-multiplier)
   # usure de l'armure pendant le combat (0.25 = 4 fois moins vite que d'habitude)
   armor-wear: 0.25
