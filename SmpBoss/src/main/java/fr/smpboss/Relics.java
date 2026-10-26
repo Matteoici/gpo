@@ -32,7 +32,7 @@ public final class Relics {
 
     private final SmpBoss plugin;
     private final Map<String, Relic> catalog = new LinkedHashMap<>();
-    private final NamespacedKey healthKey, speedKey;
+    private final NamespacedKey healthKey, speedKey, damageKey, armorKey;
     private final Map<UUID, Long> lastHurt = new HashMap<>();
     public int maxEquipped;
 
@@ -40,6 +40,8 @@ public final class Relics {
         this.plugin = plugin;
         healthKey = new NamespacedKey(plugin, "relic_health");
         speedKey = new NamespacedKey(plugin, "relic_speed");
+        damageKey = new NamespacedKey(plugin, "relic_damage");
+        armorKey = new NamespacedKey(plugin, "relic_armor");
     }
 
     void load() {
@@ -55,7 +57,8 @@ public final class Relics {
             catalog.put(id.toLowerCase(Locale.ROOT), new Relic(id.toLowerCase(Locale.ROOT), r.getString("name", id),
                     Rarity.of(r.getString("rarity")), icon == null ? Material.NETHER_STAR : icon, r.getString("item-model", ""),
                     r.getStringList("lore"), r.getDouble("health"), r.getDouble("speed"), r.getDouble("regen"),
-                    r.getString("trail"), r.getBoolean("backpack"), r.getString("visual", defaultVisual(id, r, icon))));
+                    r.getString("trail"), r.getBoolean("backpack"), r.getString("visual", defaultVisual(id, r, icon)),
+                    r.getDouble("damage"), r.getDouble("armor")));
         }
     }
 
@@ -133,15 +136,19 @@ public final class Relics {
 
     /** Remet les bonus (vie, vitesse) selon les reliques équipées. */
     public void apply(Player p) {
-        double health = 0, speed = 0;
+        double health = 0, speed = 0, damage = 0, armor = 0;
         for (String id : plugin.store().of(p.getUniqueId()).equipped) {
             Relic r = get(id);
             if (r == null) continue;
             health += r.health() * 2;
             speed += r.speed() / 100.0;
+            damage += r.damage() / 100.0;
+            armor += r.armor();
         }
         set(p, Attribute.MAX_HEALTH, healthKey, health, AttributeModifier.Operation.ADD_NUMBER);
         set(p, Attribute.MOVEMENT_SPEED, speedKey, speed, AttributeModifier.Operation.ADD_SCALAR);
+        set(p, Attribute.ATTACK_DAMAGE, damageKey, damage, AttributeModifier.Operation.ADD_SCALAR);
+        set(p, Attribute.ARMOR, armorKey, armor, AttributeModifier.Operation.ADD_NUMBER);
         double max = p.getAttribute(Attribute.MAX_HEALTH) == null ? 20 : p.getAttribute(Attribute.MAX_HEALTH).getValue();
         if (p.getHealth() > max) p.setHealth(max);
         updateBackpack(p);

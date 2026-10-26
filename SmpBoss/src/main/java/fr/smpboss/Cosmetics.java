@@ -41,7 +41,7 @@ import java.util.concurrent.ThreadLocalRandom;
 final class Cosmetics {
 
     private enum Anchor {
-        BACK, CHEST, HIP, HEAD, SHOULDER
+        BACK, CHEST, HIP, HEAD, SHOULDER, SHOULDER_R, ORBIT
     }
 
     private record Model(String visual, Anchor anchor, List<Display> parts) {
@@ -204,6 +204,16 @@ final class Cosmetics {
                         .add(fwd.clone().multiply(-0.3 + Math.sin(circle) * 0.08));
                 yaw = (w.t * 3f) % 360f; // le feu follet tourne sur lui-même
             }
+            case SHOULDER_R -> {
+                double bob = Math.sin(w.t * 0.1 + 1.5) * 0.07;
+                out = feet.clone().add(0, (sneak ? 1.6 : 1.88) + bob, 0).add(left.clone().multiply(-0.58)).add(fwd.clone().multiply(-0.25));
+                // le crâne regarde devant lui, en hochant un peu
+                yaw = w.bodyYaw + (float) Math.sin(w.t * 0.05) * 20f;
+            }
+            case ORBIT -> {
+                out = feet.clone().add(0, (sneak ? 0.9 : 1.05) + Math.sin(w.t * 0.07) * 0.08, 0);
+                yaw = (w.t * 4f) % 360f; // les orbes tournent autour du joueur
+            }
             default -> out = feet.clone();
         }
         out.setYaw(yaw);
@@ -254,6 +264,55 @@ final class Cosmetics {
                     if (w.t % 25 == 0) {
                         world.spawnParticle(Particle.WAX_OFF, now.clone().add(r.nextDouble(-0.25, 0.25), p.getEyeHeight() + 0.45,
                                 r.nextDouble(-0.25, 0.25)), 1, 0, 0, 0, 0);
+                    }
+                }
+                case "embers" -> {
+                    if (w.t % 2 == 0) {
+                        double a = w.t * 0.18;
+                        for (int k = 0; k < 2; k++) {
+                            double aa = a + Math.PI * k;
+                            world.spawnParticle(Particle.DUST, now.clone().add(Math.cos(aa) * 0.55, 0.3 + Math.sin(w.t * 0.05 + k) * 0.5 + 0.5,
+                                    Math.sin(aa) * 0.55), 1, 0, 0, 0, 0, new Particle.DustOptions(Color.fromRGB(255, 70 + r.nextInt(60), 0), 0.8f));
+                        }
+                    }
+                    if (moving && w.t % 4 == 0) world.spawnParticle(Particle.LAVA, now.clone().add(0, 0.1, 0), 1, 0.1, 0, 0.1, 0);
+                }
+                case "halo" -> {
+                    if (w.t % 2 == 0) {
+                        double y = p.getEyeHeight() + 0.55;
+                        for (int k = 0; k < 3; k++) {
+                            double a = w.t * 0.12 + k * Math.PI * 2 / 3;
+                            world.spawnParticle(Particle.DUST, now.clone().add(Math.cos(a) * 0.32, y, Math.sin(a) * 0.32), 1, 0, 0, 0, 0,
+                                    new Particle.DustOptions(Color.fromRGB(220, 10, 20), 0.9f));
+                        }
+                    }
+                    if (w.t % 20 == 0) world.spawnParticle(Particle.CRIMSON_SPORE, now.clone().add(0, p.getEyeHeight() + 0.5, 0), 3, 0.2, 0.05, 0.2, 0);
+                }
+                case "wings", "cape" -> {
+                    if (w.t % 9 == 0) world.spawnParticle(Particle.ASH, now.clone().add(0, 1.2, 0), 3, 0.4, 0.4, 0.4, 0);
+                    if (m.visual().equals("wings") && w.t % 14 == 0) {
+                        world.spawnParticle(Particle.DUST, now.clone().add(0, 1.3, 0), 2, 0.5, 0.3, 0.5, 0,
+                                new Particle.DustOptions(Color.fromRGB(150, 0, 0), 1.0f));
+                    }
+                }
+                case "hellcrown" -> {
+                    if (w.t % 6 == 0) {
+                        world.spawnParticle(Particle.FLAME, now.clone().add(r.nextDouble(-0.22, 0.22), p.getEyeHeight() + 0.55,
+                                r.nextDouble(-0.22, 0.22)), 1, 0, 0.02, 0, 0.003);
+                    }
+                }
+                case "skull" -> {
+                    if (w.t % 10 == 0 && !m.parts().isEmpty()) {
+                        world.spawnParticle(Particle.SOUL, m.parts().get(0).getLocation().add(0, 0.1, 0), 1, 0.05, 0.05, 0.05, 0.005);
+                    }
+                }
+                case "orbs" -> {
+                    if (w.t % 3 == 0) {
+                        double a = Math.toRadians(-(w.t * 4.0)) ;
+                        for (int k = 0; k < 3; k++) {
+                            double aa = a + k * Math.PI * 2 / 3;
+                            world.spawnParticle(Particle.SMALL_FLAME, now.clone().add(Math.cos(aa) * 0.75, 1.05, Math.sin(aa) * 0.75), 1, 0.02, 0.02, 0.02, 0.002);
+                        }
                     }
                 }
                 case "lantern" -> {
@@ -367,8 +426,89 @@ final class Cosmetics {
                         new Quaternionf().rotateZ((float) Math.toRadians(45))));
                 parts.add(item(at, new ItemStack(Material.GOLDEN_CARROT), 0, -0.04f, 0.035f, 0.13f, null));
             }
+            case "horns" -> {
+                anchor = Anchor.HEAD;
+                // deux cornes de démon qui partent des tempes, se courbent vers l'extérieur puis vers le haut
+                for (int s = -1; s <= 1; s += 2) {
+                    float x = s * 0.2f;
+                    parts.add(block(at, Material.POLISHED_BLACKSTONE, x, -0.12f, 0.06f, 0.11f, 0.14f, 0.11f,
+                            new Quaternionf().rotateZ((float) Math.toRadians(-s * 35))));
+                    parts.add(block(at, Material.BLACKSTONE, x + s * 0.08f, -0.01f, 0.05f, 0.08f, 0.13f, 0.08f,
+                            new Quaternionf().rotateZ((float) Math.toRadians(-s * 20))));
+                    parts.add(block(at, Material.RED_NETHER_BRICKS, x + s * 0.11f, 0.1f, 0.03f, 0.06f, 0.11f, 0.06f,
+                            new Quaternionf().rotateZ((float) Math.toRadians(s * 8)).rotateX((float) Math.toRadians(-15))));
+                    parts.add(block(at, Material.REDSTONE_BLOCK, x + s * 0.1f, 0.19f, 0.0f, 0.035f, 0.07f, 0.035f,
+                            new Quaternionf().rotateZ((float) Math.toRadians(s * 18)).rotateX((float) Math.toRadians(-25))));
+                }
+            }
+            case "hellcrown" -> {
+                anchor = Anchor.HEAD;
+                float h = 0.255f;
+                parts.add(block(at, Material.NETHERITE_BLOCK, 0, 0, h, 0.54f, 0.11f, 0.03f, null));
+                parts.add(block(at, Material.NETHERITE_BLOCK, 0, 0, -h, 0.54f, 0.11f, 0.03f, null));
+                parts.add(block(at, Material.NETHERITE_BLOCK, h, 0, 0, 0.03f, 0.11f, 0.48f, null));
+                parts.add(block(at, Material.NETHERITE_BLOCK, -h, 0, 0, 0.03f, 0.11f, 0.48f, null));
+                // pointes acérées en flammes figées
+                for (float x : new float[]{-0.18f, 0, 0.18f}) {
+                    for (float z : new float[]{h, -h}) {
+                        float tall = x == 0 ? 0.17f : 0.12f;
+                        parts.add(block(at, Material.BLACKSTONE, x, 0.05f + tall / 2, z, 0.05f, tall, 0.03f,
+                                new Quaternionf().rotateZ((float) Math.toRadians(x * 60))));
+                    }
+                }
+                for (float z : new float[]{-0.15f, 0.15f}) {
+                    for (float x : new float[]{h, -h}) {
+                        parts.add(block(at, Material.BLACKSTONE, x, 0.11f, z, 0.03f, 0.12f, 0.05f, null));
+                    }
+                }
+                BlockDisplay gem = block(at, Material.SHROOMLIGHT, 0, 0, h + 0.022f, 0.07f, 0.07f, 0.02f,
+                        new Quaternionf().rotateZ((float) Math.toRadians(45)));
+                gem.setBrightness(new Display.Brightness(15, 15));
+                parts.add(gem);
+                parts.add(block(at, Material.REDSTONE_BLOCK, h + 0.022f, 0, 0, 0.02f, 0.05f, 0.05f, null));
+                parts.add(block(at, Material.REDSTONE_BLOCK, -h - 0.022f, 0, 0, 0.02f, 0.05f, 0.05f, null));
+                parts.add(block(at, Material.REDSTONE_BLOCK, 0, 0, -h - 0.022f, 0.05f, 0.05f, 0.02f, null));
+            }
+            case "wings" -> {
+                anchor = Anchor.BACK;
+                // ailes de démon : os noirs et membranes rouge sombre, repliées en V dans le dos
+                for (int s = -1; s <= 1; s += 2) {
+                    Quaternionf open = new Quaternionf().rotateY((float) Math.toRadians(s * 28)).rotateZ((float) Math.toRadians(-s * 12));
+                    parts.add(block(at, Material.RED_WOOL, s * 0.42f, 0.12f, -0.32f, 0.62f, 0.6f, 0.02f, open));
+                    parts.add(block(at, Material.BLACK_CONCRETE, s * 0.42f, 0.44f, -0.315f, 0.66f, 0.05f, 0.04f, open));
+                    for (int k = 0; k < 3; k++) {
+                        float x = s * (0.2f + k * 0.18f);
+                        parts.add(block(at, Material.BLACK_CONCRETE, x, 0.1f - k * 0.06f, -0.3f - k * 0.08f, 0.025f, 0.6f - k * 0.1f, 0.025f,
+                                new Quaternionf().rotateY((float) Math.toRadians(s * 28)).rotateZ((float) Math.toRadians(-s * (10 + k * 8)))));
+                    }
+                    parts.add(block(at, Material.BONE_BLOCK, s * 0.74f, 0.5f, -0.48f, 0.05f, 0.08f, 0.05f, open));
+                }
+            }
+            case "cape" -> {
+                anchor = Anchor.BACK;
+                Quaternionf tilt = new Quaternionf().rotateX((float) Math.toRadians(-8));
+                parts.add(block(at, Material.BLACK_WOOL, 0, -0.32f, -0.2f, 0.56f, 1.05f, 0.03f, tilt));
+                parts.add(block(at, Material.RED_WOOL, 0, -0.3f, -0.182f, 0.5f, 1.0f, 0.01f, tilt));
+                parts.add(block(at, Material.GOLD_BLOCK, 0.2f, 0.2f, 0.05f, 0.07f, 0.07f, 0.03f, null));
+                parts.add(block(at, Material.GOLD_BLOCK, -0.2f, 0.2f, 0.05f, 0.07f, 0.07f, 0.03f, null));
+                parts.add(block(at, Material.BLACK_WOOL, 0, 0.22f, -0.05f, 0.56f, 0.05f, 0.28f, null));
+            }
+            case "skull" -> {
+                anchor = Anchor.SHOULDER_R;
+                parts.add(item(at, new ItemStack(Material.WITHER_SKELETON_SKULL), 0, 0, 0, 0.45f, null));
+            }
+            case "orbs" -> {
+                anchor = Anchor.ORBIT;
+                for (int k = 0; k < 3; k++) {
+                    double a = k * Math.PI * 2 / 3;
+                    BlockDisplay d = block(at, Material.MAGMA_BLOCK, (float) (Math.cos(a) * 0.75), 0, (float) (Math.sin(a) * 0.75), 0.18f, 0.18f, 0.18f,
+                            new Quaternionf().rotateY((float) a).rotateX(0.6f));
+                    d.setBrightness(new Display.Brightness(15, 15));
+                    parts.add(d);
+                }
+            }
             default -> {
-                // "boots", "flames" : uniquement des particules
+                // "boots", "flames", "embers", "halo" : uniquement des particules
                 anchor = Anchor.HIP;
             }
         }

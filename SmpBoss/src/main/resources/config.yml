@@ -1,4 +1,4 @@
-config-version: 3
+config-version: 4
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -156,17 +156,25 @@ loot:
   pools:
     rare:
       - {relic: trainee_flammes}
+      - {relic: braises_ardentes}
+      - {relic: crane_maudit}
       - {item: CARVED_PUMPKIN, name: "Chapeau du Roi", lore: ["<gray>Un souvenir du Roi Citrouille."]}
     epic:
       - {relic: amulette_recolte}
       - {relic: lanterne_mineure}
+      - {relic: cornes_demon}
+      - {relic: orbe_infernal}
     legendary:
       - {relic: couronne}
       - {relic: lanterne_eternelle}
       - {relic: bottes_recolte}
+      - {relic: ailes_demon}
+      - {relic: oeil_jugement}
     secret:
       - {relic: sac_recolte, title: "Celui qui a dévoré la Récolte"}
       - {sickle: true, title: "Faucheur du Néant"}
+      - {relic: couronne_enfers, title: "Souverain des Enfers"}
+      - {relic: cape_nuit, title: "Enfant de la Nuit Éternelle"}
 
 # ---------------------------------------------------------------- Reliques
 # health = cœurs en plus · speed = % de vitesse · regen = demi-cœurs toutes les 4 s hors combat (8 s sans dégâts)
@@ -226,6 +234,69 @@ relics:
       visual: backpack
       lore: ["<gray>Il a appartenu au Roi... et il est toujours chaud."]
       backpack: true
+    # ------- arrivées avec l'arène infernale (damage = % de dégâts en plus, armor = points d'armure)
+    braises_ardentes:
+      name: "Braises Ardentes"
+      rarity: rare
+      icon: MAGMA_CREAM
+      visual: embers
+      lore: ["<gray>Des braises de l'arène tournent autour de toi."]
+      armor: 1
+    crane_maudit:
+      name: "Crâne Maudit"
+      rarity: rare
+      icon: WITHER_SKELETON_SKULL
+      visual: skull
+      lore: ["<gray>Il flotte sur ton épaule et murmure des noms."]
+      damage: 3
+    cornes_demon:
+      name: "Cornes du Démon"
+      rarity: epic
+      icon: GOAT_HORN
+      visual: horns
+      lore: ["<gray>Arrachées au crâne de la porte des Enfers."]
+      damage: 6
+    orbe_infernal:
+      name: "Orbes Infernaux"
+      rarity: epic
+      icon: MAGMA_BLOCK
+      visual: orbs
+      lore: ["<gray>Trois éclats de magma te protègent."]
+      health: 1
+      armor: 2
+    ailes_demon:
+      name: "Ailes du Démon"
+      rarity: legendary
+      icon: PHANTOM_MEMBRANE
+      visual: wings
+      lore: ["<gray>Elles ne volent pas... mais quelle allure."]
+      speed: 4
+      health: 1
+    oeil_jugement:
+      name: "Œil du Jugement"
+      rarity: legendary
+      icon: ENDER_EYE
+      visual: halo
+      lore: ["<gray>Celui qui a survécu au Jugement Infernal."]
+      damage: 8
+      regen: 0.5
+    couronne_enfers:
+      name: "Couronne des Enfers"
+      rarity: secret
+      icon: NETHERITE_HELMET
+      visual: hellcrown
+      lore: ["<gray>Forgée dans la lave de l'arène.", "<gray>Seul un souverain la porte."]
+      health: 2
+      damage: 10
+      armor: 2
+    cape_nuit:
+      name: "Cape de la Nuit Éternelle"
+      rarity: secret
+      icon: BLACK_BANNER
+      visual: cape
+      lore: ["<gray>Taillée dans le ciel de la bulle rouge."]
+      speed: 6
+      regen: 1
 
 # ---------------------------------------------------------------- Sac (relique secrète)
 backpack:
@@ -238,6 +309,8 @@ backpack:
 # Sac + Cosmétiques dans la grille d'artisanat 2×2 (ils s'effacent dès qu'on y pose un objet)
 inventory-buttons:
   enabled: true
+  # le totem "Cosmétiques & Reliques" dans l'inventaire (sinon : /reliques ou le menu du serveur)
+  cosmetics: false
 
 # ---------------------------------------------------------------- Faucille (arme secrète)
 sickle:
@@ -282,6 +355,8 @@ messages:
       regen: "<green>✚ Régénère <n> cœur(s) toutes les 4 s <dark_gray>(hors combat)"
       trail: "<gold>✦ Laisse une traînée"
       backpack: "<white>▣ Sac de 27 cases <dark_gray>(/sac) <gray>· 70 % tombe à la mort"
+      damage: "<dark_red>⚔ +<n>% de dégâts"
+      armor: "<gray>🛡 +<n> armure"
     sickle:
       name: "Faucille du Néant"
       lore:
@@ -354,6 +429,13 @@ messages:
     guard-name: "<dark_red><b>Garde du Roi"
     title-enrage: "<dark_red><b>ENRAGÉ"
     subtitle-enrage: "<red>Le Roi perd la raison... tenez bon !"
+  guild-top:
+    header: "<gradient:#ff4b1f:#ffd36b><b>🏆 Top des guildes · Roi Citrouille</b></gradient> <dark_gray>(victoires, puis dégâts)"
+    line: "<rank> <guild> <dark_gray>·</dark_gray> <gold><wins></gold> <gray>victoire(s) / <fights> combat(s) <dark_gray>·</dark_gray> <red><damage></red> <gray>dégâts <dark_gray>·</dark_gray> <white><members></white> <gray>membre(s) venus"
+    empty: "<gray>Aucune guilde n'a encore affronté le Roi."
+    mine: "<gray>Ta guilde : <white>#<rank></white> <dark_gray>·</dark_gray> <gold><wins></gold> <gray>victoire(s), <red><damage></red> <gray>dégâts"
+    fight-header: "<gold><b>🏆 Guildes de ce combat :"
+    fight-line: "<gray>  <white>#<rank></white> <guild> <dark_gray>(<percent>% des dégâts)"
   board:
     title: "<gradient:#ff7a00:#ffd36b><b>♛ Roi Citrouille ♛"
     hp: "<red>❤ <white><hp></white><gray> / <max>"

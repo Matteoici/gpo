@@ -107,7 +107,9 @@ final class InvButtons implements Listener {
         // le bouton Sac n'existe que pour ceux qui ont trouvé le sac (pas de spoil)
         if (plugin.relics().ownsBackpack(p)) g.setItem(BAG, button(p, "sac"));
         else if (isButton(g.getItem(BAG))) g.setItem(BAG, null);
-        g.setItem(COSMETICS, button(p, "cosmetiques"));
+        // le totem des reliques : désactivé par défaut (accès par /reliques ou le menu du serveur)
+        if (plugin.getConfig().getBoolean("inventory-buttons.cosmetics", false)) g.setItem(COSMETICS, button(p, "cosmetiques"));
+        else if (isButton(g.getItem(COSMETICS))) g.setItem(COSMETICS, null);
     }
 
     void clear(Player p) {

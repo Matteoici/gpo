@@ -18,6 +18,10 @@ commands:
     usage: /arene
     aliases: [arena, arène]
     permission: smpboss.arena.join
+  topguildes:
+    description: Classement des guildes contre le boss
+    usage: /topguildes
+    aliases: [topguilde, guildtop, topguild, classementguildes]
   sac:
     description: Ouvrir ton sac (relique)
     usage: /sac

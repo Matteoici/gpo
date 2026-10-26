@@ -2236,6 +2236,8 @@ public final class PumpkinKing {
                     .replace("<player>", SmpBoss.MM.escapeTags(name == null ? "?" : name))
                     .replace("<percent>", String.valueOf(Math.round(e.getValue() * 100 / Math.max(1, total))))));
         }
+        GuildTop gt = plugin.guildTop();
+        if (gt != null) gt.announce(gt.record(damage, true), total);
         for (var e : sorted) {
             Player p = Bukkit.getPlayer(e.getKey());
             if (p == null) continue;
@@ -2261,6 +2263,8 @@ public final class PumpkinKing {
             c.getWorld().spawnParticle(Particle.LARGE_SMOKE, c, 80, 1.5, 2, 1.5, 0.05, null, true);
         }
         Bukkit.broadcast(parse(plugin.msg(msgKey)));
+        // un combat perdu compte quand même pour la participation des guildes (pas un arrêt du staff)
+        if (!"boss.stopped".equals(msgKey) && !damage.isEmpty() && plugin.guildTop() != null) plugin.guildTop().record(damage, false);
         cleanup();
         plugin.bossEnded();
     }

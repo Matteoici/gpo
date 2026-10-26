@@ -12,5 +12,5 @@ import java.util.List;
  */
 public record Relic(String id, String name, Rarity rarity, Material icon, String itemModel, List<String> lore,
                     double health, double speed, double regen, String trail, boolean backpack,
-                    String visual) {
+                    String visual, double damage, double armor) {
 }

@@ -161,6 +161,21 @@ categories:
         command: "largage"
         plugin: "SmpDrop"
         description: "Prochain largage, position et chances de butin"
+      reliques:
+        name: "Reliques"
+        command: "reliques"
+        plugin: "SmpBoss"
+        description: "Équiper tes reliques et cosmétiques"
+      arene:
+        name: "Arène du boss"
+        command: "arene"
+        plugin: "SmpBoss"
+        description: "Aller affronter le Roi Citrouille"
+      topguildes:
+        name: "Top des guildes"
+        command: "topguildes"
+        plugin: "SmpBoss"
+        description: "Classement des guildes contre le boss"
 
   infos:
     name: "Infos"

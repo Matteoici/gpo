@@ -39,6 +39,7 @@ public final class SmpBoss extends JavaPlugin {
     private InvButtons invButtons;
     private PumpkinKing king;
     private Arena arena;
+    private GuildTop guildTop;
     private Location altar;
     private long lastEnd;
     private final Set<RelicMenu> openMenus = new HashSet<>();
@@ -73,6 +74,13 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 3);
             saveConfig();
         }
+        // v4 : 8 nouvelles reliques (2 par rareté) ajoutées aux anciennes configs, totem de l'inventaire retiré
+        if (getConfig().getInt("config-version", 1) < 4) {
+            addDefaultRelics();
+            getConfig().set("inventory-buttons.cosmetics", false);
+            getConfig().set("config-version", 4);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);
@@ -84,6 +92,7 @@ public final class SmpBoss extends JavaPlugin {
         loadAltar();
         registerRecipe();
         getServer().getPluginManager().registerEvents(new BossListener(this), this);
+        guildTop = new GuildTop(this);
         arena = new Arena(this);
         ArenaGuard guard = new ArenaGuard(this, arena);
         getServer().getPluginManager().registerEvents(guard, this);
@@ -120,6 +129,36 @@ public final class SmpBoss extends JavaPlugin {
             if (top instanceof Backpacks.Holder || top instanceof RelicMenu) p.closeInventory();
         }
         if (store != null) store.save(false);
+    }
+
+    /** Copie depuis le config.yml du plugin les reliques et les lots qui manquent dans celui du serveur. */
+    private void addDefaultRelics() {
+        var def = getConfig().getDefaults();
+        if (def == null) return;
+        var list = def.getConfigurationSection("relics.list");
+        if (list != null) {
+            for (String id : list.getKeys(false)) {
+                if (getConfig().isSet("relics.list." + id)) continue;
+                var sec = list.getConfigurationSection(id);
+                if (sec == null) continue;
+                for (String k : sec.getKeys(true)) {
+                    if (!sec.isConfigurationSection(k)) getConfig().set("relics.list." + id + "." + k, sec.get(k));
+                }
+            }
+        }
+        var pools = def.getConfigurationSection("loot.pools");
+        if (pools == null) return;
+        for (String rarity : pools.getKeys(false)) {
+            List<java.util.Map<?, ?>> mine = new ArrayList<>(getConfig().getMapList("loot.pools." + rarity));
+            for (java.util.Map<?, ?> m : def.getMapList("loot.pools." + rarity)) {
+                Object relic = m.get("relic");
+                if (relic == null) continue;
+                boolean has = false;
+                for (java.util.Map<?, ?> x : mine) if (relic.equals(x.get("relic"))) has = true;
+                if (!has) mine.add(m);
+            }
+            getConfig().set("loot.pools." + rarity, mine);
+        }
     }
 
     private void harder(String path, double old, double now) {
@@ -179,6 +218,10 @@ public final class SmpBoss extends JavaPlugin {
         saveAltar();
     }
 
+    public GuildTop guildTop() {
+        return guildTop;
+    }
+
     public Arena arena() {
         return arena;
     }
@@ -228,6 +271,10 @@ public final class SmpBoss extends JavaPlugin {
             if (sender instanceof Player p) new RelicMenu(this, p).open();
             return true;
         }
+        if (name.equals("topguildes")) {
+            guildTop.show(sender);
+            return true;
+        }
         if (name.equals("arene")) {
             if (sender instanceof Player p) arena.join(p);
             return true;
@@ -263,6 +310,12 @@ public final class SmpBoss extends JavaPlugin {
                 king.start(sender instanceof Player p ? p : Bukkit.getOnlinePlayers().stream().findFirst().orElse(null));
             }
             case "arene", "arène", "arena" -> arena.command(sender, a);
+            case "topguildes" -> {
+                if (a.length >= 2 && a[1].equalsIgnoreCase("reset")) {
+                    guildTop.reset();
+                    sender.sendMessage(parse("<green>Classement des guildes remis à zéro."));
+                } else guildTop.show(sender);
+            }
             case "stop" -> {
                 if (king != null) king.leave("boss.stopped");
                 lastEnd = 0;
@@ -331,7 +384,7 @@ public final class SmpBoss extends JavaPlugin {
     public List<String> onTabComplete(CommandSender sender, Command cmd, String label, String[] a) {
         List<String> out = new ArrayList<>();
         if (!cmd.getName().equalsIgnoreCase("boss")) return out;
-        if (a.length == 1) out.addAll(List.of("autel", "invoquer", "stop", "give", "reload", "arene"));
+        if (a.length == 1) out.addAll(List.of("autel", "invoquer", "stop", "give", "reload", "arene", "topguildes"));
         else if (a.length == 2 && a[0].toLowerCase(Locale.ROOT).startsWith("ar"))
             out.addAll(List.of("construire", "annuler", "tp", "definir", "supprimer"));
         else if (a.length == 3 && a[0].toLowerCase(Locale.ROOT).startsWith("ar") && a[1].equalsIgnoreCase("construire"))

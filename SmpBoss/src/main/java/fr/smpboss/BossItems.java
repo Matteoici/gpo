@@ -107,6 +107,8 @@ public final class BossItems {
         if (r.health() > 0) out.add(parse(plugin.msg("items.relic.health").replace("<n>", fmt(r.health()))));
         if (r.speed() > 0) out.add(parse(plugin.msg("items.relic.speed").replace("<n>", fmt(r.speed()))));
         if (r.regen() > 0) out.add(parse(plugin.msg("items.relic.regen").replace("<n>", fmt(r.regen() / 2))));
+        if (r.damage() > 0) out.add(parse(plugin.msg("items.relic.damage").replace("<n>", fmt(r.damage()))));
+        if (r.armor() > 0) out.add(parse(plugin.msg("items.relic.armor").replace("<n>", fmt(r.armor()))));
         if (r.trail() != null) out.add(parse(plugin.msg("items.relic.trail")));
         if (r.backpack()) out.add(parse(plugin.msg("items.relic.backpack")));
         return out;
