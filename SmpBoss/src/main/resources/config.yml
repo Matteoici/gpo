@@ -157,6 +157,9 @@ arena:
     # pas d'élytres ni de charges de vent (sinon combos masse)
     no-elytra: true
     no-wind-charge: true
+    # potions de saut sans effet dans l'arène (sinon sauts géants pour la masse)
+    no-jump-effects: true
+    blocked-effects: [jump_boost, levitation]
 
 # ---------------------------------------------------------------- Butin
 loot:

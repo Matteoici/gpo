@@ -284,6 +284,47 @@ final class ArenaGuard implements Listener {
         }
     }
 
+    // ================================================================= potions de saut (combos masse)
+
+    private boolean blockedEffect(org.bukkit.potion.PotionEffectType t) {
+        if (t == null || !on("no-jump-effects")) return false;
+        String key = t.getKey().getKey();
+        for (String s : plugin.getConfig().getStringList("arena.protection.blocked-effects")) {
+            if (s.equalsIgnoreCase(key) || s.equalsIgnoreCase("minecraft:" + key)) return true;
+        }
+        return false;
+    }
+
+    /** Retire les effets interdits (saut...) d'un joueur dans l'arène. */
+    private void stripEffects(Player p) {
+        boolean any = false;
+        for (org.bukkit.potion.PotionEffect pe : p.getActivePotionEffects()) {
+            if (blockedEffect(pe.getType())) {
+                p.removePotionEffect(pe.getType());
+                any = true;
+            }
+        }
+        if (any) p.sendActionBar(parse("<red>Les potions de saut ne marchent pas dans l'arène."));
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onEffect(org.bukkit.event.entity.EntityPotionEffectEvent e) {
+        if (!(e.getEntity() instanceof Player p) || e.getNewEffect() == null || !blockedEffect(e.getModifiedType())) return;
+        if (e.getAction() != org.bukkit.event.entity.EntityPotionEffectEvent.Action.ADDED
+                && e.getAction() != org.bukkit.event.entity.EntityPotionEffectEvent.Action.CHANGED) return;
+        if (!arena.contains(p.getLocation())) return;
+        e.setCancelled(true);
+        p.sendActionBar(parse("<red>Les potions de saut ne marchent pas dans l'arène."));
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onTeleportIn(org.bukkit.event.player.PlayerTeleportEvent e) {
+        if (!arena.contains(e.getTo())) return;
+        org.bukkit.Bukkit.getScheduler().runTask(plugin, () -> {
+            if (e.getPlayer().isOnline() && arena.contains(e.getPlayer().getLocation())) stripEffects(e.getPlayer());
+        });
+    }
+
     // ================================================================= portail du spawn (entrée)
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -291,6 +332,7 @@ final class ArenaGuard implements Listener {
         Location t = e.getTo();
         if (e.getFrom().getBlockX() == t.getBlockX() && e.getFrom().getBlockY() == t.getBlockY() && e.getFrom().getBlockZ() == t.getBlockZ()) return;
         arena.checkPortal(e.getPlayer(), t);
+        if (arena.contains(t)) stripEffects(e.getPlayer());
         // lave dans l'arène : direct au spawn de l'arène (même avec résistance au feu ou protection d'arrivée)
         if (on("lava-rescue") && arena.contains(t) && !arena.inPortal(t)
                 && (t.getBlock().getType() == org.bukkit.Material.LAVA || t.clone().add(0, 0.6, 0).getBlock().getType() == org.bukkit.Material.LAVA)) {
