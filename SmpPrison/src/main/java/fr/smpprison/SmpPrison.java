@@ -392,8 +392,7 @@ public final class SmpPrison extends JavaPlugin implements Listener, TabExecutor
         }
         pl.displayName(null);
         pl.playerListName(null);
-        Location out = exit != null && exit.getWorld() != null ? exit : pl.getWorld().getSpawnLocation();
-        teleport(pl, out);
+        sendOut(pl);
         send(pl, "released");
     }
 
@@ -529,15 +528,39 @@ public final class SmpPrison extends JavaPlugin implements Listener, TabExecutor
 
     // ================================================================= zone interdite aux autres joueurs
 
-    /** La mine (+ une marge) : personne d'autre que les prisonniers et le staff n'y entre ni n'y touche. La cellule si protect-cell. */
+    /** La mine (+ une marge) : personne d'autre que les prisonniers et le staff n'y entre ni n'y touche. Jamais la cellule. */
     private boolean protectedZone(Location l) {
         if (l == null || l.getWorld() == null) return false;
         double margin = getConfig().getDouble("protect-margin", 4);
-        if (getConfig().getBoolean("protect-cell", false) && cell != null && l.getWorld() == cell.getWorld()
-                && l.distance(cell) <= getConfig().getDouble("cell-radius", 6) + margin) return true;
         BoundingBox b = mineBox();
+        boolean inBox = b != null && pos1.getWorld() == l.getWorld() && b.clone().expand(0.01).contains(l.toVector());
+        // autour de la cellule : libre (sauf si on est vraiment dans la mine)
+        if (!inBox && cell != null && l.getWorld() == cell.getWorld()
+                && l.distance(cell) <= getConfig().getDouble("cell-radius", 6) + margin + 2) return false;
         if (b != null && pos1.getWorld() == l.getWorld() && b.clone().expand(margin, margin + 2, margin).contains(l.toVector())) return true;
-        return b == null && mine != null && l.getWorld() == mine.getWorld() && l.distance(mine) <= 30 + margin;
+        // pas de coins de mine (/prison pos1 pos2) : petite zone autour du point d'arrivée
+        return b == null && mine != null && l.getWorld() == mine.getWorld() && l.distance(mine) <= 12 + margin;
+    }
+
+    /** Où il ressort : /prison setsortie, sinon le /spawn d'Essentials, sinon le spawn du monde. */
+    private void sendOut(Player pl) {
+        if (exit != null && exit.getWorld() != null) {
+            teleport(pl, exit);
+            return;
+        }
+        String cmd = getConfig().getString("spawn-command", "spawn %player%");
+        String root = cmd.split(" ")[0];
+        if (!cmd.isBlank() && Bukkit.getPluginCommand(root) != null || !cmd.isBlank() && Bukkit.getCommandMap().getCommand(root) != null) {
+            pl.getPersistentDataContainer().set(new org.bukkit.NamespacedKey("smpcombat", "allow_tp_until"),
+                    org.bukkit.persistence.PersistentDataType.LONG, System.currentTimeMillis() + 2000);
+            allowTp.add(pl.getUniqueId());
+            try {
+                if (Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd.replace("%player%", pl.getName()))) return;
+            } finally {
+                allowTp.remove(pl.getUniqueId());
+            }
+        }
+        teleport(pl, pl.getWorld().getSpawnLocation());
     }
 
     private boolean outsider(Player p) {
@@ -545,14 +568,8 @@ public final class SmpPrison extends JavaPlugin implements Listener, TabExecutor
     }
 
     private void kickOut(Player p) {
-        Location out = exit != null && !protectedZone(exit) ? exit : p.getWorld().getSpawnLocation();
-        if (protectedZone(out)) return; // sortie et spawn dans la zone : on le laisse simplement repartir
-        allowTp.add(p.getUniqueId());
-        try {
-            p.teleport(out);
-        } finally {
-            allowTp.remove(p.getUniqueId());
-        }
+        if (exit != null && exit.getWorld() != null && protectedZone(exit)) return; // sortie dans la zone : on le laisse repartir
+        sendOut(p);
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
