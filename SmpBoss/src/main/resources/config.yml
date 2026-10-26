@@ -1,4 +1,4 @@
-config-version: 2
+config-version: 3
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -23,7 +23,7 @@ boss:
   # vie PROPORTIONNELLE au nombre de combattants : X PV par joueur.
   # Compte les joueurs présents au réveil, puis chaque nouveau joueur qui le frappe ajoute X PV
   # (le pourcentage de vie restant ne change pas).
-  health-per-player: 1200
+  health-per-player: 2600
   # tableau sur le côté de l'écran : vie + part des dégâts de chacun (vert = assez pour le butin)
   damage-sidebar: true
   # taille (1 = taille normale) puis à chaque phase
@@ -32,23 +32,25 @@ boss:
   scale-phase-3: 4.2
   phase-2-at: 0.66
   phase-3-at: 0.33
-  speed: 0.24
-  melee-damage: 9
+  speed: 0.27
+  melee-damage: 12
+  # agrandit toutes les zones d'attaque (1 = taille d'origine, 1.5 = 50 % plus grandes)
+  zone-scale: 1.5
   # pause entre deux attaques spéciales (ticks : 20 = 1 seconde)
   attack-interval:
-    "1": 110
-    "2": 90
-    "3": 70
+    "1": 75
+    "2": 60
+    "3": 42
   orbit-count: 4
-  minions: 4
-  seed-rain-count: 14
+  minions: 6
+  seed-rain-count: 22
   # rayon de l'arène autour de l'autel (il ne peut pas en sortir)
   arena-radius: 18
   night-only: true
   cooldown-minutes: 30
   max-minutes: 20
   damage:
-    multiplier: 1.0
+    multiplier: 1.35
     barrage: 8
     vines: 4
     flame-wave: 7
@@ -71,15 +73,33 @@ boss:
     leap: 14
     leap-ring: 6
     feast: 3
+    # nouvelles attaques
+    nova: 22
+    cross: 7
+    cage: 16
+    cage-touch: 5
+    tornado: 6
+    hands: 8
     # tous les dégâts sont multipliés par ça en phase 3
     phase-3-multiplier: 1.6
   # phase 2 à 50 % de vie ; à 0 il fait le mort puis revient en phase 3 avec TOUTE sa vie
   phase-2-at-v2: 0.5
   phase-3-health-multiplier: 1.0
   scale-phase-3-v2: 4.6
-  attack-interval-phase-3: 55
+  attack-interval-phase-3: 42
+  # chance d'enchaîner une 2e attaque juste après (phase 2 / phase 3)
+  phase-2-combo-chance: 0.25
+  # Jugement Infernal : temps pour rejoindre un cercle vert (ticks)
+  nova-warning-ticks: 70
+  # sous ce % de vie en phase 3 il devient ENRAGÉ (plus rapide, +25 % de dégâts, enchaîne toujours)
+  enrage-at: 0.3
+  # Gardes du Roi : tant qu'il en reste un, le Roi ne prend que X des dégâts (0.3 = 30 %)
+  guard-shield: 0.3
+  guard-health: 40
+  guard-health-per-player: 15
+  guard-damage: 9
   # chance qu'il enchaîne une 2e attaque en phase 3
-  phase-3-combo-chance: 0.4
+  phase-3-combo-chance: 0.6
   # Festin : % de sa vie max qu'il récupère à chaque morsure
   feast-heal-percent: 1.0
   scythe-radius: 6.5
@@ -315,11 +335,25 @@ messages:
       carillon: "<aqua>🔔 <b>Carillon</b> <gray>· reste hors des cases orange"
       leap: "<aqua>⬆ <b>Chute du Roi</b> <gray>· fuis son ombre, saute les ondes"
       feast: "<aqua>⛓ <b>Festin</b> <gray>· éloigne-toi ou il se soigne"
+      nova: "<dark_red>☠ <b>Jugement Infernal</b> <gray>· cours dans un <green>cercle vert</green> !"
+      cross: "<red>✚ <b>Croix Infernale</b> <gray>· tourne avec les rayons"
+      cage: "<gold>🎃 <b>Cage de Citrouilles</b> <gray>· sors par la brèche verte"
+      tornado: "<red>🌪 <b>Tornades de flammes</b> <gray>· elles te poursuivent"
+      hands: "<dark_red>✋ <b>Mains des Damnés</b> <gray>· ne t'arrête pas"
+      guards: "<dark_red>🛡 <b>Gardes du Roi</b> <gray>· tue-les pour briser son bouclier"
+      vortex: "<dark_purple>🌀 <b>Vortex</b> <gray>· résiste à l'aspiration"
+      seed-rain: "<gold>☄ <b>Pluie de graines</b> <gray>· évite les cercles"
     new-fighter: "<gold>⚔ <white><player></white> rejoint le combat <dark_gray>· <gray>le Roi gagne <red>+<hp> ❤"
     not-enough: "<gray>Tu n'as fait que <white><percent>%</white> des dégâts <dark_gray>(il faut <min>%)</dark_gray><gray> : pas de butin cette fois."
     bar-hp: " <dark_gray>| <white><hp></white><gray>/<max> <red>❤"
     stunned: "<yellow><b>Le Roi est sonné !</b> <gray>Frappe-le maintenant !"
     meteor-warning: "<red><b>⚠ Une citrouille géante tombe sur toi ! COURS !"
+    nova-warning: "<dark_red><b>☠ TOUT VA EXPLOSER</b> <gray>· rejoins un <green><b>cercle vert</b></green> !"
+    cage-warning: "<gold><b>🎃 La cage se referme sur toi !</b> <gray>Sors par la <green>brèche verte</green>."
+    shield: "<red><b>🛡 Bouclier des Gardes</b> <gray>· le Roi prend très peu de dégâts, tue ses gardes !"
+    guard-name: "<dark_red><b>Garde du Roi"
+    title-enrage: "<dark_red><b>ENRAGÉ"
+    subtitle-enrage: "<red>Le Roi perd la raison... tenez bon !"
   board:
     title: "<gradient:#ff7a00:#ffd36b><b>♛ Roi Citrouille ♛"
     hp: "<red>❤ <white><hp></white><gray> / <max>"

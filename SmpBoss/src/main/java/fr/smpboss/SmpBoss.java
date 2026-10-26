@@ -56,6 +56,23 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 2);
             saveConfig();
         }
+        // v3 : boss beaucoup plus dur (seulement les valeurs restées à l'ancien réglage par défaut)
+        if (getConfig().getInt("config-version", 1) < 3) {
+            harder("boss.health-per-player", 1200, 2600);
+            harder("boss.speed", 0.24, 0.27);
+            harder("boss.melee-damage", 9, 12);
+            harder("boss.attack-interval.1", 110, 75);
+            harder("boss.attack-interval.2", 90, 60);
+            harder("boss.attack-interval.3", 70, 42);
+            harder("boss.attack-interval-phase-3", 55, 42);
+            harder("boss.phase-3-combo-chance", 0.4, 0.6);
+            harder("boss.minions", 4, 6);
+            harder("boss.seed-rain-count", 14, 22);
+            harder("boss.damage.multiplier", 1.0, 1.35);
+            if (!getConfig().isSet("boss.zone-scale")) getConfig().set("boss.zone-scale", 1.5);
+            getConfig().set("config-version", 3);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);
@@ -103,6 +120,10 @@ public final class SmpBoss extends JavaPlugin {
             if (top instanceof Backpacks.Holder || top instanceof RelicMenu) p.closeInventory();
         }
         if (store != null) store.save(false);
+    }
+
+    private void harder(String path, double old, double now) {
+        if (!getConfig().isSet(path) || Math.abs(getConfig().getDouble(path) - old) < 1e-9) getConfig().set(path, now);
     }
 
     public String msg(String key) {
