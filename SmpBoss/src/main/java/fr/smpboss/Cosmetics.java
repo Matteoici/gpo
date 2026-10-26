@@ -73,6 +73,7 @@ final class Cosmetics {
     /** Les visuels que le joueur doit porter maintenant. */
     private List<String> wanted(Player p) {
         List<String> out = new ArrayList<>();
+        if (!plugin.getConfig().getBoolean("cosmetics.enabled", false)) return out; // désactivés : les reliques gardent leurs bonus
         if (p.isDead() || p.getGameMode() == GameMode.SPECTATOR || p.isInvisible()) return out;
         if (plugin.store().of(p.getUniqueId()).hideCosmetics) return out;
         for (String id : plugin.store().of(p.getUniqueId()).equipped) {

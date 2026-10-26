@@ -81,6 +81,12 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 4);
             saveConfig();
         }
+        // v5 : cosmétiques 3D des reliques désactivés (à refaire)
+        if (getConfig().getInt("config-version", 1) < 5) {
+            getConfig().set("cosmetics.enabled", false);
+            getConfig().set("config-version", 5);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);
@@ -363,6 +369,7 @@ public final class SmpBoss extends JavaPlugin {
             case "reload" -> {
                 reloadConfig();
                 relics.load();
+                for (Player pl : Bukkit.getOnlinePlayers()) cosmetics.refresh(pl);
                 registerRecipe();
                 for (Player p : Bukkit.getOnlinePlayers()) relics.apply(p);
                 sender.sendMessage(parse("<green>SmpBoss rechargé (" + relics.all().size() + " reliques)."));
