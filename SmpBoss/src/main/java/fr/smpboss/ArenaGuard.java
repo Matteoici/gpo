@@ -316,6 +316,10 @@ final class ArenaGuard implements Listener {
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onHurt(EntityDamageEvent e) {
         if (!(e.getEntity() instanceof Player p) || !arena.contains(p.getLocation())) return;
+        if (arena.isProtected(p)) {
+            e.setCancelled(true); // protection d'arrivée : rien ne le touche (gardes, explosions, chute...)
+            return;
+        }
         var cause = e.getCause();
         if (cause == EntityDamageEvent.DamageCause.HOT_FLOOR && on("decor-safe")) {
             e.setCancelled(true);

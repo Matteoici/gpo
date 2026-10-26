@@ -785,6 +785,7 @@ public final class PumpkinKing {
      */
     private void hit(Player p, double amount) {
         if (boss == null || p.isDead()) return;
+        if (plugin.arena() != null && plugin.arena().isProtected(p)) return; // protection d'arrivée
         double pierce = Math.max(0, Math.min(1, phase == 3 ? cfg("damage.armor-pierce-phase-3", 0.3) : cfg("damage.armor-pierce", 0.3)));
         double normal = amount * (1 - pierce);
         if (normal > 0) p.damage(normal, boss);
@@ -1567,8 +1568,12 @@ public final class PumpkinKing {
                 }
                 if (i % 5 == 0) {
                     hit(p, cfg("damage.feast", 3) * mult());
-                    hp = Math.min(maxHp, hp + maxHp * cfg("feast-heal-percent", 1.0) / 100.0);
-                    heart.getWorld().spawnParticle(Particle.HEART, heart, 2, 0.6, 0.6, 0.6, 0, null, true);
+                    // plus de soin pour le Roi (réglable : feast-heal-percent)
+                    double heal = cfg("feast-heal-percent", 0.0);
+                    if (heal > 0) {
+                        hp = Math.min(maxHp, hp + maxHp * heal / 100.0);
+                        heart.getWorld().spawnParticle(Particle.HEART, heart, 2, 0.6, 0.6, 0.6, 0, null, true);
+                    }
                 }
             }
         }, null);

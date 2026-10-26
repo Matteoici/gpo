@@ -66,6 +66,44 @@ public final class Arena {
     private int[] portal; // minX, minY, minZ, maxX, maxY, maxZ
     private Location portalPos1, portalPos2;
     private final Map<UUID, Long> portalCooldown = new HashMap<>();
+    /** Protection d'arrivée : intouchable quelques secondes en entrant dans l'arène. */
+    private final Map<UUID, Long> shield = new HashMap<>();
+
+    public boolean isProtected(Player p) {
+        Long until = shield.get(p.getUniqueId());
+        if (until == null) return false;
+        if (until < System.currentTimeMillis()) {
+            shield.remove(p.getUniqueId());
+            p.sendActionBar(parse(plugin.getConfig().getString("arena.spawn-protection-end", "<gray>Ta protection d'arrivée est terminée.")));
+            return false;
+        }
+        return true;
+    }
+
+    /** Arrivée dans l'arène : X secondes sans prendre de dégâts (finit si on frappe le boss). */
+    public void protect(Player p) {
+        int secs = plugin.getConfig().getInt("arena.spawn-protection-seconds", 6);
+        if (secs <= 0) return;
+        shield.put(p.getUniqueId(), System.currentTimeMillis() + secs * 1000L);
+        p.sendActionBar(parse("<aqua>🛡 Protection d'arrivée : <white>" + secs + " s"));
+    }
+
+    public void unprotect(Player p) {
+        if (shield.remove(p.getUniqueId()) != null) p.sendActionBar(parse("<gray>Tu as attaqué : ta protection d'arrivée s'arrête."));
+    }
+
+    /** Petites particules autour des joueurs protégés (toutes les 10 ticks). */
+    void shieldParticles() {
+        for (UUID id : new java.util.ArrayList<>(shield.keySet())) {
+            Player p = Bukkit.getPlayer(id);
+            if (p == null || !isProtected(p)) continue;
+            Location l = p.getLocation().add(0, 1, 0);
+            for (int k = 0; k < 8; k++) {
+                double a = Math.PI * 2 * k / 8 + System.currentTimeMillis() / 300.0;
+                p.getWorld().spawnParticle(Particle.END_ROD, l.clone().add(Math.cos(a) * 0.7, Math.sin(a * 2) * 0.4, Math.sin(a) * 0.7), 1, 0, 0, 0, 0);
+            }
+        }
+    }
 
     Arena(SmpBoss plugin) {
         this.plugin = plugin;
@@ -219,7 +257,7 @@ public final class Arena {
             p.sendMessage(parse("<red>L'arène n'est pas encore construite."));
             return;
         }
-        p.teleport(e);
+        if (p.teleport(e)) protect(p);
     }
 
     // ================================================================= ambiance
@@ -253,6 +291,7 @@ public final class Arena {
     /** Toutes les 10 ticks : brume rouge, spores, braises au-dessus de la lave. */
     void ambience() {
         portalParticles();
+        shieldParticles();
         if (!defined || !plugin.getConfig().getBoolean("arena.ambience", true)) return;
         World w = world();
         if (w == null) return;
@@ -300,7 +339,7 @@ public final class Arena {
                     return;
                 }
                 allowTeleport(p);
-                p.teleport(e);
+                if (p.teleport(e)) protect(p);
             }
             case "definir", "define" -> {
                 if (!(sender instanceof Player p)) return;
@@ -471,7 +510,7 @@ public final class Arena {
         Bukkit.getScheduler().runTask(plugin, () -> {
             if (!p.isOnline()) return;
             // pas d'autorisation SmpCombat ici : un joueur "en danger" ne fuit pas par le portail
-            p.teleport(e);
+            if (p.teleport(e)) protect(p);
             p.getWorld().playSound(e, org.bukkit.Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 0.6f);
             p.sendActionBar(parse("<dark_red><b>☠ L'arène du Roi Citrouille</b>"));
         });

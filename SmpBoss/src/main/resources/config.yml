@@ -1,4 +1,4 @@
-config-version: 10
+config-version: 11
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -119,7 +119,7 @@ boss:
   # chance qu'il enchaîne une 2e attaque en phase 3
   phase-3-combo-chance: 0.5
   # Festin : % de sa vie max qu'il récupère à chaque morsure
-  feast-heal-percent: 1.0
+  feast-heal-percent: 0.0
   scythe-radius: 6.5
 
 # ---------------------------------------------------------------- Arène infernale
@@ -128,6 +128,9 @@ boss:
 arena:
   # brume rouge, spores et braises pour les joueurs dans l'arène
   ambience: true
+  # protection d'arrivée : X secondes sans prendre de dégâts en entrant dans l'arène (/arene, portail)
+  # elle s'arrête dès qu'on frappe le boss. 0 = désactivée
+  spawn-protection-seconds: 6
   # bords de l'écran teintés de rouge dans l'arène (0.05 = léger, 0.95 = très rouge)
   red-tint: true
   red-tint-strength: 0.6
@@ -435,7 +438,7 @@ messages:
       soul-blade: "<aqua>⚔ <b>Lame des Âmes</b> <gray>· change de côté !"
       carillon: "<aqua>🔔 <b>Carillon</b> <gray>· reste hors des cases orange"
       leap: "<aqua>⬆ <b>Chute du Roi</b> <gray>· fuis son ombre, saute les ondes"
-      feast: "<aqua>⛓ <b>Festin</b> <gray>· éloigne-toi ou il se soigne"
+      feast: "<aqua>⛓ <b>Festin</b> <gray>· éloigne-toi pour briser la chaîne"
       nova: "<dark_red>☠ <b>Jugement Infernal</b> <gray>· cours dans un <green>cercle vert</green> !"
       cross: "<red>✚ <b>Croix Infernale</b> <gray>· tourne avec les rayons"
       cage: "<gold>🎃 <b>Cage de Citrouilles</b> <gray>· sors par la brèche verte"

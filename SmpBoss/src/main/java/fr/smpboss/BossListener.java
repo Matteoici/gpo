@@ -111,6 +111,7 @@ final class BossListener implements Listener {
             e.setCancelled(true); // feu, chute, étouffement, lave... : rien
             return;
         }
+        if (plugin.arena() != null) plugin.arena().unprotect(by);
         // dégâts bruts (épée + Tranchant + coup critique), sans l'armure du boss qui les réduisait d'un quart ;
         // bonus pour le corps à corps (plus risqué que l'arc)
         boolean melee = e instanceof EntityDamageByEntityEvent ed2 && ed2.getDamager() instanceof Player;

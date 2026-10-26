@@ -120,6 +120,12 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 10);
             saveConfig();
         }
+        // v11 : le Roi ne se soigne plus (Festin)
+        if (getConfig().getInt("config-version", 1) < 11) {
+            getConfig().set("boss.feast-heal-percent", 0.0);
+            getConfig().set("config-version", 11);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);
