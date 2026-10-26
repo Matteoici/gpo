@@ -291,6 +291,13 @@ final class ArenaGuard implements Listener {
         Location t = e.getTo();
         if (e.getFrom().getBlockX() == t.getBlockX() && e.getFrom().getBlockY() == t.getBlockY() && e.getFrom().getBlockZ() == t.getBlockZ()) return;
         arena.checkPortal(e.getPlayer(), t);
+        // lave dans l'arène : direct au spawn de l'arène (même avec résistance au feu ou protection d'arrivée)
+        if (on("lava-rescue") && arena.contains(t) && !arena.inPortal(t)
+                && (t.getBlock().getType() == org.bukkit.Material.LAVA || t.clone().add(0, 0.6, 0).getBlock().getType() == org.bukkit.Material.LAVA)) {
+            org.bukkit.Bukkit.getScheduler().runTask(plugin, () -> {
+                if (e.getPlayer().isOnline()) arena.lavaRescue(e.getPlayer());
+            });
+        }
     }
 
     // ================================================================= portail de sortie
@@ -315,26 +322,29 @@ final class ArenaGuard implements Listener {
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onHurt(EntityDamageEvent e) {
-        if (!(e.getEntity() instanceof Player p) || !arena.contains(p.getLocation())) return;
+        if (!(e.getEntity() instanceof Player p)) return;
+        var cause = e.getCause();
+        boolean burn = cause == EntityDamageEvent.DamageCause.LAVA || cause == EntityDamageEvent.DamageCause.FIRE
+                || cause == EntityDamageEvent.DamageCause.FIRE_TICK;
+        // lave dans la zone portail : on passe dans l'arène sans brûler
+        if (burn && arena.inPortal(p.getLocation())) {
+            e.setCancelled(true);
+            p.setFireTicks(0);
+            arena.checkPortal(p, p.getLocation());
+            return;
+        }
+        if (!arena.contains(p.getLocation())) return;
+        if (cause == EntityDamageEvent.DamageCause.LAVA && on("lava-rescue")) {
+            e.setCancelled(true);
+            arena.lavaRescue(p);
+            return;
+        }
         if (arena.isProtected(p)) {
             e.setCancelled(true); // protection d'arrivée : rien ne le touche (gardes, explosions, chute...)
             return;
         }
-        var cause = e.getCause();
         if (cause == EntityDamageEvent.DamageCause.HOT_FLOOR && on("decor-safe")) {
             e.setCancelled(true);
-            return;
-        }
-        if (cause == EntityDamageEvent.DamageCause.LAVA && on("lava-rescue")) {
-            e.setCancelled(true);
-            Location to = arena.safeSpot(p.getLocation());
-            if (to == null) return;
-            Arena.allowTeleport(p);
-            p.teleport(to);
-            p.setFallDistance(0);
-            p.setFireTicks(0);
-            org.bukkit.Bukkit.getScheduler().runTaskLater(plugin, () -> p.setFireTicks(0), 1L);
-            p.sendActionBar(parse("<gold>La lave te recrache dans l'arène…"));
         }
     }
 

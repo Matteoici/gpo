@@ -386,10 +386,17 @@ public final class PumpkinKing {
         }
         if (board != null && tick % 10 == 0) board.update(near, hp, maxHp, damage, minPct());
 
-        // laisse : il reste dans son arène
+        // laisse : il reste sur le sol de son arène, jamais dans la lave ni derrière
         double arena = cfg("arena-radius", 18);
-        if (c.getWorld() != altar.getWorld() || horizontalDist(c, altar) > arena + 8 || c.getY() < altar.getY() - 12) {
+        Location mid = altar.clone().add(0.5, 0, 0.5);
+        double hd = c.getWorld() == altar.getWorld() ? horizontalDist(c, mid) : Double.MAX_VALUE;
+        if (hd > arena + 12 || c.getY() < altar.getY() - 12) {
             boss.teleport(altar.clone().add(0.5, 1, 0.5));
+        } else if (hd > arena + 0.5 || c.getBlock().getType() == Material.LAVA) {
+            Location back = keepIn(c, arena - 2);
+            boss.teleport(back);
+            boss.setVelocity(new Vector(0, 0, 0));
+            boss.setFireTicks(0);
         }
         // personne autour pendant 60 s : il repart
         if (tick % 20 == 0) {
@@ -1450,11 +1457,11 @@ public final class PumpkinKing {
             l.setYaw(boss.getYaw());
             boss.teleport(l);
         }, () -> {
-            Location[] shadow = {ground(target.getLocation().clone())};
+            Location[] shadow = {ground(keepIn(target.getLocation().clone(), cfg("arena-radius", 18) - 2))};
             repeat(2, 18, i -> {
                 if (target.isOnline() && target.getWorld() == altar.getWorld()
                         && horizontalDist(target.getLocation(), altar) <= cfg("arena-radius", 18) + 4) {
-                    shadow[0] = ground(target.getLocation().clone());
+                    shadow[0] = ground(keepIn(target.getLocation().clone(), cfg("arena-radius", 18) - 2));
                 }
                 Location up = shadow[0].clone().add(0, h, 0);
                 up.setYaw(boss.getYaw());
@@ -1519,6 +1526,20 @@ public final class PumpkinKing {
     boolean inFight(Player p) {
         return !ended && p.getWorld() == altar.getWorld() && horizontalDist(p.getLocation(), altar) <= cfg("arena-radius", 18) + 12
                 && Math.abs(p.getLocation().getY() - altar.getY()) < 30;
+    }
+
+    /** Même position, ramenée à au plus maxR blocs du centre (sur le sol si le boss n'est pas en l'air). */
+    private Location keepIn(Location l, double maxR) {
+        Location mid = altar.clone().add(0.5, 0, 0.5);
+        double dx = l.getX() - mid.getX(), dz = l.getZ() - mid.getZ();
+        double d = Math.hypot(dx, dz);
+        Location out = l.clone();
+        if (d > maxR && d > 0.01) {
+            out.setX(mid.getX() + dx / d * maxR);
+            out.setZ(mid.getZ() + dz / d * maxR);
+        }
+        if (out.getY() < altar.getY() + 4) out.setY(ground(out).getY());
+        return out;
     }
 
     private static double horizontalDist(Location a, Location b) {

@@ -220,6 +220,25 @@ public final class Arena {
         return out;
     }
 
+    /** Lave touchée dans l'arène : retour au spawn de l'arène, sans brûlure. */
+    void lavaRescue(Player p) {
+        Long last = portalCooldown.get(p.getUniqueId());
+        long now = System.currentTimeMillis();
+        if (last != null && now - last < 400) return;
+        portalCooldown.put(p.getUniqueId(), now);
+        Location to = entrance();
+        if (to == null) to = safeSpot(p.getLocation());
+        if (to == null) return;
+        allowTeleport(p);
+        p.teleport(to);
+        p.setFallDistance(0);
+        p.setFireTicks(0);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> p.setFireTicks(0), 1L);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> p.setFireTicks(0), 5L);
+        p.getWorld().playSound(to, org.bukkit.Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 0.6f);
+        p.sendActionBar(parse("<gold>La lave te recrache dans l'arène…"));
+    }
+
     /** Entrée : sur le sol de l'arène, côté crâne, regard vers l'autel. */
     public Location entrance() {
         if (customSpawn != null && customSpawn.getWorld() != null) return customSpawn.clone();
@@ -489,7 +508,7 @@ public final class Arena {
         }
     }
 
-    private boolean inPortal(Location l) {
+    boolean inPortal(Location l) {
         if (portal == null || portalWorld == null || l.getWorld() == null || !l.getWorld().getName().equals(portalWorld)) return false;
         int x = l.getBlockX(), y = l.getBlockY(), z = l.getBlockZ();
         return x >= portal[0] && x <= portal[3] && y >= portal[1] && y <= portal[4] && z >= portal[2] && z <= portal[5];
@@ -511,6 +530,8 @@ public final class Arena {
             if (!p.isOnline()) return;
             // pas d'autorisation SmpCombat ici : un joueur "en danger" ne fuit pas par le portail
             if (p.teleport(e)) protect(p);
+            p.setFireTicks(0);
+            Bukkit.getScheduler().runTaskLater(plugin, () -> p.setFireTicks(0), 1L);
             p.getWorld().playSound(e, org.bukkit.Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 0.6f);
             p.sendActionBar(parse("<dark_red><b>☠ L'arène du Roi Citrouille</b>"));
         });
