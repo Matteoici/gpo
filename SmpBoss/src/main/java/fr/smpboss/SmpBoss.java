@@ -81,10 +81,10 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 4);
             saveConfig();
         }
-        // v5 : cosmétiques 3D des reliques désactivés (à refaire)
-        if (getConfig().getInt("config-version", 1) < 5) {
-            getConfig().set("cosmetics.enabled", false);
-            getConfig().set("config-version", 5);
+        // v6 : cosmétiques 3D accrochés au joueur (ProtocolLib) : réactivés
+        if (getConfig().getInt("config-version", 1) < 6) {
+            getConfig().set("cosmetics.enabled", true);
+            getConfig().set("config-version", 6);
             saveConfig();
         }
         store = new Store(this);

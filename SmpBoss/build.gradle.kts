@@ -11,6 +11,7 @@ repositories {
 }
 
 dependencies {
+    compileOnly("net.dmulloy2:ProtocolLib:5.4.0") { isTransitive = false }
     compileOnly("io.papermc.paper:paper-api") { version { strictly("[26.2.build.0, 26.2.build.134-stable)") } }
 }
 

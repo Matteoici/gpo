@@ -2,7 +2,7 @@ name: SmpBoss
 version: '${version}'
 main: fr.smpboss.SmpBoss
 api-version: '26.2'
-softdepend: [WorldGuard, SmpShop, Vault]
+softdepend: [WorldGuard, SmpShop, Vault, ProtocolLib]
 description: Boss (Roi Citrouille), reliques, sac à dos, faucille
 commands:
   boss:

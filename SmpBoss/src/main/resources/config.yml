@@ -1,4 +1,4 @@
-config-version: 5
+config-version: 6
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -308,9 +308,11 @@ backpack:
 # ---------------------------------------------------------------- Boutons en haut de l'inventaire
 # Sac + Cosmétiques dans la grille d'artisanat 2×2 (ils s'effacent dès qu'on y pose un objet)
 # ---------------------------------------------------------------- Cosmétiques 3D des reliques
-# couronne, ailes, cornes... visibles sur les joueurs. Désactivés : les reliques gardent leurs bonus.
+# couronne, ailes, cornes... visibles sur les joueurs (false = cachés, les reliques gardent leurs bonus)
 cosmetics:
-  enabled: false
+  enabled: true
+  # avec ProtocolLib : accrochés au joueur, ils le suivent sans aucun retard (sinon ils sont déplacés à chaque tick)
+  attach: true
 
 inventory-buttons:
   enabled: true

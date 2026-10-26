@@ -62,10 +62,52 @@ final class Cosmetics {
     private final SmpBoss plugin;
     private final NamespacedKey tag;
     private final Map<UUID, Worn> worn = new HashMap<>();
+    /** ProtocolLib présent : les cosmétiques sont accrochés au joueur (aucun retard). Sinon : suivis à chaque tick. */
+    private final Mounts mounts;
 
     Cosmetics(SmpBoss plugin) {
         this.plugin = plugin;
         this.tag = plugin.items().relicKey;
+        Mounts m = null;
+        if (plugin.getServer().getPluginManager().isPluginEnabled("ProtocolLib")
+                && plugin.getConfig().getBoolean("cosmetics.attach", true)) {
+            try {
+                m = new Mounts();
+            } catch (Throwable t) {
+                plugin.getLogger().warning("ProtocolLib indisponible pour les cosmétiques : " + t);
+            }
+        }
+        this.mounts = m;
+    }
+
+    /** Position du modèle par rapport au haut du joueur (point d'accroche des passagers), repère du modèle. */
+    private static Vector3f attachOffset(Anchor a) {
+        return switch (a) {
+            case BACK -> new Vector3f(0, -0.7f, -0.1f);
+            case CHEST -> new Vector3f(0, -0.6f, 0.14f);
+            case HIP -> new Vector3f(0, -1.02f, 0.02f);
+            case HEAD -> new Vector3f(0, 0.02f, 0);
+            case SHOULDER -> new Vector3f(0.33f, -0.2f, 0);
+            case SHOULDER_R -> new Vector3f(-0.33f, -0.2f, 0);
+            case ORBIT -> new Vector3f(0, -0.75f, 0);
+        };
+    }
+
+    private static void shift(Model m) {
+        Vector3f off = attachOffset(m.anchor());
+        for (Display d : m.parts()) {
+            Transformation t = d.getTransformation();
+            d.setTransformation(new Transformation(new Vector3f(t.getTranslation()).add(off), t.getLeftRotation(), t.getScale(),
+                    t.getRightRotation()));
+        }
+    }
+
+    private float yawFor(Player p, Model m, Worn w) {
+        return switch (m.anchor()) {
+            case HEAD -> p.getLocation().getYaw();
+            case ORBIT -> (w.t * 4f) % 360f;
+            default -> w.bodyYaw;
+        };
     }
 
     // ================================================================= quels visuels
@@ -73,7 +115,7 @@ final class Cosmetics {
     /** Les visuels que le joueur doit porter maintenant. */
     private List<String> wanted(Player p) {
         List<String> out = new ArrayList<>();
-        if (!plugin.getConfig().getBoolean("cosmetics.enabled", false)) return out; // désactivés : les reliques gardent leurs bonus
+        if (!plugin.getConfig().getBoolean("cosmetics.enabled", true)) return out; // désactivés : les reliques gardent leurs bonus
         if (p.isDead() || p.getGameMode() == GameMode.SPECTATOR || p.isInvisible()) return out;
         if (plugin.store().of(p.getUniqueId()).hideCosmetics) return out;
         for (String id : plugin.store().of(p.getUniqueId()).equipped) {
@@ -100,7 +142,9 @@ final class Cosmetics {
         n.world = p.getWorld().getUID();
         for (String v : want) {
             Model m = build(p, v);
-            if (m != null) n.models.add(m);
+            if (m == null) continue;
+            if (mounts != null) shift(m);
+            n.models.add(m);
         }
         worn.put(p.getUniqueId(), n);
         updateVisibility(p, n);
@@ -153,9 +197,23 @@ final class Cosmetics {
             Location base = now.clone();
             if (delta.lengthSquared() < 1) base.add(delta);
             w.last = now;
-            for (Model m : w.models) {
-                Location at = anchor(p, base, m.anchor(), w);
-                for (Display d : m.parts()) d.teleport(at);
+            if (mounts != null) {
+                // accrochés au joueur côté client : on ne fait que tourner les modèles (et les garder près de lui côté serveur)
+                List<Integer> ids = new ArrayList<>();
+                for (Model m : w.models) {
+                    float yaw = yawFor(p, m, w);
+                    for (Display d : m.parts()) {
+                        if (d.getLocation().distanceSquared(now) > 64) d.teleport(now);
+                        d.setRotation(yaw, 0);
+                        ids.add(d.getEntityId());
+                    }
+                }
+                if (w.t % 5 == 1) mounts.send(p, ids);
+            } else {
+                for (Model m : w.models) {
+                    Location at = anchor(p, base, m.anchor(), w);
+                    for (Display d : m.parts()) d.teleport(at);
+                }
             }
             effects(p, w, moving, now);
             if (w.t % 20 == 0) updateVisibility(p, w);
@@ -254,11 +312,11 @@ final class Cosmetics {
                 }
                 case "wisp" -> {
                     if (w.t % 4 == 0 && !m.parts().isEmpty()) {
-                        Location l = m.parts().get(0).getLocation().add(0, 0.15, 0);
+                        Location l = anchor(p, now, m.anchor(), w).add(0, 0.15, 0);
                         world.spawnParticle(Particle.SOUL_FIRE_FLAME, l, 1, 0.05, 0.05, 0.05, 0.003);
                     }
                     if (w.t % 13 == 0 && !m.parts().isEmpty()) {
-                        world.spawnParticle(Particle.SOUL, m.parts().get(0).getLocation(), 1, 0.1, 0.1, 0.1, 0.01);
+                        world.spawnParticle(Particle.SOUL, anchor(p, now, m.anchor(), w), 1, 0.1, 0.1, 0.1, 0.01);
                     }
                 }
                 case "crown" -> {
@@ -304,7 +362,7 @@ final class Cosmetics {
                 }
                 case "skull" -> {
                     if (w.t % 10 == 0 && !m.parts().isEmpty()) {
-                        world.spawnParticle(Particle.SOUL, m.parts().get(0).getLocation().add(0, 0.1, 0), 1, 0.05, 0.05, 0.05, 0.005);
+                        world.spawnParticle(Particle.SOUL, anchor(p, now, m.anchor(), w).add(0, 0.1, 0), 1, 0.05, 0.05, 0.05, 0.005);
                     }
                 }
                 case "orbs" -> {
@@ -318,7 +376,7 @@ final class Cosmetics {
                 }
                 case "lantern" -> {
                     if (w.t % 30 == 0 && !m.parts().isEmpty()) {
-                        world.spawnParticle(Particle.SMALL_FLAME, m.parts().get(0).getLocation().add(0, -0.45, 0), 1, 0.05, 0.02, 0.05, 0.002);
+                        world.spawnParticle(Particle.SMALL_FLAME, anchor(p, now, m.anchor(), w).add(0, -0.45, 0), 1, 0.05, 0.02, 0.05, 0.002);
                     }
                 }
                 default -> {
@@ -488,8 +546,8 @@ final class Cosmetics {
             case "cape" -> {
                 anchor = Anchor.BACK;
                 Quaternionf tilt = new Quaternionf().rotateX((float) Math.toRadians(-8));
-                parts.add(block(at, Material.BLACK_WOOL, 0, -0.32f, -0.2f, 0.56f, 1.05f, 0.03f, tilt));
-                parts.add(block(at, Material.RED_WOOL, 0, -0.3f, -0.182f, 0.5f, 1.0f, 0.01f, tilt));
+                parts.add(block(at, Material.BLACK_WOOL, 0, -0.32f, -0.06f, 0.56f, 1.05f, 0.03f, tilt));
+                parts.add(block(at, Material.RED_WOOL, 0, -0.3f, -0.042f, 0.5f, 1.0f, 0.01f, tilt));
                 parts.add(block(at, Material.GOLD_BLOCK, 0.2f, 0.2f, 0.05f, 0.07f, 0.07f, 0.03f, null));
                 parts.add(block(at, Material.GOLD_BLOCK, -0.2f, 0.2f, 0.05f, 0.07f, 0.07f, 0.03f, null));
                 parts.add(block(at, Material.BLACK_WOOL, 0, 0.22f, -0.05f, 0.56f, 0.05f, 0.28f, null));
