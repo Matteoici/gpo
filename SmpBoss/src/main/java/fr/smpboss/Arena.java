@@ -294,7 +294,7 @@ public final class Arena {
             }
             default -> {
                 sender.sendMessage(parse("<dark_red><b>Arène du boss"));
-                sender.sendMessage(parse("<aqua>/boss arene construire [taille]</aqua> <gray>- construit l'arène infernale ici (taille 14-40, défaut 20)"));
+                sender.sendMessage(parse("<aqua>/boss arene construire [taille] [ici|ciel|Y]</aqua> <gray>- construit l'arène (taille 14-40, défaut 20 ; <white>ciel</white> = île flottante)"));
                 sender.sendMessage(parse("<aqua>/boss arene annuler</aqua> <gray>- remet le terrain comme avant la construction"));
                 sender.sendMessage(parse("<aqua>/boss arene tp [joueur]</aqua> <gray>- envoie dans l'arène (les joueurs : <white>/arene</white>)"));
                 sender.sendMessage(parse("<aqua>/boss arene definir <rayon> [marge]</aqua> <gray>- protège une arène collée avec WorldEdit"));
@@ -339,15 +339,26 @@ public final class Arena {
         }
         int size = a.length >= 3 ? parseInt(a[2], 20) : 20;
         size = Math.max(14, Math.min(40, size));
+        // hauteur : "ici" (sous tes pieds, défaut), "ciel" (île flottante tout en haut) ou un Y précis
+        String where = a.length >= 4 ? a[3].toLowerCase(java.util.Locale.ROOT) : "ici";
+        World pw = p.getWorld();
+        int skyY = pw.getMaxHeight() - size - 32;
+        int targetY;
+        if (where.equals("ciel") || where.equals("sky")) targetY = Math.min(skyY, Math.max(pw.getMinHeight() + 30, 230));
+        else if (where.matches("-?\\d+")) targetY = Integer.parseInt(where);
+        else targetY = p.getLocation().getBlockY() - 1;
         long[] c = confirm.get(p.getUniqueId());
-        if (c == null || c[0] < System.currentTimeMillis() || c[1] != size) {
-            confirm.put(p.getUniqueId(), new long[]{System.currentTimeMillis() + 20_000, size});
+        String cmd = "/boss arene construire " + size + (a.length >= 4 ? " " + a[3] : "");
+        if (c == null || c[0] < System.currentTimeMillis() || c[1] != size * 100_000L + targetY) {
+            confirm.put(p.getUniqueId(), new long[]{System.currentTimeMillis() + 20_000, size * 100_000L + targetY});
             int total = size + 27;
-            sender.sendMessage(parse("<gold><b>Construire l'arène infernale ici ?</b>"));
-            sender.sendMessage(parse("<gray>Centre = le bloc sous tes pieds (ce sera l'autel). C'est une bulle fermée de rayon ≈ <white>" + total
+            boolean sky = targetY > p.getLocation().getBlockY() + 5;
+            sender.sendMessage(parse("<gold><b>Construire l'arène infernale " + (sky ? "dans le ciel (Y " + targetY + ")" : "ici") + " ?</b>"));
+            sender.sendMessage(parse("<gray>Centre = " + (sky ? "au-dessus de toi, à Y <white>" + targetY + "</white> (île de roche flottante)"
+                    : "le bloc sous tes pieds") + " : ce sera l'autel. C'est une bulle fermée de rayon ≈ <white>" + total
                     + "</white> blocs et " + (size + 25) + " de haut, le crâne-portail est au <white>nord</white>. Tout ce qui est dedans est remplacé."));
             sender.sendMessage(parse("<gray>Une sauvegarde est faite : <aqua>/boss arene annuler</aqua> remet tout comme avant."));
-            sender.sendMessage(parse("<yellow>Retape <white>/boss arene construire " + size + "</white> dans les 20 secondes pour confirmer."));
+            sender.sendMessage(parse("<yellow>Retape <white>" + cmd + "</white> dans les 20 secondes pour confirmer."));
             return;
         }
         confirm.remove(p.getUniqueId());
@@ -356,10 +367,13 @@ public final class Arena {
                     + "ou supprime plugins/SmpBoss/arena-backup.dat pour garder l'ancienne telle quelle."));
             return;
         }
-        Block base = p.getLocation().getBlock().getRelative(0, -1, 0);
+        Location at = p.getLocation().clone();
+        at.setY(targetY);
+        Block base = at.getBlock();
         World w = base.getWorld();
         if (base.getY() - 25 < w.getMinHeight() || base.getY() + size + 28 > w.getMaxHeight()) {
-            sender.sendMessage(parse("<red>Trop près du fond ou du plafond du monde."));
+            sender.sendMessage(parse("<red>Trop près du fond ou du plafond du monde. <gray>(Y entre " + (w.getMinHeight() + 25) + " et "
+                    + (w.getMaxHeight() - size - 28) + ")"));
             return;
         }
         ArenaDesign d = new ArenaDesign(size);
@@ -441,6 +455,11 @@ public final class Arena {
         plugin.getConfig().set("boss.arena-radius", Math.max(8, d.r - 1));
         plugin.saveConfig();
         if (p.isOnline()) {
+            Location e = entrance();
+            if (e != null) {
+                allowTeleport(p);
+                p.teleport(e);
+            }
             p.sendMessage(parse("<green><b>Arène terminée !</b> <gray>(" + pos.size() + " blocs changés)"));
             p.sendMessage(parse("<gray>L'autel est le bloc d'obsidienne pleureuse au centre : la nuit, clic droit dessus avec une "
                     + "<gold>Citrouille sacrificielle</gold> pour réveiller le Roi Citrouille. Rayon du boss réglé sur <white>"
