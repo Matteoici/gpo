@@ -23,16 +23,17 @@ cluster-size: 6
 # "xxx*" = toute la famille (ex. oak_* : oak_planks, oak_stairs, oak_log, oak_fence...)
 # Une famille est remplacée par la même famille : "oak_*": "pale_oak_*" -> oak_stairs devient pale_oak_stairs
 replace:
-  # feuilles vertes -> blanches (chêne pâle) ou marron (champignon brun)
-  oak_leaves: "pale_oak_leaves:60, brown_mushroom_block:40"
-  birch_leaves: "pale_oak_leaves:60, brown_mushroom_block:40"
-  spruce_leaves: "pale_oak_leaves:50, brown_mushroom_block:50"
-  jungle_leaves: "pale_oak_leaves:60, brown_mushroom_block:40"
-  acacia_leaves: "pale_oak_leaves:60, brown_mushroom_block:40"
-  dark_oak_leaves: "pale_oak_leaves:50, brown_mushroom_block:50"
-  mangrove_leaves: "pale_oak_leaves:60, brown_mushroom_block:40"
-  azalea_leaves: "pale_oak_leaves:60, brown_mushroom_block:40"
-  flowering_azalea_leaves: "pale_oak_leaves:60, brown_mushroom_block:40"
+  # arbres : uniquement des feuilles -> feuilles blanches (chêne pâle)
+  # (il n'existe pas de feuilles marron dans Minecraft : le marron vient des feuilles mortes au sol, voir leaf-litter)
+  oak_leaves: "pale_oak_leaves"
+  birch_leaves: "pale_oak_leaves"
+  spruce_leaves: "pale_oak_leaves"
+  jungle_leaves: "pale_oak_leaves"
+  acacia_leaves: "pale_oak_leaves"
+  dark_oak_leaves: "pale_oak_leaves"
+  mangrove_leaves: "pale_oak_leaves"
+  azalea_leaves: "pale_oak_leaves"
+  flowering_azalea_leaves: "pale_oak_leaves"
   # sol mort, mousse pâle
   grass_block: "podzol:55, coarse_dirt:20, pale_moss_block:25"
   short_grass: "dead_bush:35, air:25, short_grass:40"
@@ -97,5 +98,5 @@ decorations:
   cobwebs: 5
   # lianes pâles qui pendent sous les feuilles de chêne pâle, en %
   pale-hanging-moss: 12
-  # feuilles mortes au sol sous les arbres (sur l'herbe / le podzol, jusqu'à 6 blocs sous des feuilles), en %
-  leaf-litter: 35
+  # feuilles mortes (marron) au sol sous les arbres (jusqu'à 7 blocs sous des feuilles), en %
+  leaf-litter: 60

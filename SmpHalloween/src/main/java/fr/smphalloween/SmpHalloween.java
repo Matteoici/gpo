@@ -399,7 +399,7 @@ public final class SmpHalloween extends JavaPlugin {
         boolean deco = getConfig().getBoolean("decorations.enabled", true);
         double cobwebs = getConfig().getDouble("decorations.cobwebs", 5) / 100.0;
         double moss = getConfig().getDouble("decorations.pale-hanging-moss", 12) / 100.0;
-        double litter = getConfig().getDouble("decorations.leaf-litter", 35) / 100.0;
+        double litter = getConfig().getDouble("decorations.leaf-litter", 60) / 100.0;
         Map<String, Integer> counts = new HashMap<>();
         List<int[]> pos = new ArrayList<>();
         List<String> old = new ArrayList<>();
