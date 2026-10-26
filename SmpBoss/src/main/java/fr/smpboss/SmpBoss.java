@@ -102,6 +102,17 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 8);
             saveConfig();
         }
+        // v9 : équilibrage global + Jugement Dernier
+        if (getConfig().getInt("config-version", 1) < 9) {
+            harder("boss.damage.phase-1-multiplier", 1.4, 1.3);
+            harder("boss.damage.phase-2-multiplier", 1.4, 1.45);
+            harder("boss.damage.phase-3-multiplier", 1.6, 1.5);
+            harder("boss.damage.armor-pierce-phase-3", 0.0, 0.3);
+            harder("boss.attack-interval-phase-3", 42, 48);
+            harder("boss.phase-3-combo-chance", 0.6, 0.5);
+            getConfig().set("config-version", 9);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);

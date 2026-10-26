@@ -82,6 +82,8 @@ public final class PumpkinKing {
     /** Gardes du Roi : tant qu'il en reste un, le Roi est protégé par un bouclier */
     private final Set<Mob> guards = new HashSet<>();
     private boolean enraged;
+    /** Jugement Dernier : l'attaque ultime de la phase 3, une seule fois par combat */
+    private boolean judgmentDone;
     private final Map<UUID, Double> damage = new HashMap<>();
 
     private Mob boss;
@@ -407,7 +409,7 @@ public final class PumpkinKing {
         // attaques
         if (invulnerable > 0 || !boss.hasAI()) return;
         if (--nextAttack <= 0) {
-            nextAttack = (int) (phase == 3 ? cfg("attack-interval-phase-3", 42) : cfg("attack-interval." + phase, phase == 1 ? 75 : 60));
+            nextAttack = (int) (phase == 3 ? cfg("attack-interval-phase-3", 48) : cfg("attack-interval." + phase, phase == 1 ? 75 : 60));
             if (enraged) nextAttack = (int) (nextAttack * 0.7);
             List<Attack> pool = switch (phase) {
                 // La Récolte : coups d'épée, citrouilles, lianes, pics, mains des damnés
@@ -430,11 +432,11 @@ public final class PumpkinKing {
             last = a;
             run(a);
             // phase 2 parfois, phase 3 souvent (toujours s'il est enragé) : il enchaîne une deuxième attaque
-            double combo = phase == 3 ? (enraged ? 1.0 : cfg("phase-3-combo-chance", 0.6)) : phase == 2 ? cfg("phase-2-combo-chance", 0.25) : 0;
+            double combo = phase == 3 ? (enraged ? 1.0 : cfg("phase-3-combo-chance", 0.5)) : phase == 2 ? cfg("phase-2-combo-chance", 0.25) : 0;
             if (ThreadLocalRandom.current().nextDouble() < combo) {
                 Attack first = a;
                 later(30, () -> {
-                    if (ended || reviving || boss == null || !boss.isValid()) return;
+                    if (ended || reviving || invulnerable > 0 || boss == null || !boss.isValid()) return;
                     List<Attack> quick = List.of(Attack.SWORD_COMBO, Attack.SPIKES, Attack.METEOR, Attack.FIRE_FISSURE, Attack.CHARGE,
                             Attack.HANDS, Attack.TORNADO, Attack.BARRAGE);
                     Attack b;
@@ -509,6 +511,8 @@ public final class PumpkinKing {
             else defeat();
         } else if (phase == 1 && ratio <= cfg("phase-2-at-v2", 0.7)) {
             changePhase(2);
+        } else if (phase == 3 && !judgmentDone && ratio <= cfg("judgment-at", 0.55)) {
+            judgment();
         } else if (phase == 3 && !enraged && ratio <= cfg("enrage-at", 0.3)) {
             enrage();
         }
@@ -771,8 +775,8 @@ public final class PumpkinKing {
     }
 
     private double mult() {
-        return cfg("damage.multiplier", 1.35) * (enraged ? 1.25 : 1.0) * (phase == 3 ? cfg("damage.phase-3-multiplier", 1.6)
-                : phase == 2 ? cfg("damage.phase-2-multiplier", 1.4) : cfg("damage.phase-1-multiplier", 1.4));
+        return cfg("damage.multiplier", 1.35) * (enraged ? 1.25 : 1.0) * (phase == 3 ? cfg("damage.phase-3-multiplier", 1.5)
+                : phase == 2 ? cfg("damage.phase-2-multiplier", 1.45) : cfg("damage.phase-1-multiplier", 1.3));
     }
 
     /**
@@ -781,7 +785,7 @@ public final class PumpkinKing {
      */
     private void hit(Player p, double amount) {
         if (boss == null || p.isDead()) return;
-        double pierce = Math.max(0, Math.min(1, phase == 3 ? cfg("damage.armor-pierce-phase-3", 0.0) : cfg("damage.armor-pierce", 0.3)));
+        double pierce = Math.max(0, Math.min(1, phase == 3 ? cfg("damage.armor-pierce-phase-3", 0.3) : cfg("damage.armor-pierce", 0.3)));
         double normal = amount * (1 - pierce);
         if (normal > 0) p.damage(normal, boss);
         if (pierce > 0 && !p.isDead()) {
@@ -1966,6 +1970,213 @@ public final class PumpkinKing {
                     Player t = closest(nearby(g.getLocation(), 40), g.getLocation());
                     if (t != null) g.setTarget(t);
                 }
+            }
+        }
+    }
+
+    /**
+     * JUGEMENT DERNIER (phase 3, une seule fois) : le Roi s'élève, fait grossir une citrouille géante au-dessus de
+     * lui, la lance sur le groupe de joueurs. Un immense cercle rouge montre où elle tombe : ceux qui sont dedans
+     * à l'impact meurent sur le coup (même avec un totem). ~6 secondes pour fuir. Le Roi est intouchable pendant.
+     */
+    private void judgment() {
+        judgmentDone = true;
+        Location base = ground(altar.clone().add(0.5, 0, 0.5));
+        World w = base.getWorld();
+        double radius = cfg("judgment-radius", 10);
+        int lockAt = 40, impact = 135;
+        invulnerable = impact + 40;
+        boss.setAI(false);
+        swing();
+        titleAll("boss.title-judgment", "boss.subtitle-judgment");
+        announce("judgment");
+        sound(base, "entity.wither.spawn", 5f, 0.4f);
+        sound(base, "entity.ender_dragon.growl", 5f, 0.5f);
+        for (Player p : nearby(base, 70)) p.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 50, 0, false, false, false));
+        // le Roi s'élève au-dessus de l'arène
+        Location start = boss.getLocation().clone();
+        Location high = base.clone().add(0, 9, 0);
+        high.setYaw(start.getYaw());
+        repeat(1, 25, i -> {
+            if (boss == null || !boss.isValid()) return;
+            double t = (i + 1) / 25.0;
+            Location l = start.clone().add(high.clone().subtract(start).toVector().multiply(t * t * (3 - 2 * t)));
+            l.setYaw(start.getYaw() + i * 6);
+            boss.teleport(l);
+            w.spawnParticle(Particle.SOUL_FIRE_FLAME, l.clone().add(0, 0.5, 0), 6, 0.6, 0.3, 0.6, 0.02, null, true);
+        }, null);
+        // la citrouille géante grossit au-dessus de lui
+        Location orb = high.clone().add(0, scale * 2.4 + 6, 0);
+        float size = (float) cfg("judgment-size", 9);
+        BlockDisplay pumpkin = w.spawn(orb, BlockDisplay.class, e -> {
+            e.setPersistent(false);
+            e.getPersistentDataContainer().set(bossKey, PersistentDataType.BYTE, (byte) 4);
+            e.setBlock(Material.JACK_O_LANTERN.createBlockData());
+            e.setBrightness(new Display.Brightness(15, 15));
+            e.setGlowing(true);
+            e.setGlowColorOverride(Color.fromRGB(0xff3b00));
+            e.setTeleportDuration(1);
+            e.setViewRange(8f);
+            e.setTransformation(centered(0.2f, new Quaternionf()));
+        });
+        props.add(pumpkin);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (!pumpkin.isValid()) return;
+            pumpkin.setInterpolationDelay(0);
+            pumpkin.setInterpolationDuration(lockAt);
+            pumpkin.setTransformation(centered(size, new Quaternionf().rotateY(1.2f).rotateX(0.3f)));
+        }, 2L);
+        // les âmes de l'arène affluent dans la citrouille
+        repeat(2, lockAt / 2, i -> {
+            ThreadLocalRandom r = ThreadLocalRandom.current();
+            double arena = cfg("arena-radius", 18);
+            for (int k = 0; k < 10; k++) {
+                double a = r.nextDouble(Math.PI * 2);
+                Location src = ground(altar.clone().add(0.5 + Math.cos(a) * arena, 0, 0.5 + Math.sin(a) * arena)).add(0, 1, 0);
+                Vector v = orb.toVector().subtract(src.toVector());
+                w.spawnParticle(i % 2 == 0 ? Particle.SOUL_FIRE_FLAME : Particle.FLAME, src, 0, v.getX(), v.getY(), v.getZ(), 0.07, null, true);
+            }
+            if (i % 5 == 0) w.strikeLightningEffect(ground(altar.clone().add(0.5 + r.nextDouble(-arena, arena), 0, 0.5 + r.nextDouble(-arena, arena))));
+            if (i % 4 == 0) sound(orb, "entity.warden.heartbeat", 4f, 0.5f + i * 0.03f);
+        }, null);
+        // cible : là où il y a le plus de joueurs
+        later(lockAt, () -> {
+            List<Player> in = nearby(base, cfg("arena-radius", 18) + 8);
+            Location target = base.clone();
+            if (!in.isEmpty()) {
+                Player best = in.get(0);
+                int bestCount = -1;
+                for (Player p : in) {
+                    int c = 0;
+                    for (Player o : in) if (horizontalDist(o.getLocation(), p.getLocation()) <= radius) c++;
+                    if (c > bestCount) {
+                        bestCount = c;
+                        best = p;
+                    }
+                }
+                target = ground(best.getLocation().clone());
+            }
+            Location lock = target;
+            int fall = impact - lockAt;
+            ring(lock, radius, Color.fromRGB(255, 0, 0), fall);
+            sound(lock, "block.respawn_anchor.charge", 5f, 0.5f);
+            Particle.DustOptions dark = new Particle.DustOptions(Color.fromRGB(60, 0, 0), 2.2f);
+            repeat(1, fall, i -> {
+                double t = (i + 1) / (double) fall;
+                // la citrouille avance au-dessus de la cible puis s'écrase (accélère)
+                Location from = orb.clone();
+                Location over = lock.clone().add(0, 26, 0);
+                Location pos;
+                if (t < 0.45) {
+                    double u = t / 0.45;
+                    pos = from.clone().add(over.clone().subtract(from).toVector().multiply(u * u * (3 - 2 * u)));
+                    pos.add(0, Math.sin(Math.PI * u) * 6, 0);
+                } else {
+                    double u = (t - 0.45) / 0.55;
+                    pos = over.clone().add(0, -(26 - size / 2.0) * u * u, 0);
+                }
+                pos.setYaw(i * 7f);
+                pumpkin.teleport(pos);
+                w.spawnParticle(Particle.FLAME, pos, 30, size * 0.35, size * 0.35, size * 0.35, 0.06, null, true);
+                w.spawnParticle(Particle.LARGE_SMOKE, pos.clone().add(0, size * 0.5, 0), 10, 1.5, 1.5, 1.5, 0.03, null, true);
+                // l'ombre qui grandit
+                double sr = radius * Math.min(1, 0.3 + t);
+                for (int k = 0; k < 40; k++) {
+                    double a = Math.PI * 2 * k / 40 + i * 0.05;
+                    w.spawnParticle(Particle.DUST, lock.clone().add(Math.cos(a) * sr * ThreadLocalRandom.current().nextDouble(), 0.12,
+                            Math.sin(a) * sr * ThreadLocalRandom.current().nextDouble()), 1, 0, 0, 0, 0, dark, true);
+                }
+                if (i % 20 == 0) {
+                    int left = (fall - i) / 20 + 1;
+                    for (Player p : nearby(lock, radius + 12)) {
+                        boolean inside = horizontalDist(p.getLocation(), lock) <= radius;
+                        p.sendActionBar(parse(plugin.msg(inside ? "boss.judgment-inside" : "boss.judgment-outside")
+                                .replace("<seconds>", String.valueOf(left))));
+                        if (inside) p.playSound(p.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_BELL, 2f, 0.5f + 0.15f * (5 - left));
+                    }
+                }
+                if (i % 10 == 0) sound(pos, "entity.blaze.burn", 4f, 0.4f);
+            }, () -> {
+                pumpkin.remove();
+                props.remove(pumpkin);
+                judgmentImpact(lock, radius, size);
+            });
+        });
+        // le Roi redescend
+        later(impact + 25, () -> {
+            if (boss == null || !boss.isValid()) return;
+            Location from = boss.getLocation().clone();
+            Location down = base.clone();
+            down.setYaw(from.getYaw());
+            repeat(1, 12, i -> {
+                if (boss == null || !boss.isValid()) return;
+                double t = (i + 1) / 12.0;
+                boss.teleport(from.clone().add(down.clone().subtract(from).toVector().multiply(t * t)));
+            }, () -> {
+                shockwave(down, 8, 1.2, 0);
+                invulnerable = 0;
+                if (boss != null && boss.isValid() && !ended) boss.setAI(true);
+                nextAttack = 40;
+            });
+        });
+    }
+
+    private void judgmentImpact(Location c, double radius, float size) {
+        World w = c.getWorld();
+        sound(c, "entity.generic.explode", 6f, 0.4f);
+        sound(c, "entity.dragon_fireball.explode", 6f, 0.5f);
+        sound(c, "entity.wither.death", 4f, 0.6f);
+        sound(c, "entity.warden.sonic_boom", 5f, 0.5f);
+        try {
+            Object flash = Particle.FLASH.getDataType() == Color.class ? Color.fromRGB(255, 120, 40) : null;
+            w.spawnParticle(Particle.FLASH, c.clone().add(0, 2, 0), 3, 1, 1, 1, 0, flash, true);
+        } catch (RuntimeException ignored) {
+            // particule différente selon la version : pas grave
+        }
+        for (int k = 0; k < 10; k++) {
+            double a = Math.PI * 2 * k / 10;
+            w.spawnParticle(Particle.EXPLOSION_EMITTER, c.clone().add(Math.cos(a) * radius * 0.6, 1, Math.sin(a) * radius * 0.6), 1, 0, 0, 0, 0, null, true);
+        }
+        w.spawnParticle(Particle.EXPLOSION_EMITTER, c.clone().add(0, 2, 0), 4, 1.5, 1, 1.5, 0, null, true);
+        w.spawnParticle(Particle.BLOCK, c.clone().add(0, 1, 0), 600, radius * 0.5, 1.5, radius * 0.5, 0, Material.PUMPKIN.createBlockData(), true);
+        w.spawnParticle(Particle.LAVA, c, 120, radius * 0.5, 0.5, radius * 0.5, 0, null, true);
+        // colonne de feu
+        for (double y = 0; y < 22; y += 0.7) {
+            w.spawnParticle(Particle.FLAME, c.clone().add(0, y, 0), 12, 1.2 + y * 0.05, 0.2, 1.2 + y * 0.05, 0.04, null, true);
+            w.spawnParticle(Particle.SOUL_FIRE_FLAME, c.clone().add(0, y, 0), 4, 0.6, 0.2, 0.6, 0.02, null, true);
+        }
+        // trois anneaux de flammes qui balaient l'arène
+        for (int wave = 0; wave < 3; wave++) {
+            int ww = wave;
+            later(wave * 6, () -> repeat(1, 16, i -> {
+                double r = 1 + (radius + 8) * (i + 1) / 16.0;
+                int pts = (int) Math.max(30, r * 8);
+                for (int k = 0; k < pts; k++) {
+                    double a = Math.PI * 2 * k / pts;
+                    w.spawnParticle(ww == 1 ? Particle.SOUL_FIRE_FLAME : Particle.FLAME, c.clone().add(Math.cos(a) * r, 0.4 + ww * 0.6, Math.sin(a) * r),
+                            1, 0, 0.1, 0, 0.01, null, true);
+                }
+            }, null));
+        }
+        for (Player p : nearby(c, 80)) {
+            p.playHurtAnimation((float) ThreadLocalRandom.current().nextDouble(360));
+            p.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, 60, 0, false, false, false));
+        }
+        burst(c.clone().add(0, size / 2.0, 0));
+        // dans le cercle : mort instantanée (même avec un totem) ; juste à côté : projeté
+        for (Player p : nearby(c, radius + 8)) {
+            double d = horizontalDist(p.getLocation(), c);
+            if (d <= radius && Math.abs(p.getLocation().getY() - c.getY()) < 8) {
+                p.setNoDamageTicks(0);
+                p.damage(100000, org.bukkit.damage.DamageSource.builder(org.bukkit.damage.DamageType.GENERIC_KILL)
+                        .withCausingEntity(boss).withDirectEntity(boss).build());
+                if (!p.isDead()) p.setHealth(0);
+                Bukkit.broadcast(parse(plugin.msg("boss.judgment-kill").replace("<player>", SmpBoss.MM.escapeTags(p.getName()))));
+            } else {
+                Vector kb = p.getLocation().toVector().subtract(c.toVector()).setY(0);
+                if (kb.lengthSquared() < 0.01) kb = new Vector(0.1, 0, 0);
+                p.setVelocity(kb.normalize().multiply(1.6).setY(0.8));
+                hit(p, cfg("damage.judgment-blast", 4) * mult());
             }
         }
     }

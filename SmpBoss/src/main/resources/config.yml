@@ -1,4 +1,4 @@
-config-version: 8
+config-version: 9
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -81,13 +81,15 @@ boss:
     tornado: 6
     hands: 8
     # multiplicateur des dégâts par phase
-    phase-1-multiplier: 1.4
-    phase-2-multiplier: 1.4
-    phase-3-multiplier: 1.6
+    phase-1-multiplier: 1.3
+    phase-2-multiplier: 1.45
+    phase-3-multiplier: 1.5
     # part de chaque coup qui traverse l'armure (seuls les enchantements Protection la réduisent)
     # 0.3 = 30 % ; sans ça, une armure en netherite enchantée ne prend presque rien
     armor-pierce: 0.3
-    armor-pierce-phase-3: 0.0
+    armor-pierce-phase-3: 0.3
+    # Jugement Dernier : ceux qui sont juste à côté du cercle (projetés)
+    judgment-blast: 4
   # phase 2 quand il lui reste 70 % de vie ; à 0 il fait le mort puis revient en phase 3 (voir phase-3-health-multiplier)
   # usure de l'armure pendant le combat (0.25 = 4 fois moins vite que d'habitude)
   armor-wear: 0.25
@@ -95,20 +97,25 @@ boss:
   # vie de la phase 3 (Roi Sans Tête) par rapport à la vie de départ (0.6 = 60 %)
   phase-3-health-multiplier: 0.6
   scale-phase-3-v2: 4.6
-  attack-interval-phase-3: 42
+  attack-interval-phase-3: 48
   # chance d'enchaîner une 2e attaque juste après (phase 2 / phase 3)
   phase-2-combo-chance: 0.25
   # Jugement Infernal : temps pour rejoindre un cercle vert (ticks)
   nova-warning-ticks: 70
   # sous ce % de vie en phase 3 il devient ENRAGÉ (plus rapide, +25 % de dégâts, enchaîne toujours)
   enrage-at: 0.3
+  # JUGEMENT DERNIER (phase 3, une seule fois) : citrouille géante, mort instantanée dans le cercle rouge
+  # se déclenche quand il reste X de la vie de la phase 3 ; rayon du cercle ; taille de la citrouille
+  judgment-at: 0.55
+  judgment-radius: 10
+  judgment-size: 9
   # Gardes du Roi : tant qu'il en reste un, le Roi ne prend que X des dégâts (0.3 = 30 %)
   guard-shield: 0.3
   guard-health: 40
   guard-health-per-player: 15
   guard-damage: 9
   # chance qu'il enchaîne une 2e attaque en phase 3
-  phase-3-combo-chance: 0.6
+  phase-3-combo-chance: 0.5
   # Festin : % de sa vie max qu'il récupère à chaque morsure
   feast-heal-percent: 1.0
   scythe-radius: 6.5
@@ -435,6 +442,7 @@ messages:
       guards: "<dark_red>🛡 <b>Gardes du Roi</b> <gray>· tue-les pour briser son bouclier"
       vortex: "<dark_purple>🌀 <b>Vortex</b> <gray>· résiste à l'aspiration"
       seed-rain: "<gold>☄ <b>Pluie de graines</b> <gray>· évite les cercles"
+      judgment: "<dark_red>☠ <b>JUGEMENT DERNIER</b> <gray>· sors du cercle rouge ou meurs"
     new-fighter: "<gold>⚔ <white><player></white> rejoint le combat <dark_gray>· <gray>le Roi gagne <red>+<hp> ❤"
     not-enough: "<gray>Tu n'as fait que <white><percent>%</white> des dégâts <dark_gray>(il faut <min>%)</dark_gray><gray> : pas de butin cette fois."
     bar-hp: " <dark_gray>| <white><hp></white><gray>/<max> <red>❤"
@@ -444,6 +452,11 @@ messages:
     cage-warning: "<gold><b>🎃 La cage se referme sur toi !</b> <gray>Sors par la <green>brèche verte</green>."
     shield: "<red><b>🛡 Bouclier des Gardes</b> <gray>· le Roi prend très peu de dégâts, tue ses gardes !"
     guard-name: "<dark_red><b>Garde du Roi"
+    title-judgment: "<dark_red><b>☠ JUGEMENT DERNIER ☠"
+    subtitle-judgment: "<red>Fuyez la citrouille... ou périssez."
+    judgment-inside: "<dark_red><b>☠ SORS DU CERCLE ROUGE ☠</b> <red><seconds>..."
+    judgment-outside: "<gold>Tu es hors du cercle <gray>· reste loin ! <white><seconds>..."
+    judgment-kill: "<dark_red>☠ <white><player></white> <red>a été écrasé par la Citrouille du Jugement Dernier."
     title-enrage: "<dark_red><b>ENRAGÉ"
     subtitle-enrage: "<red>Le Roi perd la raison... tenez bon !"
   guild-top:
