@@ -1,4 +1,4 @@
-config-version: 6
+config-version: 7
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -311,8 +311,8 @@ backpack:
 # couronne, ailes, cornes... visibles sur les joueurs (false = cachés, les reliques gardent leurs bonus)
 cosmetics:
   enabled: true
-  # avec ProtocolLib : accrochés au joueur, ils le suivent sans aucun retard (sinon ils sont déplacés à chaque tick)
-  attach: true
+  # expérimental : accrochés au joueur côté client (false = replacés sur le joueur à chaque tick, toujours bien placés)
+  attach: false
 
 inventory-buttons:
   enabled: true

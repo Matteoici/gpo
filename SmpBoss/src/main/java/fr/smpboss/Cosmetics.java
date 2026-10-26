@@ -87,7 +87,7 @@ final class Cosmetics {
     Cosmetics(SmpBoss plugin) {
         this.plugin = plugin;
         this.tag = plugin.items().relicKey;
-        this.mounts = plugin.getConfig().getBoolean("cosmetics.attach", true) ? Mounts.create(plugin.getLogger()) : null;
+        this.mounts = plugin.getConfig().getBoolean("cosmetics.attach", false) ? Mounts.create(plugin.getLogger()) : null;
         loadModels();
     }
 

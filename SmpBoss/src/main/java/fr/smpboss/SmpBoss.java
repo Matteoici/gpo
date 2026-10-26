@@ -87,6 +87,12 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 6);
             saveConfig();
         }
+        // v7 : l'accroche côté client ne marche pas sur ce serveur : suivi classique (modèles bien placés)
+        if (getConfig().getInt("config-version", 1) < 7) {
+            getConfig().set("cosmetics.attach", false);
+            getConfig().set("config-version", 7);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);
