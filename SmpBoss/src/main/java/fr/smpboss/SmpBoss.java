@@ -113,6 +113,13 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 9);
             saveConfig();
         }
+        // v10 : l'épée fait plus mal au boss (plus d'armure du boss, bonus corps à corps) -> un peu plus de vie
+        if (getConfig().getInt("config-version", 1) < 10) {
+            harder("boss.health-per-player", 1600, 2400);
+            if (!getConfig().isSet("boss.melee-bonus")) getConfig().set("boss.melee-bonus", 1.3);
+            getConfig().set("config-version", 10);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);

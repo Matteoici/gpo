@@ -2506,7 +2506,7 @@ public final class PumpkinKing {
     }
 
     private double perPlayer() {
-        return Math.max(1, cfg("health-per-player", 1600)) * (phase == 3 ? cfg("phase-3-health-multiplier", 0.6) : 1.0);
+        return Math.max(1, cfg("health-per-player", 2400)) * (phase == 3 ? cfg("phase-3-health-multiplier", 0.6) : 1.0);
     }
 
     private double minPct() {
