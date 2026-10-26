@@ -507,7 +507,7 @@ public final class PumpkinKing {
         if (hp <= 0) {
             if (phase < 3) resurrect();
             else defeat();
-        } else if (phase == 1 && ratio <= cfg("phase-2-at-v2", 0.5)) {
+        } else if (phase == 1 && ratio <= cfg("phase-2-at-v2", 0.7)) {
             changePhase(2);
         } else if (phase == 3 && !enraged && ratio <= cfg("enrage-at", 0.3)) {
             enrage();
@@ -1493,6 +1493,12 @@ public final class PumpkinKing {
         });
     }
 
+    /** Le joueur est dans le combat (dans l'arène du boss). */
+    boolean inFight(Player p) {
+        return !ended && p.getWorld() == altar.getWorld() && horizontalDist(p.getLocation(), altar) <= cfg("arena-radius", 18) + 12
+                && Math.abs(p.getLocation().getY() - altar.getY()) < 30;
+    }
+
     private static double horizontalDist(Location a, Location b) {
         return Math.hypot(a.getX() - b.getX(), a.getZ() - b.getZ());
     }
@@ -2229,6 +2235,8 @@ public final class PumpkinKing {
         List<Map.Entry<UUID, Double>> sorted = new ArrayList<>(damage.entrySet());
         sorted.sort((a, b) -> Double.compare(b.getValue(), a.getValue()));
         Bukkit.broadcast(parse(plugin.msg("boss.defeated")));
+        long secs = tick / 20;
+        Bukkit.broadcast(parse(plugin.msg("boss.fight-time").replace("<time>", secs / 60 + " min " + String.format("%02d", secs % 60) + " s")));
         for (int i = 0; i < Math.min(3, sorted.size()); i++) {
             var e = sorted.get(i);
             String name = Bukkit.getOfflinePlayer(e.getKey()).getName();
@@ -2270,7 +2278,7 @@ public final class PumpkinKing {
     }
 
     private double perPlayer() {
-        return Math.max(1, cfg("health-per-player", 2600)) * (phase == 3 ? cfg("phase-3-health-multiplier", 1.0) : 1.0);
+        return Math.max(1, cfg("health-per-player", 1600)) * (phase == 3 ? cfg("phase-3-health-multiplier", 0.6) : 1.0);
     }
 
     private double minPct() {

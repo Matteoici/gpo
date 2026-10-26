@@ -40,6 +40,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
+import org.bukkit.event.player.PlayerItemDamageEvent;
 
 import static fr.smpboss.SmpBoss.parse;
 
@@ -73,6 +74,23 @@ final class BossListener implements Listener {
         if (r == CreatureSpawnEvent.SpawnReason.SPAWNER || r == CreatureSpawnEvent.SpawnReason.SPAWNER_EGG) {
             e.getEntity().getPersistentDataContainer().set(spawnerKey, PersistentDataType.BYTE, (byte) 1);
         }
+    }
+
+    // ================================================================= usure de l'armure
+
+    /** Pendant le combat, l'armure s'use beaucoup moins (les attaques du boss touchent souvent). */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onWear(PlayerItemDamageEvent e) {
+        PumpkinKing k = plugin.king();
+        Player p = e.getPlayer();
+        if (k == null || !k.active() || !k.inFight(p)) return;
+        boolean armor = false;
+        for (ItemStack a : p.getInventory().getArmorContents()) if (a != null && a.equals(e.getItem())) armor = true;
+        if (!armor) return;
+        double v = e.getDamage() * Math.max(0, plugin.getConfig().getDouble("boss.armor-wear", 0.25));
+        int out = (int) v + (ThreadLocalRandom.current().nextDouble() < v - (int) v ? 1 : 0);
+        if (out <= 0) e.setCancelled(true);
+        else e.setDamage(out);
     }
 
     // ================================================================= dégâts au boss

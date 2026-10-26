@@ -1,4 +1,4 @@
-config-version: 7
+config-version: 8
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -23,7 +23,7 @@ boss:
   # vie PROPORTIONNELLE au nombre de combattants : X PV par joueur.
   # Compte les joueurs présents au réveil, puis chaque nouveau joueur qui le frappe ajoute X PV
   # (le pourcentage de vie restant ne change pas).
-  health-per-player: 2600
+  health-per-player: 1600
   # tableau sur le côté de l'écran : vie + part des dégâts de chacun (vert = assez pour le butin)
   damage-sidebar: true
   # taille (1 = taille normale) puis à chaque phase
@@ -82,9 +82,12 @@ boss:
     hands: 8
     # tous les dégâts sont multipliés par ça en phase 3
     phase-3-multiplier: 1.6
-  # phase 2 à 50 % de vie ; à 0 il fait le mort puis revient en phase 3 avec TOUTE sa vie
-  phase-2-at-v2: 0.5
-  phase-3-health-multiplier: 1.0
+  # phase 2 quand il lui reste 70 % de vie ; à 0 il fait le mort puis revient en phase 3 (voir phase-3-health-multiplier)
+  # usure de l'armure pendant le combat (0.25 = 4 fois moins vite que d'habitude)
+  armor-wear: 0.25
+  phase-2-at-v2: 0.7
+  # vie de la phase 3 (Roi Sans Tête) par rapport à la vie de départ (0.6 = 60 %)
+  phase-3-health-multiplier: 0.6
   scale-phase-3-v2: 4.6
   attack-interval-phase-3: 42
   # chance d'enchaîner une 2e attaque juste après (phase 2 / phase 3)
@@ -391,6 +394,7 @@ messages:
     title-defeat: "<gold><b>VICTOIRE"
     subtitle-defeat: "<gray>Le Roi Citrouille est tombé !"
     defeated: "<#ff7a00><b>♛ Le Roi Citrouille est vaincu !</b> <gray>Meilleurs combattants :"
+    fight-time: "<gray>⏱ Combat terminé en <white><time></white>."
     top-line: "<gray>  <white>#<rank></white> <yellow><player></yellow> <dark_gray>(<percent>% des dégâts)"
     left: "<gray>Personne ne combat... le <#ff7a00>Roi Citrouille</#ff7a00> retourne sous terre."
     timeout: "<gray>Trop tard ! Le <#ff7a00>Roi Citrouille</#ff7a00> s'enfonce dans la nuit."

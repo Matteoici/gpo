@@ -93,6 +93,15 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 7);
             saveConfig();
         }
+        // v8 : combat plus court (~8 min) : phase 1 plus courte, moins de vie, phase 3 à 60 %
+        if (getConfig().getInt("config-version", 1) < 8) {
+            harder("boss.health-per-player", 2600, 1600);
+            harder("boss.phase-2-at-v2", 0.5, 0.7);
+            harder("boss.phase-3-health-multiplier", 1.0, 0.6);
+            if (!getConfig().isSet("boss.armor-wear")) getConfig().set("boss.armor-wear", 0.25);
+            getConfig().set("config-version", 8);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);
