@@ -161,6 +161,8 @@ arena:
     no-jump-effects: true
     # ender pearls interdites dans l'arène (lancer, entrer ou sortir avec)
     no-ender-pearl: true
+    # lances (spear) inutilisables dans l'arène (pas de ruée / coups de lance)
+    no-spear: true
     blocked-effects: [jump_boost, levitation]
 
 # ---------------------------------------------------------------- Butin

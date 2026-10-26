@@ -284,6 +284,72 @@ final class ArenaGuard implements Listener {
         }
     }
 
+    // ================================================================= lances (spear)
+
+    private static boolean spear(org.bukkit.inventory.ItemStack it) {
+        return it != null && it.getType().name().endsWith("_SPEAR");
+    }
+
+    private void spearDenied(Player p) {
+        p.sendActionBar(parse("<red>Pas de lances dans l'arène."));
+    }
+
+    /** Si le joueur tient une lance, on passe sur un autre emplacement de sa barre. */
+    private void dropSpearFromHand(Player p) {
+        if (!on("no-spear") || !spear(p.getInventory().getItemInMainHand())) return;
+        var inv = p.getInventory();
+        int cur = inv.getHeldItemSlot();
+        for (int i = 1; i < 9; i++) {
+            int s = (cur + i) % 9;
+            if (!spear(inv.getItem(s))) {
+                inv.setHeldItemSlot(s);
+                spearDenied(p);
+                return;
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    public void onSpearHeld(org.bukkit.event.player.PlayerItemHeldEvent e) {
+        Player p = e.getPlayer();
+        if (!on("no-spear") || !arena.contains(p.getLocation()) || !spear(p.getInventory().getItem(e.getNewSlot()))) return;
+        e.setCancelled(true);
+        spearDenied(p);
+    }
+
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    public void onSpearSwap(org.bukkit.event.player.PlayerSwapHandItemsEvent e) {
+        if (!on("no-spear") || !arena.contains(e.getPlayer().getLocation())) return;
+        if (spear(e.getMainHandItem())) {
+            e.setCancelled(true);
+            spearDenied(e.getPlayer());
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOW)
+    public void onSpearUse(PlayerInteractEvent e) {
+        if (!on("no-spear") || !spear(e.getItem()) || !arena.contains(e.getPlayer().getLocation())) return;
+        e.setCancelled(true);
+        e.setUseItemInHand(Event.Result.DENY);
+        dropSpearFromHand(e.getPlayer());
+    }
+
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    public void onSpearHit(org.bukkit.event.entity.EntityDamageByEntityEvent e) {
+        if (!(e.getDamager() instanceof Player p) || !on("no-spear") || !arena.contains(p.getLocation())) return;
+        if (!spear(p.getInventory().getItemInMainHand())) return;
+        e.setCancelled(true);
+        dropSpearFromHand(p);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onSpearClick(org.bukkit.event.inventory.InventoryClickEvent e) {
+        if (!(e.getWhoClicked() instanceof Player p) || !on("no-spear") || !arena.contains(p.getLocation())) return;
+        org.bukkit.Bukkit.getScheduler().runTask(plugin, () -> {
+            if (p.isOnline() && arena.contains(p.getLocation())) dropSpearFromHand(p);
+        });
+    }
+
     // ================================================================= ender pearls
 
     @EventHandler(priority = EventPriority.LOW)
@@ -349,7 +415,10 @@ final class ArenaGuard implements Listener {
     public void onTeleportIn(org.bukkit.event.player.PlayerTeleportEvent e) {
         if (!arena.contains(e.getTo())) return;
         org.bukkit.Bukkit.getScheduler().runTask(plugin, () -> {
-            if (e.getPlayer().isOnline() && arena.contains(e.getPlayer().getLocation())) stripEffects(e.getPlayer());
+            if (e.getPlayer().isOnline() && arena.contains(e.getPlayer().getLocation())) {
+                stripEffects(e.getPlayer());
+                dropSpearFromHand(e.getPlayer());
+            }
         });
     }
 
@@ -360,7 +429,10 @@ final class ArenaGuard implements Listener {
         Location t = e.getTo();
         if (e.getFrom().getBlockX() == t.getBlockX() && e.getFrom().getBlockY() == t.getBlockY() && e.getFrom().getBlockZ() == t.getBlockZ()) return;
         arena.checkPortal(e.getPlayer(), t);
-        if (arena.contains(t)) stripEffects(e.getPlayer());
+        if (arena.contains(t)) {
+            stripEffects(e.getPlayer());
+            dropSpearFromHand(e.getPlayer());
+        }
         // lave dans l'arène : direct au spawn de l'arène (même avec résistance au feu ou protection d'arrivée)
         if (on("lava-rescue") && arena.contains(t) && !arena.inPortal(t)
                 && (t.getBlock().getType() == org.bukkit.Material.LAVA || t.clone().add(0, 0.6, 0).getBlock().getType() == org.bukkit.Material.LAVA)) {
