@@ -252,6 +252,7 @@ gui:
       medium: "<yellow>Moyenne"
       hard: "<red>Difficile"
       weekly: "<aqua>Semaine"
+      halloween: "<#ff7a00>🎃 Halloween"
     quest:
       name: "<quest>"
       name-done: "<green><b>✔</b> <quest>"

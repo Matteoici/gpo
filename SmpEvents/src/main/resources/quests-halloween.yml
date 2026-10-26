@@ -1,0 +1,102 @@
+# =====================================================================
+#  🎃 Quêtes d'HALLOWEEN : données EN PLUS des quêtes normales pendant l'événement
+#  (combien par jour / par semaine et jusqu'à quand : quests.events.halloween dans config.yml)
+#  Même format que quests.yml. BOSS_DAMAGE / BOSS_WIN = combat contre le Roi Citrouille (SmpBoss).
+#  Après une modification : /smpevents reload
+# =====================================================================
+
+daily:
+  citrouilles:
+    type: MINE
+    targets: [PUMPKIN, CARVED_PUMPKIN]
+    amount: 32
+    reward: 20000
+    icon: PUMPKIN
+    name: "<#ff7a00>🎃 Récolter <amount> citrouilles"
+  lanternes:
+    type: PLACE
+    targets: [JACK_O_LANTERN, CARVED_PUMPKIN]
+    amount: 12
+    reward: 15000
+    icon: JACK_O_LANTERN
+    name: "<#ff7a00>🎃 Décorer : poser <amount> citrouilles sculptées"
+  squelettes:
+    type: KILL_MOB
+    targets: [SKELETON, STRAY, BOGGED, WITHER_SKELETON]
+    amount: 40
+    reward: 25000
+    icon: BONE
+    name: "<#ff7a00>💀 Chasser <amount> squelettes"
+  araignees:
+    type: KILL_MOB
+    targets: [SPIDER, CAVE_SPIDER]
+    amount: 25
+    reward: 20000
+    icon: SPIDER_EYE
+    name: "<#ff7a00>🕷 Écraser <amount> araignées"
+  sorcieres:
+    type: KILL_MOB
+    targets: [WITCH]
+    amount: 5
+    reward: 30000
+    icon: CAULDRON
+    name: "<#ff7a00>🧙 Vaincre <amount> sorcières"
+  morts:
+    type: KILL_MOB
+    targets: [ZOMBIE, HUSK, DROWNED, ZOMBIE_VILLAGER]
+    amount: 50
+    reward: 25000
+    icon: ZOMBIE_HEAD
+    name: "<#ff7a00>🧟 Repousser <amount> morts-vivants"
+  phantoms:
+    type: KILL_MOB
+    targets: [PHANTOM]
+    amount: 6
+    reward: 30000
+    icon: PHANTOM_MEMBRANE
+    name: "<#ff7a00>🦇 Abattre <amount> phantoms"
+  tartes:
+    type: EAT
+    targets: [PUMPKIN_PIE]
+    amount: 8
+    reward: 15000
+    icon: PUMPKIN_PIE
+    name: "<#ff7a00>🥧 Manger <amount> tartes à la citrouille"
+  bougies:
+    type: PLACE
+    targets: [CANDLE, WHITE_CANDLE, ORANGE_CANDLE, BLACK_CANDLE, RED_CANDLE, PURPLE_CANDLE, YELLOW_CANDLE, GRAY_CANDLE, BROWN_CANDLE]
+    amount: 10
+    reward: 12000
+    icon: ORANGE_CANDLE
+    name: "<#ff7a00>🕯 Allumer l'ambiance : poser <amount> bougies"
+  roi-degats:
+    type: BOSS_DAMAGE
+    targets: []
+    amount: 500
+    reward: 40000
+    icon: GOLDEN_SWORD
+    name: "<#ff7a00>♛ Infliger <amount> dégâts au Roi Citrouille"
+
+weekly:
+  roi:
+    type: BOSS_WIN
+    targets: []
+    amount: 1
+    reward: 250000
+    icon: JACK_O_LANTERN
+    commands: ["boss give %player% graine 8"]
+    name: "<gradient:#ff7a00:#ffd36b><b>♛ Vaincre le Roi Citrouille</b></gradient>"
+  massacre:
+    type: KILL_MOB
+    targets: [ZOMBIE, HUSK, DROWNED, ZOMBIE_VILLAGER, SKELETON, STRAY, BOGGED, SPIDER, CAVE_SPIDER, WITCH, PHANTOM, CREEPER, ENDERMAN]
+    amount: 400
+    reward: 200000
+    icon: WITHER_SKELETON_SKULL
+    name: "<#ff7a00>☠ Massacre d'Halloween : tuer <amount> monstres"
+  recolte:
+    type: MINE
+    targets: [PUMPKIN, CARVED_PUMPKIN, MELON]
+    amount: 256
+    reward: 150000
+    icon: CARVED_PUMPKIN
+    name: "<#ff7a00>🎃 Grande récolte : <amount> citrouilles ou pastèques"

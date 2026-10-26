@@ -197,6 +197,7 @@ public final class RelicMenu implements InventoryHolder {
         lore.add(Component.empty());
         lore.add(parse(plugin.msg(equipped ? "menu.click-unequip" : "menu.click-equip")));
         lore.add(parse(plugin.msg("menu.click-inspect")));
+        if (!r.backpack()) lore.add(parse(plugin.msg("menu.click-trade")));
         m.lore(lore);
         if (equipped) m.setEnchantmentGlintOverride(true);
         m.addItemFlags(ItemFlag.values());
@@ -345,6 +346,10 @@ public final class RelicMenu implements InventoryHolder {
             viewer.playSound(Sound.sound(Key.key("minecraft", "block.chest.locked"), Sound.Source.MASTER, 0.7f, 1.3f));
             return;
         }
+        if (type == ClickType.DROP || type == ClickType.CONTROL_DROP) {
+            extract(d, r);
+            return;
+        }
         if (type.isShiftClick()) {
             viewer.closeInventory();
             inspect(plugin, viewer, r);
@@ -359,6 +364,39 @@ public final class RelicMenu implements InventoryHolder {
                 .replace("<max>", String.valueOf(slots()))));
         viewer.playSound(Sound.sound(Key.key("minecraft", key.equals("relics.equipped")
                 ? "item.armor.equip_netherite" : "ui.button.click"), Sound.Source.MASTER, 1f, 1.2f));
+        draw();
+    }
+
+    private String pendingExtract;
+    private long pendingUntil;
+
+    /** Touche Q sur une relique : elle redevient un objet (pour l'échanger, la vendre, la donner). */
+    private void extract(PlayerData d, Relic r) {
+        if (r.backpack()) {
+            viewer.sendMessage(parse(plugin.msg("relics.no-trade-backpack")));
+            return;
+        }
+        long now = System.currentTimeMillis();
+        String name = r.rarity().name(r.name(), 0);
+        if (!r.id().equals(pendingExtract) || now > pendingUntil) {
+            pendingExtract = r.id();
+            pendingUntil = now + 5000;
+            viewer.sendMessage(parse(plugin.msg("relics.extract-confirm").replace("<relic>", name)));
+            viewer.playSound(Sound.sound(Key.key("minecraft", "block.note_block.pling"), Sound.Source.MASTER, 0.8f, 0.8f));
+            return;
+        }
+        pendingExtract = null;
+        if (viewer.getInventory().firstEmpty() == -1) {
+            viewer.sendMessage(parse(plugin.msg("relics.extract-full")));
+            return;
+        }
+        if (!d.relics.remove(r.id())) return;
+        d.equipped.remove(r.id());
+        plugin.store().dirty();
+        plugin.relics().apply(viewer);
+        viewer.getInventory().addItem(plugin.items().relicItem(r));
+        viewer.sendMessage(parse(plugin.msg("relics.extracted").replace("<relic>", name)));
+        viewer.playSound(Sound.sound(Key.key("minecraft", "entity.item.pickup"), Sound.Source.MASTER, 1f, 0.8f));
         draw();
     }
 

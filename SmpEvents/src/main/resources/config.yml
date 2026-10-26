@@ -24,6 +24,13 @@ quests:
     hard: 1
   # nombre de quêtes de la semaine (changent le lundi)
   weekly-count: 2
+  # événements : quêtes EN PLUS des normales, jusqu'à la date "until" (incluse). Liste : quests-halloween.yml
+  events:
+    halloween:
+      enabled: true
+      daily-slots: 2
+      weekly-slots: 1
+      until: "2026-11-08"
   # bonus quand on finit TOUTES les quêtes du jour
   daily-bonus: 50000
   # série : +X % de bonus par jour d'affilée où on a tout fini (jusqu'à streak-max-days)

@@ -499,6 +499,10 @@ messages:
     unequipped: "<yellow>Retirée : <relic>"
     full: "<red>Tu as déjà <max> reliques équipées. Retires-en une d'abord."
     not-owned: "<red>Tu n'as pas cette relique."
+    extract-confirm: "<gold>Transformer <relic> <gold>en objet pour l'échanger ? <gray>Appuie encore sur <white>Q</white> dans les 5 secondes. <dark_gray>(elle quitte ta collection)"
+    extracted: "<green><relic> <green>est dans ton inventaire. <gray>Échange-la, vends-la ou donne-la ; clic droit avec pour la récupérer."
+    extract-full: "<red>Ton inventaire est plein."
+    no-trade-backpack: "<red>Le Sac de la Récolte ne s'échange pas (il garde tes objets)."
   backpack:
     title: "<gradient:#ffffff:#6b2f84><b>Sac de la Récolte"
     none: "<red>Il te faut la relique <white>Sac de la Récolte</white> équipée (/reliques)."
@@ -531,6 +535,7 @@ messages:
     click-equip: "<yellow>▶ Clic : équiper"
     click-unequip: "<yellow>▶ Clic : retirer"
     click-inspect: "<aqua>▶ Shift + clic : inspecter"
+    click-trade: "<gold>▶ Q : transformer en objet <dark_gray>(pour l'échanger)"
     empty-slot:
       name: "<gray>Emplacement libre"
       lore: ["<dark_gray>Choisis une relique en bas."]

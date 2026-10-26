@@ -4,116 +4,56 @@ import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
-import org.bukkit.World;
-import org.bukkit.block.data.BlockData;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.BlockDisplay;
-import org.bukkit.entity.Display;
-import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
-import org.joml.Quaternionf;
-import org.joml.Vector3f;
 
-import java.io.File;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Les cosmétiques visibles des reliques équipées, construits en blocs miniatures (aucun pack de textures requis).
- * Les modèles sont décrits dans cosmetics.yml (coordonnées depuis les pieds : x = gauche, y = haut, z = avant).
- *
- * Avec ProtocolLib, les modèles sont accrochés au joueur côté client (comme des passagers) : ils le suivent
- * sans aucun retard. Sinon ils sont replacés à chaque tick. Cachés en vol plané, à la nage et au lit.
+ * Les cosmétiques des reliques équipées, entièrement en particules (aucune entité, rien qui puisse traîner
+ * ou tomber par terre) : couronnes, cornes, ailes, cape, feu follet, orbes, halo, braises...
+ * Les formes sont dessinées dans le repère du joueur (x = gauche, y = haut, z = avant) et tournent avec lui.
  */
 final class Cosmetics {
 
-    private enum Anchor {
-        BODY, HEAD, ORBIT
-    }
-
-    /** base = transformations d'origine (modèle tourné vers le sud), lastYaw = dernière rotation envoyée. */
-    private record Model(String visual, Anchor anchor, List<Display> parts, List<Transformation> base, float[] lastYaw) {
-    }
-
     private static final class Worn {
-        final List<Model> models = new ArrayList<>();
-        String key = "";
+        List<String> visuals = new ArrayList<>();
         float bodyYaw;
         Location last;
         int t;
-        UUID world;
     }
 
     private static final Color[] LEAVES = {Color.fromRGB(0xd9771f), Color.fromRGB(0xb5481c), Color.fromRGB(0xe8b23a),
             Color.fromRGB(0x8a3b12), Color.fromRGB(0xf0c75e)};
-    /** Hauteur du point d'accroche des passagers sur un joueur debout. */
-    private static final float ATTACH = 1.8f;
+    private static final Color GOLD = Color.fromRGB(255, 200, 40), GOLD_DARK = Color.fromRGB(200, 140, 20),
+            BLACK = Color.fromRGB(25, 20, 25), BLOOD = Color.fromRGB(150, 0, 10), RED = Color.fromRGB(220, 30, 20),
+            BONE = Color.fromRGB(235, 228, 205), ORANGE = Color.fromRGB(255, 120, 10);
 
     private final SmpBoss plugin;
-    private final NamespacedKey tag;
     private final Map<UUID, Worn> worn = new HashMap<>();
-    private final Mounts mounts;
-
-    /** Accrochés au joueur côté client (sinon : replacés à chaque tick). */
-    private boolean attached() {
-        return mounts != null && !mounts.broken();
-    }
-
-    /** L'accroche ne marche pas : on reconstruit tout en mode "suivi". */
-    void rebuildAll() {
-        removeAll();
-        for (Player p : Bukkit.getOnlinePlayers()) refresh(p);
-    }
-    private YamlConfiguration models = new YamlConfiguration();
     private int clock;
 
     Cosmetics(SmpBoss plugin) {
         this.plugin = plugin;
-        this.tag = plugin.items().relicKey;
-        this.mounts = plugin.getConfig().getBoolean("cosmetics.attach", false) ? Mounts.create(plugin.getLogger()) : null;
-        loadModels();
     }
 
-    /** cosmetics.yml du dossier du plugin s'il existe, sinon celui du plugin. */
+    /** Gardé pour /boss reload (les anciens modèles 3D n'existent plus). */
     void loadModels() {
-        File f = new File(plugin.getDataFolder(), "cosmetics.yml");
-        if (f.exists()) {
-            models = YamlConfiguration.loadConfiguration(f);
-            return;
-        }
-        try (InputStream in = plugin.getResource("cosmetics.yml")) {
-            if (in != null) models = YamlConfiguration.loadConfiguration(new InputStreamReader(in, StandardCharsets.UTF_8));
-        } catch (Exception e) {
-            plugin.getLogger().warning("cosmetics.yml illisible : " + e.getMessage());
-        }
     }
 
     // ================================================================= quels visuels
 
-    /** Les visuels que le joueur doit porter maintenant. */
     private List<String> wanted(Player p) {
         List<String> out = new ArrayList<>();
         if (!plugin.getConfig().getBoolean("cosmetics.enabled", true)) return out;
         if (p.isDead() || p.getGameMode() == GameMode.SPECTATOR || p.isInvisible()) return out;
-        // poses où le modèle ne tiendrait pas sur le corps
-        if (p.isGliding() || p.isSwimming() || p.isSleeping() || p.isRiptiding()) return out;
+        if (p.isSleeping()) return out;
         if (plugin.store().of(p.getUniqueId()).hideCosmetics) return out;
         for (String id : plugin.store().of(p.getUniqueId()).equipped) {
             Relic r = plugin.relics().get(id);
@@ -124,273 +64,289 @@ final class Cosmetics {
         return out;
     }
 
-    /** À appeler quand les reliques équipées changent (ou mort, monde, mode de jeu...). */
     void refresh(Player p) {
         List<String> want = wanted(p);
-        String key = String.join(",", want);
-        Worn w = worn.get(p.getUniqueId());
-        if (w != null && w.key.equals(key) && p.getWorld().getUID().equals(w.world) && valid(w)) return;
-        if (w == null && want.isEmpty()) return;
-        remove(p.getUniqueId());
-        if (want.isEmpty()) return;
-        Worn n = new Worn();
-        n.key = key;
-        n.bodyYaw = p.getYaw();
-        n.last = p.getLocation();
-        n.world = p.getWorld().getUID();
-        for (String v : want) {
-            Model m = build(p, v);
-            if (m != null) n.models.add(m);
+        if (want.isEmpty()) {
+            worn.remove(p.getUniqueId());
+            return;
         }
-        worn.put(p.getUniqueId(), n);
-        updateVisibility(p, n);
-        if (attached()) {
-            for (Model m : n.models) turn(m, yaw(p, m, n), 0);
-            mounts.send(p, ids(n));
-            // une 2e fois quand les affichages sont bien arrivés chez les joueurs
-            Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                Worn now = worn.get(p.getUniqueId());
-                if (now == n && p.isOnline() && attached()) mounts.send(p, ids(n));
-            }, 3L);
-        }
-    }
-
-    private static boolean valid(Worn w) {
-        for (Model m : w.models) for (Display d : m.parts()) if (!d.isValid()) return false;
-        return true;
-    }
-
-    private static List<Integer> ids(Worn w) {
-        List<Integer> ids = new ArrayList<>();
-        for (Model m : w.models) for (Display d : m.parts()) ids.add(d.getEntityId());
-        return ids;
+        Worn w = worn.computeIfAbsent(p.getUniqueId(), k -> {
+            Worn n = new Worn();
+            n.bodyYaw = p.getYaw();
+            n.last = p.getLocation();
+            return n;
+        });
+        w.visuals = want;
     }
 
     void remove(UUID id) {
-        Worn w = worn.remove(id);
-        if (w == null) return;
-        for (Model m : w.models) for (Display d : m.parts()) d.remove();
+        worn.remove(id);
     }
 
     void removeAll() {
-        for (UUID id : new ArrayList<>(worn.keySet())) remove(id);
+        worn.clear();
     }
 
-    // ================================================================= suivi
+    // ================================================================= chaque tick
 
-    /** Toutes les ticks. */
     void tick() {
-        // toutes les 10 ticks : quelqu'un a changé de pose (vol plané, nage...) ? on remet / enlève ses modèles
-        if (++clock % 10 == 0) {
-            for (Player p : Bukkit.getOnlinePlayers()) {
-                Worn w = worn.get(p.getUniqueId());
-                String key = String.join(",", wanted(p));
-                if (w == null ? !key.isEmpty() : !w.key.equals(key)) refresh(p);
-            }
-        }
+        if (++clock % 10 == 0) for (Player p : Bukkit.getOnlinePlayers()) refresh(p);
         for (var e : new ArrayList<>(worn.entrySet())) {
             Player p = Bukkit.getPlayer(e.getKey());
             Worn w = e.getValue();
-            if (p == null || !p.isOnline()) {
-                remove(e.getKey());
-                continue;
-            }
-            if (!p.getWorld().getUID().equals(w.world) || p.isDead() || !valid(w)) {
-                remove(e.getKey());
-                Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                    if (p.isOnline()) refresh(p);
-                }, 5L);
+            if (p == null || !p.isOnline() || p.isDead()) {
+                worn.remove(e.getKey());
                 continue;
             }
             w.t++;
             Location now = p.getLocation();
+            if (w.last.getWorld() != now.getWorld()) w.last = now;
             Vector delta = now.toVector().subtract(w.last.toVector());
             boolean moving = delta.clone().setY(0).lengthSquared() > 0.0004;
             // rotation du corps : suit la tête en marchant, sinon reste à moins de 50° de la tête
-            float head = now.getYaw();
-            float diff = wrap(head - w.bodyYaw);
+            float diff = wrap(now.getYaw() - w.bodyYaw);
             if (moving) w.bodyYaw += diff * 0.35f;
-            else if (Math.abs(diff) > 50) w.bodyYaw = head - Math.signum(diff) * 50;
+            else if (Math.abs(diff) > 50) w.bodyYaw = now.getYaw() - Math.signum(diff) * 50;
             w.bodyYaw = wrap(w.bodyYaw);
             w.last = now;
-            if (attached()) {
-                // accrochés au joueur côté client : aucun déplacement envoyé (ça les décrocherait), on tourne le modèle
-                // par sa transformation, et on ne les rapproche côté serveur que s'ils sont loin (portée d'affichage)
-                for (Model m : w.models) {
-                    float yaw = yaw(p, m, w);
-                    if (m.anchor() == Anchor.ORBIT || Math.abs(wrap(yaw - m.lastYaw()[0])) > 2f) turn(m, yaw, 2);
-                    for (Display d : m.parts()) {
-                        if (d.getLocation().distanceSquared(now) > 24 * 24) {
-                            Location l = now.clone();
-                            l.setYaw(0);
-                            l.setPitch(0);
-                            d.teleport(l);
-                        }
-                    }
-                }
-                if (w.t % 4 == 1) mounts.send(p, ids(w));
-            } else {
-                // sans ProtocolLib : position prédite d'un tick (sinon les modèles traînent derrière le joueur)
-                Location base = now.clone();
-                if (delta.lengthSquared() < 1) base.add(delta);
-                for (Model m : w.models) {
-                    Location at = base.clone();
-                    at.setYaw(yaw(p, m, w));
-                    at.setPitch(0);
-                    for (Display d : m.parts()) d.teleport(at);
-                }
-            }
-            effects(p, w, moving, now);
-            if (w.t % 20 == 0) updateVisibility(p, w);
-        }
-    }
-
-    private static float yaw(Player p, Model m, Worn w) {
-        return switch (m.anchor()) {
-            case HEAD -> p.getLocation().getYaw();
-            case ORBIT -> (w.t * 4f) % 360f;
-            default -> w.bodyYaw;
-        };
-    }
-
-    /** Un joueur caché (vanish) : ses cosmétiques le sont aussi. */
-    private void updateVisibility(Player p, Worn w) {
-        for (Player v : Bukkit.getOnlinePlayers()) {
-            boolean see = v.equals(p) || v.canSee(p);
-            for (Model m : w.models) {
-                for (Display d : m.parts()) {
-                    if (see) v.showEntity(plugin, d);
-                    else v.hideEntity(plugin, d);
+            // un tick d'avance : les particules restent sur le joueur même quand il court
+            Location at = now.clone();
+            if (delta.lengthSquared() < 1) at.add(delta);
+            List<Player> viewers = viewers(p);
+            if (viewers.isEmpty()) continue;
+            Draw d = new Draw(at, w.bodyYaw, now.getYaw(), p.isSneaking() ? -0.3 : 0, viewers);
+            for (String v : w.visuals) {
+                try {
+                    draw(v, d, w, moving);
+                } catch (RuntimeException ex) {
+                    // une particule refusée par cette version : on ignore ce visuel
                 }
             }
         }
     }
 
-    /** Un point du repère du joueur (x = gauche, y = haut, z = avant) dans le monde. */
-    private static Location world(Location feet, float yaw, double x, double y, double z) {
-        double rad = Math.toRadians(yaw);
-        Vector fwd = new Vector(-Math.sin(rad), 0, Math.cos(rad));
-        Vector left = new Vector(Math.cos(rad), 0, Math.sin(rad));
-        return feet.clone().add(left.multiply(x)).add(fwd.multiply(z)).add(0, y, 0);
+    /** Ceux qui voient le joueur (lui compris), à moins de 48 blocs. */
+    private static List<Player> viewers(Player p) {
+        List<Player> out = new ArrayList<>();
+        for (Player v : p.getWorld().getPlayers()) {
+            if (!v.equals(p) && !v.canSee(p)) continue;
+            if (v.getLocation().distanceSquared(p.getLocation()) > 48 * 48) continue;
+            out.add(v);
+        }
+        return out;
     }
 
-    private void effects(Player p, Worn w, boolean moving, Location now) {
-        World world = p.getWorld();
+    // ================================================================= dessin
+
+    /** Outil de dessin dans le repère du joueur. */
+    private static final class Draw {
+        final Location feet;
+        final double bodyRad, headRad, sneak;
+        final List<Player> viewers;
+
+        Draw(Location feet, float bodyYaw, float headYaw, double sneak, List<Player> viewers) {
+            this.feet = feet;
+            this.bodyRad = Math.toRadians(bodyYaw);
+            this.headRad = Math.toRadians(headYaw);
+            this.sneak = sneak;
+            this.viewers = viewers;
+        }
+
+        Location at(boolean head, double x, double y, double z) {
+            double rad = head ? headRad : bodyRad;
+            double fx = -Math.sin(rad), fz = Math.cos(rad), lx = Math.cos(rad), lz = Math.sin(rad);
+            return feet.clone().add(lx * x + fx * z, y + (y > 1.0 ? sneak : 0), lz * x + fz * z);
+        }
+
+        void dust(boolean head, double x, double y, double z, Color c, float size) {
+            Location l = at(head, x, y, z);
+            Particle.DustOptions o = new Particle.DustOptions(c, size);
+            for (Player v : viewers) v.spawnParticle(Particle.DUST, l, 1, 0, 0, 0, 0, o);
+        }
+
+        void part(Particle p, boolean head, double x, double y, double z, int n, double spread, double speed) {
+            Location l = at(head, x, y, z);
+            for (Player v : viewers) v.spawnParticle(p, l, n, spread, spread, spread, speed);
+        }
+    }
+
+    private void draw(String visual, Draw d, Worn w, boolean moving) {
         ThreadLocalRandom r = ThreadLocalRandom.current();
-        for (Model m : w.models) {
-            switch (m.visual()) {
-                case "flames" -> {
-                    if (moving && w.t % 2 == 0) {
-                        world.spawnParticle(Particle.FLAME, now.clone().add(r.nextDouble(-0.15, 0.15), 0.05, r.nextDouble(-0.15, 0.15)), 1,
-                                0.02, 0, 0.02, 0.005);
-                        world.spawnParticle(Particle.SMALL_FLAME, now.clone().add(0, 0.1, 0), 1, 0.15, 0.02, 0.15, 0.01);
-                    } else if (!moving && w.t % 10 == 0) {
-                        world.spawnParticle(Particle.SMALL_FLAME, now.clone().add(0, 0.05, 0), 1, 0.25, 0, 0.25, 0.015);
-                    }
+        int t = w.t;
+        switch (visual) {
+            // ---------------------------------------------------------- couronne dorée posée sur la tête
+            case "crown" -> {
+                if (t % 3 != 0) return;
+                double spin = t * 0.02;
+                for (int k = 0; k < 12; k++) {
+                    double a = spin + Math.PI * 2 * k / 12;
+                    d.dust(true, Math.cos(a) * 0.3, 1.98, Math.sin(a) * 0.3, GOLD, 0.7f);
                 }
-                case "boots" -> {
-                    if (moving && w.t % 2 == 0) {
-                        Particle.DustOptions leaf = new Particle.DustOptions(LEAVES[r.nextInt(LEAVES.length)], (float) r.nextDouble(0.6, 1.0));
-                        world.spawnParticle(Particle.DUST, now.clone().add(r.nextDouble(-0.2, 0.2), 0.15, r.nextDouble(-0.2, 0.2)), 1, 0.05,
-                                0.05, 0.05, 0, leaf);
-                        if (w.t % 6 == 0) world.spawnParticle(Particle.WAX_ON, now.clone().add(0, 0.1, 0), 1, 0.2, 0.05, 0.2, 0);
-                    } else if (!moving && w.t % 4 == 0) {
-                        // feuilles qui tournoient autour des chevilles
-                        double a = w.t * 0.25;
-                        for (int k = 0; k < 2; k++) {
-                            double aa = a + Math.PI * k;
-                            world.spawnParticle(Particle.DUST, now.clone().add(Math.cos(aa) * 0.45, 0.15 + Math.sin(w.t * 0.1) * 0.08,
-                                    Math.sin(aa) * 0.45), 1, 0, 0, 0, 0, new Particle.DustOptions(LEAVES[(w.t / 4 + k) % LEAVES.length], 0.7f));
-                        }
-                    }
+                for (int k = 0; k < 5; k++) {
+                    double a = spin + Math.PI * 2 * k / 5;
+                    d.dust(true, Math.cos(a) * 0.3, 2.1, Math.sin(a) * 0.3, GOLD_DARK, 0.6f);
                 }
-                case "wisp" -> {
-                    if (w.t % 4 == 0 && !m.parts().isEmpty()) {
-                        Location l = world(now, w.bodyYaw, 0.36, 1.72, 0);
-                        world.spawnParticle(Particle.SOUL_FIRE_FLAME, l, 1, 0.05, 0.05, 0.05, 0.003);
-                    }
-                    if (w.t % 13 == 0 && !m.parts().isEmpty()) {
-                        world.spawnParticle(Particle.SOUL, world(now, w.bodyYaw, 0.36, 1.6, 0), 1, 0.1, 0.1, 0.1, 0.01);
-                    }
+                d.dust(true, 0, 1.98, 0.31, RED, 0.75f);
+                if (t % 24 == 0) d.part(Particle.WAX_OFF, true, 0, 2.05, 0, 1, 0.2, 0);
+            }
+            // ---------------------------------------------------------- couronne des enfers : noire, pointes en feu
+            case "hellcrown" -> {
+                if (t % 3 != 0) return;
+                double spin = -t * 0.02;
+                for (int k = 0; k < 12; k++) {
+                    double a = spin + Math.PI * 2 * k / 12;
+                    d.dust(true, Math.cos(a) * 0.3, 1.98, Math.sin(a) * 0.3, k % 3 == 0 ? RED : BLACK, 0.75f);
                 }
-                case "crown" -> {
-                    if (w.t % 25 == 0) {
-                        world.spawnParticle(Particle.WAX_OFF, now.clone().add(r.nextDouble(-0.25, 0.25), p.getEyeHeight() + 0.45,
-                                r.nextDouble(-0.25, 0.25)), 1, 0, 0, 0, 0);
-                    }
-                }
-                case "embers" -> {
-                    if (w.t % 2 == 0) {
-                        double a = w.t * 0.18;
-                        for (int k = 0; k < 2; k++) {
-                            double aa = a + Math.PI * k;
-                            world.spawnParticle(Particle.DUST, now.clone().add(Math.cos(aa) * 0.55, 0.3 + Math.sin(w.t * 0.05 + k) * 0.5 + 0.5,
-                                    Math.sin(aa) * 0.55), 1, 0, 0, 0, 0, new Particle.DustOptions(Color.fromRGB(255, 70 + r.nextInt(60), 0), 0.8f));
-                        }
-                    }
-                    if (moving && w.t % 4 == 0) world.spawnParticle(Particle.LAVA, now.clone().add(0, 0.1, 0), 1, 0.1, 0, 0.1, 0);
-                }
-                case "halo" -> {
-                    if (w.t % 2 == 0) {
-                        double y = p.getEyeHeight() + 0.55;
-                        for (int k = 0; k < 3; k++) {
-                            double a = w.t * 0.12 + k * Math.PI * 2 / 3;
-                            world.spawnParticle(Particle.DUST, now.clone().add(Math.cos(a) * 0.32, y, Math.sin(a) * 0.32), 1, 0, 0, 0, 0,
-                                    new Particle.DustOptions(Color.fromRGB(220, 10, 20), 0.9f));
-                        }
-                    }
-                    if (w.t % 20 == 0) world.spawnParticle(Particle.CRIMSON_SPORE, now.clone().add(0, p.getEyeHeight() + 0.5, 0), 3, 0.2, 0.05, 0.2, 0);
-                }
-                case "wings", "cape" -> {
-                    if (w.t % 9 == 0) world.spawnParticle(Particle.ASH, now.clone().add(0, 1.2, 0), 3, 0.4, 0.4, 0.4, 0);
-                    if (m.visual().equals("wings") && w.t % 14 == 0) {
-                        world.spawnParticle(Particle.DUST, now.clone().add(0, 1.3, 0), 2, 0.5, 0.3, 0.5, 0,
-                                new Particle.DustOptions(Color.fromRGB(150, 0, 0), 1.0f));
-                    }
-                }
-                case "hellcrown" -> {
-                    if (w.t % 6 == 0) {
-                        world.spawnParticle(Particle.FLAME, now.clone().add(r.nextDouble(-0.22, 0.22), p.getEyeHeight() + 0.55,
-                                r.nextDouble(-0.22, 0.22)), 1, 0, 0.02, 0, 0.003);
-                    }
-                }
-                case "skull" -> {
-                    if (w.t % 10 == 0 && !m.parts().isEmpty()) {
-                        world.spawnParticle(Particle.SOUL, world(now, w.bodyYaw, -0.36, 1.62, 0), 1, 0.05, 0.05, 0.05, 0.005);
-                    }
-                }
-                case "orbs" -> {
-                    if (w.t % 3 == 0) {
-                        double a = Math.toRadians(-(w.t * 4.0)) ;
-                        for (int k = 0; k < 3; k++) {
-                            double aa = a + k * Math.PI * 2 / 3;
-                            world.spawnParticle(Particle.SMALL_FLAME, now.clone().add(Math.cos(aa) * 0.75, 1.05, Math.sin(aa) * 0.75), 1, 0.02, 0.02, 0.02, 0.002);
-                        }
-                    }
-                }
-                case "lantern" -> {
-                    if (w.t % 30 == 0 && !m.parts().isEmpty()) {
-                        world.spawnParticle(Particle.SMALL_FLAME, world(now, w.bodyYaw, -0.27, 0.48, 0.02), 1, 0.05, 0.02, 0.05, 0.002);
-                    }
-                }
-                default -> {
+                for (int k = 0; k < 6; k++) {
+                    double a = spin + Math.PI * 2 * k / 6;
+                    d.dust(true, Math.cos(a) * 0.3, 2.09, Math.sin(a) * 0.3, BLACK, 0.6f);
+                    if (t % 6 == 0) d.part(Particle.SMALL_FLAME, true, Math.cos(a) * 0.3, 2.18, Math.sin(a) * 0.3, 1, 0, 0);
                 }
             }
-        }
-    }
-
-    /** Tourne tout le modèle autour du joueur (par la transformation : pas de paquet de déplacement). */
-    private static void turn(Model m, float yaw, int ticks) {
-        m.lastYaw()[0] = yaw;
-        Quaternionf ry = new Quaternionf().rotateY((float) Math.toRadians(-yaw));
-        for (int i = 0; i < m.parts().size(); i++) {
-            Display d = m.parts().get(i);
-            Transformation b = m.base().get(i);
-            Vector3f t = ry.transform(new Vector3f(b.getTranslation()));
-            Quaternionf l = new Quaternionf(ry).mul(new Quaternionf(b.getLeftRotation()));
-            d.setInterpolationDelay(0);
-            d.setInterpolationDuration(ticks);
-            d.setTransformation(new Transformation(t, l, new Vector3f(b.getScale()), new Quaternionf(b.getRightRotation())));
+            // ---------------------------------------------------------- cornes de démon
+            case "horns" -> {
+                if (t % 2 != 0) return;
+                for (int s = -1; s <= 1; s += 2) {
+                    for (int i = 0; i <= 7; i++) {
+                        double u = i / 7.0;
+                        double x = s * (0.2 + 0.2 * u - 0.05 * u * u);
+                        double y = 1.86 + 0.34 * u;
+                        double z = 0.04 - 0.18 * u * u;
+                        Color c = u > 0.85 ? BONE : u > 0.45 ? RED : BLACK;
+                        d.dust(true, x, y, z, c, (float) (0.85 - 0.45 * u));
+                    }
+                }
+            }
+            // ---------------------------------------------------------- ailes de démon (battent doucement)
+            case "wings" -> {
+                if (t % 3 != 0) return;
+                double flap = Math.sin(t * 0.12) * 0.07;
+                for (int s = -1; s <= 1; s += 2) {
+                    // os principal, de l'omoplate vers le haut et l'extérieur
+                    for (int i = 0; i <= 10; i++) {
+                        double u = i / 10.0;
+                        d.dust(false, s * (0.12 + 0.85 * u), 1.3 + 0.38 * Math.sin(u * 2.6) + flap * u, -0.2 - 0.32 * u, BLACK, 0.85f);
+                    }
+                    // trois doigts qui descendent depuis l'os
+                    double[][] fingers = {{0.35, 0.85}, {0.6, 0.95}, {0.85, 1.12}};
+                    for (double[] f : fingers) {
+                        double ux = (f[0] - 0.12) / 0.85;
+                        double topY = 1.3 + 0.38 * Math.sin(ux * 2.6) + flap * ux, topZ = -0.2 - 0.32 * ux;
+                        for (int i = 0; i <= 5; i++) {
+                            double v = i / 5.0;
+                            d.dust(false, s * f[0], topY + (f[1] - topY) * v, topZ - 0.05 * v, BLACK, 0.6f);
+                        }
+                    }
+                    // membrane rouge entre les os
+                    for (int i = 0; i < 9; i++) {
+                        double u = 0.05 + r.nextDouble() * 0.9;
+                        double top = 1.3 + 0.38 * Math.sin(u * 2.6) + flap * u;
+                        double bottom = 0.85 + 0.3 * u;
+                        double y = bottom + (top - bottom) * r.nextDouble();
+                        d.dust(false, s * (0.12 + 0.85 * u), y, -0.22 - 0.32 * u, BLOOD, 0.7f);
+                    }
+                }
+            }
+            // ---------------------------------------------------------- cape noire doublée de rouge, flotte en courant
+            case "cape" -> {
+                if (t % 3 != 0) return;
+                double flow = moving ? 0.35 : 0.05;
+                for (int i = 0; i <= 6; i++) {
+                    double v = i / 6.0; // 0 = épaules, 1 = genoux
+                    double y = 1.4 - 0.9 * v;
+                    double z = -0.18 - flow * v * v - 0.03 * Math.sin(t * 0.2 + v * 3);
+                    for (int j = 0; j <= 4; j++) {
+                        double x = -0.26 + 0.13 * j;
+                        boolean edge = j == 0 || j == 4 || i == 6;
+                        d.dust(false, x, y, z, edge ? RED : BLACK, 0.8f);
+                    }
+                }
+            }
+            // ---------------------------------------------------------- feu follet d'âme qui tourne autour de la tête
+            case "wisp" -> {
+                double a = t * 0.12;
+                d.part(Particle.SOUL_FIRE_FLAME, false, Math.cos(a) * 0.65, 1.85 + Math.sin(t * 0.1) * 0.1, Math.sin(a) * 0.65, 1, 0, 0);
+                if (t % 12 == 0) d.part(Particle.SOUL, false, Math.cos(a) * 0.65, 1.85, Math.sin(a) * 0.65, 1, 0.05, 0.01);
+            }
+            // ---------------------------------------------------------- crâne maudit : âmes sur l'épaule droite
+            case "skull" -> {
+                if (t % 4 == 0) d.part(Particle.SOUL, false, -0.38, 1.55, 0, 1, 0.08, 0.01);
+                if (t % 3 == 0) {
+                    double a = t * 0.15;
+                    d.dust(false, -0.38 + Math.cos(a) * 0.18, 1.6, Math.sin(a) * 0.18, Color.fromRGB(60, 60, 60), 0.7f);
+                    d.dust(false, -0.38, 1.62, 0.12, Color.fromRGB(120, 255, 200), 0.5f);
+                }
+            }
+            // ---------------------------------------------------------- lanterne à la ceinture
+            case "lantern" -> {
+                if (t % 3 == 0) d.dust(false, -0.3, 0.62, 0.02, ORANGE, 1.1f);
+                if (t % 8 == 0) d.part(Particle.SMALL_FLAME, false, -0.3, 0.66, 0.02, 1, 0.02, 0);
+            }
+            // ---------------------------------------------------------- amulette sur le torse
+            case "amulet" -> {
+                if (t % 4 != 0) return;
+                d.dust(false, 0, 1.25, 0.16, GOLD, 0.6f);
+                d.dust(false, 0.07, 1.15, 0.16, GOLD, 0.6f);
+                d.dust(false, -0.07, 1.15, 0.16, GOLD, 0.6f);
+                d.dust(false, 0, 1.05, 0.16, GOLD, 0.6f);
+                d.dust(false, 0, 1.15, 0.17, ORANGE, 0.8f);
+            }
+            // ---------------------------------------------------------- orbes de magma en orbite
+            case "orbs" -> {
+                for (int k = 0; k < 3; k++) {
+                    double a = t * 0.1 + Math.PI * 2 * k / 3;
+                    double y = 1.0 + Math.sin(t * 0.08 + k) * 0.1;
+                    d.dust(false, Math.cos(a) * 0.8, y, Math.sin(a) * 0.8, ORANGE, 1.2f);
+                    if (t % 4 == k) d.part(Particle.FLAME, false, Math.cos(a) * 0.8, y, Math.sin(a) * 0.8, 1, 0, 0);
+                }
+            }
+            // ---------------------------------------------------------- sac : un peu de poussière sur le dos
+            case "backpack" -> {
+                if (t % 10 == 0) d.dust(false, 0, 1.05, -0.3, Color.fromRGB(120, 75, 35), 1.4f);
+            }
+            // ---------------------------------------------------------- halo rouge au-dessus de la tête
+            case "halo" -> {
+                if (t % 2 != 0) return;
+                for (int k = 0; k < 4; k++) {
+                    double a = t * 0.1 + Math.PI * 2 * k / 4;
+                    d.dust(true, Math.cos(a) * 0.32, 2.25, Math.sin(a) * 0.32, Color.fromRGB(220, 10, 20), 0.9f);
+                }
+                if (t % 20 == 0) d.part(Particle.CRIMSON_SPORE, true, 0, 2.2, 0, 3, 0.2, 0);
+            }
+            // ---------------------------------------------------------- braises qui tournent autour du joueur
+            case "embers" -> {
+                if (t % 2 != 0) return;
+                for (int k = 0; k < 2; k++) {
+                    double a = t * 0.18 + Math.PI * k;
+                    d.dust(false, Math.cos(a) * 0.55, 0.8 + Math.sin(t * 0.05 + k) * 0.5, Math.sin(a) * 0.55,
+                            Color.fromRGB(255, 70 + r.nextInt(60), 0), 0.8f);
+                }
+                if (moving && t % 4 == 0) d.part(Particle.LAVA, false, 0, 0.1, 0, 1, 0.1, 0);
+            }
+            // ---------------------------------------------------------- empreintes de flammes
+            case "flames" -> {
+                if (moving && t % 2 == 0) {
+                    d.part(Particle.FLAME, false, r.nextDouble(-0.15, 0.15), 0.05, 0, 1, 0.02, 0.005);
+                    d.part(Particle.SMALL_FLAME, false, 0, 0.1, 0, 1, 0.12, 0.01);
+                } else if (!moving && t % 10 == 0) {
+                    d.part(Particle.SMALL_FLAME, false, 0, 0.05, 0, 1, 0.2, 0.015);
+                }
+            }
+            // ---------------------------------------------------------- feuilles d'automne
+            case "boots" -> {
+                if (moving && t % 2 == 0) {
+                    d.dust(false, r.nextDouble(-0.2, 0.2), 0.15, r.nextDouble(-0.2, 0.2), LEAVES[r.nextInt(LEAVES.length)],
+                            (float) r.nextDouble(0.6, 1.0));
+                } else if (!moving && t % 4 == 0) {
+                    for (int k = 0; k < 2; k++) {
+                        double a = t * 0.25 + Math.PI * k;
+                        d.dust(false, Math.cos(a) * 0.45, 0.15 + Math.sin(t * 0.1) * 0.08, Math.sin(a) * 0.45,
+                                LEAVES[(t / 4 + k) % LEAVES.length], 0.7f);
+                    }
+                }
+            }
+            default -> {
+            }
         }
     }
 
@@ -399,122 +355,5 @@ final class Cosmetics {
         if (a >= 180f) a -= 360f;
         if (a < -180f) a += 360f;
         return a;
-    }
-
-    // ================================================================= modèles (cosmetics.yml)
-
-    private Model build(Player p, String visual) {
-        Location at = p.getLocation();
-        if (attached()) {
-            // modèle tourné par sa transformation : l'entité elle-même reste orientée vers le sud
-            at.setYaw(0);
-            at.setPitch(0);
-        }
-        List<Display> parts = new ArrayList<>();
-        ConfigurationSection def = models.getConfigurationSection(visual);
-        Anchor anchor = Anchor.BODY;
-        if (def != null) {
-            try {
-                anchor = Anchor.valueOf(def.getString("anchor", "body").toUpperCase(Locale.ROOT));
-            } catch (IllegalArgumentException ignored) {
-            }
-            // modèle du pack de textures pour le sac (si un jour il y en a un)
-            String packModel = visual.equals("backpack") ? plugin.getConfig().getString("models.backpack", "") : "";
-            if (packModel != null && !packModel.isBlank()) {
-                ItemStack it = new ItemStack(Material.BUNDLE);
-                NamespacedKey k = NamespacedKey.fromString(packModel);
-                if (k != null) {
-                    ItemMeta meta = it.getItemMeta();
-                    meta.setItemModel(k);
-                    it.setItemMeta(meta);
-                }
-                parts.add(item(at, it, new Vector3f(0, 1.05f, -0.24f), 0.55f, new Quaternionf()));
-            } else {
-                for (Map<?, ?> part : def.getMapList("parts")) {
-                    Display d = part(at, part);
-                    if (d != null) parts.add(d);
-                }
-            }
-        }
-        // sinon : visuel fait uniquement de particules (boots, flames, embers, halo)
-        List<Transformation> base = new ArrayList<>();
-        for (Display d : parts) base.add(d.getTransformation());
-        return new Model(visual, anchor, parts, base, new float[]{Float.NaN});
-    }
-
-    private static float[] vec(Object o, float def) {
-        float[] out = {def, def, def};
-        if (o instanceof List<?> l) {
-            for (int i = 0; i < 3 && i < l.size(); i++) if (l.get(i) instanceof Number n) out[i] = n.floatValue();
-        }
-        return out;
-    }
-
-    private Display part(Location at, Map<?, ?> m) {
-        float[] c = vec(m.get("at"), 0), r = vec(m.get("rot"), 0);
-        // accroché au joueur : le repère part du haut du joueur, pas de ses pieds
-        Vector3f center = new Vector3f(c[0], c[1] - (attached() ? ATTACH : 0), c[2]);
-        Quaternionf q = new Quaternionf().rotateY((float) Math.toRadians(r[1])).rotateX((float) Math.toRadians(r[0]))
-                .rotateZ((float) Math.toRadians(r[2]));
-        Display d;
-        if (m.get("item") != null) {
-            Material mat = Material.matchMaterial(String.valueOf(m.get("item")));
-            if (mat == null) return null;
-            float s = m.get("scale") instanceof Number n ? n.floatValue() : 0.4f;
-            d = item(at, new ItemStack(mat), center, s, q);
-        } else if (m.get("block") != null) {
-            BlockData data;
-            try {
-                String b = String.valueOf(m.get("block"));
-                data = Bukkit.createBlockData(b.contains(":") ? b : "minecraft:" + b);
-            } catch (IllegalArgumentException e) {
-                plugin.getLogger().warning("cosmetics.yml : bloc inconnu " + m.get("block"));
-                return null;
-            }
-            float[] s = vec(m.get("size"), 0.1f);
-            d = block(at, data, center, new Vector3f(s[0], s[1], s[2]), q);
-        } else {
-            return null;
-        }
-        if (Boolean.TRUE.equals(m.get("bright"))) d.setBrightness(new Display.Brightness(15, 15));
-        if (m.get("glow") != null) {
-            try {
-                d.setGlowColorOverride(Color.fromRGB(Integer.parseInt(String.valueOf(m.get("glow")).replace("#", ""), 16)));
-                d.setGlowing(true);
-            } catch (IllegalArgumentException ignored) {
-            }
-        }
-        return d;
-    }
-
-    // ================================================================= briques
-
-    private void common(Display d) {
-        d.setPersistent(false);
-        d.getPersistentDataContainer().set(tag, PersistentDataType.STRING, "cosmetic");
-        d.setTeleportDuration(1);
-        d.setViewRange(0.6f);
-        d.setShadowRadius(0);
-    }
-
-    /** Un pavé centré en "center", de taille "size", tourné de q autour de son centre. */
-    private BlockDisplay block(Location at, BlockData data, Vector3f center, Vector3f size, Quaternionf q) {
-        Vector3f half = new Vector3f(size).mul(0.5f);
-        q.transform(half);
-        Vector3f translation = new Vector3f(center).sub(half);
-        return at.getWorld().spawn(at, BlockDisplay.class, d -> {
-            common(d);
-            d.setBlock(data);
-            d.setTransformation(new Transformation(translation, q, size, new Quaternionf()));
-        });
-    }
-
-    private ItemDisplay item(Location at, ItemStack it, Vector3f center, float scale, Quaternionf q) {
-        return at.getWorld().spawn(at, ItemDisplay.class, d -> {
-            common(d);
-            d.setItemStack(it);
-            d.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
-            d.setTransformation(new Transformation(center, q, new Vector3f(scale, scale, scale), new Quaternionf()));
-        });
     }
 }

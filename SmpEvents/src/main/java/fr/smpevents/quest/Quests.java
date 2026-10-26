@@ -49,6 +49,27 @@ public final class Quests {
     public boolean announceWeekly;
     public boolean actionBar;
 
+    /** Événement (Halloween...) : quêtes du jour et de la semaine en plus, jusqu'à une date. */
+    public record Event(String name, int daily, int weekly, java.time.LocalDate until) {
+    }
+
+    public final List<Event> events = new ArrayList<>();
+
+    /** Événements en cours aujourd'hui. */
+    public List<Event> activeEvents() {
+        java.time.LocalDate today = plugin.settings().questDay();
+        List<Event> out = new ArrayList<>();
+        for (Event e : events) if (e.until() == null || !today.isAfter(e.until())) out.add(e);
+        return out;
+    }
+
+    /** Emplacements du jour : ceux de la config + ceux des événements en cours. */
+    public Map<String, Integer> slots() {
+        Map<String, Integer> out = new LinkedHashMap<>(dailySlots);
+        for (Event e : activeEvents()) if (e.daily() > 0) out.put(e.name(), e.daily());
+        return out;
+    }
+
     public Quests(SmpEvents plugin, QuestPool pool) {
         this.plugin = plugin;
         this.pool = pool;
@@ -77,6 +98,23 @@ public final class Quests {
         playerKillCooldownMs = Math.max(0, c.getLong("player-kill-cooldown-hours", 2)) * 3_600_000L;
         announceWeekly = c.getBoolean("announce-weekly", true);
         actionBar = c.getBoolean("action-bar", true);
+        events.clear();
+        ConfigurationSection ev = c.getConfigurationSection("events");
+        if (ev != null && !ev.getKeys(false).isEmpty()) {
+            for (String k : ev.getKeys(false)) {
+                ConfigurationSection e = ev.getConfigurationSection(k);
+                if (e == null || !e.getBoolean("enabled", true)) continue;
+                java.time.LocalDate until = null;
+                try {
+                    if (e.isSet("until")) until = java.time.LocalDate.parse(e.getString("until"));
+                } catch (RuntimeException ignored) {
+                }
+                events.add(new Event(k.toLowerCase(), Math.max(0, e.getInt("daily-slots", 2)), Math.max(0, e.getInt("weekly-slots", 1)), until));
+            }
+        } else {
+            // config ancienne sans section "events" : Halloween par défaut jusqu'au 8 novembre
+            events.add(new Event("halloween", 2, 1, java.time.LocalDate.of(2026, 11, 8)));
+        }
     }
 
     public QuestPool pool() {
@@ -85,7 +123,7 @@ public final class Quests {
 
     public int dailyTotal() {
         int n = 0;
-        for (int v : dailySlots.values()) n += v;
+        for (int v : slots().values()) n += v;
         return n;
     }
 
@@ -104,10 +142,12 @@ public final class Quests {
             d.rerollsUsed = 0;
         }
         // retire les quêtes qui n'existent plus dans quests.yml, puis complète
-        d.daily.removeIf(q -> pool.get(q.id) == null || pool.get(q.id).weekly());
+        Map<String, Integer> slots = slots();
+        d.daily.removeIf(q -> pool.get(q.id) == null || pool.get(q.id).weekly()
+                || pool.get(q.id).event() != null && !slots.containsKey(pool.get(q.id).tier()));
         Map<String, Integer> have = new HashMap<>();
         for (QuestProgress q : d.daily) have.merge(pool.get(q.id).tier(), 1, Integer::sum);
-        for (var e : dailySlots.entrySet()) {
+        for (var e : slots.entrySet()) {
             int missing = e.getValue() - have.getOrDefault(e.getKey(), 0);
             for (int i = 0; i < missing; i++) {
                 QuestDef def = pick(pool.tier(e.getKey(), false), d.daily);
@@ -119,18 +159,34 @@ public final class Quests {
             d.week = week;
             d.weekly.clear();
         }
-        d.weekly.removeIf(q -> pool.get(q.id) == null || !pool.get(q.id).weekly());
-        while (d.weekly.size() < weeklyCount) {
+        List<Event> active = activeEvents();
+        d.weekly.removeIf(q -> {
+            QuestDef def = pool.get(q.id);
+            if (def == null || !def.weekly()) return true;
+            return def.event() != null && active.stream().noneMatch(e -> e.name().equals(def.event()));
+        });
+        long normal = d.weekly.stream().filter(q -> pool.get(q.id).event() == null).count();
+        while (normal < weeklyCount) {
             QuestDef def = pick(pool.weekly(), d.weekly);
             if (def == null) break;
             d.weekly.add(new QuestProgress(def.id()));
+            normal++;
+        }
+        for (Event e : active) {
+            long have2 = d.weekly.stream().filter(q -> e.name().equals(pool.get(q.id).event())).count();
+            while (have2 < e.weekly()) {
+                QuestDef def = pick(pool.eventWeekly(e.name()), d.weekly);
+                if (def == null) break;
+                d.weekly.add(new QuestProgress(def.id()));
+                have2++;
+            }
         }
         sortDaily(d);
     }
 
     /** Ordre d'affichage : facile, moyen, difficile... (ordre de daily-slots). */
     private void sortDaily(PlayerData d) {
-        List<String> order = new ArrayList<>(dailySlots.keySet());
+        List<String> order = new ArrayList<>(slots().keySet());
         d.daily.sort((a, b) -> Integer.compare(order.indexOf(pool.get(a.id).tier()), order.indexOf(pool.get(b.id).tier())));
     }
 

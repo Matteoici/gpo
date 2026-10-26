@@ -2479,6 +2479,7 @@ public final class PumpkinKing {
         }
         GuildTop gt = plugin.guildTop();
         if (gt != null) gt.announce(gt.record(damage, true), total);
+        questProgress(true, total * minPct);
         for (var e : sorted) {
             Player p = Bukkit.getPlayer(e.getKey());
             if (p == null) continue;
@@ -2506,8 +2507,21 @@ public final class PumpkinKing {
         Bukkit.broadcast(parse(plugin.msg(msgKey)));
         // un combat perdu compte quand même pour la participation des guildes (pas un arrêt du staff)
         if (!"boss.stopped".equals(msgKey) && !damage.isEmpty() && plugin.guildTop() != null) plugin.guildTop().record(damage, false);
+        if (!"boss.stopped".equals(msgKey)) questProgress(false, 0);
         cleanup();
         plugin.bossEnded();
+    }
+
+    /** Quêtes de SmpEvents (Halloween) : dégâts infligés au Roi, victoire. */
+    private void questProgress(boolean won, double minDamage) {
+        if (!Bukkit.getPluginManager().isPluginEnabled("SmpEvents")) return;
+        for (var e : damage.entrySet()) {
+            Player p = Bukkit.getPlayer(e.getKey());
+            if (p == null) continue;
+            long dmg = Math.round(e.getValue());
+            if (dmg > 0) Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "smpevents progress " + p.getName() + " BOSS_DAMAGE " + dmg);
+            if (won && e.getValue() >= minDamage) Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "smpevents progress " + p.getName() + " BOSS_WIN 1");
+        }
     }
 
     private double perPlayer() {

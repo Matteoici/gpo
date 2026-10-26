@@ -56,6 +56,16 @@ final class Commands implements CommandExecutor, TabCompleter {
                 } else if (a.length > 0 && a[0].equalsIgnoreCase("reload")) {
                     plugin.reload();
                     t().send(sender, "reloaded");
+                } else if (a.length >= 4 && a[0].equalsIgnoreCase("progress")) {
+                    // /smpevents progress <joueur> <TYPE> <quantité> [cible] : avancer une quête depuis un autre plugin
+                    Player target = Bukkit.getPlayerExact(a[1]);
+                    try {
+                        fr.smpevents.quest.QuestType type = fr.smpevents.quest.QuestType.valueOf(a[2].toUpperCase(java.util.Locale.ROOT));
+                        long amount = Long.parseLong(a[3]);
+                        if (target != null) plugin.quests().progress(target, type, a.length >= 5 ? a[4].toUpperCase(java.util.Locale.ROOT) : null, amount);
+                    } catch (IllegalArgumentException ex) {
+                        sender.sendMessage("Type ou quantité invalide : " + ex.getMessage());
+                    }
                 } else {
                     t().sendLines(sender, "help-admin");
                 }

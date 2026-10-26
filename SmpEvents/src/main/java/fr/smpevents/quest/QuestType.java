@@ -31,5 +31,9 @@ public enum QuestType {
     /** Secondes passées dans la zone d'un roi de la colline */
     KOTH_TIME,
     /** Primes encaissées */
-    BOUNTY
+    BOUNTY,
+    /** Dégâts infligés au boss (SmpBoss, compté à la fin du combat) */
+    BOSS_DAMAGE,
+    /** Victoire contre le boss (SmpBoss, avec assez de dégâts pour le butin) */
+    BOSS_WIN
 }
