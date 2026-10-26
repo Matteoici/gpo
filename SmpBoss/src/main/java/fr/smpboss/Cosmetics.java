@@ -48,7 +48,8 @@ final class Cosmetics {
         BODY, HEAD, ORBIT
     }
 
-    private record Model(String visual, Anchor anchor, List<Display> parts) {
+    /** base = transformations d'origine (modèle tourné vers le sud), lastYaw = dernière rotation envoyée. */
+    private record Model(String visual, Anchor anchor, List<Display> parts, List<Transformation> base, float[] lastYaw) {
     }
 
     private static final class Worn {
@@ -69,22 +70,24 @@ final class Cosmetics {
     private final NamespacedKey tag;
     private final Map<UUID, Worn> worn = new HashMap<>();
     private final Mounts mounts;
+
+    /** Accrochés au joueur côté client (sinon : replacés à chaque tick). */
+    private boolean attached() {
+        return mounts != null && !mounts.broken();
+    }
+
+    /** L'accroche ne marche pas : on reconstruit tout en mode "suivi". */
+    void rebuildAll() {
+        removeAll();
+        for (Player p : Bukkit.getOnlinePlayers()) refresh(p);
+    }
     private YamlConfiguration models = new YamlConfiguration();
     private int clock;
 
     Cosmetics(SmpBoss plugin) {
         this.plugin = plugin;
         this.tag = plugin.items().relicKey;
-        Mounts m = null;
-        if (plugin.getServer().getPluginManager().isPluginEnabled("ProtocolLib")
-                && plugin.getConfig().getBoolean("cosmetics.attach", true)) {
-            try {
-                m = new Mounts();
-            } catch (Throwable t) {
-                plugin.getLogger().warning("ProtocolLib indisponible pour les cosmétiques : " + t);
-            }
-        }
-        this.mounts = m;
+        this.mounts = plugin.getConfig().getBoolean("cosmetics.attach", true) ? Mounts.create(plugin.getLogger()) : null;
         loadModels();
     }
 
@@ -141,7 +144,15 @@ final class Cosmetics {
         }
         worn.put(p.getUniqueId(), n);
         updateVisibility(p, n);
-        if (mounts != null) mounts.send(p, ids(n));
+        if (attached()) {
+            for (Model m : n.models) turn(m, yaw(p, m, n), 0);
+            mounts.send(p, ids(n));
+            // une 2e fois quand les affichages sont bien arrivés chez les joueurs
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                Worn now = worn.get(p.getUniqueId());
+                if (now == n && p.isOnline() && attached()) mounts.send(p, ids(n));
+            }, 3L);
+        }
     }
 
     private static boolean valid(Worn w) {
@@ -202,16 +213,22 @@ final class Cosmetics {
             else if (Math.abs(diff) > 50) w.bodyYaw = head - Math.signum(diff) * 50;
             w.bodyYaw = wrap(w.bodyYaw);
             w.last = now;
-            if (mounts != null) {
-                // accrochés au joueur côté client : on ne fait que les tourner (et les garder près de lui côté serveur)
+            if (attached()) {
+                // accrochés au joueur côté client : aucun déplacement envoyé (ça les décrocherait), on tourne le modèle
+                // par sa transformation, et on ne les rapproche côté serveur que s'ils sont loin (portée d'affichage)
                 for (Model m : w.models) {
                     float yaw = yaw(p, m, w);
+                    if (m.anchor() == Anchor.ORBIT || Math.abs(wrap(yaw - m.lastYaw()[0])) > 2f) turn(m, yaw, 2);
                     for (Display d : m.parts()) {
-                        if (d.getLocation().distanceSquared(now) > 64) d.teleport(now);
-                        d.setRotation(yaw, 0);
+                        if (d.getLocation().distanceSquared(now) > 24 * 24) {
+                            Location l = now.clone();
+                            l.setYaw(0);
+                            l.setPitch(0);
+                            d.teleport(l);
+                        }
                     }
                 }
-                if (w.t % 5 == 1) mounts.send(p, ids(w));
+                if (w.t % 4 == 1) mounts.send(p, ids(w));
             } else {
                 // sans ProtocolLib : position prédite d'un tick (sinon les modèles traînent derrière le joueur)
                 Location base = now.clone();
@@ -362,6 +379,21 @@ final class Cosmetics {
         }
     }
 
+    /** Tourne tout le modèle autour du joueur (par la transformation : pas de paquet de déplacement). */
+    private static void turn(Model m, float yaw, int ticks) {
+        m.lastYaw()[0] = yaw;
+        Quaternionf ry = new Quaternionf().rotateY((float) Math.toRadians(-yaw));
+        for (int i = 0; i < m.parts().size(); i++) {
+            Display d = m.parts().get(i);
+            Transformation b = m.base().get(i);
+            Vector3f t = ry.transform(new Vector3f(b.getTranslation()));
+            Quaternionf l = new Quaternionf(ry).mul(new Quaternionf(b.getLeftRotation()));
+            d.setInterpolationDelay(0);
+            d.setInterpolationDuration(ticks);
+            d.setTransformation(new Transformation(t, l, new Vector3f(b.getScale()), new Quaternionf(b.getRightRotation())));
+        }
+    }
+
     private static float wrap(float a) {
         a %= 360f;
         if (a >= 180f) a -= 360f;
@@ -373,6 +405,11 @@ final class Cosmetics {
 
     private Model build(Player p, String visual) {
         Location at = p.getLocation();
+        if (attached()) {
+            // modèle tourné par sa transformation : l'entité elle-même reste orientée vers le sud
+            at.setYaw(0);
+            at.setPitch(0);
+        }
         List<Display> parts = new ArrayList<>();
         ConfigurationSection def = models.getConfigurationSection(visual);
         Anchor anchor = Anchor.BODY;
@@ -400,7 +437,9 @@ final class Cosmetics {
             }
         }
         // sinon : visuel fait uniquement de particules (boots, flames, embers, halo)
-        return new Model(visual, anchor, parts);
+        List<Transformation> base = new ArrayList<>();
+        for (Display d : parts) base.add(d.getTransformation());
+        return new Model(visual, anchor, parts, base, new float[]{Float.NaN});
     }
 
     private static float[] vec(Object o, float def) {
@@ -414,7 +453,7 @@ final class Cosmetics {
     private Display part(Location at, Map<?, ?> m) {
         float[] c = vec(m.get("at"), 0), r = vec(m.get("rot"), 0);
         // accroché au joueur : le repère part du haut du joueur, pas de ses pieds
-        Vector3f center = new Vector3f(c[0], c[1] - (mounts != null ? ATTACH : 0), c[2]);
+        Vector3f center = new Vector3f(c[0], c[1] - (attached() ? ATTACH : 0), c[2]);
         Quaternionf q = new Quaternionf().rotateY((float) Math.toRadians(r[1])).rotateX((float) Math.toRadians(r[0]))
                 .rotateZ((float) Math.toRadians(r[2]));
         Display d;
