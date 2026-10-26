@@ -1,4 +1,4 @@
-config-version: 13
+config-version: 14
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -51,7 +51,7 @@ boss:
   # rayon de l'arène autour de l'autel (il ne peut pas en sortir)
   arena-radius: 18
   night-only: true
-  cooldown-minutes: 30
+  cooldown-minutes: 15
   max-minutes: 20
   damage:
     multiplier: 1.35
@@ -133,6 +133,8 @@ arena:
   # protection d'arrivée : X secondes sans prendre de dégâts en entrant dans l'arène (/arene, portail)
   # elle s'arrête dès qu'on frappe le boss. 0 = désactivée
   spawn-protection-seconds: 6
+  # mourir dans l'arène ne fait rien perdre (inventaire, niveaux, sac)
+  keep-inventory: true
   # bords de l'écran teintés de rouge dans l'arène (0.05 = léger, 0.95 = très rouge)
   red-tint: true
   red-tint-strength: 0.6
@@ -337,6 +339,9 @@ cosmetics:
   # expérimental : accrochés au joueur côté client (false = replacés sur le joueur à chaque tick, toujours bien placés)
   attach: false
 
+# texte flottant au-dessus de l'autel (comment réveiller le Roi + état)
+altar-hologram: true
+
 inventory-buttons:
   enabled: true
   # le totem "Cosmétiques & Reliques" dans l'inventaire (sinon : /reliques ou le menu du serveur)
@@ -473,6 +478,11 @@ messages:
     mine: "<gray>Ta guilde : <white>#<rank></white> <dark_gray>·</dark_gray> <gold><wins></gold> <gray>victoire(s), <red><damage></red> <gray>dégâts"
     fight-header: "<gold><b>🏆 Guildes de ce combat :"
     fight-line: "<gray>  <white>#<rank></white> <guild> <dark_gray>(<percent>% des dégâts)"
+  altar:
+    hologram: "<gradient:#ff7a00:#ffd36b><b>♛ Autel du Roi Citrouille ♛</b></gradient>\n<gray>Clic droit avec une <gold>Citrouille sacrificielle</gold>\n<gray>pour réveiller le Roi <dark_gray>(la nuit)</dark_gray>\n<dark_gray>8 Graines maudites + 1 citrouille sculptée\n\n<status>"
+    status-ready: "<green><b>✔ Le Roi peut être réveillé"
+    status-day: "<yellow>☀ Le Roi dort... revenez la nuit"
+    status-cooldown: "<red>⏳ Le Roi se repose encore <white><minutes> min"
   board:
     title: "<gradient:#ff7a00:#ffd36b><b>♛ Roi Citrouille ♛"
     hp: "<red>❤ <white><hp></white><gray> / <max>"

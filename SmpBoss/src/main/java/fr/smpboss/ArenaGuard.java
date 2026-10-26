@@ -338,6 +338,19 @@ final class ArenaGuard implements Listener {
         }
     }
 
+    // ================================================================= mort dans l'arène
+
+    /** Mourir dans l'arène ne fait rien perdre (inventaire et niveaux gardés). */
+    @EventHandler(priority = EventPriority.LOW)
+    public void onDeath(org.bukkit.event.entity.PlayerDeathEvent e) {
+        Player p = e.getEntity();
+        if (!arena.contains(p.getLocation()) || !plugin.getConfig().getBoolean("arena.keep-inventory", true)) return;
+        e.setKeepInventory(true);
+        e.getDrops().clear();
+        e.setKeepLevel(true);
+        e.setDroppedExp(0);
+    }
+
     // ================================================================= monstres
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)

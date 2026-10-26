@@ -40,6 +40,7 @@ public final class SmpBoss extends JavaPlugin {
     private PumpkinKing king;
     private Arena arena;
     private GuildTop guildTop;
+    private AltarHologram hologram;
     private Location altar;
     private long lastEnd;
     private final Set<RelicMenu> openMenus = new HashSet<>();
@@ -140,6 +141,12 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 13);
             saveConfig();
         }
+        // v14 : 15 min entre deux combats
+        if (getConfig().getInt("config-version", 1) < 14) {
+            harder("boss.cooldown-minutes", 30, 15);
+            getConfig().set("config-version", 14);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);
@@ -152,6 +159,8 @@ public final class SmpBoss extends JavaPlugin {
         registerRecipe();
         getServer().getPluginManager().registerEvents(new BossListener(this), this);
         guildTop = new GuildTop(this);
+        hologram = new AltarHologram(this);
+        Bukkit.getScheduler().runTaskTimer(this, hologram::tick, 40L, 10L);
         arena = new Arena(this);
         ArenaGuard guard = new ArenaGuard(this, arena);
         getServer().getPluginManager().registerEvents(guard, this);
@@ -177,6 +186,7 @@ public final class SmpBoss extends JavaPlugin {
     public void onDisable() {
         if (king != null) king.cleanup();
         if (arena != null) arena.shutdown();
+        if (hologram != null) hologram.remove();
         if (relics != null) relics.removeAll();
         for (Player p : Bukkit.getOnlinePlayers()) {
             if (invButtons != null) {
@@ -341,13 +351,24 @@ public final class SmpBoss extends JavaPlugin {
                 && b.getY() == altar.getBlockY() && b.getZ() == altar.getBlockZ();
     }
 
+    /** Ligne d'état de l'autel (texte flottant). */
+    String altarStatus() {
+        long left = lastEnd + getConfig().getLong("boss.cooldown-minutes", 15) * 60_000L - System.currentTimeMillis();
+        if (left > 0) return msg("altar.status-cooldown").replace("<minutes>", String.valueOf(left / 60_000 + 1));
+        if (getConfig().getBoolean("boss.night-only", true) && altar != null) {
+            long t = altar.getWorld().getTime();
+            if (t < 13000 || t > 23000) return msg("altar.status-day");
+        }
+        return msg("altar.status-ready");
+    }
+
     /** Un joueur utilise la citrouille sacrificielle sur l'autel. */
     public void trySummon(Player p) {
         if (king != null && king.active()) {
             p.sendMessage(parse(msg("summon.already")));
             return;
         }
-        long cd = getConfig().getLong("boss.cooldown-minutes", 30) * 60_000L;
+        long cd = getConfig().getLong("boss.cooldown-minutes", 15) * 60_000L;
         long left = lastEnd + cd - System.currentTimeMillis();
         if (left > 0) {
             p.sendMessage(parse(msg("summon.cooldown").replace("<minutes>", String.valueOf(left / 60_000 + 1))));

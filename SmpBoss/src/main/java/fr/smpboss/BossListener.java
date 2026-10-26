@@ -105,10 +105,18 @@ final class BossListener implements Listener {
         if (e instanceof EntityDamageByEntityEvent ed) {
             Entity d = ed.getDamager();
             if (d instanceof Player p) by = p;
-            else if (d instanceof Projectile pr && pr.getShooter() instanceof Player p) by = p;
+            else if (d instanceof Projectile pr && pr.getShooter() instanceof Player p) {
+                // perles, boules de neige, œufs, charges de vent : ne touchent pas le Roi
+                if (pr instanceof org.bukkit.entity.EnderPearl || pr instanceof org.bukkit.entity.Snowball || pr instanceof org.bukkit.entity.Egg
+                        || pr instanceof org.bukkit.entity.AbstractWindCharge) {
+                    e.setCancelled(true);
+                    return;
+                }
+                by = p;
+            }
         }
-        if (by == null) {
-            e.setCancelled(true); // feu, chute, étouffement, lave... : rien
+        if (by == null || e.getDamage() <= 0) {
+            e.setCancelled(true); // feu, chute, étouffement, lave, coups à 0... : rien (et ne compte pas comme combattant)
             return;
         }
         if (plugin.arena() != null) plugin.arena().unprotect(by);
@@ -264,9 +272,25 @@ final class BossListener implements Listener {
 
     // ================================================================= mort, connexion
 
+    /** Une perle lancée sur le Roi le traverse (pas de téléportation sur lui). */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onProjectileHit(org.bukkit.event.entity.ProjectileHitEvent e) {
+        PumpkinKing k = plugin.king();
+        if (k == null || e.getHitEntity() == null || !k.isBoss(e.getHitEntity())) return;
+        if (e.getEntity() instanceof org.bukkit.entity.EnderPearl || e.getEntity() instanceof org.bukkit.entity.Snowball
+                || e.getEntity() instanceof org.bukkit.entity.Egg) {
+            e.setCancelled(true);
+        }
+    }
+
     @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerDeath(PlayerDeathEvent e) {
         Player p = e.getEntity();
+        // mort dans l'arène : on garde tout, sac compris
+        if (plugin.arena() != null && plugin.arena().contains(p.getLocation()) && plugin.getConfig().getBoolean("arena.keep-inventory", true)) {
+            plugin.relics().updateBackpack(p);
+            return;
+        }
         List<ItemStack> lost = plugin.backpacks().dropOnDeath(p);
         if (!lost.isEmpty()) {
             if (e.getKeepInventory()) plugin.backpacks().dropAt(p.getLocation(), lost);
