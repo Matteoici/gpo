@@ -133,6 +133,13 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 12);
             saveConfig();
         }
+        // v13 : Jugement Dernier immense
+        if (getConfig().getInt("config-version", 1) < 13) {
+            harder("boss.judgment-radius", 10, 14);
+            harder("boss.judgment-size", 9, 16);
+            getConfig().set("config-version", 13);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);

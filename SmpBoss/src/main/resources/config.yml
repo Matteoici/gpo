@@ -1,4 +1,4 @@
-config-version: 12
+config-version: 13
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -111,8 +111,8 @@ boss:
   # JUGEMENT DERNIER (phase 3, une seule fois) : citrouille géante, mort instantanée dans le cercle rouge
   # se déclenche quand il reste X de la vie de la phase 3 ; rayon du cercle ; taille de la citrouille
   judgment-at: 0.55
-  judgment-radius: 10
-  judgment-size: 9
+  judgment-radius: 14
+  judgment-size: 16
   # Gardes du Roi : tant qu'il en reste un, le Roi ne prend que X des dégâts (0.3 = 30 %)
   guard-shield: 0.3
   guard-health: 40

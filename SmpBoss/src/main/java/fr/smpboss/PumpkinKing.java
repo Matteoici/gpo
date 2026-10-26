@@ -1980,39 +1980,41 @@ public final class PumpkinKing {
     }
 
     /**
-     * JUGEMENT DERNIER (phase 3, une seule fois) : le Roi s'élève, fait grossir une citrouille géante au-dessus de
-     * lui, la lance sur le groupe de joueurs. Un immense cercle rouge montre où elle tombe : ceux qui sont dedans
-     * à l'impact meurent sur le coup (même avec un totem). ~6 secondes pour fuir. Le Roi est intouchable pendant.
+     * JUGEMENT DERNIER (phase 3, une seule fois). Le Roi s'élève au-dessus de l'arène, aspire les âmes et fait
+     * naître une citrouille GIGANTESQUE entourée de 8 citrouilles en orbite, puis la lance sur le groupe de joueurs.
+     * Un immense cercle rouge montre l'impact ~6 s à l'avance : dedans = mort instantanée (même avec un totem).
+     * Explosion démesurée : boule de feu, champignon de fumée, ondes de choc sur toute l'arène, débris, pluie de lave.
      */
     private void judgment() {
         judgmentDone = true;
         Location base = ground(altar.clone().add(0.5, 0, 0.5));
         World w = base.getWorld();
-        double radius = cfg("judgment-radius", 10);
-        int lockAt = 40, impact = 135;
-        invulnerable = impact + 40;
+        double radius = cfg("judgment-radius", 14);
+        float size = (float) cfg("judgment-size", 16);
+        int lockAt = 60, impact = 180;
+        invulnerable = impact + 60;
         boss.setAI(false);
         swing();
         titleAll("boss.title-judgment", "boss.subtitle-judgment");
         announce("judgment");
-        sound(base, "entity.wither.spawn", 5f, 0.4f);
-        sound(base, "entity.ender_dragon.growl", 5f, 0.5f);
-        for (Player p : nearby(base, 70)) p.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 50, 0, false, false, false));
+        sound(base, "entity.wither.spawn", 6f, 0.4f);
+        sound(base, "entity.ender_dragon.growl", 6f, 0.4f);
+        sound(base, "block.end_portal.spawn", 6f, 0.5f);
+        for (Player p : nearby(base, 80)) p.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 70, 0, false, false, false));
         // le Roi s'élève au-dessus de l'arène
         Location start = boss.getLocation().clone();
-        Location high = base.clone().add(0, 9, 0);
+        Location high = base.clone().add(0, 10, 0);
         high.setYaw(start.getYaw());
-        repeat(1, 25, i -> {
+        repeat(1, 30, i -> {
             if (boss == null || !boss.isValid()) return;
-            double t = (i + 1) / 25.0;
+            double t = (i + 1) / 30.0;
             Location l = start.clone().add(high.clone().subtract(start).toVector().multiply(t * t * (3 - 2 * t)));
             l.setYaw(start.getYaw() + i * 6);
             boss.teleport(l);
-            w.spawnParticle(Particle.SOUL_FIRE_FLAME, l.clone().add(0, 0.5, 0), 6, 0.6, 0.3, 0.6, 0.02, null, true);
+            w.spawnParticle(Particle.SOUL_FIRE_FLAME, l.clone().add(0, 0.5, 0), 8, 0.7, 0.3, 0.7, 0.03, null, true);
         }, null);
         // la citrouille géante grossit au-dessus de lui
-        Location orb = high.clone().add(0, scale * 2.4 + 6, 0);
-        float size = (float) cfg("judgment-size", 9);
+        Location orb = high.clone().add(0, scale * 2.4 + size * 0.6 + 2, 0);
         BlockDisplay pumpkin = w.spawn(orb, BlockDisplay.class, e -> {
             e.setPersistent(false);
             e.getPersistentDataContainer().set(bossKey, PersistentDataType.BYTE, (byte) 4);
@@ -2021,7 +2023,7 @@ public final class PumpkinKing {
             e.setGlowing(true);
             e.setGlowColorOverride(Color.fromRGB(0xff3b00));
             e.setTeleportDuration(1);
-            e.setViewRange(8f);
+            e.setViewRange(12f);
             e.setTransformation(centered(0.2f, new Quaternionf()));
         });
         props.add(pumpkin);
@@ -2029,21 +2031,68 @@ public final class PumpkinKing {
             if (!pumpkin.isValid()) return;
             pumpkin.setInterpolationDelay(0);
             pumpkin.setInterpolationDuration(lockAt);
-            pumpkin.setTransformation(centered(size, new Quaternionf().rotateY(1.2f).rotateX(0.3f)));
+            pumpkin.setTransformation(centered(size, new Quaternionf().rotateY(1.2f).rotateX(0.25f)));
         }, 2L);
-        // les âmes de l'arène affluent dans la citrouille
-        repeat(2, lockAt / 2, i -> {
+        // 8 citrouilles en orbite autour
+        List<BlockDisplay> moons = new ArrayList<>();
+        for (int k = 0; k < 8; k++) {
+            BlockDisplay m = w.spawn(orb, BlockDisplay.class, e -> {
+                e.setPersistent(false);
+                e.getPersistentDataContainer().set(bossKey, PersistentDataType.BYTE, (byte) 4);
+                e.setBlock(Material.JACK_O_LANTERN.createBlockData());
+                e.setBrightness(new Display.Brightness(15, 15));
+                e.setGlowing(true);
+                e.setGlowColorOverride(Color.fromRGB(0x7ff3ff));
+                e.setTeleportDuration(1);
+                e.setViewRange(10f);
+                e.setTransformation(centered(2.4f, new Quaternionf()));
+            });
+            moons.add(m);
+            props.add(m);
+        }
+        Location[] center = {orb.clone()};
+        // les âmes de l'arène affluent dans la citrouille, éclairs, rayon d'âmes du Roi vers la citrouille
+        repeat(1, impact, i -> {
+            // orbite des petites citrouilles
+            double grow = Math.min(1, i / (double) lockAt);
+            for (int k = 0; k < moons.size(); k++) {
+                double a = i * 0.09 + Math.PI * 2 * k / moons.size();
+                double rr = (size * 0.55 + 3) * grow + 1;
+                Location ml = center[0].clone().add(Math.cos(a) * rr, Math.sin(i * 0.1 + k) * 1.5, Math.sin(a) * rr);
+                ml.setYaw((float) Math.toDegrees(-a));
+                moons.get(k).teleport(ml);
+                if (i % 2 == 0) w.spawnParticle(Particle.SOUL_FIRE_FLAME, ml, 2, 0.3, 0.3, 0.3, 0.01, null, true);
+            }
+            if (i >= lockAt) return;
             ThreadLocalRandom r = ThreadLocalRandom.current();
             double arena = cfg("arena-radius", 18);
-            for (int k = 0; k < 10; k++) {
-                double a = r.nextDouble(Math.PI * 2);
-                Location src = ground(altar.clone().add(0.5 + Math.cos(a) * arena, 0, 0.5 + Math.sin(a) * arena)).add(0, 1, 0);
-                Vector v = orb.toVector().subtract(src.toVector());
-                w.spawnParticle(i % 2 == 0 ? Particle.SOUL_FIRE_FLAME : Particle.FLAME, src, 0, v.getX(), v.getY(), v.getZ(), 0.07, null, true);
+            if (i % 2 == 0) {
+                for (int k = 0; k < 14; k++) {
+                    double a = r.nextDouble(Math.PI * 2);
+                    Location src = ground(altar.clone().add(0.5 + Math.cos(a) * arena, 0, 0.5 + Math.sin(a) * arena)).add(0, 1, 0);
+                    Vector v = orb.toVector().subtract(src.toVector());
+                    w.spawnParticle(k % 2 == 0 ? Particle.SOUL_FIRE_FLAME : Particle.FLAME, src, 0, v.getX(), v.getY(), v.getZ(), 0.07, null, true);
+                }
+                if (boss != null && boss.isValid()) {
+                    Location from = boss.getLocation().add(0, scale * 1.8, 0);
+                    Vector beam = orb.toVector().subtract(from.toVector());
+                    double len = beam.length();
+                    beam.normalize();
+                    for (double t = 0; t < len; t += 0.6) {
+                        w.spawnParticle(Particle.SOUL_FIRE_FLAME, from.clone().add(beam.clone().multiply(t)), 1, 0.08, 0.08, 0.08, 0, null, true);
+                    }
+                }
             }
-            if (i % 5 == 0) w.strikeLightningEffect(ground(altar.clone().add(0.5 + r.nextDouble(-arena, arena), 0, 0.5 + r.nextDouble(-arena, arena))));
-            if (i % 4 == 0) sound(orb, "entity.warden.heartbeat", 4f, 0.5f + i * 0.03f);
-        }, null);
+            if (i % 10 == 0) {
+                w.strikeLightningEffect(ground(altar.clone().add(0.5 + r.nextDouble(-arena, arena), 0, 0.5 + r.nextDouble(-arena, arena))));
+                sound(orb, "entity.warden.heartbeat", 5f, 0.5f + i * 0.02f);
+            }
+        }, () -> {
+            for (BlockDisplay m : moons) {
+                m.remove();
+                props.remove(m);
+            }
+        });
         // cible : là où il y a le plus de joueurs
         later(lockAt, () -> {
             List<Player> in = nearby(base, cfg("arena-radius", 18) + 8);
@@ -2064,43 +2113,46 @@ public final class PumpkinKing {
             Location lock = target;
             int fall = impact - lockAt;
             ring(lock, radius, Color.fromRGB(255, 0, 0), fall);
-            sound(lock, "block.respawn_anchor.charge", 5f, 0.5f);
-            Particle.DustOptions dark = new Particle.DustOptions(Color.fromRGB(60, 0, 0), 2.2f);
+            sound(lock, "block.respawn_anchor.charge", 6f, 0.5f);
+            sound(lock, "entity.elder_guardian.curse", 5f, 0.5f);
+            Particle.DustOptions dark = new Particle.DustOptions(Color.fromRGB(60, 0, 0), 2.4f);
             repeat(1, fall, i -> {
                 double t = (i + 1) / (double) fall;
                 // la citrouille avance au-dessus de la cible puis s'écrase (accélère)
-                Location from = orb.clone();
-                Location over = lock.clone().add(0, 26, 0);
+                Location over = lock.clone().add(0, 30, 0);
                 Location pos;
                 if (t < 0.45) {
                     double u = t / 0.45;
-                    pos = from.clone().add(over.clone().subtract(from).toVector().multiply(u * u * (3 - 2 * u)));
-                    pos.add(0, Math.sin(Math.PI * u) * 6, 0);
+                    pos = orb.clone().add(over.clone().subtract(orb).toVector().multiply(u * u * (3 - 2 * u)));
+                    pos.add(0, Math.sin(Math.PI * u) * 8, 0);
                 } else {
                     double u = (t - 0.45) / 0.55;
-                    pos = over.clone().add(0, -(26 - size / 2.0) * u * u, 0);
+                    pos = over.clone().add(0, -(30 - size / 2.0) * u * u, 0);
                 }
-                pos.setYaw(i * 7f);
+                pos.setYaw(i * 6f);
                 pumpkin.teleport(pos);
-                w.spawnParticle(Particle.FLAME, pos, 30, size * 0.35, size * 0.35, size * 0.35, 0.06, null, true);
-                w.spawnParticle(Particle.LARGE_SMOKE, pos.clone().add(0, size * 0.5, 0), 10, 1.5, 1.5, 1.5, 0.03, null, true);
+                center[0] = pos.clone();
+                w.spawnParticle(Particle.FLAME, pos, 45, size * 0.35, size * 0.35, size * 0.35, 0.08, null, true);
+                w.spawnParticle(Particle.LARGE_SMOKE, pos.clone().add(0, size * 0.5, 0), 14, 2, 2, 2, 0.04, null, true);
+                w.spawnParticle(Particle.LAVA, pos, 4, size * 0.3, size * 0.3, size * 0.3, 0, null, true);
                 // l'ombre qui grandit
                 double sr = radius * Math.min(1, 0.3 + t);
-                for (int k = 0; k < 40; k++) {
-                    double a = Math.PI * 2 * k / 40 + i * 0.05;
-                    w.spawnParticle(Particle.DUST, lock.clone().add(Math.cos(a) * sr * ThreadLocalRandom.current().nextDouble(), 0.12,
-                            Math.sin(a) * sr * ThreadLocalRandom.current().nextDouble()), 1, 0, 0, 0, 0, dark, true);
+                for (int k = 0; k < 50; k++) {
+                    double a = Math.PI * 2 * k / 50 + i * 0.05;
+                    double rr = sr * Math.sqrt(ThreadLocalRandom.current().nextDouble());
+                    w.spawnParticle(Particle.DUST, lock.clone().add(Math.cos(a) * rr, 0.12, Math.sin(a) * rr), 1, 0, 0, 0, 0, dark, true);
                 }
                 if (i % 20 == 0) {
                     int left = (fall - i) / 20 + 1;
-                    for (Player p : nearby(lock, radius + 12)) {
+                    for (Player p : nearby(lock, radius + 15)) {
                         boolean inside = horizontalDist(p.getLocation(), lock) <= radius;
                         p.sendActionBar(parse(plugin.msg(inside ? "boss.judgment-inside" : "boss.judgment-outside")
                                 .replace("<seconds>", String.valueOf(left))));
-                        if (inside) p.playSound(p.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_BELL, 2f, 0.5f + 0.15f * (5 - left));
+                        if (inside) p.playSound(p.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_BELL, 2f, 0.5f + 0.12f * (7 - left));
                     }
                 }
-                if (i % 10 == 0) sound(pos, "entity.blaze.burn", 4f, 0.4f);
+                if (i % 10 == 0) sound(pos, "entity.blaze.burn", 5f, 0.4f);
+                if (i == fall - 12) sound(lock, "entity.ender_dragon.flap", 6f, 0.5f);
             }, () -> {
                 pumpkin.remove();
                 props.remove(pumpkin);
@@ -2108,7 +2160,7 @@ public final class PumpkinKing {
             });
         });
         // le Roi redescend
-        later(impact + 25, () -> {
+        later(impact + 45, () -> {
             if (boss == null || !boss.isValid()) return;
             Location from = boss.getLocation().clone();
             Location down = base.clone();
@@ -2128,50 +2180,110 @@ public final class PumpkinKing {
 
     private void judgmentImpact(Location c, double radius, float size) {
         World w = c.getWorld();
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        // --- le son : tout explose en même temps
+        sound(c, "entity.ender_dragon.death", 6f, 0.7f);
         sound(c, "entity.generic.explode", 6f, 0.4f);
         sound(c, "entity.dragon_fireball.explode", 6f, 0.5f);
-        sound(c, "entity.wither.death", 4f, 0.6f);
-        sound(c, "entity.warden.sonic_boom", 5f, 0.5f);
+        sound(c, "entity.wither.death", 5f, 0.6f);
+        sound(c, "entity.warden.sonic_boom", 6f, 0.5f);
+        sound(c, "entity.lightning_bolt.thunder", 6f, 0.6f);
+        later(4, () -> sound(c, "entity.generic.explode", 6f, 0.6f));
+        later(9, () -> sound(c, "entity.generic.explode", 6f, 0.5f));
+        // --- éclair blanc à l'écran pour tout le monde
+        net.kyori.adventure.text.Component flash = parse("<white>██████████████████████████");
+        for (Player p : nearby(c, 90)) {
+            p.showTitle(Title.title(flash, parse("<gold>████████████████████████████████████"),
+                    Title.Times.times(java.time.Duration.ZERO, java.time.Duration.ofMillis(150), java.time.Duration.ofMillis(600))));
+        }
         try {
-            Object flash = Particle.FLASH.getDataType() == Color.class ? Color.fromRGB(255, 120, 40) : null;
-            w.spawnParticle(Particle.FLASH, c.clone().add(0, 2, 0), 3, 1, 1, 1, 0, flash, true);
+            Object fl = Particle.FLASH.getDataType() == Color.class ? Color.fromRGB(255, 140, 40) : null;
+            for (int k = 0; k < 6; k++) w.spawnParticle(Particle.FLASH, c.clone().add(0, 2 + k, 0), 2, radius * 0.3, 1, radius * 0.3, 0, fl, true);
         } catch (RuntimeException ignored) {
             // particule différente selon la version : pas grave
         }
-        for (int k = 0; k < 10; k++) {
-            double a = Math.PI * 2 * k / 10;
-            w.spawnParticle(Particle.EXPLOSION_EMITTER, c.clone().add(Math.cos(a) * radius * 0.6, 1, Math.sin(a) * radius * 0.6), 1, 0, 0, 0, 0, null, true);
+        // --- explosions en cascade : centre, puis anneaux
+        w.spawnParticle(Particle.EXPLOSION_EMITTER, c.clone().add(0, 2, 0), 8, 2, 1.5, 2, 0, null, true);
+        for (int ringN = 0; ringN < 3; ringN++) {
+            int rn = ringN;
+            later(ringN * 4, () -> {
+                double rr = radius * (0.35 + 0.3 * rn);
+                int n = 8 + rn * 6;
+                for (int k = 0; k < n; k++) {
+                    double a = Math.PI * 2 * k / n + rn;
+                    w.spawnParticle(Particle.EXPLOSION_EMITTER, c.clone().add(Math.cos(a) * rr, 1 + rn, Math.sin(a) * rr), 1, 0, 0, 0, 0, null, true);
+                }
+            });
         }
-        w.spawnParticle(Particle.EXPLOSION_EMITTER, c.clone().add(0, 2, 0), 4, 1.5, 1, 1.5, 0, null, true);
-        w.spawnParticle(Particle.BLOCK, c.clone().add(0, 1, 0), 600, radius * 0.5, 1.5, radius * 0.5, 0, Material.PUMPKIN.createBlockData(), true);
-        w.spawnParticle(Particle.LAVA, c, 120, radius * 0.5, 0.5, radius * 0.5, 0, null, true);
-        // colonne de feu
-        for (double y = 0; y < 22; y += 0.7) {
-            w.spawnParticle(Particle.FLAME, c.clone().add(0, y, 0), 12, 1.2 + y * 0.05, 0.2, 1.2 + y * 0.05, 0.04, null, true);
-            w.spawnParticle(Particle.SOUL_FIRE_FLAME, c.clone().add(0, y, 0), 4, 0.6, 0.2, 0.6, 0.02, null, true);
-        }
-        // trois anneaux de flammes qui balaient l'arène
-        for (int wave = 0; wave < 3; wave++) {
+        // --- boule de feu qui gonfle
+        repeat(1, 12, i -> {
+            double rr = radius * (i + 1) / 12.0;
+            for (int k = 0; k < 160; k++) {
+                double th = rnd.nextDouble(Math.PI * 2), ph = Math.acos(rnd.nextDouble());
+                Location l = c.clone().add(Math.cos(th) * Math.sin(ph) * rr, Math.cos(ph) * rr * 0.8, Math.sin(th) * Math.sin(ph) * rr);
+                w.spawnParticle(k % 4 == 0 ? Particle.SOUL_FIRE_FLAME : Particle.FLAME, l, 1, 0.1, 0.1, 0.1, 0.02, null, true);
+            }
+        }, null);
+        // --- ondes de choc qui balaient toute l'arène et au-delà
+        Particle.DustOptions orange = new Particle.DustOptions(Color.fromRGB(255, 110, 0), 2.5f);
+        for (int wave = 0; wave < 4; wave++) {
             int ww = wave;
-            later(wave * 6, () -> repeat(1, 16, i -> {
-                double r = 1 + (radius + 8) * (i + 1) / 16.0;
-                int pts = (int) Math.max(30, r * 8);
+            later(wave * 5, () -> repeat(1, 18, i -> {
+                double r = 1 + (radius + 22) * (i + 1) / 18.0;
+                int pts = (int) Math.max(40, r * 4.5);
                 for (int k = 0; k < pts; k++) {
                     double a = Math.PI * 2 * k / pts;
-                    w.spawnParticle(ww == 1 ? Particle.SOUL_FIRE_FLAME : Particle.FLAME, c.clone().add(Math.cos(a) * r, 0.4 + ww * 0.6, Math.sin(a) * r),
-                            1, 0, 0.1, 0, 0.01, null, true);
+                    Location l = c.clone().add(Math.cos(a) * r, 0.3 + ww * 0.5, Math.sin(a) * r);
+                    switch (ww) {
+                        case 0 -> w.spawnParticle(Particle.FLAME, l, 1, 0, 0.15, 0, 0.02, null, true);
+                        case 1 -> w.spawnParticle(Particle.DUST, l, 1, 0, 0.1, 0, 0, orange, true);
+                        case 2 -> w.spawnParticle(Particle.SOUL_FIRE_FLAME, l, 1, 0, 0.1, 0, 0.01, null, true);
+                        default -> w.spawnParticle(Particle.CLOUD, l, 1, 0, 0.1, 0, 0.02, null, true);
+                    }
                 }
             }, null));
         }
-        for (Player p : nearby(c, 80)) {
-            p.playHurtAnimation((float) ThreadLocalRandom.current().nextDouble(360));
-            p.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, 60, 0, false, false, false));
-        }
-        burst(c.clone().add(0, size / 2.0, 0));
-        // dans le cercle : mort instantanée (même avec un totem) ; juste à côté : projeté
-        for (Player p : nearby(c, radius + 8)) {
+        // --- champignon : colonne de feu et de fumée, chapeau qui s'élargit
+        repeat(1, 45, i -> {
+            double h = Math.min(30, i * 1.1);
+            for (double y = 0; y < h; y += 1.2) {
+                double sw = 1.5 + y * 0.04;
+                w.spawnParticle(Particle.FLAME, c.clone().add(0, y, 0), 3, sw, 0.3, sw, 0.02, null, true);
+                if (((int) y) % 3 == 0) w.spawnParticle(Particle.LARGE_SMOKE, c.clone().add(0, y, 0), 2, sw, 0.3, sw, 0.02, null, true);
+            }
+            if (i > 12) {
+                double capR = Math.min(13, 3 + (i - 12) * 0.35);
+                double capY = Math.min(30, h);
+                for (int k = 0; k < 40; k++) {
+                    double a = rnd.nextDouble(Math.PI * 2);
+                    double rr = capR * (0.6 + 0.4 * rnd.nextDouble());
+                    Location l = c.clone().add(Math.cos(a) * rr, capY + rnd.nextDouble(-2, 3), Math.sin(a) * rr);
+                    w.spawnParticle(k % 3 == 0 ? Particle.FLAME : Particle.CAMPFIRE_SIGNAL_SMOKE, l, 1, 0.2, 0.2, 0.2, 0.01, null, true);
+                }
+            }
+        }, null);
+        // --- pluie de lave et cratère qui brûle
+        repeat(2, 30, i -> {
+            for (int k = 0; k < 12; k++) {
+                double a = rnd.nextDouble(Math.PI * 2), rr = Math.sqrt(rnd.nextDouble()) * (radius + 8);
+                w.spawnParticle(Particle.FALLING_LAVA, c.clone().add(Math.cos(a) * rr, 18 + rnd.nextDouble(8), Math.sin(a) * rr), 1, 0, 0, 0, 0, null, true);
+                double a2 = rnd.nextDouble(Math.PI * 2), r2 = Math.sqrt(rnd.nextDouble()) * radius;
+                w.spawnParticle(Particle.SMALL_FLAME, c.clone().add(Math.cos(a2) * r2, 0.2, Math.sin(a2) * r2), 2, 0.2, 0.1, 0.2, 0.01, null, true);
+            }
+            if (i % 5 == 0) w.spawnParticle(Particle.LAVA, c, 20, radius * 0.4, 0.3, radius * 0.4, 0, null, true);
+        }, null);
+        // --- débris de citrouille qui volent partout
+        debris(c.clone().add(0, size * 0.3, 0), 36);
+        w.spawnParticle(Particle.BLOCK, c.clone().add(0, 1, 0), 900, radius * 0.5, 2, radius * 0.5, 0, Material.PUMPKIN.createBlockData(), true);
+        // --- la caméra tremble 2 secondes
+        repeat(3, 12, i -> {
+            for (Player p : nearby(c, 90)) p.playHurtAnimation((float) rnd.nextDouble(360));
+        }, null);
+        for (Player p : nearby(c, 90)) p.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, 80, 0, false, false, false));
+        // --- dans le cercle : mort instantanée (même avec un totem) ; autour : projeté loin
+        for (Player p : nearby(c, radius + 22)) {
             double d = horizontalDist(p.getLocation(), c);
-            if (d <= radius && Math.abs(p.getLocation().getY() - c.getY()) < 8) {
+            if (d <= radius && Math.abs(p.getLocation().getY() - c.getY()) < 10) {
                 p.setNoDamageTicks(0);
                 p.damage(100000, org.bukkit.damage.DamageSource.builder(org.bukkit.damage.DamageType.GENERIC_KILL)
                         .withCausingEntity(boss).withDirectEntity(boss).build());
@@ -2180,9 +2292,59 @@ public final class PumpkinKing {
             } else {
                 Vector kb = p.getLocation().toVector().subtract(c.toVector()).setY(0);
                 if (kb.lengthSquared() < 0.01) kb = new Vector(0.1, 0, 0);
-                p.setVelocity(kb.normalize().multiply(1.6).setY(0.8));
-                hit(p, cfg("damage.judgment-blast", 4) * mult());
+                double force = Math.max(0.6, 2.2 - (d - radius) * 0.07);
+                p.setVelocity(kb.normalize().multiply(force).setY(0.9));
+                if (d <= radius + 8) hit(p, cfg("damage.judgment-blast", 4) * mult());
             }
+        }
+    }
+
+    /** Gros morceaux de citrouille et de magma projetés dans tous les sens, qui rebondissent puis éclatent. */
+    private void debris(Location c, int count) {
+        ThreadLocalRandom r = ThreadLocalRandom.current();
+        Material[] mats = {Material.JACK_O_LANTERN, Material.PUMPKIN, Material.CARVED_PUMPKIN, Material.MAGMA_BLOCK, Material.SHROOMLIGHT};
+        for (int n = 0; n < count; n++) {
+            float sz = (float) r.nextDouble(0.5, 1.7);
+            Material mat = mats[r.nextInt(mats.length)];
+            BlockDisplay d = c.getWorld().spawn(c, BlockDisplay.class, e -> {
+                e.setPersistent(false);
+                e.getPersistentDataContainer().set(bossKey, PersistentDataType.BYTE, (byte) 4);
+                e.setBlock(mat.createBlockData());
+                e.setBrightness(new Display.Brightness(15, 15));
+                e.setTeleportDuration(1);
+                e.setViewRange(8f);
+                e.setTransformation(centered(sz, new Quaternionf().rotateXYZ(r.nextFloat() * 3, r.nextFloat() * 3, r.nextFloat() * 3)));
+            });
+            props.add(d);
+            double a = r.nextDouble(Math.PI * 2);
+            Vector vel = new Vector(Math.cos(a), 0, Math.sin(a)).multiply(r.nextDouble(0.5, 1.3)).setY(r.nextDouble(0.7, 1.6));
+            Location[] pos = {c.clone()};
+            int[] t = {0};
+            BukkitTask[] task = new BukkitTask[1];
+            task[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+                t[0]++;
+                if (t[0] > 60 || !d.isValid()) {
+                    if (d.isValid()) d.getWorld().spawnParticle(Particle.BLOCK, d.getLocation(), 25, 0.4, 0.4, 0.4, 0, mat.createBlockData(), true);
+                    d.remove();
+                    props.remove(d);
+                    task[0].cancel();
+                    return;
+                }
+                vel.setY(vel.getY() - 0.07);
+                pos[0].add(vel);
+                Location gl = ground(pos[0]);
+                if (pos[0].getY() < gl.getY()) {
+                    pos[0].setY(gl.getY());
+                    vel.setY(-vel.getY() * 0.35);
+                    vel.multiply(0.6);
+                    d.getWorld().spawnParticle(Particle.BLOCK, pos[0], 8, 0.3, 0.1, 0.3, 0, mat.createBlockData(), true);
+                }
+                pos[0].setYaw(t[0] * 15f);
+                d.teleport(pos[0]);
+                if (t[0] % 2 == 0) d.getWorld().spawnParticle(Particle.FLAME, pos[0], 2, 0.1, 0.1, 0.1, 0.01, null, true);
+                if (t[0] % 3 == 0) d.getWorld().spawnParticle(Particle.LARGE_SMOKE, pos[0], 1, 0.1, 0.1, 0.1, 0.01, null, true);
+            }, 1L, 1L);
+            tasks.add(task[0]);
         }
     }
 
