@@ -126,6 +126,13 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 11);
             saveConfig();
         }
+        // v12 : combat de moins de 10 min même en équipe : 1800 PV, les joueurs en plus ajoutent 70 %
+        if (getConfig().getInt("config-version", 1) < 12) {
+            harder("boss.health-per-player", 2400, 1800);
+            if (!getConfig().isSet("boss.extra-player-health")) getConfig().set("boss.extra-player-health", 0.7);
+            getConfig().set("config-version", 12);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);

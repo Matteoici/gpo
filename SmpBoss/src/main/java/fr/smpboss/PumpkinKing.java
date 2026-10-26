@@ -181,7 +181,7 @@ public final class PumpkinKing {
         // vie proportionnelle au nombre de combattants : X PV par joueur (ceux qui sont là au réveil,
         // puis chaque nouveau joueur qui le frappe en rajoute)
         fighters = Math.max(1, nearby(at, 45).size());
-        maxHp = perPlayer() * fighters;
+        maxHp = hpFor(fighters);
         hp = maxHp;
         if (plugin.getConfig().getBoolean("boss.damage-sidebar", true)) board = new DamageBoard(plugin);
         scale = (float) cfg("scale", 3.0);
@@ -487,11 +487,11 @@ public final class PumpkinKing {
         if (damage.size() > fighters) {
             double old = maxHp;
             fighters = damage.size();
-            maxHp = perPlayer() * fighters;
+            maxHp = hpFor(fighters);
             hp = hp * maxHp / old;
             for (Player p : nearby(boss.getLocation(), 60)) {
                 p.sendActionBar(parse(plugin.msg("boss.new-fighter").replace("<player>", SmpBoss.MM.escapeTags(by.getName()))
-                        .replace("<hp>", String.valueOf((long) perPlayer()))));
+                        .replace("<hp>", String.valueOf((long) (perPlayer() * extraShare())))));
             }
         }
         guards.removeIf(g -> !g.isValid() || g.isDead());
@@ -2249,7 +2249,7 @@ public final class PumpkinKing {
         later(155, () -> {
             if (boss == null || !boss.isValid()) return;
             phase = 3;
-            maxHp = perPlayer() * fighters;
+            maxHp = hpFor(fighters);
             hp = maxHp;
             Location h = boss.getLocation().add(0, scale * 1.8, 0);
             h.getWorld().spawnParticle(Particle.EXPLOSION_EMITTER, h, 2, 0.5, 0.5, 0.5, 0, null, true);
@@ -2524,8 +2524,18 @@ public final class PumpkinKing {
         }
     }
 
+    /** Part de vie ajoutée par chaque joueur après le premier (0.7 = 70 %). */
+    private double extraShare() {
+        return Math.max(0, cfg("extra-player-health", 0.7));
+    }
+
+    /** Vie totale pour n combattants : 1er joueur = 100 %, chacun des suivants = extra-player-health. */
+    private double hpFor(int n) {
+        return perPlayer() * (1 + extraShare() * Math.max(0, n - 1));
+    }
+
     private double perPlayer() {
-        return Math.max(1, cfg("health-per-player", 2400)) * (phase == 3 ? cfg("phase-3-health-multiplier", 0.6) : 1.0);
+        return Math.max(1, cfg("health-per-player", 1800)) * (phase == 3 ? cfg("phase-3-health-multiplier", 0.6) : 1.0);
     }
 
     private double minPct() {

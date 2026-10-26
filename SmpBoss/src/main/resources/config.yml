@@ -1,4 +1,4 @@
-config-version: 11
+config-version: 12
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -23,7 +23,9 @@ boss:
   # vie PROPORTIONNELLE au nombre de combattants : X PV par joueur.
   # Compte les joueurs présents au réveil, puis chaque nouveau joueur qui le frappe ajoute X PV
   # (le pourcentage de vie restant ne change pas).
-  health-per-player: 2400
+  health-per-player: 1800
+  # chaque joueur en plus ajoute X de cette vie (0.7 = 70 %) : venir en équipe va plus vite
+  extra-player-health: 0.7
   # dégâts des coups à l'épée / à la hache sur le boss (1.3 = +30 % ; l'arc reste normal)
   melee-bonus: 1.3
   # tableau sur le côté de l'écran : vie + part des dégâts de chacun (vert = assez pour le butin)
