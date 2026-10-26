@@ -1,0 +1,20 @@
+name: SmpAntiFlood
+version: '${version}'
+main: fr.smpantiflood.SmpAntiFlood
+api-version: '26.2'
+description: "Anti-flood du chat (spam, répétitions, majuscules, sourdine automatique)"
+commands:
+  antiflood:
+    description: Gérer l'anti-flood
+    usage: /antiflood <reload|unmute>
+    permission: smpantiflood.admin
+permissions:
+  smpantiflood.admin:
+    description: /antiflood
+    default: op
+  smpantiflood.bypass:
+    description: Pas concerné par l'anti-flood
+    default: op
+  smpantiflood.alerts:
+    description: Voir quand un joueur est rendu muet
+    default: op

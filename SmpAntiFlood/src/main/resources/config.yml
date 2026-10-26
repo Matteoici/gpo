@@ -1,0 +1,54 @@
+# =====================================================================
+#  SmpAntiFlood - anti-flood / anti-spam du chat
+#  Le staff (permission smpantiflood.bypass, les op par défaut) n'est pas concerné.
+#  Après une modification : /antiflood reload
+# =====================================================================
+
+# délai minimum entre deux messages (secondes)
+min-delay-seconds: 0.8
+
+# pas plus de X messages en Y secondes
+burst:
+  max-messages: 5
+  seconds: 8
+
+# "aaaaaaaa" -> "aaa", "!!!!!!" -> "!!!", "lol lol lol lol lol" -> "lol lol lol" (les chiffres ne sont pas touchés)
+max-repeated-chars: 3
+
+# MAJUSCULES : au-delà de X % de majuscules (et au moins N lettres), le message passe en minuscules
+caps:
+  min-letters: 8
+  max-percent: 70
+
+# même message (ou presque) qu'un des derniers : bloqué
+duplicate:
+  seconds: 30
+  remember: 3
+  # 0.85 = 85 % identique compte comme le même message
+  similarity: 0.85
+  # les réponses courtes ("oui", "ok", "gg") ne comptent pas
+  min-length: 6
+
+# message fait uniquement de symboles (+ de 6 caractères) : bloqué
+block-symbol-only: true
+
+# sourdine automatique : X avertissements en Y secondes = muet pendant Z secondes
+mute:
+  strikes: 5
+  window-seconds: 60
+  seconds: 60
+
+# commandes de messages privés vérifiées aussi
+commands: [msg, tell, w, m, whisper, r, reply, me, mail]
+# celles où le 1er mot est le pseudo du destinataire
+commands-with-target: [msg, tell, w, m, whisper]
+
+messages:
+  too-fast: "<red>⏳ Doucement ! Attends un peu entre deux messages."
+  too-many: "<red>⏳ Trop de messages d'un coup, respire un peu."
+  duplicate: "<red>✋ Tu as déjà envoyé ce message."
+  symbols: "<red>✋ Pas de flood de symboles."
+  caps: "<gray>(tes majuscules ont été baissées, pas besoin de crier 😉)"
+  muted-now: "<red><b>🔇 Tu es muet pendant <seconds> s</b> <gray>pour flood."
+  muted: "<red>🔇 Tu es muet encore <seconds> s."
+  staff-alert: "<dark_gray>[<red>AntiFlood</red>]</dark_gray> <white><player></white> <gray>est muet <seconds> s pour flood."

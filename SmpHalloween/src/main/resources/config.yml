@@ -1,0 +1,101 @@
+# =====================================================================
+#  SmpHalloween - transforme une zone (ton spawn) en version Halloween, puis la remet comme avant
+#
+#  1) Va au centre de ton spawn :  /halloween zone 80         (rayon 80, de 20 blocs sous toi à 60 au-dessus)
+#     ou une boîte précise :         /halloween pos1  puis  /halloween pos2
+#  2) /halloween apercu      -> combien de blocs seraient changés (rien n'est modifié)
+#  3) /halloween appliquer   -> remplace les blocs (sauvegarde automatique)
+#  4) Après Halloween : /halloween retirer  -> tout revient exactement comme avant
+#
+#  Les états des blocs sont gardés (escaliers dans le même sens, dalles, portes...).
+# =====================================================================
+
+# blocs vérifiés par tick / blocs changés par tick (baisse si le serveur rame pendant la transformation)
+scan-per-tick: 60000
+changes-per-tick: 3000
+
+# les choix au hasard ("a:60, b:40") sont faits par paquets de X blocs : un arbre entier devient
+# blanc OU marron (pas un mélange pixel par pixel). 1 = chaque bloc au hasard.
+cluster-size: 6
+
+# ---------------------------------------------------------------- remplacements
+# bloc: "nouveau bloc"   ou plusieurs au hasard avec un poids : "a:60, b:40"
+# "xxx*" = toute la famille (ex. oak_* : oak_planks, oak_stairs, oak_log, oak_fence...)
+# Une famille est remplacée par la même famille : "oak_*": "pale_oak_*" -> oak_stairs devient pale_oak_stairs
+replace:
+  # feuilles vertes -> blanches (chêne pâle) ou marron (champignon brun)
+  oak_leaves: "pale_oak_leaves:60, brown_mushroom_block:40"
+  birch_leaves: "pale_oak_leaves:60, brown_mushroom_block:40"
+  spruce_leaves: "pale_oak_leaves:50, brown_mushroom_block:50"
+  jungle_leaves: "pale_oak_leaves:60, brown_mushroom_block:40"
+  acacia_leaves: "pale_oak_leaves:60, brown_mushroom_block:40"
+  dark_oak_leaves: "pale_oak_leaves:50, brown_mushroom_block:50"
+  mangrove_leaves: "pale_oak_leaves:60, brown_mushroom_block:40"
+  azalea_leaves: "pale_oak_leaves:60, brown_mushroom_block:40"
+  flowering_azalea_leaves: "pale_oak_leaves:60, brown_mushroom_block:40"
+  # sol mort, mousse pâle
+  grass_block: "podzol:55, coarse_dirt:20, pale_moss_block:25"
+  short_grass: "dead_bush:35, air:25, short_grass:40"
+  fern: "dead_bush"
+  # fleurs -> fleurs-yeux (elles s'ouvrent la nuit !)
+  dandelion: "open_eyeblossom"
+  poppy: "open_eyeblossom"
+  blue_orchid: "open_eyeblossom"
+  allium: "open_eyeblossom"
+  azure_bluet: "closed_eyeblossom"
+  oxeye_daisy: "closed_eyeblossom"
+  cornflower: "open_eyeblossom"
+  red_tulip: "open_eyeblossom"
+  orange_tulip: "open_eyeblossom"
+  white_tulip: "closed_eyeblossom"
+  pink_tulip: "open_eyeblossom"
+  # ---- PLUS LOIN (désactivé : change aussi les maisons / chemins). Enlève les # pour l'activer.
+  # bois : chêne -> chêne pâle (gris, sinistre), bouleau -> chêne noir
+  # "oak_*": "pale_oak_*"
+  # "birch_*": "dark_oak_*"
+  # "stripped_oak_*": "stripped_pale_oak_*"
+  # "stripped_birch_*": "stripped_dark_oak_*"
+  # pierre -> ardoise des abîmes / pierre noire
+  # "stone_brick*": "deepslate_brick*"
+  # "mossy_stone_brick*": "deepslate_tile*"
+  # "cracked_stone_bricks": "cracked_deepslate_bricks"
+  # "cobblestone*": "cobbled_deepslate*"
+  # "polished_andesite*": "polished_blackstone*"
+  # "andesite*": "blackstone*"
+  # smooth_stone: "polished_blackstone_bricks"
+  # smooth_stone_slab: "polished_blackstone_brick_slab"
+  # lumières -> citrouilles et flammes d'âmes
+  glowstone: "jack_o_lantern"
+  sea_lantern: "jack_o_lantern"
+  lantern: "soul_lantern"
+  torch: "soul_torch"
+  wall_torch: "soul_wall_torch"
+  campfire: "soul_campfire"
+  # couleurs d'Halloween
+  # white_wool: "orange_wool:60, black_wool:40"
+  # white_carpet: "orange_carpet:60, black_carpet:40"
+  # white_concrete: "orange_concrete:60, black_concrete:40"
+  # white_stained_glass: "orange_stained_glass"
+  # white_stained_glass_pane: "orange_stained_glass_pane"
+  hay_block: "pumpkin"
+
+# ---------------------------------------------------------------- décorations ajoutées
+decorations:
+  enabled: true
+  # posées sur ces sols (s'il y a de l'air au-dessus)
+  ground: [podzol, coarse_dirt, pale_moss_block, grass_block, dirt, moss_block, rooted_dirt]
+  # chance (%) par bloc de sol
+  on-ground:
+    carved_pumpkin: 0.9
+    jack_o_lantern: 0.5
+    pumpkin: 0.6
+    "red_candle[candles=3,lit=true]": 0.25
+    "orange_candle[candles=2,lit=true]": 0.25
+    skeleton_skull: 0.15
+    pale_moss_carpet: 2.5
+  # toiles d'araignée dans les coins (air sous un plafond, contre au moins 2 murs), en %
+  cobwebs: 5
+  # lianes pâles qui pendent sous les feuilles de chêne pâle, en %
+  pale-hanging-moss: 12
+  # feuilles mortes au sol sous les arbres (sur l'herbe / le podzol, jusqu'à 6 blocs sous des feuilles), en %
+  leaf-litter: 35

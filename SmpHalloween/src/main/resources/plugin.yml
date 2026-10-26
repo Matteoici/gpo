@@ -1,0 +1,14 @@
+name: SmpHalloween
+version: '${version}'
+main: fr.smphalloween.SmpHalloween
+api-version: '26.2'
+description: "Transforme le spawn en version Halloween (et le remet comme avant)"
+commands:
+  halloween:
+    description: Transformer une zone en version Halloween
+    usage: /halloween <zone|pos1|pos2|apercu|appliquer|retirer>
+    permission: smphalloween.admin
+permissions:
+  smphalloween.admin:
+    description: Utiliser /halloween
+    default: op
