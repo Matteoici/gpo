@@ -331,6 +331,7 @@ public final class Arena {
                         + "<white>/arene</white><gray>, le portail du spawn et /boss arene tp y mènent."));
             }
             case "portail", "portal" -> portalCommand(sender, a);
+            case "recuperer", "récupérer", "restaurer", "recover" -> recover(sender);
             case "supprimer", "remove" -> {
                 defined = false;
                 save();
@@ -345,12 +346,77 @@ public final class Arena {
                 sender.sendMessage(parse("<aqua>/boss arene setspawn [reset]</aqua> <gray>- le point d'arrivée = là où tu es"));
                 sender.sendMessage(parse("<aqua>/boss arene portail pos1|pos2|supprimer</aqua> <gray>- une zone (au spawn) où entrer = tp dans l'arène"));
                 sender.sendMessage(parse("<aqua>/boss arene supprimer</aqua> <gray>- coupe la protection"));
+                sender.sendMessage(parse("<aqua>/boss arene recuperer</aqua> <gray>- retrouve la zone de l'arène construite (après un /definir par erreur)"));
                 if (defined) {
                     sender.sendMessage(parse("<gray>Arène : " + worldName + " " + cx + " " + cy + " " + cz + " · sol " + floorRadius
                             + " · protection " + protectRadius));
                 }
             }
         }
+    }
+
+    // ================================================================= récupération
+
+    /**
+     * Retrouve la zone de l'arène construite : la taille vient de la sauvegarde du terrain (l'étendue des blocs
+     * changés), le centre vient de l'autel (placé au centre à la construction).
+     */
+    private void recover(CommandSender sender) {
+        Location alt = plugin.altar();
+        int size = -1;
+        int bx = Integer.MIN_VALUE, bz = 0;
+        String bw = null;
+        if (backupFile.exists()) {
+            try (DataInputStream in = new DataInputStream(new GZIPInputStream(new FileInputStream(backupFile)))) {
+                if (in.readInt() != 0x534D4241) throw new IOException("fichier invalide");
+                bw = in.readUTF();
+                int pal = in.readInt();
+                for (int i = 0; i < pal; i++) in.readUTF();
+                int n = in.readInt();
+                int minX = Integer.MAX_VALUE, maxX = Integer.MIN_VALUE, minZ = Integer.MAX_VALUE, maxZ = Integer.MIN_VALUE;
+                for (int i = 0; i < n; i++) {
+                    int x = in.readInt();
+                    in.readInt();
+                    int z = in.readInt();
+                    in.readInt();
+                    minX = Math.min(minX, x);
+                    maxX = Math.max(maxX, x);
+                    minZ = Math.min(minZ, z);
+                    maxZ = Math.max(maxZ, z);
+                }
+                if (n > 0) {
+                    bx = (minX + maxX) / 2;
+                    bz = (minZ + maxZ) / 2;
+                    // bulle = sol + 24, coque jusqu'à +26 de chaque côté
+                    size = Math.max(14, Math.min(40, Math.max(maxX - minX, maxZ - minZ) / 2 - 26));
+                }
+            } catch (IOException e) {
+                sender.sendMessage(parse("<red>Sauvegarde illisible : " + e.getMessage()));
+            }
+        }
+        if (alt == null || alt.getWorld() == null) {
+            sender.sendMessage(parse("<red>Pas d'autel enregistré : impossible de retrouver le centre. "
+                    + "<gray>Va sur le bloc d'obsidienne pleureuse au centre de l'arène et tape /boss autel en le regardant, puis réessaie."));
+            return;
+        }
+        if (bx != Integer.MIN_VALUE && (bw == null || !bw.equals(alt.getWorld().getName())
+                || Math.abs(alt.getBlockX() - bx) > 3 || Math.abs(alt.getBlockZ() - bz) > 3)) {
+            sender.sendMessage(parse("<yellow>Attention : l'autel ne semble pas être au centre de l'arène construite "
+                    + "(centre trouvé : " + bx + " " + bz + "). <gray>Si tu as déplacé l'autel, remets-le au centre avec /boss autel."));
+        }
+        if (size < 0) size = (int) Math.round(plugin.getConfig().getDouble("boss.arena-radius", 19) + 1);
+        worldName = alt.getWorld().getName();
+        cx = alt.getBlockX();
+        cy = alt.getBlockY();
+        cz = alt.getBlockZ();
+        floorRadius = size;
+        protectRadius = size + 28;
+        defined = true;
+        save();
+        plugin.getConfig().set("boss.arena-radius", Math.max(8, size - 1));
+        plugin.saveConfig();
+        sender.sendMessage(parse("<green>Zone de l'arène retrouvée : centre " + cx + " " + cy + " " + cz + ", sol de rayon " + floorRadius
+                + ", protection " + protectRadius + " blocs."));
     }
 
     // ================================================================= portail du spawn
