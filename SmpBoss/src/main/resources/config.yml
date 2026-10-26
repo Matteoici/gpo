@@ -159,6 +159,8 @@ arena:
     no-wind-charge: true
     # potions de saut sans effet dans l'arène (sinon sauts géants pour la masse)
     no-jump-effects: true
+    # ender pearls interdites dans l'arène (lancer, entrer ou sortir avec)
+    no-ender-pearl: true
     blocked-effects: [jump_boost, levitation]
 
 # ---------------------------------------------------------------- Butin

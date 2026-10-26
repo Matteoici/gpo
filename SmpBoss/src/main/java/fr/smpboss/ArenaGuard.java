@@ -284,6 +284,34 @@ final class ArenaGuard implements Listener {
         }
     }
 
+    // ================================================================= ender pearls
+
+    @EventHandler(priority = EventPriority.LOW)
+    public void onPearlUse(PlayerInteractEvent e) {
+        if (!on("no-ender-pearl") || e.getItem() == null || e.getItem().getType() != Material.ENDER_PEARL
+                || !arena.contains(e.getPlayer().getLocation())) return;
+        e.setUseItemInHand(Event.Result.DENY);
+        e.getPlayer().sendActionBar(parse("<red>Pas d'ender pearls dans l'arène."));
+    }
+
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    public void onPearlLaunch(org.bukkit.event.entity.ProjectileLaunchEvent e) {
+        if (e.getEntity() instanceof org.bukkit.entity.EnderPearl && e.getEntity().getShooter() instanceof Player p
+                && on("no-ender-pearl") && arena.contains(p.getLocation())) {
+            e.setCancelled(true);
+        }
+    }
+
+    /** Une perle lancée de dehors ne fait pas entrer (ni sortir) de l'arène. */
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    public void onPearlTeleport(org.bukkit.event.player.PlayerTeleportEvent e) {
+        if (e.getCause() != org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.ENDER_PEARL || !on("no-ender-pearl")) return;
+        if (arena.contains(e.getTo()) || arena.contains(e.getFrom())) {
+            e.setCancelled(true);
+            e.getPlayer().sendActionBar(parse("<red>Pas d'ender pearls dans l'arène."));
+        }
+    }
+
     // ================================================================= potions de saut (combos masse)
 
     private boolean blockedEffect(org.bukkit.potion.PotionEffectType t) {
