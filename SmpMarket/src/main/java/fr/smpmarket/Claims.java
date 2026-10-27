@@ -57,14 +57,16 @@ public final class Claims {
         spot.paid = 0;
         if (m != null) {
             copyStyle(m, spot);
-            putBuild(spot, m.build); // sa construction réapparaît
+            putBuild(spot, m.build); // sa construction réapparaît, centrée et tournée vers l'entrée
             int ox = spot.region.minX(), oy = spot.region.minY(), oz = spot.region.minZ();
+            Frame fr = frame(spot);
             for (Showcase c : m.showcases) {
                 if (c.virtual) {
                     spot.showcases.add(c);
                     continue;
                 }
-                Showcase n = new Showcase(c.id, c.template, c.price, c.stock, c.x + ox, c.y + oy, c.z + oz);
+                int[] wpos = m.layout == 2 ? toWorld(fr, c.x, c.y, c.z) : new int[]{c.x + ox, c.y + oy, c.z + oz};
+                Showcase n = new Showcase(c.id, c.template, c.price, c.stock, wpos[0], wpos[1], wpos[2]);
                 n.sold = c.sold;
                 n.revenue = c.revenue;
                 // emplacement plus petit / autrement construit : l'article passe au catalogue (rien n'est perdu)
@@ -107,14 +109,16 @@ public final class Claims {
         m.owner = owner;
         m.ownerName = spot.ownerName;
         copyStyle(spot, m);
+        Frame fr = frame(spot);
         m.build.addAll(takeBuild(spot, owner)); // sa construction part avec lui : l'emplacement redevient vide
-        int ox = spot.region.minX(), oy = spot.region.minY(), oz = spot.region.minZ();
+        m.layout = 2;
         for (Showcase c : spot.showcases) {
             if (c.virtual) {
                 m.showcases.add(c);
                 continue;
             }
-            Showcase r = new Showcase(c.id, c.template, c.price, c.stock, c.x - ox, c.y - oy, c.z - oz);
+            int[] l = toLocal(fr, c.x, c.y, c.z);
+            Showcase r = new Showcase(c.id, c.template, c.price, c.stock, l[0], l[1], l[2]);
             r.sold = c.sold;
             r.revenue = c.revenue;
             m.showcases.add(r);
@@ -215,6 +219,50 @@ public final class Claims {
 
     // ================================================================= construction du marché
 
+    // ================================================================= repère d'un emplacement
+
+    /**
+     * Repère d'un emplacement : son centre (coordonnées doublées pour rester entières), son sol, et son orientation
+     * (le regard du point d'entrée, au quart de tour). Une construction enregistrée dans ce repère se remet au centre
+     * de n'importe quel autre emplacement, tournée pour regarder du même côté que son entrée.
+     */
+    record Frame(int cx2, int floor, int cz2, int facing) {
+    }
+
+    Frame frame(Stall st) {
+        return new Frame(st.region.minX() + st.region.maxX() + 1, floor(st), st.region.minZ() + st.region.maxZ() + 1,
+                Math.floorMod(Math.round(st.eyaw / 90f), 4));
+    }
+
+    /** (x, z) tourné de k quarts de tour (sens des aiguilles d'une montre vu du dessus, comme Minecraft). */
+    static int[] rot(int x, int z, int k) {
+        for (int i = 0; i < Math.floorMod(k, 4); i++) {
+            int t = x;
+            x = -z;
+            z = t;
+        }
+        return new int[]{x, z};
+    }
+
+    static int[] toLocal(Frame f, int x, int y, int z) {
+        int[] r = rot(2 * x + 1 - f.cx2(), 2 * z + 1 - f.cz2(), -f.facing());
+        return new int[]{r[0], y - f.floor(), r[1]};
+    }
+
+    static int[] toWorld(Frame f, int lx, int ly, int lz) {
+        int[] r = rot(lx, lz, f.facing());
+        return new int[]{Math.floorDiv(r[0] + f.cx2() - 1, 2), ly + f.floor(), Math.floorDiv(r[1] + f.cz2() - 1, 2)};
+    }
+
+    private static org.bukkit.block.structure.StructureRotation rotation(int k) {
+        return switch (Math.floorMod(k, 4)) {
+            case 1 -> org.bukkit.block.structure.StructureRotation.CLOCKWISE_90;
+            case 2 -> org.bukkit.block.structure.StructureRotation.CLOCKWISE_180;
+            case 3 -> org.bukkit.block.structure.StructureRotation.COUNTERCLOCKWISE_90;
+            default -> org.bukkit.block.structure.StructureRotation.NONE;
+        };
+    }
+
     /** Tout l'emplacement (bords compris) appartient au marché posé dessus. */
     private static int margin(Stall st) {
         return 0;
@@ -311,13 +359,21 @@ public final class Claims {
             if (owner != null) for (org.bukkit.inventory.ItemStack it : give) plugin.store().addParcel(owner, it);
             e.remove();
         }
+        Frame fr = new Frame(st.region.minX() + st.region.maxX() + 1, f, st.region.minZ() + st.region.maxZ() + 1,
+                Math.floorMod(Math.round(st.eyaw / 90f), 4));
         // de haut en bas : rien ne tombe ni ne se casse en route
         for (int y = y1; y > f; y--) {
             for (int x = x0; x <= x1; x++) {
                 for (int z = z0; z <= z1; z++) {
                     org.bukkit.block.Block b = w.getBlockAt(x, y, z);
                     if (b.getType().isAir()) continue;
-                    out.add((x - st.region.minX()) + "," + (y - st.region.minY()) + "," + (z - st.region.minZ()) + "|" + b.getBlockData().getAsString());
+                    int[] l = toLocal(fr, x, y, z);
+                    org.bukkit.block.data.BlockData data = b.getBlockData().clone();
+                    try {
+                        data.rotate(rotation(-fr.facing()));
+                    } catch (RuntimeException ignored) {
+                    }
+                    out.add("L|" + l[0] + "," + l[1] + "," + l[2] + "|" + data.getAsString());
                     b.setType(org.bukkit.Material.AIR, false);
                 }
             }
@@ -326,26 +382,50 @@ public final class Claims {
         return out;
     }
 
-    /** Remet une construction sur un emplacement (de bas en haut, seulement dans l'intérieur et au-dessus du sol). */
+    /** Remet une construction sur un emplacement (de bas en haut, seulement dans l'emplacement et au-dessus du sol). */
     private void putBuild(Stall st, List<String> build) {
         org.bukkit.World w = st.region.bukkitWorld();
         if (w == null || build.isEmpty()) return;
-        int m = margin(st), f = floor(st);
-        List<String> sorted = new java.util.ArrayList<>(build);
-        sorted.sort(java.util.Comparator.comparingInt(s -> Integer.parseInt(s.substring(0, s.indexOf('|')).split(",")[1])));
-        for (String s : sorted) {
+        int f = floor(st);
+        Frame fr = frame(st);
+        List<int[]> pos = new java.util.ArrayList<>();
+        List<String> data = new java.util.ArrayList<>();
+        for (String s : build) {
             try {
-                int bar = s.indexOf('|');
-                String[] p = s.substring(0, bar).split(",");
-                int x = st.region.minX() + Integer.parseInt(p[0]), y = st.region.minY() + Integer.parseInt(p[1]),
-                        z = st.region.minZ() + Integer.parseInt(p[2]);
-                if (x < st.region.minX() + m || x > st.region.maxX() - m || z < st.region.minZ() + m || z > st.region.maxZ() - m) continue;
-                if (y <= f || y > st.region.maxY() + above()) continue;
-                org.bukkit.block.Block b = w.getBlockAt(x, y, z);
-                if (!b.getType().isAir()) continue;
-                b.setBlockData(org.bukkit.Bukkit.createBlockData(s.substring(bar + 1)), false);
+                boolean local = s.startsWith("L|");
+                String body = local ? s.substring(2) : s;
+                int bar = body.indexOf('|');
+                String[] p = body.substring(0, bar).split(",");
+                int a = Integer.parseInt(p[0]), b = Integer.parseInt(p[1]), c = Integer.parseInt(p[2]);
+                int[] wp = local ? toWorld(fr, a, b, c)
+                        : new int[]{st.region.minX() + a, st.region.minY() + b, st.region.minZ() + c}; // ancien format
+                String d = body.substring(bar + 1);
+                if (local && fr.facing() != 0) {
+                    org.bukkit.block.data.BlockData bd = org.bukkit.Bukkit.createBlockData(d);
+                    try {
+                        bd.rotate(rotation(fr.facing()));
+                    } catch (RuntimeException ignored) {
+                    }
+                    d = bd.getAsString();
+                }
+                pos.add(wp);
+                data.add(d);
             } catch (RuntimeException ignored) {
                 // bloc d'une autre version : on passe
+            }
+        }
+        Integer[] order = new Integer[pos.size()];
+        for (int k = 0; k < order.length; k++) order[k] = k;
+        java.util.Arrays.sort(order, java.util.Comparator.comparingInt(k -> pos.get(k)[1]));
+        for (int k : order) {
+            int[] p = pos.get(k);
+            if (p[0] < st.region.minX() || p[0] > st.region.maxX() || p[2] < st.region.minZ() || p[2] > st.region.maxZ()) continue;
+            if (p[1] <= f || p[1] > st.region.maxY() + above()) continue;
+            org.bukkit.block.Block bl = w.getBlockAt(p[0], p[1], p[2]);
+            if (!bl.getType().isAir()) continue;
+            try {
+                bl.setBlockData(org.bukkit.Bukkit.createBlockData(data.get(k)), false);
+            } catch (RuntimeException ignored) {
             }
         }
     }

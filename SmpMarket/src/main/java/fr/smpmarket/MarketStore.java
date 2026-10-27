@@ -200,6 +200,7 @@ public final class MarketStore {
             y.set(b + "last-change", s.lastChange);
             if (s.floorY != Integer.MIN_VALUE) y.set(b + "floor-y", s.floorY);
             if (!s.build.isEmpty()) y.set(b + "build", new ArrayList<>(s.build));
+            if (s.layout != 0) y.set(b + "layout", s.layout);
             y.set(b + "paid", s.paid);
             for (Showcase c : s.showcases) {
                 String cb = b + "showcases." + c.id + ".";
@@ -336,6 +337,7 @@ public final class MarketStore {
         s.lastChange = c.getLong("last-change", System.currentTimeMillis());
         s.floorY = c.getInt("floor-y", Integer.MIN_VALUE);
         s.build.addAll(c.getStringList("build"));
+        s.layout = c.getInt("layout", 0);
         s.paid = c.getDouble("paid", 0);
         ConfigurationSection sc = c.getConfigurationSection("showcases");
         if (sc != null) for (String k : sc.getKeys(false)) {

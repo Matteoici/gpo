@@ -68,6 +68,8 @@ public final class Stall {
     public int floorY = Integer.MIN_VALUE;
     /** Marché rangé : sa construction, "dx,dy,dz|blockdata" (relatif au coin de l'emplacement). */
     public final List<String> build = new ArrayList<>();
+    /** 2 = vitrines / construction enregistrées par rapport au CENTRE et au sol, tournées vers l'entrée. */
+    public int layout;
     public double paid;                                    // ce qu'il a payé pour ce stand (remboursé s'il est inactif)
     public long totalSold;
     public double totalRevenue;
