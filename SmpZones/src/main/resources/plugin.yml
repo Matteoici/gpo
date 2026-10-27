@@ -1,0 +1,18 @@
+name: SmpZones
+version: '${version}'
+main: fr.smpzones.SmpZones
+api-version: '26.2'
+description: "Protection de zones : casser, poser, PvP, dégâts, monstres, explosions, feu... (comme WorldGuard, en français)"
+commands:
+  zone:
+    description: Protéger des zones
+    usage: /zone <baguette|pos1|pos2|creer|flags|liste|info|...>
+    aliases: [zones, rg, region, protection]
+    permission: smpzones.admin
+permissions:
+  smpzones.admin:
+    description: Créer et régler les zones
+    default: op
+  smpzones.bypass:
+    description: Ignore les protections des zones (désactivable avec /zone bypass)
+    default: op

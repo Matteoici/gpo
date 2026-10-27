@@ -1,0 +1,38 @@
+# =====================================================================
+#  SmpZones - zones protégées (comme WorldGuard, en français)
+#  1) /zone baguette  -> clic gauche / clic droit sur les 2 coins
+#  2) /zone creer spawn haut   (haut = toute la hauteur du monde)
+#  3) /zone proteger spawn     (tout interdire d'un coup) ou /zone flags spawn (menu, permission par permission)
+#  Les op ignorent les protections (permission smpzones.bypass) : /zone bypass pour tester comme un joueur.
+#  Les zones se chevauchent : la plus haute priorité qui règle une permission décide.
+#  /zone monde : les permissions de TOUT le monde (ex. interdire le PvP partout sauf dans une zone "arene-pvp").
+# =====================================================================
+
+# Anti-flood : AUCUN seau (eau, lave, poudreuse, seaux à poissons...) ne peut être vidé près du spawn,
+# ni par les joueurs ni par les distributeurs. Une zone avec "seaux" autorisé passe outre (ferme, etc.).
+anti-flood:
+  enabled: true
+  radius: 1000
+  # centre : le spawn du monde (/setworldspawn). Décommente pour un autre centre :
+  # center: {x: 0, z: 0}
+  # mondes concernés (vide = tous les mondes)
+  worlds: [world]
+
+messages:
+  anti-flood: "<red>🪣 Pas de seaux à moins de <white><radius></white> blocs du spawn (anti-flood)."
+  denied:
+    default: "<red>✖ Interdit ici."
+    casser: "<red>✖ Tu ne peux pas casser ici."
+    poser: "<red>✖ Tu ne peux pas poser ici."
+    interagir: "<red>✖ Tu ne peux pas utiliser ça ici."
+    coffres: "<red>✖ Tu ne peux pas ouvrir ça ici."
+    entites: "<red>✖ Pas touche ici."
+    seaux: "<red>✖ Pas de seaux ici."
+    vehicules: "<red>✖ Tu ne peux pas casser ça ici."
+    pvp: "<red>⚔ Le PvP est désactivé ici."
+    feu: "<red>🔥 Pas de feu ici."
+    jeter: "<red>✖ Tu ne peux pas jeter d'objets ici."
+    perles: "<red>✖ Pas d'ender pearls ici."
+    chorus: "<red>✖ Pas de chorus ici."
+    elytres: "<red>✖ Pas d'élytres ici."
+    entrer: "<red>⛔ Tu ne peux pas entrer ici."
