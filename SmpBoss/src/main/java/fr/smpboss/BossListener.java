@@ -45,6 +45,8 @@ import org.bukkit.event.player.PlayerItemDamageEvent;
 import static fr.smpboss.SmpBoss.parse;
 
 final class BossListener implements Listener {
+    private final java.util.Map<java.util.UUID, Long> cheeseWarn = new java.util.HashMap<>();
+
 
     private final SmpBoss plugin;
     private final NamespacedKey spawnerKey;
@@ -117,6 +119,18 @@ final class BossListener implements Listener {
         }
         if (by == null || e.getDamage() <= 0) {
             e.setCancelled(true); // feu, chute, étouffement, lave, coups à 0... : rien (et ne compte pas comme combattant)
+            return;
+        }
+        // anti-cheese : on ne frappe le Roi que depuis la piste (pas du pont du portail, du muret, de dehors...)
+        Arena ar = plugin.arena();
+        if (ar != null && ar.defined() && plugin.getConfig().getBoolean("arena.protection.floor-only-damage", true)
+                && ar.contains(e.getEntity().getLocation()) && !ar.onFightFloor(by.getLocation())) {
+            e.setCancelled(true);
+            Long last = cheeseWarn.get(by.getUniqueId());
+            if (last == null || System.currentTimeMillis() - last > 2000) {
+                cheeseWarn.put(by.getUniqueId(), System.currentTimeMillis());
+                by.sendActionBar(SmpBoss.parse("<red>☠ Le Roi ne sent rien d'ici... <gold>descends dans l'arène</gold> pour le frapper."));
+            }
             return;
         }
         if (plugin.arena() != null) plugin.arena().unprotect(by);

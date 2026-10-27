@@ -203,6 +203,15 @@ public final class Arena {
         return dx * dx + dz * dz <= (double) (floorRadius + 1) * (floorRadius + 1);
     }
 
+    /** Sur la piste de combat elle-même (pas sur le muret, le pont du portail, les piliers...). */
+    public boolean onFightFloor(Location l) {
+        if (!defined || l == null || l.getWorld() == null || !l.getWorld().getName().equals(worldName)) return false;
+        if (l.getY() < cy - 4 || l.getY() > cy + 30) return false;
+        double dx = l.getX() - (cx + 0.5), dz = l.getZ() - (cz + 0.5);
+        double max = floorRadius + plugin.getConfig().getDouble("arena.protection.floor-margin", 0.5);
+        return dx * dx + dz * dz <= max * max;
+    }
+
     /** Point sûr sur le sol, du côté de la position donnée (sauvetage de la lave). */
     public Location safeSpot(Location from) {
         Location c = center();

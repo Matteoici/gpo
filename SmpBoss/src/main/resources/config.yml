@@ -163,6 +163,11 @@ arena:
     no-ender-pearl: true
     # lances (spear) inutilisables dans l'arène (pas de ruée / coups de lance)
     no-spear: true
+    # anti-cheese : les coups / flèches sur le Roi ne comptent que depuis la piste de combat
+    # (pas depuis le pont du portail, le muret, les piliers ou l'extérieur)
+    floor-only-damage: true
+    # marge en blocs autour du bord de la piste
+    floor-margin: 0.5
     blocked-effects: [jump_boost, levitation]
 
 # ---------------------------------------------------------------- Butin
