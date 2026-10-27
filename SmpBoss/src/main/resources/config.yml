@@ -259,20 +259,25 @@ weapons:
     length: 18
     levitation-seconds: 1.5
     levitation-level: 1
+  # ❂ PRESTIGE (0,001 % = 1 chance sur 100 000 par victoire)
   brise-terre:
-    chance: 0.5
-    # clic droit : bond puis onde de choc au sol
-    damage: 8
-    radius: 6
-    cooldown-seconds: 12
+    chance: 0.001
+    # hache : 18 de dégâts au corps à corps (netherite = 10)
+    attack-damage: 18
+    attack-speed: 1.1
+    # clic droit : bond puis onde de choc au sol (dégâts, projette, ralentit, affaiblit)
+    damage: 14
+    radius: 8
+    cooldown-seconds: 8
   arbalete-spectrale:
-    chance: 0.5
-    # le tir devient un crâne d'âmes qui suit l'ennemi le plus proche devant toi
-    damage: 8
-    range: 24
-    wither-seconds: 3
-    glow-seconds: 6
-    cooldown-seconds: 5
+    chance: 0.001
+    # le tir devient 3 crânes d'âmes qui poursuivent chacun un ennemi devant toi
+    skulls: 3
+    damage: 14
+    range: 32
+    wither-seconds: 4
+    glow-seconds: 8
+    cooldown-seconds: 3
 
 # ---------------------------------------------------------------- Reliques
 # health = cœurs en plus · speed = % de vitesse · regen = demi-cœurs toutes les 4 s hors combat (8 s sans dégâts)
@@ -609,17 +614,18 @@ messages:
         - "<gray>et ralentit tout ce qui est autour."
         - "<gray>Pas de dégâts de chute pendant le saut."
         - ""
+        - "<white>⚔ 18</white> <gray>au corps à corps"
         - "<white>💥 <damage> ❤</white> <gray>· rayon <white><radius></white> · <white>⏳ <cooldown> s"
         - "<dark_gray>Ne tombe pas à la mort."
     arbalete-spectrale:
       name: "Arbalète Spectrale"
       lore:
-        - "<gray>Le tir devient un <aqua>crâne d'âmes</aqua>"
-        - "<gray>qui <white>poursuit</white> l'ennemi le plus proche."
+        - "<gray>Le tir devient <aqua>3 crânes d'âmes</aqua>"
+        - "<gray>qui <white>poursuivent</white> chacun un ennemi."
         - "<gray>Il le flétrit et le fait <white>briller</white>"
         - "<gray>(impossible de se cacher)."
         - ""
-        - "<white>☠ <damage> ❤</white> <gray>· <white>⏳ <cooldown> s"
+        - "<white>☠ <damage> ❤</white> <gray>par crâne · <white>⏳ <cooldown> s"
         - "<dark_gray>Ne tombe pas à la mort."
     tranche-mace:
       name: "Tranche Mace"
