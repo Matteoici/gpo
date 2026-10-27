@@ -91,6 +91,11 @@ final class MarketListener implements Listener {
             plugin.texts().send(p, "claim.no-build");
             return;
         }
+        if (st.isRented() && st.canBuild(p.getUniqueId()) && !plugin.claims().buildable(st, e.getBlock())) {
+            e.setCancelled(true); // le sol et le bord de l'emplacement ne bougent pas
+            plugin.texts().send(p, "claim.v2.build-zone");
+            return;
+        }
         if (st.canBuild(p.getUniqueId())) {
             if (isShowcaseBlock(st, e.getBlock())) {
                 e.setCancelled(true);
@@ -122,6 +127,11 @@ final class MarketListener implements Listener {
         if (!plugin.settings().claimBuilding) {
             e.setCancelled(true);
             plugin.texts().send(p, "claim.no-build");
+            return;
+        }
+        if (st.isRented() && st.canBuild(p.getUniqueId()) && !plugin.claims().buildable(st, e.getBlock())) {
+            e.setCancelled(true);
+            plugin.texts().send(p, "claim.v2.build-zone");
             return;
         }
         if (st.canBuild(p.getUniqueId())) {

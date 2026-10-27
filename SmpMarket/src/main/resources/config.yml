@@ -16,8 +16,9 @@ claim:
   quit-delay-seconds: 0
   # marché rangé (joueur déconnecté) : ses objets restent achetables à distance (recherche / liste des boutiques)
   offline-buy: true
-  # construire sur les emplacements (non conseillé : le joueur suivant récupérerait les blocs)
-  allow-building: false
+  # construire sur son emplacement : la construction part avec le marché quand il est rangé,
+  # et réapparaît là où le joueur le réinstalle (seulement l'intérieur, au-dessus du sol)
+  building: true
 
 # ---------------------------------------------------------------- (ancien) Location des stands — plus utilisé
 lease:

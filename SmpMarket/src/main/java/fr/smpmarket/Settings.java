@@ -50,7 +50,8 @@ public final class Settings {
         leaveDistance = Math.max(4, c.getDouble("claim.leave-distance", 24));
         leaveGraceMs = Math.max(0, (long) (c.getDouble("claim.leave-grace-seconds", 45) * 1000));
         offlineGraceMs = Math.max(0, (long) (c.getDouble("claim.offline-grace-seconds", 60) * 1000));
-        claimBuilding = c.getBoolean("claim.allow-building", false);
+        // les constructions partent avec le marché : on peut construire sur son emplacement
+        claimBuilding = c.getBoolean("claim.building", true);
         quitDelayMs = Math.max(0, (long) (c.getDouble("claim.quit-delay-seconds", 0) * 1000));
         offlineBuy = c.getBoolean("claim.offline-buy", true);
         leaseMs = Math.max(1, (long) (c.getDouble("lease.days", 7) * 24 * H));

@@ -6,6 +6,7 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -56,6 +57,7 @@ public final class Claims {
         spot.paid = 0;
         if (m != null) {
             copyStyle(m, spot);
+            putBuild(spot, m.build); // sa construction réapparaît
             int ox = spot.region.minX(), oy = spot.region.minY(), oz = spot.region.minZ();
             for (Showcase c : m.showcases) {
                 if (c.virtual) {
@@ -105,6 +107,7 @@ public final class Claims {
         m.owner = owner;
         m.ownerName = spot.ownerName;
         copyStyle(spot, m);
+        m.build.addAll(takeBuild(spot, owner)); // sa construction part avec lui : l'emplacement redevient vide
         int ox = spot.region.minX(), oy = spot.region.minY(), oz = spot.region.minZ();
         for (Showcase c : spot.showcases) {
             if (c.virtual) {
@@ -202,7 +205,123 @@ public final class Claims {
             if (st.auction != null) plugin.auctions().cancel(st);
             if (st.isRented()) st.leaseEnd = Long.MAX_VALUE;
         }
+        // une seule fois : les vieux stands construits sur les emplacements LIBRES sont retirés
+        // (ceux des joueurs encore propriétaires partent avec eux quand leur marché se range)
+        if (!plugin.store().oldBuildsCleared) {
+            int n = 0;
+            for (Stall st : plugin.store().stalls()) {
+                if (st.isRented() || st.region == null || st.region.bukkitWorld() == null) continue;
+                if (!takeBuild(st, null).isEmpty()) n++;
+            }
+            plugin.store().oldBuildsCleared = true;
+            if (n > 0) plugin.getLogger().info(n + " ancien(s) stand(s) retiré(s) des emplacements libres.");
+        }
         plugin.store().markDirty();
+    }
+
+    // ================================================================= construction du marché
+
+    private static int margin(Stall st) {
+        return st.region.sizeX() > 3 && st.region.sizeZ() > 3 ? 1 : 0;
+    }
+
+    /** Peut-on construire ici ? Seulement à l'intérieur, au-dessus du sol (ce qui partira avec le marché). */
+    public boolean buildable(Stall st, org.bukkit.block.Block b) {
+        int m = margin(st);
+        return b.getX() >= st.region.minX() + m && b.getX() <= st.region.maxX() - m && b.getZ() >= st.region.minZ() + m
+                && b.getZ() <= st.region.maxZ() - m && b.getY() > floor(st) && b.getY() <= st.region.maxY();
+    }
+
+    /** Hauteur du sol de l'emplacement (couches pleines à au moins 60 % en partant du bas). */
+    int floor(Stall st) {
+        if (st.floorY != Integer.MIN_VALUE) return st.floorY;
+        org.bukkit.World w = st.region.bukkitWorld();
+        if (w == null) return st.region.minY();
+        int m = margin(st), f = st.region.minY() - 1;
+        for (int y = st.region.minY(); y <= st.region.maxY(); y++) {
+            int solid = 0, total = 0;
+            for (int x = st.region.minX() + m; x <= st.region.maxX() - m; x++) {
+                for (int z = st.region.minZ() + m; z <= st.region.maxZ() - m; z++) {
+                    total++;
+                    if (w.getBlockAt(x, y, z).getType().isSolid()) solid++;
+                }
+            }
+            if (total > 0 && solid >= total * 0.6) f = y;
+            else break;
+        }
+        st.floorY = f;
+        plugin.store().markDirty();
+        return f;
+    }
+
+    /**
+     * Retire tout ce qui est construit sur l'emplacement (au-dessus du sol, à l'intérieur) et le renvoie.
+     * Cadres / tableaux / porte-armures : leur contenu va dans le colis du propriétaire.
+     */
+    private List<String> takeBuild(Stall st, UUID owner) {
+        List<String> out = new java.util.ArrayList<>();
+        org.bukkit.World w = st.region.bukkitWorld();
+        if (w == null) return out;
+        int m = margin(st), f = floor(st);
+        int x0 = st.region.minX() + m, x1 = st.region.maxX() - m, z0 = st.region.minZ() + m, z1 = st.region.maxZ() - m;
+        int y1 = st.region.maxY();
+        if (f + 1 > y1 || x0 > x1 || z0 > z1) return out;
+        for (int cx = x0 >> 4; cx <= x1 >> 4; cx++) for (int cz = z0 >> 4; cz <= z1 >> 4; cz++) w.getChunkAt(cx, cz);
+        org.bukkit.util.BoundingBox bb = new org.bukkit.util.BoundingBox(x0, f + 1, z0, x1 + 1, y1 + 1, z1 + 1);
+        for (org.bukkit.entity.Entity e : w.getNearbyEntities(bb)) {
+            if (!e.getPersistentDataContainer().getKeys().isEmpty()) continue; // vitrines, mannequins... (plugins)
+            List<org.bukkit.inventory.ItemStack> give = new java.util.ArrayList<>();
+            if (e instanceof org.bukkit.entity.ItemFrame fr) {
+                give.add(fr.getItem());
+                give.add(new org.bukkit.inventory.ItemStack(fr instanceof org.bukkit.entity.GlowItemFrame ? org.bukkit.Material.GLOW_ITEM_FRAME : org.bukkit.Material.ITEM_FRAME));
+            } else if (e instanceof org.bukkit.entity.Painting) {
+                give.add(new org.bukkit.inventory.ItemStack(org.bukkit.Material.PAINTING));
+            } else if (e instanceof org.bukkit.entity.ArmorStand as) {
+                for (org.bukkit.inventory.ItemStack it : as.getEquipment().getArmorContents()) give.add(it);
+                give.add(as.getEquipment().getItemInMainHand());
+                give.add(as.getEquipment().getItemInOffHand());
+                give.add(new org.bukkit.inventory.ItemStack(org.bukkit.Material.ARMOR_STAND));
+            } else continue;
+            if (owner != null) for (org.bukkit.inventory.ItemStack it : give) plugin.store().addParcel(owner, it);
+            e.remove();
+        }
+        // de haut en bas : rien ne tombe ni ne se casse en route
+        for (int y = y1; y > f; y--) {
+            for (int x = x0; x <= x1; x++) {
+                for (int z = z0; z <= z1; z++) {
+                    org.bukkit.block.Block b = w.getBlockAt(x, y, z);
+                    if (b.getType().isAir()) continue;
+                    out.add((x - st.region.minX()) + "," + (y - st.region.minY()) + "," + (z - st.region.minZ()) + "|" + b.getBlockData().getAsString());
+                    b.setType(org.bukkit.Material.AIR, false);
+                }
+            }
+        }
+        java.util.Collections.reverse(out); // gardé de bas en haut pour le remettre dans l'ordre
+        return out;
+    }
+
+    /** Remet une construction sur un emplacement (de bas en haut, seulement dans l'intérieur et au-dessus du sol). */
+    private void putBuild(Stall st, List<String> build) {
+        org.bukkit.World w = st.region.bukkitWorld();
+        if (w == null || build.isEmpty()) return;
+        int m = margin(st), f = floor(st);
+        List<String> sorted = new java.util.ArrayList<>(build);
+        sorted.sort(java.util.Comparator.comparingInt(s -> Integer.parseInt(s.substring(0, s.indexOf('|')).split(",")[1])));
+        for (String s : sorted) {
+            try {
+                int bar = s.indexOf('|');
+                String[] p = s.substring(0, bar).split(",");
+                int x = st.region.minX() + Integer.parseInt(p[0]), y = st.region.minY() + Integer.parseInt(p[1]),
+                        z = st.region.minZ() + Integer.parseInt(p[2]);
+                if (x < st.region.minX() + m || x > st.region.maxX() - m || z < st.region.minZ() + m || z > st.region.maxZ() - m) continue;
+                if (y <= f || y > st.region.maxY()) continue;
+                org.bukkit.block.Block b = w.getBlockAt(x, y, z);
+                if (!b.getType().isAir()) continue;
+                b.setBlockData(org.bukkit.Bukkit.createBlockData(s.substring(bar + 1)), false);
+            } catch (RuntimeException ignored) {
+                // bloc d'une autre version : on passe
+            }
+        }
     }
 
     /** Emplacements libres. */

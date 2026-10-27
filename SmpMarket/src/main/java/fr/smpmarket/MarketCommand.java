@@ -339,6 +339,7 @@ public final class MarketCommand implements TabExecutor {
                     Cuboid r = st.region;
                     st.region = new Cuboid(r.world(), r.minX(), r.minY() + dy, r.minZ(), r.maxX(), r.maxY() + dy, r.maxZ());
                     st.ey += dy;
+                    if (st.floorY != Integer.MIN_VALUE) st.floorY += dy;
                     if (st.npcSpot != null) st.npcSpot[1] += dy;
                     List<Showcase> moved = new ArrayList<>();
                     for (Showcase c : st.showcases) {

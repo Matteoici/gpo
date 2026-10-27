@@ -30,6 +30,8 @@ public final class MarketStore {
     /** Ventes faites pendant l'absence du vendeur : [nombre, argent]. */
     private final Map<UUID, double[]> offlineSales = new HashMap<>();
     private boolean dirty;
+    /** les vieux stands (ancien système) ont été retirés des emplacements libres */
+    public boolean oldBuildsCleared;
 
     MarketStore(SmpMarket plugin) {
         this.plugin = plugin;
@@ -149,6 +151,7 @@ public final class MarketStore {
     public void save() {
         dirty = false;
         YamlConfiguration y = new YamlConfiguration();
+        y.set("old-builds-cleared", oldBuildsCleared);
         for (Stall s : stalls.values()) write(y, "stalls." + s.id + ".", s);
         for (Stall s : markets.values()) write(y, "markets." + s.owner + ".", s);
         try {
@@ -194,6 +197,8 @@ public final class MarketStore {
             y.set(b + "total-sold", s.totalSold);
             y.set(b + "total-revenue", s.totalRevenue);
             y.set(b + "last-change", s.lastChange);
+            if (s.floorY != Integer.MIN_VALUE) y.set(b + "floor-y", s.floorY);
+            if (!s.build.isEmpty()) y.set(b + "build", new ArrayList<>(s.build));
             y.set(b + "paid", s.paid);
             for (Showcase c : s.showcases) {
                 String cb = b + "showcases." + c.id + ".";
@@ -243,6 +248,7 @@ public final class MarketStore {
         notes.clear();
         offlineSales.clear();
         YamlConfiguration y = YamlConfiguration.loadConfiguration(stallsFile);
+        oldBuildsCleared = y.getBoolean("old-builds-cleared", false);
         ConfigurationSection root = y.getConfigurationSection("stalls");
         if (root != null) {
             for (String id : root.getKeys(false)) {
@@ -326,6 +332,8 @@ public final class MarketStore {
         s.totalSold = c.getLong("total-sold");
         s.totalRevenue = c.getDouble("total-revenue");
         s.lastChange = c.getLong("last-change", System.currentTimeMillis());
+        s.floorY = c.getInt("floor-y", Integer.MIN_VALUE);
+        s.build.addAll(c.getStringList("build"));
         s.paid = c.getDouble("paid", 0);
         ConfigurationSection sc = c.getConfigurationSection("showcases");
         if (sc != null) for (String k : sc.getKeys(false)) {

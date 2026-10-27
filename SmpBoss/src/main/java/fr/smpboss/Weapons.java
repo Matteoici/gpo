@@ -186,11 +186,17 @@ final class Weapons implements Listener {
 
     private void slash(Player p) {
         World w = p.getWorld();
-        Location start = p.getLocation().add(0, 1.0, 0);
-        Vector dir = start.getDirection().setY(0);
-        if (dir.lengthSquared() < 0.01) dir = new Vector(0, 0, 1);
-        dir.normalize();
-        Vector fwd = dir;
+        // la lame part exactement là où on vise (vers le sol, vers le ciel...)
+        Location start = p.getEyeLocation().add(0, -0.3, 0);
+        Vector fwd = start.getDirection().normalize();
+        // axe de la lame : la "verticale" perpendiculaire à la visée
+        Vector up = new Vector(0, 1, 0).subtract(fwd.clone().multiply(fwd.getY()));
+        if (up.lengthSquared() < 0.01) {
+            // visée droit vers le haut / le bas : la lame se met dans l'axe du regard horizontal
+            double yaw = Math.toRadians(p.getLocation().getYaw());
+            up = new Vector(-Math.sin(yaw), 0, Math.cos(yaw));
+        }
+        Vector axis = up.normalize();
         int steps = (int) cfg("tranche-mace.length", 18);
         double dmg = cfg("tranche-mace.damage", 6);
         int lev = (int) (cfg("tranche-mace.levitation-seconds", 1.5) * 20);
@@ -208,31 +214,42 @@ final class Weapons implements Listener {
                 return;
             }
             Location c = start.clone().add(fwd.clone().multiply(1.5 + i[0] * 1.1));
-            if (c.getBlock().getType().isSolid() && c.clone().add(0, 1, 0).getBlock().getType().isSolid()) {
-                w.spawnParticle(Particle.CRIT, c, 20, 0.3, 0.8, 0.3, 0.2, null, true);
+            if (c.getBlock().getType().isSolid()) {
+                // elle s'écrase sur le sol / le mur : fissure + éclats, et touche ce qui est juste là
+                w.spawnParticle(Particle.BLOCK, c, 40, 0.6, 0.3, 0.6, 0, c.getBlock().getBlockData(), true);
+                w.spawnParticle(Particle.SWEEP_ATTACK, c.clone().add(0, 0.5, 0), 3, 0.6, 0.2, 0.6, 0, null, true);
+                w.playSound(c, org.bukkit.Sound.ITEM_MACE_SMASH_GROUND, 1f, 1.3f);
+                for (Entity en : w.getNearbyEntities(c, 1.6, 1.6, 1.6)) touch(p, en, hit, dmg, lev, k);
                 task[0].cancel();
                 return;
             }
             // la lame : un croissant vertical de 4 blocs de haut
             for (double t = -1; t <= 1.0001; t += 0.1) {
-                Location pt = c.clone().add(0, t * 2.0, 0).add(fwd.clone().multiply(-0.7 * t * t));
+                Location pt = c.clone().add(axis.clone().multiply(t * 2.0)).add(fwd.clone().multiply(-0.7 * t * t));
                 w.spawnParticle(Particle.DUST, pt, 1, 0.02, 0.02, 0.02, 0, Math.abs(t) > 0.8 ? cyan : white, true);
                 if (i[0] % 2 == 0 && Math.abs(t) < 0.05) w.spawnParticle(Particle.SWEEP_ATTACK, pt, 1, 0, 0, 0, 0, null, true);
             }
-            if (i[0] % 3 == 0) w.spawnParticle(Particle.END_ROD, c, 4, 0.1, 1.2, 0.1, 0.01, null, true);
-            for (Entity en : w.getNearbyEntities(c, 1.0, 2.2, 1.0)) {
-                if (!(en instanceof LivingEntity le) || en.equals(p) || !hit.add(en.getUniqueId())) continue;
-                if (en instanceof Player t && (t.getGameMode() == org.bukkit.GameMode.SPECTATOR || t.getGameMode() == org.bukkit.GameMode.CREATIVE)) continue;
-                le.setNoDamageTicks(0);
-                le.damage(dmg, p);
-                if (k != null && k.isBoss(en)) continue;
-                le.setFallDistance(0); // un joueur qui tombait à la masse perd son élan
-                le.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, lev, (int) cfg("tranche-mace.levitation-level", 1) - 1, false, true, true));
-                w.spawnParticle(Particle.CLOUD, le.getLocation().add(0, 1, 0), 12, 0.3, 0.5, 0.3, 0.05, null, true);
-                w.playSound(le.getLocation(), org.bukkit.Sound.ENTITY_BREEZE_JUMP, 1f, 1.2f);
+            if (i[0] % 3 == 0) w.spawnParticle(Particle.END_ROD, c, 4, 0.3, 0.3, 0.3, 0.01, null, true);
+            // la lame touche tout ce qui est sur sa longueur (4 blocs)
+            for (double t = -1; t <= 1.0001; t += 0.5) {
+                Location pt = c.clone().add(axis.clone().multiply(t * 2.0));
+                for (Entity en : w.getNearbyEntities(pt, 0.9, 0.9, 0.9)) touch(p, en, hit, dmg, lev, k);
             }
             i[0]++;
         }, 0L, 1L);
+    }
+
+    private void touch(Player p, Entity en, Set<UUID> hit, double dmg, int lev, PumpkinKing k) {
+        if (!(en instanceof LivingEntity le) || en.equals(p) || !hit.add(en.getUniqueId())) return;
+        if (en instanceof Player t && (t.getGameMode() == org.bukkit.GameMode.SPECTATOR || t.getGameMode() == org.bukkit.GameMode.CREATIVE)) return;
+        le.setNoDamageTicks(0);
+        le.damage(dmg, p);
+        if (k != null && k.isBoss(en)) return;
+        le.setFallDistance(0); // un joueur qui tombait à la masse perd son élan
+        le.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, lev, (int) cfg("tranche-mace.levitation-level", 1) - 1, false, true, true));
+        World w = le.getWorld();
+        w.spawnParticle(Particle.CLOUD, le.getLocation().add(0, 1, 0), 12, 0.3, 0.5, 0.3, 0.05, null, true);
+        w.playSound(le.getLocation(), org.bukkit.Sound.ENTITY_BREEZE_JUMP, 1f, 1.2f);
     }
 
     // ================================================================= gardées à la mort

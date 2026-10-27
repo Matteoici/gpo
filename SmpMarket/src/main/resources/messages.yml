@@ -685,6 +685,7 @@ claim:
       - "<gradient:#ffd36b:#ff8a3d><b>🏪 Le marché</b></gradient>"
       - "<gray>Trouve un <green>emplacement libre</green>, fais <yellow>clic droit</yellow> sur son panneau : <white>ton marché apparaît</white>."
       - "<gray>Il reste ouvert <white>tant que tu es connecté</white>. Tu te déconnectes : il est <white>rangé</white> (rien n'est perdu) et l'emplacement se libère."
+      - "<gray>Ta <white>construction</white> part avec ton marché et réapparaît là où tu le réinstalles."
       - "<aqua>/marche</aqua> <dark_gray>- <gray>menu du marché"
       - "<aqua>/marche installer</aqua> <dark_gray>- <gray>installer ton marché sur l'emplacement où tu es"
       - "<aqua>/marche ranger</aqua> <dark_gray>- <gray>ranger ton marché"
@@ -697,6 +698,7 @@ claim:
     deployed: "<green>🏪 Ton marché <white><shop></white> est de retour !</green> <gray>(<white><count></white> article(s) en vente) · ouvert tant que tu es connecté."
     packed-quit: "<yellow>📦 Tu t'es déconnecté : ton marché <white><shop></white> a été rangé.</yellow> <gray>Réinstalle-le sur n'importe quel emplacement libre."
     owner-offline: "<gray>Le marché de <white><player></white> est fermé : il n'est pas connecté."
+    build-zone: "<red>Tu construis seulement à l'intérieur de ton emplacement, au-dessus du sol."
     gui-help:
       name: "<white><b>Comment ça marche ?"
       lore:

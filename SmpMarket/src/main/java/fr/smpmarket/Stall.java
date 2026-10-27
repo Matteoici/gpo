@@ -64,6 +64,10 @@ public final class Stall {
     public boolean tracksContainers;
 
     public long lastChange;                                // dernière modification par le locataire (ms)
+    /** Emplacement : hauteur du sol (tout ce qui est au-dessus, dans l'intérieur, appartient au marché posé dessus). */
+    public int floorY = Integer.MIN_VALUE;
+    /** Marché rangé : sa construction, "dx,dy,dz|blockdata" (relatif au coin de l'emplacement). */
+    public final List<String> build = new ArrayList<>();
     public double paid;                                    // ce qu'il a payé pour ce stand (remboursé s'il est inactif)
     public long totalSold;
     public double totalRevenue;
