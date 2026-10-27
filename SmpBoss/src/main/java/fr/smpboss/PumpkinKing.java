@@ -84,6 +84,7 @@ public final class PumpkinKing {
     private boolean enraged;
     /** Jugement Dernier : l'attaque ultime de la phase 3, une seule fois par combat */
     private boolean judgmentDone;
+    private boolean apocalypseDone;
     private final Map<UUID, Double> damage = new HashMap<>();
 
     private Mob boss;
@@ -522,6 +523,8 @@ public final class PumpkinKing {
             judgment();
         } else if (phase == 3 && !enraged && ratio <= cfg("enrage-at", 0.3)) {
             enrage();
+        } else if (phase == 3 && judgmentDone && !apocalypseDone && ratio <= cfg("apocalypse-at", 0.15)) {
+            apocalypse();
         }
         return true;
     }
@@ -2012,7 +2015,9 @@ public final class PumpkinKing {
         World w = base.getWorld();
         double radius = cfg("judgment-radius", 14);
         float size = (float) cfg("judgment-size", 16);
-        int lockAt = 60, impact = 180;
+        int lockAt = 60;
+        int travel = (int) cfg("judgment-travel-ticks", 50), drop = (int) cfg("judgment-fall-ticks", 40);
+        int impact = lockAt + travel + drop;
         invulnerable = impact + 60;
         boss.setAI(false);
         swing();
@@ -2242,15 +2247,15 @@ public final class PumpkinKing {
             Particle.DustOptions dark = new Particle.DustOptions(Color.fromRGB(60, 0, 0), 2.4f);
             repeat(1, fall, i -> {
                 double t = (i + 1) / (double) fall;
-                // la citrouille avance au-dessus de la cible puis s'écrase (accélère)
+                // la citrouille avance au-dessus de la cible, puis s'écrase en 2 s (accélère)
                 Location over = lock.clone().add(0, 30, 0);
                 Location pos;
-                if (t < 0.45) {
-                    double u = t / 0.45;
+                if (i < travel) {
+                    double u = (i + 1) / (double) travel;
                     pos = orb.clone().add(over.clone().subtract(orb).toVector().multiply(u * u * (3 - 2 * u)));
                     pos.add(0, Math.sin(Math.PI * u) * 8, 0);
                 } else {
-                    double u = (t - 0.45) / 0.55;
+                    double u = (i - travel + 1) / (double) drop;
                     pos = over.clone().add(0, -(30 - size / 2.0) * u * u, 0);
                 }
                 pos.setYaw(i * 6f);
@@ -2278,7 +2283,7 @@ public final class PumpkinKing {
                 if (i % 10 == 0) sound(pos, "entity.blaze.burn", 5f, 0.4f);
                 if (i == fall - 12) sound(lock, "entity.ender_dragon.flap", 6f, 0.5f);
                 // rayons de visée rouges vers le bord du cercle
-                if (t < 0.5 && i % 2 == 0) {
+                if (i < travel && i % 2 == 0) {
                     Particle.DustOptions laser = new Particle.DustOptions(Color.fromRGB(255, 0, 0), 1.2f);
                     for (int k = 0; k < 6; k++) {
                         double a = Math.PI * 2 * k / 6 + i * 0.03;
@@ -2459,6 +2464,391 @@ public final class PumpkinKing {
                 double force = Math.max(0.6, 2.2 - (d - radius) * 0.07);
                 p.setVelocity(kb.normalize().multiply(force).setY(0.9));
                 if (d <= radius + 8) hit(p, cfg("damage.judgment-blast", 4) * mult());
+            }
+        }
+    }
+
+    // ================================================================= APOCALYPSE (2e méga attaque)
+
+    private BlockDisplay prop(Location l, Material m, float size, Quaternionf rot, Color glow, float view) {
+        BlockDisplay d = l.getWorld().spawn(l, BlockDisplay.class, e -> {
+            e.setPersistent(false);
+            e.getPersistentDataContainer().set(bossKey, PersistentDataType.BYTE, (byte) 4);
+            e.setBlock(m.createBlockData());
+            e.setBrightness(new Display.Brightness(15, 15));
+            if (glow != null) {
+                e.setGlowing(true);
+                e.setGlowColorOverride(glow);
+            }
+            e.setTeleportDuration(1);
+            e.setViewRange(view);
+            e.setTransformation(centered(size, rot));
+        });
+        props.add(d);
+        return d;
+    }
+
+    /**
+     * APOCALYPSE (phase 3, une seule fois, après le Jugement Dernier, sous 15 % de vie).
+     * Le Roi s'élève et fait naître une ÉCLIPSE noire au-dessus de l'arène.
+     * 1) Pluie de météores : 4 vagues de citrouilles en feu sur chaque joueur (esquivables).
+     * 2) L'éclipse descend : TOUTE l'arène va exploser. Un seul abri, un cercle d'âmes qui rétrécit :
+     *    dedans on survit (blessé), dehors c'est la mort instantanée, même sur le pont ou le muret.
+     */
+    private void apocalypse() {
+        apocalypseDone = true;
+        Location base = ground(altar.clone().add(0.5, 0, 0.5));
+        World w = base.getWorld();
+        double arena = cfg("arena-radius", 18);
+        int waves = (int) cfg("apocalypse-meteor-waves", 4), waveGap = 35, meteorFall = 30;
+        int phaseB = 40 + waves * waveGap + 10;
+        int countdown = (int) cfg("apocalypse-countdown-ticks", 120);
+        int boom = phaseB + countdown;
+        invulnerable = boom + 70;
+        boss.setAI(false);
+        swing();
+        announce("apocalypse");
+        sound(base, "entity.wither.spawn", 8f, 0.3f);
+        sound(base, "event.raid.horn", 8f, 0.5f);
+        sound(base, "entity.ender_dragon.growl", 8f, 0.3f);
+        String word = "APOCALYPSE";
+        repeat(3, word.length() + 1, i -> {
+            String shown = word.substring(0, Math.min(word.length(), i + 1));
+            for (Player p : nearby(base, 90)) {
+                p.showTitle(Title.title(parse("<black><b>☠</b></black> <gradient:#2b0000:#ff1e00:#2b0000><b>" + shown + "</b></gradient> <black><b>☠"),
+                        parse(i >= word.length() ? plugin.msg("boss.subtitle-apocalypse") : ""),
+                        Title.Times.times(java.time.Duration.ZERO, java.time.Duration.ofMillis(i >= word.length() ? 3000 : 500),
+                                java.time.Duration.ofMillis(600))));
+                if (i < word.length()) p.playSound(p.getLocation(), org.bukkit.Sound.BLOCK_ANVIL_LAND, 0.6f, 0.4f + i * 0.05f);
+            }
+        }, null);
+        for (Player p : nearby(base, 90)) p.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, boom + 40, 0, false, false, false));
+        // le Roi s'élève, très haut
+        Location start = boss.getLocation().clone();
+        Location high = base.clone().add(0, 13, 0);
+        high.setYaw(start.getYaw());
+        repeat(1, 40, i -> {
+            if (boss == null || !boss.isValid()) return;
+            double t = (i + 1) / 40.0;
+            Location l = start.clone().add(high.clone().subtract(start).toVector().multiply(t * t * (3 - 2 * t)));
+            l.setYaw(start.getYaw() + i * 9);
+            boss.teleport(l);
+            for (int k = 0; k < 3; k++) {
+                double a = i * 0.5 + Math.PI * 2 * k / 3;
+                w.spawnParticle(Particle.SOUL_FIRE_FLAME, l.clone().add(Math.cos(a) * 2.5, 0.5, Math.sin(a) * 2.5), 3, 0.1, 0.1, 0.1, 0.01, null, true);
+            }
+        }, null);
+        // ---- l'éclipse : une sphère noire bordée de rouge, couronne de feu
+        float size = (float) cfg("apocalypse-eclipse-size", 14);
+        Location[] sky = {base.clone().add(0, 34, 0)};
+        Quaternionf[] rots = {new Quaternionf(), new Quaternionf().rotateY((float) Math.PI / 4), new Quaternionf().rotateX((float) Math.PI / 4),
+                new Quaternionf().rotateZ((float) Math.PI / 4)};
+        List<BlockDisplay> eclipse = new ArrayList<>();
+        for (int k = 0; k < rots.length; k++) {
+            BlockDisplay d = prop(sky[0], Material.BLACK_CONCRETE, 0.2f, rots[k], k == 0 ? Color.fromRGB(0xff1e00) : null, 16f);
+            eclipse.add(d);
+            int kk = k;
+            later(2, () -> {
+                if (!d.isValid()) return;
+                d.setInterpolationDelay(0);
+                d.setInterpolationDuration(40);
+                d.setTransformation(centered(size * (kk == 0 ? 1f : 0.98f), rots[kk]));
+            });
+        }
+        BlockDisplay core = prop(sky[0], Material.SHROOMLIGHT, 0.2f, new Quaternionf(), Color.fromRGB(0xff6a00), 16f);
+        later(30, () -> {
+            if (!core.isValid()) return;
+            core.setInterpolationDelay(0);
+            core.setInterpolationDuration(boom - 30);
+            core.setTransformation(centered(size * 0.55f, new Quaternionf().rotateY(2f)));
+        });
+        eclipse.add(core);
+        later(12, () -> {
+            for (Player p : nearby(base, 60)) {
+                try {
+                    p.lookAt(sky[0].getX(), sky[0].getY(), sky[0].getZ(), io.papermc.paper.entity.LookAnchor.EYES);
+                } catch (RuntimeException ignored) {
+                }
+            }
+            sound(sky[0], "block.end_portal.spawn", 8f, 0.4f);
+            sound(sky[0], "entity.warden.sonic_boom", 8f, 0.5f);
+        });
+        Particle.DustOptions corona = new Particle.DustOptions(Color.fromRGB(255, 40, 0), 2.6f);
+        Particle.DustOptions corona2 = new Particle.DustOptions(Color.fromRGB(255, 160, 0), 1.8f);
+        repeat(1, boom, i -> {
+            Location c = sky[0];
+            double grow = Math.min(1, i / 40.0);
+            double rr = size * 0.85 * grow + 1;
+            if (i % 2 == 0) {
+                int pts = 70;
+                for (int k = 0; k < pts; k++) {
+                    double a = Math.PI * 2 * k / pts + i * 0.03;
+                    double wob = 1 + 0.12 * Math.sin(a * 7 + i * 0.4);
+                    w.spawnParticle(Particle.DUST, c.clone().add(Math.cos(a) * rr * wob, Math.sin(a * 3 + i * 0.1) * 0.8, Math.sin(a) * rr * wob), 1, 0, 0, 0, 0,
+                            k % 2 == 0 ? corona : corona2, true);
+                }
+                // jets de feu qui s'échappent de la couronne
+                for (int k = 0; k < 6; k++) {
+                    double a = ThreadLocalRandom.current().nextDouble(Math.PI * 2);
+                    Location l = c.clone().add(Math.cos(a) * rr, 0, Math.sin(a) * rr);
+                    w.spawnParticle(Particle.FLAME, l, 0, Math.cos(a), ThreadLocalRandom.current().nextDouble(-0.3, 0.3), Math.sin(a), 0.25, null, true);
+                }
+            }
+            // les âmes de l'arène sont aspirées vers l'éclipse
+            if (i % 3 == 0) {
+                for (int k = 0; k < 8; k++) {
+                    double a = ThreadLocalRandom.current().nextDouble(Math.PI * 2), r0 = Math.sqrt(ThreadLocalRandom.current().nextDouble()) * arena;
+                    Location src = base.clone().add(Math.cos(a) * r0, 0.3, Math.sin(a) * r0);
+                    Vector v = c.toVector().subtract(src.toVector());
+                    w.spawnParticle(Particle.SOUL, src, 0, v.getX(), v.getY(), v.getZ(), 0.05, null, true);
+                }
+            }
+            // rayon d'âmes du Roi vers l'éclipse
+            if (i % 2 == 0 && boss != null && boss.isValid()) {
+                Location from = boss.getLocation().add(0, scale * 1.8, 0);
+                Vector beam = c.toVector().subtract(from.toVector());
+                double len = beam.length();
+                beam.normalize();
+                for (double t = 0; t < len - size * 0.4; t += 0.7) {
+                    w.spawnParticle(Particle.SOUL_FIRE_FLAME, from.clone().add(beam.clone().multiply(t)), 1, 0.1, 0.1, 0.1, 0, null, true);
+                }
+            }
+            if (i % 30 == 0) sound(c, "entity.warden.heartbeat", 8f, 0.4f + i * 0.004f);
+            if (i % 25 == 0) w.strikeLightningEffect(ground(base.clone().add(ThreadLocalRandom.current().nextDouble(-arena, arena), 0,
+                    ThreadLocalRandom.current().nextDouble(-arena, arena))));
+        }, null);
+        // ---- 1) pluie de météores
+        double mr = cfg("apocalypse-meteor-radius", 4);
+        for (int wave = 0; wave < waves; wave++) {
+            later(40 + wave * waveGap, () -> {
+                List<Location> spots = new ArrayList<>();
+                for (Player p : nearby(base, arena + 8)) {
+                    Vector lead = p.getVelocity().setY(0).multiply(6);
+                    spots.add(ground(keepIn(p.getLocation().add(lead), arena - 1)));
+                }
+                for (int k = 0; k < 2; k++) {
+                    double a = ThreadLocalRandom.current().nextDouble(Math.PI * 2), r0 = Math.sqrt(ThreadLocalRandom.current().nextDouble()) * (arena - 2);
+                    spots.add(ground(base.clone().add(Math.cos(a) * r0, 0, Math.sin(a) * r0)));
+                }
+                sound(sky[0], "entity.blaze.shoot", 6f, 0.4f);
+                sound(sky[0], "entity.ghast.shoot", 6f, 0.5f);
+                for (Location tl : spots) meteor(sky[0].clone(), tl, mr, meteorFall);
+            });
+        }
+        // ---- 2) le cœur de l'éclipse : un seul abri
+        Location[] shelter = new Location[1];
+        double shR0 = cfg("apocalypse-shelter-start-radius", 6.5), shR1 = cfg("apocalypse-shelter-radius", 4);
+        later(phaseB, () -> {
+            double a = ThreadLocalRandom.current().nextDouble(Math.PI * 2);
+            shelter[0] = ground(base.clone().add(Math.cos(a) * arena * 0.55, 0, Math.sin(a) * arena * 0.55));
+            announce("apocalypse-2");
+            sound(base, "block.beacon.activate", 8f, 0.5f);
+            sound(base, "entity.elder_guardian.curse", 8f, 0.4f);
+            for (Player p : nearby(base, 90)) {
+                p.showTitle(Title.title(parse(plugin.msg("boss.title-apocalypse-2")), parse(plugin.msg("boss.subtitle-apocalypse-2")),
+                        Title.Times.times(java.time.Duration.ofMillis(100), java.time.Duration.ofMillis(2200), java.time.Duration.ofMillis(400))));
+            }
+        });
+        Particle.DustOptions safe = new Particle.DustOptions(Color.fromRGB(80, 255, 200), 1.6f);
+        Particle.DustOptions doom = new Particle.DustOptions(Color.fromRGB(150, 0, 0), 2.2f);
+        Location skyStart = sky[0].clone();
+        repeat(1, countdown, i -> {
+            if (shelter[0] == null) return;
+            double t = (i + 1) / (double) countdown;
+            // l'éclipse descend sur l'arène
+            sky[0] = skyStart.clone().add(0, -20 * t * t, 0);
+            for (BlockDisplay d : eclipse) if (d.isValid()) d.teleport(sky[0]);
+            double sr = shR0 + (shR1 - shR0) * t;
+            Location s = shelter[0];
+            // l'abri : cercle d'âmes + colonne de lumière
+            int pts = (int) (sr * 10);
+            for (int k = 0; k < pts; k++) {
+                double a = Math.PI * 2 * k / pts + i * 0.05;
+                w.spawnParticle(Particle.DUST, s.clone().add(Math.cos(a) * sr, 0.2, Math.sin(a) * sr), 1, 0, 0, 0, 0, safe, true);
+                if (k % 4 == 0) w.spawnParticle(Particle.SOUL_FIRE_FLAME, s.clone().add(Math.cos(a) * sr, 0.3, Math.sin(a) * sr), 1, 0, 0.05, 0, 0.01, null, true);
+            }
+            if (i % 2 == 0) {
+                for (double y = 0; y < 26; y += 0.8) {
+                    w.spawnParticle(Particle.END_ROD, s.clone().add(Math.cos(y + i * 0.3) * 0.6, y, Math.sin(y + i * 0.3) * 0.6), 1, 0, 0, 0, 0, null, true);
+                }
+            }
+            // tout le reste de l'arène rougeoie : ça va sauter
+            if (i % 2 == 0) {
+                for (int k = 0; k < 140; k++) {
+                    double a = ThreadLocalRandom.current().nextDouble(Math.PI * 2), rr = Math.sqrt(ThreadLocalRandom.current().nextDouble()) * (arena + 3);
+                    Location l = base.clone().add(Math.cos(a) * rr, 0.15, Math.sin(a) * rr);
+                    if (horizontalDist(l, s) <= sr) continue;
+                    w.spawnParticle(Particle.DUST, l, 1, 0, 0, 0, 0, doom, true);
+                    if (k % 12 == 0) w.spawnParticle(Particle.FLAME, l, 1, 0, 0.2, 0, 0.02, null, true);
+                }
+            }
+            if (i % 20 == 0) {
+                int left = (countdown - i) / 20 + 1;
+                for (Player p : nearby(base, arena + 20)) {
+                    boolean in = horizontalDist(p.getLocation(), s) <= sr;
+                    p.sendActionBar(parse(plugin.msg(in ? "boss.apocalypse-inside" : "boss.apocalypse-outside").replace("<seconds>", String.valueOf(left))));
+                    p.playSound(p.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_BELL, 2f, in ? 1.5f : 0.5f + 0.1f * (6 - left));
+                }
+                sound(base, "entity.warden.heartbeat", 8f, 0.6f + 0.1f * i / 20f);
+            }
+            if (i == countdown - 8) {
+                for (Player p : nearby(base, 90)) {
+                    p.stopAllSounds();
+                    p.playSound(p.getLocation(), org.bukkit.Sound.BLOCK_BEACON_DEACTIVATE, 2f, 0.4f);
+                }
+            }
+        }, null);
+        // ---- détonation
+        later(boom, () -> {
+            Location s = shelter[0] == null ? base : shelter[0];
+            apocalypseImpact(base, s, shR1, arena, sky[0], eclipse);
+        });
+        // le Roi redescend
+        later(boom + 55, () -> {
+            if (boss == null || !boss.isValid()) return;
+            Location from = boss.getLocation().clone();
+            Location down = base.clone();
+            down.setYaw(from.getYaw());
+            repeat(1, 12, i -> {
+                if (boss == null || !boss.isValid()) return;
+                double t = (i + 1) / 12.0;
+                boss.teleport(from.clone().add(down.clone().subtract(from).toVector().multiply(t * t)));
+            }, () -> {
+                shockwave(down, 10, 1.4, 0);
+                invulnerable = 0;
+                if (boss != null && boss.isValid() && !ended) boss.setAI(true);
+                nextAttack = 40;
+            });
+        });
+    }
+
+    /** Une citrouille en feu tombe de l'éclipse sur un point, cercle d'avertissement pendant sa chute. */
+    private void meteor(Location from, Location to, double r, int fall) {
+        World w = to.getWorld();
+        ring(to, r, Color.fromRGB(255, 60, 0), fall);
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        BlockDisplay m = prop(from, rnd.nextBoolean() ? Material.JACK_O_LANTERN : Material.MAGMA_BLOCK, (float) rnd.nextDouble(2.4, 3.4),
+                new Quaternionf().rotateXYZ(rnd.nextFloat() * 3, rnd.nextFloat() * 3, rnd.nextFloat() * 3), Color.fromRGB(0xff5a00), 10f);
+        repeat(1, fall, i -> {
+            double t = (i + 1) / (double) fall;
+            Location l = from.clone().add(to.clone().add(0, 1, 0).subtract(from).toVector().multiply(t * t));
+            l.setYaw(i * 20f);
+            m.teleport(l);
+            w.spawnParticle(Particle.FLAME, l, 12, 0.8, 0.8, 0.8, 0.04, null, true);
+            w.spawnParticle(Particle.LARGE_SMOKE, l, 4, 0.6, 0.6, 0.6, 0.02, null, true);
+            if (i % 3 == 0) w.spawnParticle(Particle.LAVA, l, 2, 0.5, 0.5, 0.5, 0, null, true);
+            if (i == fall - 8) sound(to, "entity.ender_dragon.flap", 3f, 0.6f);
+        }, () -> {
+            m.remove();
+            props.remove(m);
+            sound(to, "entity.generic.explode", 4f, 0.5f);
+            sound(to, "entity.dragon_fireball.explode", 3f, 0.6f);
+            w.spawnParticle(Particle.EXPLOSION_EMITTER, to.clone().add(0, 1, 0), 1, 0, 0, 0, 0, null, true);
+            w.spawnParticle(Particle.EXPLOSION, to.clone().add(0, 1, 0), 10, r * 0.4, 0.5, r * 0.4, 0, null, true);
+            w.spawnParticle(Particle.FLAME, to.clone().add(0, 0.5, 0), 80, r * 0.4, 0.3, r * 0.4, 0.15, null, true);
+            w.spawnParticle(Particle.BLOCK, to.clone().add(0, 0.5, 0), 60, r * 0.3, 0.3, r * 0.3, 0, Material.PUMPKIN.createBlockData(), true);
+            // cratère qui brûle un instant
+            repeat(4, 10, i -> w.spawnParticle(Particle.SMALL_FLAME, to.clone().add(0, 0.2, 0), 10, r * 0.4, 0.05, r * 0.4, 0.01, null, true), null);
+            for (Player p : nearby(to, r + 3)) {
+                double d = horizontalDist(p.getLocation(), to);
+                Vector kb = p.getLocation().toVector().subtract(to.toVector()).setY(0);
+                if (kb.lengthSquared() < 0.01) kb = new Vector(0.1, 0, 0);
+                if (d <= r) {
+                    hit(p, cfg("damage.apocalypse-meteor", 6) * mult());
+                    p.setFireTicks(80);
+                    p.setVelocity(kb.normalize().multiply(1.2).setY(0.8));
+                } else {
+                    p.setVelocity(kb.normalize().multiply(0.6).setY(0.4));
+                }
+            }
+        });
+    }
+
+    private void apocalypseImpact(Location base, Location shelter, double shelterR, double arena, Location sky, List<BlockDisplay> eclipse) {
+        World w = base.getWorld();
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        // l'éclipse se contracte... puis éclate
+        for (BlockDisplay d : eclipse) {
+            if (!d.isValid()) continue;
+            d.setInterpolationDelay(0);
+            d.setInterpolationDuration(4);
+            d.setTransformation(centered(0.5f, new Quaternionf()));
+        }
+        later(5, () -> {
+            for (BlockDisplay d : eclipse) {
+                d.remove();
+                props.remove(d);
+            }
+            debris(sky, 30);
+            w.spawnParticle(Particle.EXPLOSION_EMITTER, sky, 10, 4, 4, 4, 0, null, true);
+            w.spawnParticle(Particle.SONIC_BOOM, sky, 12, 3, 3, 3, 0, null, true);
+        });
+        sound(base, "entity.ender_dragon.death", 8f, 0.5f);
+        sound(base, "entity.wither.death", 8f, 0.4f);
+        sound(base, "entity.warden.sonic_boom", 8f, 0.4f);
+        sound(base, "entity.lightning_bolt.thunder", 8f, 0.5f);
+        for (int k = 1; k <= 4; k++) later(k * 4, () -> sound(base, "entity.generic.explode", 8f, 0.4f + rnd.nextFloat() * 0.3f));
+        net.kyori.adventure.text.Component flash = parse("<white>████████████████████████████");
+        for (Player p : nearby(base, 90)) {
+            p.showTitle(Title.title(flash, parse("<red>██████████████████████████████████████"),
+                    Title.Times.times(java.time.Duration.ZERO, java.time.Duration.ofMillis(250), java.time.Duration.ofMillis(900))));
+        }
+        // une colonne de feu infernal tombe du ciel au centre
+        repeat(1, 20, i -> {
+            for (double y = 0; y < 40; y += 1) {
+                double sw = 1.5 + (40 - y) * 0.05;
+                w.spawnParticle(i % 2 == 0 ? Particle.SOUL_FIRE_FLAME : Particle.FLAME, base.clone().add(0, y, 0), 3, sw, 0.4, sw, 0.05, null, true);
+            }
+        }, null);
+        // l'arène entière explose, en anneaux depuis le centre ; l'abri reste intact
+        int rings = (int) ((arena + 6) / 2.5);
+        for (int n = 0; n <= rings; n++) {
+            double rr = n * 2.5;
+            later(n, () -> {
+                int pts = (int) Math.max(1, rr * 0.9);
+                for (int k = 0; k < pts; k++) {
+                    double a = Math.PI * 2 * k / pts + rr;
+                    Location l = base.clone().add(Math.cos(a) * rr, 0.8, Math.sin(a) * rr);
+                    if (horizontalDist(l, shelter) <= shelterR + 0.5) continue;
+                    w.spawnParticle(Particle.EXPLOSION_EMITTER, l, 1, 0, 0, 0, 0, null, true);
+                    w.spawnParticle(Particle.FLAME, l, 10, 1, 0.6, 1, 0.12, null, true);
+                }
+                shake(base, 90);
+            });
+        }
+        // le sol de l'arène brûle, cendres qui retombent
+        Particle.DustOptions ember = new Particle.DustOptions(Color.fromRGB(255, 70, 0), 1.2f);
+        repeat(3, 40, i -> {
+            for (int k = 0; k < 60; k++) {
+                double a = rnd.nextDouble(Math.PI * 2), rr = Math.sqrt(rnd.nextDouble()) * (arena + 4);
+                Location l = base.clone().add(Math.cos(a) * rr, 0.2, Math.sin(a) * rr);
+                if (horizontalDist(l, shelter) <= shelterR) continue;
+                w.spawnParticle(k % 3 == 0 ? Particle.FLAME : Particle.SMALL_FLAME, l, 1, 0.2, 0.1, 0.2, 0.01, null, true);
+                Location up = base.clone().add(Math.cos(a) * rr, 4 + rnd.nextDouble(16), Math.sin(a) * rr);
+                if (k % 2 == 0) w.spawnParticle(k % 4 == 0 ? Particle.DUST : Particle.ASH, up, 1, 0, -0.05, 0, 0, k % 4 == 0 ? ember : null, true);
+            }
+            if (i % 8 == 0) w.spawnParticle(Particle.LAVA, base, 30, arena * 0.5, 0.3, arena * 0.5, 0, null, true);
+        }, null);
+        // l'abri résonne
+        repeat(2, 20, i -> w.spawnParticle(Particle.SOUL, shelter.clone().add(0, 0.5, 0), 6, shelterR * 0.5, 0.3, shelterR * 0.5, 0.03, null, true), null);
+        for (Player p : nearby(base, 90)) {
+            p.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, 100, 0, false, false, false));
+            p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 40, 2, false, false, false));
+        }
+        // dehors : mort instantanée (même sur le pont ou le muret) ; dans l'abri : on survit, blessé
+        for (Player p : nearby(base, arena + 16)) {
+            if (Math.abs(p.getLocation().getY() - base.getY()) > 25) continue;
+            if (plugin.arena() != null && plugin.arena().isProtected(p)) continue;
+            if (horizontalDist(p.getLocation(), shelter) <= shelterR + 0.4) {
+                hit(p, cfg("damage.apocalypse-shelter", 4) * mult());
+                Vector kb = p.getLocation().toVector().subtract(shelter.toVector()).setY(0);
+                p.setVelocity((kb.lengthSquared() < 0.01 ? new Vector(0, 0, 0) : kb.normalize().multiply(0.3)).setY(0.5));
+            } else {
+                p.setNoDamageTicks(0);
+                p.damage(100000, org.bukkit.damage.DamageSource.builder(org.bukkit.damage.DamageType.GENERIC_KILL)
+                        .withCausingEntity(boss).withDirectEntity(boss).build());
+                if (!p.isDead()) p.setHealth(0);
+                Bukkit.broadcast(parse(plugin.msg("boss.apocalypse-kill").replace("<player>", SmpBoss.MM.escapeTags(p.getName()))));
             }
         }
     }

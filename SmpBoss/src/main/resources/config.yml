@@ -94,6 +94,9 @@ boss:
     armor-pierce-phase-3: 0.3
     # Jugement Dernier : ceux qui sont juste à côté du cercle (projetés)
     judgment-blast: 4
+    # Apocalypse : un météore ; ceux qui survivent dans l'abri
+    apocalypse-meteor: 6
+    apocalypse-shelter: 4
   # phase 2 quand il lui reste 70 % de vie ; à 0 il fait le mort puis revient en phase 3 (voir phase-3-health-multiplier)
   # usure de l'armure pendant le combat (0.25 = 4 fois moins vite que d'habitude)
   armor-wear: 0.25
@@ -113,6 +116,19 @@ boss:
   judgment-at: 0.55
   judgment-radius: 14
   judgment-size: 16
+  # citrouille du Jugement : temps pour se placer au-dessus de la cible, puis temps de chute (20 ticks = 1 s)
+  judgment-travel-ticks: 50
+  judgment-fall-ticks: 40
+  # APOCALYPSE (phase 3, une seule fois, après le Jugement) : sous X de vie de la phase 3
+  # 1) vagues de météores sur chaque joueur  2) toute l'arène explose sauf UN abri (cercle d'âmes qui rétrécit)
+  apocalypse-at: 0.15
+  apocalypse-meteor-waves: 4
+  apocalypse-meteor-radius: 4
+  # temps pour rejoindre l'abri (ticks) ; rayon de l'abri au début et à la fin
+  apocalypse-countdown-ticks: 120
+  apocalypse-shelter-start-radius: 6.5
+  apocalypse-shelter-radius: 4
+  apocalypse-eclipse-size: 14
   # Gardes du Roi : tant qu'il en reste un, le Roi ne prend que X des dégâts (0.3 = 30 %)
   guard-shield: 0.3
   guard-health: 40
@@ -467,6 +483,8 @@ messages:
       vortex: "<dark_purple>🌀 <b>Vortex</b> <gray>· résiste à l'aspiration"
       seed-rain: "<gold>☄ <b>Pluie de graines</b> <gray>· évite les cercles"
       judgment: "<dark_red>☠ <b>JUGEMENT DERNIER</b> <gray>· sors du cercle rouge ou meurs"
+      apocalypse: "<black>☠</black> <dark_red><b>APOCALYPSE</b> <gray>· esquive les météores"
+      apocalypse-2: "<dark_red><b>☠ TOUTE L'ARÈNE VA EXPLOSER</b> <gray>· rejoins le <aqua><b>cercle d'âmes</b></aqua> !"
     new-fighter: "<gold>⚔ <white><player></white> rejoint le combat <dark_gray>· <gray>le Roi gagne <red>+<hp> ❤"
     not-enough: "<gray>Tu n'as fait que <white><percent>%</white> des dégâts <dark_gray>(il faut <min>%)</dark_gray><gray> : pas de butin cette fois."
     bar-hp: " <dark_gray>| <white><hp></white><gray>/<max> <red>❤"
@@ -481,6 +499,12 @@ messages:
     judgment-inside: "<dark_red><b>☠ SORS DU CERCLE ROUGE ☠</b> <red><seconds>..."
     judgment-outside: "<gold>Tu es hors du cercle <gray>· reste loin ! <white><seconds>..."
     judgment-kill: "<dark_red>☠ <white><player></white> <red>a été écrasé par la Citrouille du Jugement Dernier."
+    subtitle-apocalypse: "<red>L'éclipse dévore la nuit..."
+    title-apocalypse-2: "<aqua><b>⬤ REJOINS L'ABRI ⬤"
+    subtitle-apocalypse-2: "<gray>Le <aqua>cercle d'âmes</aqua> est le seul endroit sûr"
+    apocalypse-inside: "<aqua><b>✔ Reste dans le cercle d'âmes</b> <white><seconds>..."
+    apocalypse-outside: "<dark_red><b>☠ COURS AU CERCLE D'ÂMES ☠</b> <red><seconds>..."
+    apocalypse-kill: "<dark_red>☠ <white><player></white> <red>a été englouti par l'Apocalypse."
     title-enrage: "<dark_red><b>ENRAGÉ"
     subtitle-enrage: "<red>Le Roi perd la raison... tenez bon !"
   guild-top:
