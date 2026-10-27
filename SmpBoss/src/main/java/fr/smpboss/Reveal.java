@@ -44,6 +44,7 @@ final class Reveal {
             case EPIC -> Color.fromRGB(0xb45cff);
             case LEGENDARY -> Color.fromRGB(0xffd36b);
             case SECRET -> Color.WHITE;
+            case PRESTIGE -> Color.fromRGB(0xffd700);
             default -> Color.fromRGB(0xdddddd);
         };
     }
@@ -133,12 +134,20 @@ final class Reveal {
                 else if (Particle.FLASH.getDataType() == Void.class) w.spawnParticle(Particle.FLASH, l, 1, 0, 0, 0, 0, null, true);
                 w.spawnParticle(Particle.END_ROD, l, 40, 0.1, 0.1, 0.1, 0.18, null, true);
                 w.spawnParticle(Particle.DUST, l, 60, 0.7, 0.7, 0.7, 0, new Particle.DustOptions(col, 1.6f), true);
+                if (rarity == Rarity.PRESTIGE) {
+                    w.spawnParticle(Particle.TOTEM_OF_UNDYING, l, 250, 0.6, 0.6, 0.6, 0.9, null, true);
+                    w.spawnParticle(Particle.FLAME, l, 120, 0.2, 0.2, 0.2, 0.35, null, true);
+                    w.spawnParticle(Particle.SOUL_FIRE_FLAME, l, 60, 0.2, 0.2, 0.2, 0.3, null, true);
+                    w.strikeLightningEffect(p.getLocation());
+                    sound(p, "entity.ender_dragon.death", 1f, 1.2f);
+                }
                 if (rarity == Rarity.LEGENDARY || rarity == Rarity.SECRET) {
                     w.spawnParticle(Particle.TOTEM_OF_UNDYING, l, 80, 0.4, 0.4, 0.4, 0.6, null, true);
                     sound(p, "entity.firework_rocket.twinkle", 1f, 1f);
                 }
                 sound(p, switch (rarity) {
                     case SECRET -> "entity.wither.spawn";
+                    case PRESTIGE -> "ui.toast.challenge_complete";
                     case LEGENDARY -> "ui.toast.challenge_complete";
                     case EPIC -> "entity.player.levelup";
                     default -> "entity.experience_orb.pickup";
@@ -155,7 +164,11 @@ final class Reveal {
                     w.spawnParticle(Particle.DUST, l.clone().add(0, -0.1, 0), 3, 0.35, 0.35, 0.35, 0,
                             new Particle.DustOptions(col, 0.8f), true);
                 }
-                if (rarity == Rarity.LEGENDARY && i % 4 == 0) {
+                if (rarity == Rarity.PRESTIGE && i % 3 == 0) {
+                    w.spawnParticle(Particle.DUST, l, 6, 0.6, 0.6, 0.6, 0, new Particle.DustOptions(i % 6 == 0 ? Color.RED : Color.fromRGB(0xffd700), 1.3f), true);
+                    w.spawnParticle(Particle.END_ROD, l, 1, 0.5, 0.5, 0.5, 0.02, null, true);
+                }
+                if ((rarity == Rarity.LEGENDARY || rarity == Rarity.PRESTIGE) && i % 4 == 0) {
                     Component lb = parse(rarity.name(stripTags(nameMini), (i / 4) % 10)).appendNewline().append(parse(rarity.tag));
                     if (where != null && !where.isBlank()) lb = lb.appendNewline().append(parse(where));
                     text.text(lb);

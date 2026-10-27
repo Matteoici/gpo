@@ -43,19 +43,22 @@ public final class Loot {
         // ---- tirage de rareté (avec garantie)
         ThreadLocalRandom r = ThreadLocalRandom.current();
         double roll = r.nextDouble() * 100;
+        double prestige = c.getDouble("loot.chances.prestige", 0.01);
         double secret = c.getDouble("loot.chances.secret", 0.5);
         double legendary = c.getDouble("loot.chances.legendary", 1);
         double epic = c.getDouble("loot.chances.epic", 5);
         double rare = c.getDouble("loot.chances.rare", 20);
         int pitySecret = c.getInt("loot.pity.secret", 300), pityLegendary = c.getInt("loot.pity.legendary", 150);
         Rarity got;
-        if (roll < secret || (pitySecret > 0 && d.pitySecret + 1 >= pitySecret)) got = Rarity.SECRET;
+        boolean hasPrestige = !c.getMapList("loot.pools.prestige").isEmpty();
+        if (hasPrestige && roll < prestige) got = Rarity.PRESTIGE;
+        else if ((roll -= hasPrestige ? prestige : 0) < secret || (pitySecret > 0 && d.pitySecret + 1 >= pitySecret)) got = Rarity.SECRET;
         else if (roll < secret + legendary || (pityLegendary > 0 && d.pityLegendary + 1 >= pityLegendary)) got = Rarity.LEGENDARY;
         else if (roll < secret + legendary + epic) got = Rarity.EPIC;
         else if (roll < secret + legendary + epic + rare) got = Rarity.RARE;
         else got = Rarity.COMMON;
 
-        if (got == Rarity.SECRET) {
+        if (got == Rarity.SECRET || got == Rarity.PRESTIGE) {
             d.pitySecret = 0;
             d.pityLegendary = 0;
         } else if (got == Rarity.LEGENDARY) {
@@ -123,12 +126,25 @@ public final class Loot {
             if (Bukkit.getPluginManager().isPluginEnabled("SmpTitles")) {
                 String id = "boss_" + Integer.toHexString(title.toLowerCase(Locale.ROOT).hashCode());
                 Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "titre give " + p.getName() + " " + id + " "
-                        + Rarity.SECRET.name(title, 0));
+                        + (rarity == Rarity.PRESTIGE ? Rarity.PRESTIGE : Rarity.SECRET).name(title, 0));
             }
             plugin.store().dirty();
-            p.sendMessage(parse(plugin.msg("loot.new-title").replace("<title>", Rarity.SECRET.name(title, 0))));
+            p.sendMessage(parse(plugin.msg("loot.new-title").replace("<title>", (rarity == Rarity.PRESTIGE ? Rarity.PRESTIGE : Rarity.SECRET).name(title, 0))));
         }
-        if (rarity.ordinal() >= Rarity.LEGENDARY.ordinal()) {
+        if (rarity == Rarity.PRESTIGE) {
+            // tout le serveur le voit : titre, éclair, son du dragon
+            Component msg = parse(plugin.msg("loot.broadcast-prestige")
+                    .replace("<player>", SmpBoss.MM.escapeTags(p.getName())).replace("<item>", itemMini));
+            Bukkit.broadcast(msg);
+            for (Player o : Bukkit.getOnlinePlayers()) {
+                o.showTitle(Title.title(parse(rarity.tag), parse(plugin.msg("loot.prestige-subtitle")
+                                .replace("<player>", SmpBoss.MM.escapeTags(p.getName())).replace("<item>", itemMini)),
+                        Title.Times.times(Duration.ofMillis(300), Duration.ofMillis(5000), Duration.ofMillis(1000))));
+                o.playSound(Sound.sound(Key.key("minecraft", "entity.ender_dragon.death"), Sound.Source.MASTER, 0.6f, 1.1f));
+                o.playSound(Sound.sound(Key.key("minecraft", "ui.toast.challenge_complete"), Sound.Source.MASTER, 1f, 0.8f));
+            }
+            p.getWorld().strikeLightningEffect(p.getLocation());
+        } else if (rarity.ordinal() >= Rarity.LEGENDARY.ordinal()) {
             Component msg = parse(plugin.msg(rarity == Rarity.SECRET ? "loot.broadcast-secret" : "loot.broadcast-legendary")
                     .replace("<player>", SmpBoss.MM.escapeTags(p.getName())).replace("<item>", itemMini));
             Bukkit.broadcast(msg);

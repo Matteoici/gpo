@@ -180,6 +180,11 @@ public final class RelicMenu implements InventoryHolder {
             case EPIC -> Material.PURPLE_STAINED_GLASS_PANE;
             case LEGENDARY -> RAINBOW[Math.floorMod(frame + k * 3, RAINBOW.length)];
             case SECRET -> (frame + k) % 2 == 0 ? Material.WHITE_STAINED_GLASS_PANE : Material.GRAY_STAINED_GLASS_PANE;
+            case PRESTIGE -> switch (Math.floorMod(frame + k, 3)) {
+                case 0 -> Material.RED_STAINED_GLASS_PANE;
+                case 1 -> Material.YELLOW_STAINED_GLASS_PANE;
+                default -> Material.WHITE_STAINED_GLASS_PANE;
+            };
         };
     }
 
@@ -237,7 +242,10 @@ public final class RelicMenu implements InventoryHolder {
         if (!d.titles.isEmpty()) {
             lore.add(Component.empty());
             lore.add(parse(plugin.msg("menu.info-titles")));
-            for (String t : d.titles) lore.add(parse("<dark_gray> - " + Rarity.SECRET.name(t, 0)));
+            for (String t : d.titles) {
+                boolean pr = plugin.getConfig().getMapList("loot.pools.prestige").stream().anyMatch(m -> t.equals(m.get("title")));
+                lore.add(parse("<dark_gray> - " + (pr ? Rarity.PRESTIGE : Rarity.SECRET).name(t, 0)));
+            }
         }
         m.lore(lore);
         it.setItemMeta(m);

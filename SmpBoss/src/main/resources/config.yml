@@ -192,6 +192,8 @@ loot:
   min-damage-percent: 5
   # chances en %, tirées dans cet ordre (secret, puis légendaire...)
   chances:
+    # ❂ PRESTIGE : 0,01 % (1 chance sur 10 000), tiré avant tout le reste, sans garantie
+    prestige: 0.01
     secret: 0.5
     legendary: 1
     epic: 5
@@ -228,6 +230,9 @@ loot:
       - {sickle: true, title: "Faucheur du Néant"}
       - {relic: couronne_enfers, title: "Souverain des Enfers"}
       - {relic: cape_nuit, title: "Enfant de la Nuit Éternelle"}
+    prestige:
+      - {relic: couronne_roi_eternel, title: "Le Roi Éternel"}
+      - {relic: ailes_eclipse, title: "Survivant de l'Apocalypse"}
 
 # ---------------------------------------------------------------- Reliques
 # health = cœurs en plus · speed = % de vitesse · regen = demi-cœurs toutes les 4 s hors combat (8 s sans dégâts)
@@ -349,6 +354,28 @@ relics:
       visual: cape
       lore: ["<gray>Taillée dans le ciel de la bulle rouge."]
       speed: 6
+      regen: 1
+    # ------- ❂ PRESTIGE (0,01 %) : versions ultimes de la couronne et des ailes
+    couronne_roi_eternel:
+      name: "Couronne du Roi Éternel"
+      rarity: prestige
+      icon: GOLDEN_HELMET
+      visual: eternalcrown
+      lore: ["<gray>La vraie couronne du Roi Citrouille.", "<gray>Une chance sur dix mille... et elle est à toi."]
+      health: 5
+      damage: 20
+      armor: 4
+      regen: 2
+    ailes_eclipse:
+      name: "Ailes de l'Éclipse"
+      rarity: prestige
+      icon: ELYTRA
+      visual: eclipse
+      lore: ["<gray>Arrachées à l'éclipse de l'Apocalypse.", "<gray>Le ciel s'assombrit sur ton passage."]
+      speed: 15
+      health: 4
+      damage: 12
+      armor: 3
       regen: 1
 
 # ---------------------------------------------------------------- Sac (relique secrète)
@@ -539,6 +566,8 @@ messages:
     new-item: "<white>Nouvel objet <dark_gray>‹</dark_gray><item><dark_gray>›"
     new-title: "<white>Nouveau titre débloqué : <dark_gray>‹</dark_gray><title><dark_gray>›"
     broadcast-legendary: "<rainbow><b>✦</b></rainbow> <white><player></white> <gray>a obtenu</gray> <item> <gray>sur le Roi Citrouille !"
+    broadcast-prestige: "<gradient:#ff1a1a:#ffd700:#ff1a1a><b>❂❂❂ PRESTIGE ❂❂❂</b></gradient> <white><b><player></b></white> <gray>a obtenu</gray> <item> <gray>! <dark_gray>(1 chance sur 10 000)"
+    prestige-subtitle: "<white><player></white> <gray>a obtenu</gray> <item>"
     broadcast-secret: "<gradient:#ffffff:#4a4a4a:#ffffff><b>✧ SECRET ✧</b></gradient> <white><player></white> <gray>a obtenu</gray> <item> <gray>!!!"
   relics:
     claimed: "<green>Relique ajoutée : <relic> <gray>(/reliques)"
@@ -623,6 +652,8 @@ messages:
       name: "<gray><b>Coffre de butin</b> <dark_gray>(vide)"
       lore: ["<dark_gray>Si ton inventaire est plein quand tu gagnes", "<dark_gray>un objet, il t'attend ici : rien ne se perd."]
     visual:
+      eternalcrown: "<white>✧ Visuel : <gradient:#ff1a1a:#ffd700:#ff1a1a>grande couronne d'or + cercle de runes au sol"
+      eclipse: "<white>✧ Visuel : <gradient:#ff1a1a:#ffd700:#ff1a1a>grandes ailes de feu + éclipse au-dessus de la tête"
       backpack: "<white>✧ Visuel : <gold>sac à dos de la Récolte"
       crown: "<white>✧ Visuel : <gold>couronne dorée flottante"
       lantern: "<white>✧ Visuel : <gold>lanterne à la ceinture"

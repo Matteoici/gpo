@@ -345,6 +345,87 @@ final class Cosmetics {
                     }
                 }
             }
+            // ---------------------------------------------------------- ❂ PRESTIGE : couronne du Roi Éternel
+            // grande couronne d'or à pointes et rubis, cercle de runes doré qui tourne au sol, étincelles qui montent
+            case "eternalcrown" -> {
+                double spin = t * 0.03;
+                if (t % 2 == 0) {
+                    for (int k = 0; k < 16; k++) {
+                        double a = spin + Math.PI * 2 * k / 16;
+                        d.dust(true, Math.cos(a) * 0.34, 1.97, Math.sin(a) * 0.34, k % 2 == 0 ? GOLD : GOLD_DARK, 0.75f);
+                    }
+                    for (int k = 0; k < 8; k++) {
+                        double a = spin + Math.PI * 2 * k / 8;
+                        double h = k % 2 == 0 ? 0.26 : 0.16;
+                        for (double y = 0.06; y <= h; y += 0.06) {
+                            double in = 0.34 - y * 0.25;
+                            d.dust(true, Math.cos(a) * in, 1.97 + y, Math.sin(a) * in, GOLD, 0.6f);
+                        }
+                        d.dust(true, Math.cos(a) * 0.3, 1.97 + h + 0.05, Math.sin(a) * 0.3, k % 2 == 0 ? RED : Color.WHITE, 0.7f);
+                    }
+                }
+                if (t % 3 == 0) {
+                    // cercle de runes au sol (deux anneaux qui tournent en sens inverse)
+                    for (int k = 0; k < 24; k++) {
+                        double a = t * 0.04 + Math.PI * 2 * k / 24;
+                        d.dust(false, Math.cos(a) * 1.1, 0.06, Math.sin(a) * 1.1, GOLD, 0.8f);
+                    }
+                    for (int k = 0; k < 6; k++) {
+                        double a1 = -t * 0.04 + Math.PI * 2 * k / 6, a2 = a1 + Math.PI * 2 * 2 / 6;
+                        for (double u = 0; u <= 1; u += 0.2) {
+                            double x = Math.cos(a1) * 0.8 * (1 - u) + Math.cos(a2) * 0.8 * u, z = Math.sin(a1) * 0.8 * (1 - u) + Math.sin(a2) * 0.8 * u;
+                            d.dust(false, x, 0.06, z, RED, 0.6f);
+                        }
+                    }
+                }
+                if (t % 4 == 0) d.part(Particle.END_ROD, false, r.nextDouble(-0.9, 0.9), 0.1, r.nextDouble(-0.9, 0.9), 1, 0, 0.03);
+                if (t % 30 == 0) d.part(Particle.TOTEM_OF_UNDYING, false, 0, 1.2, 0, 8, 0.4, 0.15);
+                if (moving && t % 2 == 0) d.part(Particle.WAX_OFF, false, 0, 0.1, -0.2, 1, 0.1, 0);
+            }
+            // ---------------------------------------------------------- ❂ PRESTIGE : ailes de l'Éclipse
+            // grandes ailes noires aux bords de feu, éclipse noire à couronne de flammes au-dessus de la tête
+            case "eclipse" -> {
+                if (t % 2 == 0) {
+                    double flap = Math.sin(t * 0.1) * 0.12;
+                    for (int s = -1; s <= 1; s += 2) {
+                        for (int i = 0; i <= 14; i++) {
+                            double u = i / 14.0;
+                            double x = s * (0.14 + 1.35 * u), y = 1.35 + 0.6 * Math.sin(u * 2.4) + flap * u, z = -0.22 - 0.4 * u;
+                            d.dust(false, x, y, z, i > 10 ? ORANGE : BLACK, 0.95f);
+                        }
+                        double[][] fingers = {{0.45, 0.75}, {0.75, 0.8}, {1.05, 0.95}, {1.35, 1.15}};
+                        for (double[] f : fingers) {
+                            double ux = (f[0] - 0.14) / 1.35;
+                            double topY = 1.35 + 0.6 * Math.sin(ux * 2.4) + flap * ux, topZ = -0.22 - 0.4 * ux;
+                            for (int i = 0; i <= 6; i++) {
+                                double v = i / 6.0;
+                                d.dust(false, s * f[0], topY + (f[1] - topY) * v, topZ - 0.06 * v, v > 0.8 ? RED : BLACK, 0.65f);
+                            }
+                        }
+                        for (int i = 0; i < 6; i++) {
+                            double u = 0.05 + r.nextDouble() * 0.95;
+                            double top = 1.35 + 0.6 * Math.sin(u * 2.4) + flap * u, bottom = 0.75 + 0.4 * u;
+                            d.dust(false, s * (0.14 + 1.35 * u), bottom + (top - bottom) * r.nextDouble(), -0.24 - 0.4 * u, BLOOD, 0.7f);
+                        }
+                    }
+                }
+                // l'éclipse au-dessus de la tête
+                if (t % 2 == 1) {
+                    double cy = 2.55 + Math.sin(t * 0.06) * 0.06;
+                    for (int k = 0; k < 7; k++) {
+                        double a = Math.PI * 2 * k / 7;
+                        d.dust(false, Math.cos(a) * 0.1, cy + Math.sin(a) * 0.1, 0, BLACK, 1.1f);
+                    }
+                    d.dust(false, 0, cy, 0, BLACK, 1.6f);
+                    for (int k = 0; k < 14; k++) {
+                        double a = t * 0.08 + Math.PI * 2 * k / 14;
+                        d.dust(false, Math.cos(a) * 0.3, cy + Math.sin(a) * 0.3, 0, k % 2 == 0 ? RED : ORANGE, 0.6f);
+                    }
+                }
+                if (t % 5 == 0) d.part(Particle.FLAME, false, r.nextDouble(-0.3, 0.3), 2.55, 0, 1, 0.05, 0.01);
+                if (moving && t % 2 == 0) d.part(Particle.SOUL_FIRE_FLAME, false, r.nextDouble(-0.2, 0.2), 0.08, -0.2, 1, 0.05, 0.01);
+                if (t % 40 == 0) d.part(Particle.SOUL, false, 0, 1.2, -0.4, 3, 0.4, 0.02);
+            }
             default -> {
             }
         }
