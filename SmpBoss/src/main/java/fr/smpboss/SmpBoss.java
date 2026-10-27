@@ -191,6 +191,12 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 17);
             saveConfig();
         }
+        // v18 : les reliques PRESTIGE (et leur lot) ajoutées aux configs existantes
+        if (getConfig().getInt("config-version", 1) < 18) {
+            addDefaultRelics();
+            getConfig().set("config-version", 18);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);
