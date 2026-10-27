@@ -205,24 +205,50 @@ public final class Claims {
             if (st.auction != null) plugin.auctions().cancel(st);
             if (st.isRented()) st.leaseEnd = Long.MAX_VALUE;
         }
-        // une seule fois : les vieux stands construits sur les emplacements LIBRES sont retirés
-        // (ceux des joueurs encore propriétaires partent avec eux quand leur marché se range)
-        if (!plugin.store().oldBuildsCleared) {
-            int n = 0;
-            for (Stall st : plugin.store().stalls()) {
-                if (st.isRented() || st.region == null || st.region.bukkitWorld() == null) continue;
-                if (!takeBuild(st, null).isEmpty()) n++;
-            }
-            plugin.store().oldBuildsCleared = true;
-            if (n > 0) plugin.getLogger().info(n + " ancien(s) stand(s) retiré(s) des emplacements libres.");
+        if (!plugin.store().oldBuildsClearedV2) {
+            for (Stall st : plugin.store().stalls()) st.floorY = Integer.MIN_VALUE;
         }
         plugin.store().markDirty();
+        // les vieux stands sont retirés juste après (mondes chargés, propriétaires rangés)
+        Bukkit.getScheduler().runTaskLater(plugin, this::wipeOldStands, 100L);
     }
 
     // ================================================================= construction du marché
 
+    /** Tout l'emplacement (bords compris) appartient au marché posé dessus. */
     private static int margin(Stall st) {
-        return st.region.sizeX() > 3 && st.region.sizeZ() > 3 ? 1 : 0;
+        return 0;
+    }
+
+    /** Hauteur au-dessus de la zone prise en compte (toits des anciens stands). */
+    private int above() {
+        return Math.max(0, plugin.getConfig().getInt("claim.clear-above", 0));
+    }
+
+    /** Retire ce qui reste sur un emplacement libre (anciens stands) ; renvoie true s'il y avait quelque chose. */
+    public boolean wipe(Stall st) {
+        if (st.isRented() || st.region == null || st.region.bukkitWorld() == null) return false;
+        return !takeBuild(st, null).isEmpty();
+    }
+
+    /** Une seule fois, quelques secondes après le démarrage (les mondes sont chargés) : emplacements libres vidés. */
+    void wipeOldStands() {
+        if (plugin.store().oldBuildsClearedV2) return;
+        boolean all = true;
+        int n = 0;
+        for (Stall st : plugin.store().stalls()) {
+            if (st.region == null) continue;
+            if (st.region.bukkitWorld() == null) {
+                all = false;
+                continue;
+            }
+            if (st.isRented()) continue; // il sera rangé (et sa construction gardée) à la seconde suivante
+            st.floorY = Integer.MIN_VALUE; // recalculé sur tout l'emplacement
+            if (wipe(st)) n++;
+        }
+        if (all) plugin.store().oldBuildsClearedV2 = true;
+        plugin.store().save();
+        if (n > 0) plugin.getLogger().info(n + " ancien(s) stand(s) retiré(s) des emplacements libres.");
     }
 
     /** Peut-on construire ici ? Seulement à l'intérieur, au-dessus du sol (ce qui partira avec le marché). */
@@ -264,7 +290,7 @@ public final class Claims {
         if (w == null) return out;
         int m = margin(st), f = floor(st);
         int x0 = st.region.minX() + m, x1 = st.region.maxX() - m, z0 = st.region.minZ() + m, z1 = st.region.maxZ() - m;
-        int y1 = st.region.maxY();
+        int y1 = st.region.maxY() + above();
         if (f + 1 > y1 || x0 > x1 || z0 > z1) return out;
         for (int cx = x0 >> 4; cx <= x1 >> 4; cx++) for (int cz = z0 >> 4; cz <= z1 >> 4; cz++) w.getChunkAt(cx, cz);
         org.bukkit.util.BoundingBox bb = new org.bukkit.util.BoundingBox(x0, f + 1, z0, x1 + 1, y1 + 1, z1 + 1);
@@ -314,7 +340,7 @@ public final class Claims {
                 int x = st.region.minX() + Integer.parseInt(p[0]), y = st.region.minY() + Integer.parseInt(p[1]),
                         z = st.region.minZ() + Integer.parseInt(p[2]);
                 if (x < st.region.minX() + m || x > st.region.maxX() - m || z < st.region.minZ() + m || z > st.region.maxZ() - m) continue;
-                if (y <= f || y > st.region.maxY()) continue;
+                if (y <= f || y > st.region.maxY() + above()) continue;
                 org.bukkit.block.Block b = w.getBlockAt(x, y, z);
                 if (!b.getType().isAir()) continue;
                 b.setBlockData(org.bukkit.Bukkit.createBlockData(s.substring(bar + 1)), false);

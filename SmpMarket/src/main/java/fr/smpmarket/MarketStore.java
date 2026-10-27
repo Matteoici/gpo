@@ -31,7 +31,7 @@ public final class MarketStore {
     private final Map<UUID, double[]> offlineSales = new HashMap<>();
     private boolean dirty;
     /** les vieux stands (ancien système) ont été retirés des emplacements libres */
-    public boolean oldBuildsCleared;
+    public boolean oldBuildsCleared, oldBuildsClearedV2;
 
     MarketStore(SmpMarket plugin) {
         this.plugin = plugin;
@@ -152,6 +152,7 @@ public final class MarketStore {
         dirty = false;
         YamlConfiguration y = new YamlConfiguration();
         y.set("old-builds-cleared", oldBuildsCleared);
+        y.set("old-builds-cleared-v2", oldBuildsClearedV2);
         for (Stall s : stalls.values()) write(y, "stalls." + s.id + ".", s);
         for (Stall s : markets.values()) write(y, "markets." + s.owner + ".", s);
         try {
@@ -249,6 +250,7 @@ public final class MarketStore {
         offlineSales.clear();
         YamlConfiguration y = YamlConfiguration.loadConfiguration(stallsFile);
         oldBuildsCleared = y.getBoolean("old-builds-cleared", false);
+        oldBuildsClearedV2 = y.getBoolean("old-builds-cleared-v2", false);
         ConfigurationSection root = y.getConfigurationSection("stalls");
         if (root != null) {
             for (String id : root.getKeys(false)) {

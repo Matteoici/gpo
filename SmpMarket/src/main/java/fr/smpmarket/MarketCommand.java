@@ -389,7 +389,11 @@ public final class MarketCommand implements TabExecutor {
                     plugin.claims().pack(st, "claim.packed-admin");
                     n++;
                 }
-                sender.sendMessage(Texts.MM.deserialize("<green>" + n + " marché(s) rangé(s) : tous les emplacements sont libres et vides."));
+                int w = 0;
+                for (Stall st : store.stalls()) if (plugin.claims().wipe(st)) w++;
+                store.save();
+                sender.sendMessage(Texts.MM.deserialize("<green>" + n + " marché(s) rangé(s), " + w
+                        + " ancien(s) stand(s) retiré(s) : tous les emplacements sont libres et vides."));
             }
             case "delete", "reset", "setentrance", "give", "end", "showcases", "price" -> {
                 if (a.length < 2) {

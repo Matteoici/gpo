@@ -19,6 +19,9 @@ claim:
   # construire sur son emplacement : la construction part avec le marché quand il est rangé,
   # et réapparaît là où le joueur le réinstalle (seulement l'intérieur, au-dessus du sol)
   building: true
+  # blocs AU-DESSUS de la zone de l'emplacement aussi retirés / gardés avec le marché (toits d'anciens stands).
+  # 0 = seulement la zone de l'emplacement (sûr si le marché est sous un grand toit commun)
+  clear-above: 0
 
 # ---------------------------------------------------------------- (ancien) Location des stands — plus utilisé
 lease:
