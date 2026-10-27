@@ -541,6 +541,31 @@ public final class SmpBoss extends JavaPlugin {
                 loot.give(t, it);
                 sender.sendMessage(parse("<green>Donné à " + t.getName() + "."));
             }
+            case "retirer", "remove", "enlever" -> {
+                if (a.length < 3) {
+                    sender.sendMessage(parse("<red>/boss retirer <joueur> <id|tout>"));
+                    return true;
+                }
+                org.bukkit.OfflinePlayer t = Bukkit.getOfflinePlayer(a[1]);
+                PlayerData d = store.of(t.getUniqueId());
+                String what = a[2].toLowerCase(Locale.ROOT).replace("relique:", "");
+                int removed;
+                if (what.equals("tout") || what.equals("all")) {
+                    removed = d.relics.size();
+                    d.relics.clear();
+                    d.equipped.clear();
+                } else {
+                    removed = d.relics.remove(what) ? 1 : 0;
+                    d.equipped.remove(what);
+                }
+                store.dirty();
+                if (t.getPlayer() != null) {
+                    relics.apply(t.getPlayer());
+                    cosmetics.refresh(t.getPlayer());
+                }
+                sender.sendMessage(parse(removed > 0 ? "<green>" + removed + " relique(s) retirée(s) à " + a[1] + "."
+                        : "<yellow>" + a[1] + " n'a pas cette relique. <gray>(id : " + String.join(", ", d.relics) + ")"));
+            }
             case "reload" -> {
                 reloadConfig();
                 relics.load();
@@ -568,7 +593,7 @@ public final class SmpBoss extends JavaPlugin {
     public List<String> onTabComplete(CommandSender sender, Command cmd, String label, String[] a) {
         List<String> out = new ArrayList<>();
         if (!cmd.getName().equalsIgnoreCase("boss")) return out;
-        if (a.length == 1) out.addAll(List.of("autel", "invoquer", "stop", "give", "reload", "arene", "topguildes"));
+        if (a.length == 1) out.addAll(List.of("autel", "invoquer", "stop", "give", "retirer", "reload", "arene", "topguildes"));
         else if (a.length == 2 && a[0].toLowerCase(Locale.ROOT).startsWith("ar"))
             out.addAll(List.of("construire", "annuler", "tp", "setspawn", "portail", "recuperer", "definir", "supprimer"));
         else if (a.length == 3 && a[0].toLowerCase(Locale.ROOT).startsWith("ar") && a[1].equalsIgnoreCase("portail"))
@@ -577,7 +602,12 @@ public final class SmpBoss extends JavaPlugin {
             out.addAll(List.of("16", "20", "24", "28"));
         else if (a.length == 4 && a[0].toLowerCase(Locale.ROOT).startsWith("ar") && a[1].equalsIgnoreCase("construire"))
             out.addAll(List.of("ici", "ciel"));
-        else if (a.length == 2 && a[0].equalsIgnoreCase("give")) for (Player p : Bukkit.getOnlinePlayers()) out.add(p.getName());
+        else if (a.length == 2 && (a[0].equalsIgnoreCase("give") || a[0].equalsIgnoreCase("retirer"))) for (Player p : Bukkit.getOnlinePlayers()) out.add(p.getName());
+        else if (a.length == 3 && a[0].equalsIgnoreCase("retirer")) {
+            out.add("tout");
+            Player t = Bukkit.getPlayerExact(a[1]);
+            if (t != null) out.addAll(store.of(t.getUniqueId()).relics);
+        }
         else if (a.length == 3 && a[0].equalsIgnoreCase("give")) {
             out.addAll(List.of("graine", "citrouille", "faucille"));
             for (String id : relics.all().keySet()) out.add("relique:" + id);
