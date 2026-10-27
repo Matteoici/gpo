@@ -16,6 +16,10 @@ anti-flood:
   # center: {x: 0, z: 0}
   # mondes concernés (vide = tous les mondes)
   worlds: [world]
+  # hauteur couverte (ex. seulement l'île flottante : min-y: 150, max-y: 320). Absent = toute la hauteur.
+  # min-y: 150
+  # max-y: 320
+  # (tout se règle aussi en jeu : /zone paysage)
   # ...AUCUN seau (eau, lave, poudreuse, seaux à poissons) ne peut être vidé, ni par un joueur ni par un distributeur
   # (une zone avec "seaux" autorisé passe outre : ferme, base...)
   # ...les explosions (TNT, creepers, wagonnets de TNT) ne cassent aucun bloc (une zone avec "explosions" autorisé passe outre)

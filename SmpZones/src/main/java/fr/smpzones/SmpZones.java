@@ -132,9 +132,17 @@ public final class SmpZones extends JavaPlugin implements Listener {
         if (!getConfig().getBoolean("anti-flood.enabled", true) || l == null || l.getWorld() == null) return false;
         List<String> worlds = getConfig().getStringList("anti-flood.worlds");
         if (!worlds.isEmpty() && !worlds.contains(l.getWorld().getName())) return false;
+        if (!inHeight(l)) return false;
         Location c = center(l.getWorld());
         double dx = l.getX() - c.getX(), dz = l.getZ() - c.getZ(), r = floodRadius();
         return dx * dx + dz * dz <= r * r;
+    }
+
+    /** Hauteur couverte par le paysage protégé (min-y / max-y, absents = toute la hauteur). */
+    private boolean inHeight(Location l) {
+        var c = getConfig();
+        if (c.isSet("anti-flood.min-y") && l.getY() < c.getDouble("anti-flood.min-y")) return false;
+        return !c.isSet("anti-flood.max-y") || l.getY() <= c.getDouble("anti-flood.max-y");
     }
 
     /** true = vider un seau est interdit ici (rayon autour du spawn), sauf si une zone autorise les seaux. */
@@ -144,6 +152,7 @@ public final class SmpZones extends JavaPlugin implements Listener {
         if (!worlds.isEmpty() && !worlds.contains(l.getWorld().getName())) return false;
         Zone z = decider(l, Flag.SEAUX);
         if (z != null && z.flags.get(Flag.SEAUX)) return false; // une zone autorise les seaux ici (fermes...)
+        if (!inHeight(l)) return false;
         Location c = center(l.getWorld());
         double dx = l.getX() - c.getX(), dz = l.getZ() - c.getZ();
         double r = floodRadius();
@@ -625,6 +634,98 @@ public final class SmpZones extends JavaPlugin implements Listener {
                 save();
                 send(s, "<green>" + n + " zone(s) déplacée(s).");
             }
+            case "hauteur", "height", "verticale" -> {
+                // /zone hauteur <zone> <minY> <maxY>   ou   /zone hauteur <zone> tout
+                Zone z = a.length > 2 ? zone(s, a[1]) : null;
+                if (z == null || z.global) {
+                    if (a.length <= 2) send(s, "<red>/zone hauteur <zone> <Y bas> <Y haut></red> <gray>ou</gray> <red>/zone hauteur <zone> tout");
+                    return true;
+                }
+                World w = Bukkit.getWorld(z.world);
+                int lo, hi;
+                try {
+                    if (a[2].equalsIgnoreCase("tout") || a[2].equalsIgnoreCase("all")) {
+                        lo = w == null ? -64 : w.getMinHeight();
+                        hi = w == null ? 319 : w.getMaxHeight() - 1;
+                    } else {
+                        lo = Integer.parseInt(a[2]);
+                        hi = a.length > 3 ? Integer.parseInt(a[3]) : z.box[4];
+                    }
+                } catch (NumberFormatException ex) {
+                    send(s, "<red>Nombres invalides.");
+                    return true;
+                }
+                z.box[1] = Math.min(lo, hi);
+                z.box[4] = Math.max(lo, hi);
+                save();
+                send(s, "<green>" + MM.escapeTags(z.name) + "</green> <gray>va maintenant de <white>Y " + z.box[1] + "</white> à <white>Y " + z.box[4] + "</white>.");
+                if (p != null && w != null) outline(p, w, z.box, 200);
+            }
+            case "etendre", "étendre", "expand" -> {
+                // /zone etendre <zone> <haut|bas> <blocs>
+                Zone z = a.length > 3 ? zone(s, a[1]) : null;
+                if (z == null || z.global) {
+                    if (a.length <= 3) send(s, "<red>/zone etendre <zone> <haut|bas> <blocs>");
+                    return true;
+                }
+                int n;
+                try {
+                    n = Integer.parseInt(a[3]);
+                } catch (NumberFormatException ex) {
+                    send(s, "<red>Nombre invalide.");
+                    return true;
+                }
+                if (a[2].toLowerCase(Locale.ROOT).startsWith("h")) z.box[4] += n;
+                else z.box[1] -= n;
+                save();
+                send(s, "<green>" + MM.escapeTags(z.name) + "</green> <gray>: <white>Y " + z.box[1] + "</white> → <white>Y " + z.box[4]);
+            }
+            case "paysage", "spawn", "anti-flood" -> {
+                // /zone paysage [rayon <n> | hauteur <bas> <haut> | hauteur tout | centre | on | off]
+                String what = a.length > 1 ? a[1].toLowerCase(Locale.ROOT) : "";
+                var c = getConfig();
+                switch (what) {
+                    case "rayon", "radius" -> {
+                        try {
+                            c.set("anti-flood.radius", Integer.parseInt(a[2]));
+                        } catch (RuntimeException ex) {
+                            send(s, "<red>/zone paysage rayon <blocs>");
+                            return true;
+                        }
+                    }
+                    case "hauteur", "height" -> {
+                        if (a.length > 2 && (a[2].equalsIgnoreCase("tout") || a[2].equalsIgnoreCase("all"))) {
+                            c.set("anti-flood.min-y", null);
+                            c.set("anti-flood.max-y", null);
+                        } else {
+                            try {
+                                int lo = Integer.parseInt(a[2]), hi = Integer.parseInt(a[3]);
+                                c.set("anti-flood.min-y", Math.min(lo, hi));
+                                c.set("anti-flood.max-y", Math.max(lo, hi));
+                            } catch (RuntimeException ex) {
+                                send(s, "<red>/zone paysage hauteur <Y bas> <Y haut></red> <gray>ou</gray> <red>/zone paysage hauteur tout");
+                                return true;
+                            }
+                        }
+                    }
+                    case "centre", "center" -> {
+                        if (p == null) return true;
+                        c.set("anti-flood.center.x", p.getLocation().getBlockX());
+                        c.set("anti-flood.center.z", p.getLocation().getBlockZ());
+                    }
+                    case "on", "off" -> c.set("anti-flood.enabled", what.equals("on"));
+                    default -> {
+                    }
+                }
+                if (!what.isEmpty()) saveConfig();
+                String h = c.isSet("anti-flood.min-y") ? "Y " + c.getInt("anti-flood.min-y") + " → Y " + c.getInt("anti-flood.max-y") : "toute la hauteur";
+                String ctr = c.isSet("anti-flood.center.x") ? c.getInt("anti-flood.center.x") + " " + c.getInt("anti-flood.center.z") : "spawn du monde";
+                send(s, "<gold>Paysage protégé</gold> <gray>: " + (c.getBoolean("anti-flood.enabled", true) ? "<green>actif" : "<red>coupé")
+                        + "<gray> · rayon <white>" + floodRadius() + "</white> · centre <white>" + ctr + "</white> · hauteur <white>" + h);
+                if (what.isEmpty()) {
+                    s.sendMessage(parse("<gray>/zone paysage rayon <blocs> · hauteur <Y bas> <Y haut> (ou tout) · centre (= là où tu es) · on/off"));
+                }
+            }
             case "bypass" -> {
                 if (p == null) return true;
                 if (!noBypass.remove(p.getUniqueId())) {
@@ -667,6 +768,8 @@ public final class SmpZones extends JavaPlugin implements Listener {
         s.sendMessage(parse("<white>/zone membre <nom> ajouter|retirer <joueur></white> <gray>· peut construire dedans"));
         s.sendMessage(parse("<white>/zone priorite <nom> <n></white> <gray>· la plus haute gagne quand les zones se chevauchent"));
         s.sendMessage(parse("<white>/zone message <nom> entree|sortie <texte></white> <gray>· message en entrant / sortant"));
+        s.sendMessage(parse("<white>/zone hauteur <nom> <Y bas> <Y haut></white> <gray>·</gray> <white>/zone etendre <nom> haut|bas <blocs></white> <gray>· la verticalité"));
+        s.sendMessage(parse("<white>/zone paysage</white> <gray>· rayon / hauteur / centre du paysage protégé (seaux, explosions, machines)"));
         s.sendMessage(parse("<white>/zone info</white> <gray>·</gray> <white>/zone voir <nom></white> <gray>·</gray> <white>/zone liste</white> <gray>·</gray> <white>/zone supprimer <nom>"));
         s.sendMessage(parse("<white>/zone deplacer <nom|tout> <x> <y> <z></white> <gray>·</gray> <white>/zone bypass</white> <gray>(tester comme un joueur)"));
     }
@@ -676,10 +779,16 @@ public final class SmpZones extends JavaPlugin implements Listener {
         List<String> out = new ArrayList<>();
         if (a.length == 1) {
             out.addAll(List.of("baguette", "pos1", "pos2", "creer", "redefinir", "flags", "proteger", "monde", "liste", "info", "voir",
-                    "priorite", "membre", "message", "deplacer", "supprimer", "bypass", "reload"));
-        } else if (a.length == 2 && !a[0].equalsIgnoreCase("creer")) {
+                    "priorite", "hauteur", "etendre", "membre", "message", "deplacer", "paysage", "supprimer", "bypass", "reload"));
+        } else if (a.length == 2 && !a[0].equalsIgnoreCase("creer") && !a[0].equalsIgnoreCase("paysage")) {
             for (Zone z : zones.values()) out.add(z.name);
             if (a[0].equalsIgnoreCase("deplacer")) out.add("tout");
+        } else if (a.length == 2 && a[0].equalsIgnoreCase("paysage")) {
+            out.addAll(List.of("rayon", "hauteur", "centre", "on", "off"));
+        } else if (a.length == 3 && a[0].equalsIgnoreCase("hauteur")) {
+            out.add("tout");
+        } else if (a.length == 3 && a[0].equalsIgnoreCase("etendre")) {
+            out.addAll(List.of("haut", "bas"));
         } else if (a.length == 3 && a[0].equalsIgnoreCase("creer")) {
             out.add("haut");
         } else if (a.length == 3 && a[0].toLowerCase(Locale.ROOT).startsWith("flag")) {
