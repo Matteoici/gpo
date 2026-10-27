@@ -740,7 +740,9 @@ jobs:
           echo "dir=$(dirname "$f")" >> "$GITHUB_OUTPUT"
       - name: Build SmpSalles
         working-directory: ${{ steps.find.outputs.dir }}
-        run: gradle build
+        run: |
+          set -o pipefail
+          gradle build 2>&1 | tee build.log || { grep -E "error:|\.java:[0-9]+" -A2 build.log | head -40 | while IFS= read -r l; do echo "::error::$l"; done; exit 1; }
       - name: Vérifier que le jar contient bien le plugin
         working-directory: ${{ steps.find.outputs.dir }}
         run: |
