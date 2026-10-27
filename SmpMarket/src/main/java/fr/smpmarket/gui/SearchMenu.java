@@ -37,7 +37,7 @@ public final class SearchMenu extends Menu {
             Showcase c = results.get(idx).showcase();
             button(GRID[i], CatalogMenu.display(this, c, "gui.search.lore", ph("price", money(c.price)), ph("stock", c.stock),
                     ph("shop", st.displayName()), ph("owner", st.ownerName)), click -> {
-                if (click.isRightClick() && CatalogMenu.near(plugin, viewer, st)) {
+                if (st.isPacked() || (click.isRightClick() && CatalogMenu.near(plugin, viewer, st))) {
                     new BuyMenu(plugin, viewer, st, c, () -> new SearchMenu(plugin, viewer, query, page).open()).open();
                 } else {
                     viewer.closeInventory();

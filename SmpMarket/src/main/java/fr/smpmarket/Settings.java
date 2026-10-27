@@ -39,9 +39,17 @@ public final class Settings {
     public final int maxExtraShowcases, maxCatalogSlots;
     public final boolean mannequins, privateAllowed;
     public final double mannequinDistance;
+    /** Emplacements à claim : on part à plus de X blocs (ou on se déconnecte) -> le marché est rangé après Y s. */
+    public final double leaveDistance;
+    public final long leaveGraceMs, offlineGraceMs;
+    public final boolean claimBuilding;
 
     Settings(FileConfiguration c) {
         currency = c.getString("currency-symbol", "$");
+        leaveDistance = Math.max(4, c.getDouble("claim.leave-distance", 24));
+        leaveGraceMs = Math.max(0, (long) (c.getDouble("claim.leave-grace-seconds", 45) * 1000));
+        offlineGraceMs = Math.max(0, (long) (c.getDouble("claim.offline-grace-seconds", 60) * 1000));
+        claimBuilding = c.getBoolean("claim.allow-building", false);
         leaseMs = Math.max(1, (long) (c.getDouble("lease.days", 7) * 24 * H));
         renewWindowMs = Math.max(H, (long) (c.getDouble("lease.renew-window-hours", 24) * H));
         maxPerPlayer = Math.max(1, c.getInt("lease.max-per-player", 1));

@@ -23,6 +23,8 @@ public final class MarketStore {
     private final SmpMarket plugin;
     private final File stallsFile, mailFile;
     private final Map<String, Stall> stalls = new LinkedHashMap<>();
+    /** Marchés rangés, par propriétaire (leurs vitrines sont en coordonnées relatives à l'emplacement). */
+    private final Map<UUID, Stall> markets = new LinkedHashMap<>();
     private final Map<UUID, List<ItemStack>> parcels = new HashMap<>();
     private final Map<UUID, List<String>> notes = new HashMap<>();
     /** Ventes faites pendant l'absence du vendeur : [nombre, argent]. */
@@ -53,6 +55,31 @@ public final class MarketStore {
     public void remove(Stall s) {
         stalls.remove(s.id.toLowerCase());
         markDirty();
+    }
+
+    public Collection<Stall> markets() {
+        return markets.values();
+    }
+
+    public Stall market(UUID owner) {
+        return owner == null ? null : markets.get(owner);
+    }
+
+    public void putMarket(Stall m) {
+        markets.put(m.owner, m);
+        markDirty();
+    }
+
+    public Stall takeMarket(UUID owner) {
+        Stall m = markets.remove(owner);
+        if (m != null) markDirty();
+        return m;
+    }
+
+    /** Le marché d'un joueur, installé (emplacement) ou rangé. */
+    public Stall marketOf(UUID owner) {
+        for (Stall s : stalls.values()) if (s.isOwner(owner)) return s;
+        return markets.get(owner);
     }
 
     public List<Stall> ownedBy(UUID id) {
@@ -122,11 +149,23 @@ public final class MarketStore {
     public void save() {
         dirty = false;
         YamlConfiguration y = new YamlConfiguration();
-        for (Stall s : stalls.values()) {
-            String b = "stalls." + s.id + ".";
+        for (Stall s : stalls.values()) write(y, "stalls." + s.id + ".", s);
+        for (Stall s : markets.values()) write(y, "markets." + s.owner + ".", s);
+        try {
+            y.save(stallsFile);
+        } catch (IOException e) {
+            plugin.getLogger().severe("Impossible de sauvegarder stalls.yml : " + e.getMessage());
+        }
+        saveMail();
+    }
+
+    private void write(YamlConfiguration y, String b, Stall s) {
+        {
             Cuboid r = s.region;
-            y.set(b + "region", List.of(r.world(), r.minX(), r.minY(), r.minZ(), r.maxX(), r.maxY(), r.maxZ()));
-            y.set(b + "entrance", List.of(s.world, s.ex, s.ey, s.ez, (double) s.eyaw));
+            if (r != null) {
+                y.set(b + "region", List.of(r.world(), r.minX(), r.minY(), r.minZ(), r.maxX(), r.maxY(), r.maxZ()));
+                y.set(b + "entrance", List.of(s.world, s.ex, s.ey, s.ez, (double) s.eyaw));
+            }
             y.set(b + "start-price", s.startPrice);
             y.set(b + "max-showcases", s.maxShowcases);
             if (s.owner != null) {
@@ -178,12 +217,9 @@ public final class MarketStore {
                 }
             }
         }
-        try {
-            y.save(stallsFile);
-        } catch (IOException e) {
-            plugin.getLogger().severe("Impossible de sauvegarder stalls.yml : " + e.getMessage());
-        }
+    }
 
+    private void saveMail() {
         YamlConfiguration m = new YamlConfiguration();
         for (Map.Entry<UUID, List<ItemStack>> e : parcels.entrySet()) {
             if (e.getValue().isEmpty()) continue;
@@ -202,6 +238,7 @@ public final class MarketStore {
 
     public void load() {
         stalls.clear();
+        markets.clear();
         parcels.clear();
         notes.clear();
         offlineSales.clear();
@@ -213,6 +250,17 @@ public final class MarketStore {
                     stalls.put(id.toLowerCase(), readStall(id, root.getConfigurationSection(id)));
                 } catch (Exception e) {
                     plugin.getLogger().warning("Stand illisible '" + id + "' : " + e.getMessage());
+                }
+            }
+        }
+        ConfigurationSection mk = y.getConfigurationSection("markets");
+        if (mk != null) {
+            for (String id : mk.getKeys(false)) {
+                try {
+                    Stall st = readStall("m-" + id, mk.getConfigurationSection(id));
+                    if (st.owner != null) markets.put(st.owner, st);
+                } catch (Exception e) {
+                    plugin.getLogger().warning("Marché rangé illisible '" + id + "' : " + e.getMessage());
                 }
             }
         }
@@ -238,14 +286,16 @@ public final class MarketStore {
     private Stall readStall(String id, ConfigurationSection c) {
         Stall s = new Stall(id);
         List<?> r = c.getList("region");
-        s.region = new Cuboid(String.valueOf(r.get(0)), num(r.get(1)), num(r.get(2)), num(r.get(3)),
-                num(r.get(4)), num(r.get(5)), num(r.get(6)));
-        List<?> e = c.getList("entrance");
-        s.world = String.valueOf(e.get(0));
-        s.ex = dbl(e.get(1));
-        s.ey = dbl(e.get(2));
-        s.ez = dbl(e.get(3));
-        s.eyaw = (float) dbl(e.get(4));
+        if (r != null && r.size() >= 7) {
+            s.region = new Cuboid(String.valueOf(r.get(0)), num(r.get(1)), num(r.get(2)), num(r.get(3)),
+                    num(r.get(4)), num(r.get(5)), num(r.get(6)));
+            List<?> e = c.getList("entrance");
+            s.world = String.valueOf(e.get(0));
+            s.ex = dbl(e.get(1));
+            s.ey = dbl(e.get(2));
+            s.ez = dbl(e.get(3));
+            s.eyaw = (float) dbl(e.get(4));
+        }
         s.startPrice = c.getDouble("start-price", 1000);
         s.maxShowcases = c.getInt("max-showcases", plugin.settings().defaultShowcases);
         String owner = c.getString("owner");

@@ -72,6 +72,11 @@ public final class Stall {
         this.id = id;
     }
 
+    /** Marché rangé (son propriétaire n'est sur aucun emplacement) : pas de zone, vitrines en coordonnées relatives. */
+    public boolean isPacked() {
+        return region == null;
+    }
+
     public boolean isRented() {
         return owner != null;
     }

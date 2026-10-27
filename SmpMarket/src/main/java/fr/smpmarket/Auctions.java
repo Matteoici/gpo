@@ -251,7 +251,7 @@ public final class Auctions {
      * Coffres, tonneaux, shulkers, fours... posés dans le stand : le contenant ET son contenu partent dans le colis
      * (une shulker garde ses objets à l'intérieur), puis le bloc est retiré. Les vitrines ne sont pas touchées.
      */
-    private int collectContainers(Stall st) {
+    int collectContainers(Stall st) {
         org.bukkit.World w = st.region == null ? null : Bukkit.getWorld(st.region.world());
         if (w == null || st.owner == null) return 0;
         java.util.List<org.bukkit.block.Block> blocks = new java.util.ArrayList<>();
@@ -361,6 +361,6 @@ public final class Auctions {
     }
 
     public TagResolver stallTags(Stall st) {
-        return TagResolver.resolver(ph("stall", st.id), ph("shop", st.displayName()), ph("size", st.region.size()));
+        return TagResolver.resolver(ph("stall", st.id), ph("shop", st.displayName()), ph("size", st.region == null ? "-" : st.region.size()));
     }
 }

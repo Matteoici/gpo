@@ -45,6 +45,7 @@ public final class CatalogMenu extends Menu {
 
     /** Le joueur est-il assez près pour acheter dans ce stand ? */
     static boolean near(SmpMarket plugin, Player p, Stall st) {
+        if (st.isPacked()) return true; // marché rangé : on achète à distance
         Location e = st.entrance();
         if (e == null || e.getWorld() != p.getWorld()) return false;
         double d = plugin.settings().buyDistance;
@@ -78,7 +79,8 @@ public final class CatalogMenu extends Menu {
                 new BuyMenu(plugin, viewer, stall, c, () -> new CatalogMenu(plugin, viewer, stall).open()).open();
             });
         }
-        button(49, item(Material.ENDER_PEARL, "gui.catalog.tp"), c -> {
+        if (stall.isPacked()) set(49, item(Material.BARREL, "claim.gui.packed-info"));
+        else button(49, item(Material.ENDER_PEARL, "gui.catalog.tp"), c -> {
             viewer.closeInventory();
             MarketCommand.teleport(plugin, viewer, stall);
         });

@@ -38,7 +38,8 @@ public final class StallMenu extends Menu {
         }
         long now = System.currentTimeMillis();
         TagResolver tags = plugin.auctions().stallTags(stall);
-        set(4, Items.glow(item(Material.EMERALD, "gui.stall.header", tags, ph("time", Settings.time(stall.leaseEnd - now)),
+        set(4, Items.glow(item(Material.EMERALD, stall.isPacked() ? "claim.gui.header-packed" : "claim.gui.header-open", tags,
+                ph("distance", (int) plugin.settings().leaveDistance),
                 ph("sold", stall.totalSold), ph("revenue", money(stall.totalRevenue)),
                 ph("used", stall.physicalCount()), ph("max", stall.showcaseLimit()),
                 ph("catalog", stall.virtualCount()), ph("catalog-max", stall.catalogSlots))));
@@ -65,18 +66,18 @@ public final class StallMenu extends Menu {
         }));
         button(47, item(Material.PLAYER_HEAD, "gui.stall.trusted", ph("count", stall.trusted.size())),
                 c -> new TrustedMenu(plugin, viewer, stall).open());
-        button(48, item(stall.autoRenew ? Material.REPEATER : Material.COMPARATOR, "gui.stall.autorenew",
-                pc("state", t().get(stall.autoRenew ? "gui.stall.on" : "gui.stall.off")), ph("price", money(stall.startPrice))), c -> {
-            stall.autoRenew = !stall.autoRenew;
-            stall.touch();
-                plugin.store().markDirty();
-            t().send(viewer, stall.autoRenew ? "stall.auto-renew-on" : "stall.auto-renew-off");
-            redraw();
-        });
-        button(49, item(Material.ENDER_PEARL, "gui.stall.tp"), c -> {
-            viewer.closeInventory();
-            MarketCommand.teleport(plugin, viewer, stall);
-        });
+        if (!stall.isPacked()) {
+            button(48, item(Material.BARREL, "claim.gui.pack"), c -> {
+                viewer.closeInventory();
+                plugin.claims().pack(stall, "claim.packed-manual");
+            });
+            button(49, item(Material.ENDER_PEARL, "gui.stall.tp"), c -> {
+                viewer.closeInventory();
+                MarketCommand.teleport(plugin, viewer, stall);
+            });
+        } else {
+            button(49, item(Material.OAK_HANGING_SIGN, "claim.gui.find-spot"), c -> new DirectoryMenu(plugin, viewer, 0, true).open());
+        }
         set(50, item(Material.BOOK, "gui.stall.howto"));
 
         // ---- améliorations et options (ligne du bas de la grille)
@@ -127,7 +128,7 @@ public final class StallMenu extends Menu {
                 redraw();
             });
         }
-        if (set.mannequins) {
+        if (set.mannequins && !stall.isPacked()) {
             button(42, item(Material.ARMOR_STAND, "gui.stall.mannequin-spot"), c -> {
                 if (!stall.region.contains(viewer.getLocation().getBlock())) {
                     t().send(viewer, "stall.mannequin-outside");
@@ -153,7 +154,7 @@ public final class StallMenu extends Menu {
         }
         button(52, Items.glow(item(Material.PAINTING, "gui.stall.style")), c -> new StyleMenu(plugin, viewer, stall).open());
         Auction a = stall.auction;
-        if (a != null && a.renewal) {
+        if (a != null && a.renewal && !stall.isPacked()) {
             button(51, Items.glow(item(Material.BELL, "gui.stall.renewal",
                     ph("bid", money(a.hasBid() ? a.bid : stall.startPrice)),
                     pc("bidder", a.hasBid() ? t().get("gui.auctions.by", ph("player", a.bidderName)) : t().get("gui.auctions.waiting")),

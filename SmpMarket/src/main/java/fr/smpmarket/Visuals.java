@@ -78,6 +78,7 @@ public final class Visuals {
 
     /** Fait apparaître ce qui manque pour ce stand (si les chunks sont chargés). */
     public void ensure(Stall st) {
+        if (st.region == null) return; // marché rangé : rien dans le monde
         World w = st.region.bukkitWorld();
         if (w == null) return;
         Location entrance = st.entrance();
@@ -202,6 +203,8 @@ public final class Visuals {
         TagResolver base = TagResolver.resolver(plugin.auctions().stallTags(st), ph("owner", st.ownerName == null ? "-" : st.ownerName),
                 ph("count", st.itemsForSale()));
         if (!st.isRented()) {
+            // emplacement libre : n'importe qui peut y installer son marché
+            if (a == null || !a.hasBid()) return t.lines("claim.sign-free", base);
             boolean bid = a != null && a.hasBid();
             boolean running = a != null && a.endsAt > 0;
             TagResolver vals = TagResolver.resolver(ph("bid", s.money(bid ? a.bid : st.startPrice)),

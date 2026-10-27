@@ -59,7 +59,7 @@ final class MarketListener implements Listener {
         if (st == null) return;
         if (target.showcase() == null) {
             // panneau du stand
-            if (!st.isRented()) new AuctionMenu(plugin, p, st, null).open();
+            if (!st.isRented()) plugin.claims().deploy(p, st);
             else if (st.isOwner(p.getUniqueId())) new StallMenu(plugin, p, st).open();
             else new CatalogMenu(plugin, p, st).open();
             return;
@@ -85,6 +85,12 @@ final class MarketListener implements Listener {
         if (st == null) return;
         Player p = e.getPlayer();
         if (plugin.isAdminBypass(p)) return;
+        if (!plugin.settings().claimBuilding) {
+            // emplacements partagés : on n'y construit pas (le suivant le récupérerait)
+            e.setCancelled(true);
+            plugin.texts().send(p, "claim.no-build");
+            return;
+        }
         if (st.canBuild(p.getUniqueId())) {
             if (isShowcaseBlock(st, e.getBlock())) {
                 e.setCancelled(true);
@@ -113,6 +119,11 @@ final class MarketListener implements Listener {
         if (st == null) return;
         Player p = e.getPlayer();
         if (plugin.isAdminBypass(p)) return;
+        if (!plugin.settings().claimBuilding) {
+            e.setCancelled(true);
+            plugin.texts().send(p, "claim.no-build");
+            return;
+        }
         if (st.canBuild(p.getUniqueId())) {
             if (isShowcaseBlock(st, e.getBlock())) {
                 e.setCancelled(true);
@@ -189,6 +200,11 @@ final class MarketListener implements Listener {
         if (st == null) return;
         Player p = e.getPlayer();
         if (plugin.isAdminBypass(p)) return;
+        if (!plugin.settings().claimBuilding) {
+            e.setCancelled(true);
+            plugin.texts().send(p, "claim.no-build");
+            return;
+        }
         if (st.canBuild(p.getUniqueId())) {
             if (plugin.settings().overrideProtections) e.setCancelled(false);
             st.touch();

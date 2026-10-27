@@ -119,7 +119,9 @@ public final class Search {
     /** Toutes les vitrines correspondantes avec du stock, de la moins chère à la plus chère. */
     public static List<Result> find(SmpMarket plugin, String query) {
         List<Result> out = new ArrayList<>();
-        for (Stall st : plugin.store().stalls()) {
+        List<Stall> all = new ArrayList<>(plugin.store().stalls());
+        all.addAll(plugin.store().markets()); // marchés rangés : achetables à distance
+        for (Stall st : all) {
             if (!st.isRented()) continue;
             for (Showcase c : st.showcases) {
                 if (c.stock > 0 && matches(c.template, query)) out.add(new Result(st, c));

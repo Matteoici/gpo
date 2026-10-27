@@ -27,7 +27,7 @@ import static fr.smpmarket.Texts.ph;
 
 public final class MarketCommand implements TabExecutor {
 
-    private static final List<String> SUBS = List.of("chercher", "vitrine", "gerer", "colis", "encheres", "encherir", "tp",
+    private static final List<String> SUBS = List.of("chercher", "installer", "ranger", "vitrine", "gerer", "colis", "tp",
             "ami", "retirer-ami", "nom", "catalogue", "mannequin", "aide");
     private static final List<String> ADMIN = List.of("wand", "create", "delete", "setentrance", "list", "reset", "give",
             "end", "showcases", "price", "reload");
@@ -66,13 +66,11 @@ public final class MarketCommand implements TabExecutor {
         return from >= args.length ? "" : String.join(" ", Arrays.copyOfRange(args, from, args.length)).trim();
     }
 
+    /** Son marché, installé sur un emplacement ou rangé. */
     private Stall myStall(Player p) {
-        List<Stall> l = plugin.store().ownedBy(p.getUniqueId());
-        if (l.isEmpty()) {
-            t().send(p, "stall.none");
-            return null;
-        }
-        return l.get(0);
+        Stall st = plugin.store().marketOf(p.getUniqueId());
+        if (st == null) t().send(p, "claim.no-market-yet");
+        return st;
     }
 
     @Override
@@ -89,7 +87,7 @@ public final class MarketCommand implements TabExecutor {
         }
         switch (sub) {
             case "" -> new MainMenu(plugin, p).open();
-            case "aide", "help" -> t().sendLines(p, "help");
+            case "aide", "help" -> t().sendLines(p, "claim.help");
             case "chercher", "search", "find" -> {
                 String q = join(args, 1);
                 if (q.isEmpty()) t().send(p, "error.usage", ph("usage", "/marche chercher <objet>"));
@@ -117,9 +115,27 @@ public final class MarketCommand implements TabExecutor {
                 Stall st = myStall(p);
                 if (st != null) plugin.shops().createVirtual(p, st, price);
             }
+            case "installer", "claim", "ouvrir" -> {
+                Stall spot = plugin.shops().stallAt(p.getLocation());
+                if (spot == null) {
+                    Block below = p.getLocation().getBlock().getRelative(0, -1, 0);
+                    spot = plugin.shops().stallAt(below);
+                }
+                if (spot == null) t().send(p, "claim.not-on-spot");
+                else plugin.claims().deploy(p, spot);
+            }
+            case "ranger", "pack", "fermer" -> {
+                Stall st = plugin.store().marketOf(p.getUniqueId());
+                if (st == null || st.isPacked()) t().send(p, "claim.nothing-to-pack");
+                else plugin.claims().pack(st, "claim.packed-manual");
+            }
             case "mannequin", "pnj" -> {
                 Stall st = myStall(p);
                 if (st == null) return true;
+                if (st.isPacked()) {
+                    t().send(p, "claim.not-deployed");
+                    return true;
+                }
                 String opt = args.length > 1 ? args[1].toLowerCase(Locale.ROOT) : "";
                 if (opt.equals("off") || opt.equals("retirer")) {
                     st.mannequin = false;
@@ -144,18 +160,7 @@ public final class MarketCommand implements TabExecutor {
                 if (st != null) new StallMenu(plugin, p, st).open();
             }
             case "colis", "parcels" -> new MailboxMenu(plugin, p).open();
-            case "encheres", "auctions" -> new AuctionsMenu(plugin, p, 0).open();
-            case "encherir", "bid" -> {
-                if (args.length < 3) {
-                    t().send(p, "error.usage", ph("usage", "/marche encherir <stand> <montant>"));
-                    return true;
-                }
-                Stall st = plugin.store().stall(args[1]);
-                double amount = parseMoney(args[2]);
-                if (st == null) t().send(p, "stall.unknown", ph("stall", args[1]));
-                else if (amount <= 0) t().send(p, "error.bad-amount", ph("value", args[2]));
-                else plugin.auctions().bid(p, st, amount);
-            }
+            case "encheres", "auctions", "encherir", "bid" -> t().send(p, "claim.no-auctions");
             case "tp", "visiter", "visit" -> {
                 if (args.length < 2) {
                     t().send(p, "error.usage", ph("usage", "/marche tp <stand ou joueur>"));
@@ -167,7 +172,13 @@ public final class MarketCommand implements TabExecutor {
                         if (s.ownerName != null && s.ownerName.equalsIgnoreCase(args[1])) st = s;
                     }
                 }
+                if (st == null) {
+                    for (Stall s : plugin.store().markets()) {
+                        if (s.ownerName != null && s.ownerName.equalsIgnoreCase(args[1])) st = s;
+                    }
+                }
                 if (st == null) t().send(p, "stall.unknown", ph("stall", args[1]));
+                else if (st.isPacked()) new fr.smpmarket.gui.CatalogMenu(plugin, p, st).open();
                 else teleport(p, st);
             }
             case "ami", "trust" -> {
@@ -198,7 +209,7 @@ public final class MarketCommand implements TabExecutor {
                 if (st == null) return true;
                 rename(p, st, join(args, 1));
             }
-            default -> t().sendLines(p, "help");
+            default -> t().sendLines(p, "claim.help");
         }
         return true;
     }
@@ -332,14 +343,14 @@ public final class MarketCommand implements TabExecutor {
         switch (sub) {
             case "delete" -> {
                 auctions.cancel(st);
-                auctions.evict(st);
+                plugin.claims().pack(st, "claim.packed-admin");
                 plugin.visuals().removeStall(st);
                 store.remove(st);
                 t().send(sender, "admin.deleted", ph("stall", st.id));
             }
             case "reset" -> {
                 auctions.cancel(st);
-                auctions.evict(st);
+                plugin.claims().pack(st, "claim.packed-admin");
                 plugin.visuals().rebuild(st);
                 t().send(sender, "admin.reset", ph("stall", st.id));
             }
@@ -365,15 +376,15 @@ public final class MarketCommand implements TabExecutor {
                     t().send(sender, "error.unknown-player", ph("player", a[2]));
                     return;
                 }
-                double days = a.length > 3 ? parseMoney(a[3]) : -1;
-                long lease = days > 0 ? (long) (days * 86_400_000L) : plugin.settings().leaseMs;
+                Player op = o.getPlayer();
+                if (op == null) {
+                    t().send(sender, "claim.admin-give-online");
+                    return;
+                }
                 auctions.cancel(st);
-                auctions.evict(st);
-                auctions.assign(st, o.getUniqueId(), o.getName(), System.currentTimeMillis() + lease);
-                plugin.visuals().rebuild(st);
-                plugin.notify(o.getUniqueId(), t().get("auction.won", auctions.stallTags(st), ph("amount", "0"),
-                        ph("time", Settings.time(lease))));
-                t().send(sender, "admin.given", ph("stall", st.id), ph("player", o.getName()));
+                plugin.claims().pack(st, "claim.packed-admin");
+                for (Stall other : new ArrayList<>(store.stalls())) if (other.isOwner(op.getUniqueId())) plugin.claims().pack(other, null);
+                if (plugin.claims().deploy(op, st)) t().send(sender, "admin.given", ph("stall", st.id), ph("player", o.getName()));
             }
             case "end" -> {
                 if (st.auction == null) {

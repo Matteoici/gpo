@@ -566,3 +566,114 @@ upgrade:
   catalog-max: "<red>Ton catalogue est déjà au maximum (<white><max></white> places)."
 mannequin:
   description: "<gray>Absent · <yellow>clic droit : catalogue"
+
+# ---------------------------------------------------------------- Emplacements à claim (nouveau marché)
+claim:
+  help:
+    - ""
+    - "<gradient:#ffd36b:#ff8a3d><b>🏪 Le marché</b></gradient>"
+    - "<gray>Trouve un <green>emplacement libre</green>, fais <yellow>clic droit</yellow> sur son panneau : <white>ton marché apparaît</white>."
+    - "<gray>Tu t'éloignes ou tu te déconnectes : ton marché est <white>rangé</white> (rien n'est perdu) et l'emplacement se libère."
+    - "<gray>Rangé, ton stock reste <white>achetable à distance</white> via la recherche."
+    - "<aqua>/marche</aqua> <dark_gray>- <gray>menu du marché"
+    - "<aqua>/marche installer</aqua> <dark_gray>- <gray>installer ton marché sur l'emplacement où tu es"
+    - "<aqua>/marche ranger</aqua> <dark_gray>- <gray>ranger ton marché"
+    - "<aqua>/marche chercher <objet></aqua> <dark_gray>- <gray>trouver le meilleur prix"
+    - "<aqua>/marche vitrine <prix></aqua> <dark_gray>- <gray>exposer l'objet en main sur le bloc visé"
+    - "<aqua>/marche gerer</aqua> <dark_gray>- <gray>gérer ton marché (même rangé)"
+    - "<aqua>/marche colis</aqua> <dark_gray>- <gray>récupérer tes objets"
+    - ""
+  sign-free:
+    - "<green><b>★ EMPLACEMENT LIBRE ★</b></green>"
+    - "<gray>Emplacement <white><stall></white> <dark_gray>(<size>)"
+    - "<gray>Installe ton marché ici, gratuitement"
+    - "<yellow>Clic droit pour l'installer"
+  already-yours: "<yellow>Ton marché est déjà installé ici."
+  taken: "<red>Cet emplacement est déjà pris par <white><player></white>."
+  already-deployed: "<red>Ton marché est déjà installé sur l'emplacement <white><stall></white>. <gray>Range-le d'abord : <aqua>/marche ranger"
+  deployed-new: "<green>🏪 Ton marché est installé !</green> <gray>Objet en main + vise un bloc : <aqua>/marche vitrine <prix></aqua><gray>. Il se range tout seul si tu t'éloignes à plus de <white><distance></white> blocs."
+  deployed: "<green>🏪 Ton marché <white><shop></white> est de retour !</green> <gray>(<white><count></white> article(s) en vente) · il se range si tu t'éloignes à plus de <white><distance></white> blocs."
+  back: "<green>Tu es revenu : ton marché reste ouvert."
+  leaving: "<gold>⚠ Tu t'éloignes de ton marché : rangé dans <white><seconds> s</white>"
+  packed-far: "<yellow>📦 Tu t'es éloigné : ton marché <white><shop></white> est rangé.</yellow> <gray>Ton stock reste achetable à distance. Réinstalle-le sur n'importe quel emplacement libre."
+  packed-offline: "<yellow>📦 Tu t'es déconnecté : ton marché <white><shop></white> a été rangé.</yellow> <gray>Ton stock est resté achetable à distance."
+  packed-manual: "<yellow>📦 Ton marché <white><shop></white> est rangé.</yellow> <gray>L'emplacement est libre ; ton stock reste achetable à distance."
+  packed-admin: "<yellow>📦 Un admin a rangé ton marché <white><shop></white>.</yellow> <gray>Rien n'est perdu."
+  no-build: "<red>On ne construit pas sur les emplacements du marché <gray>(ils sont partagés)."
+  hint: "<gray>Fais <yellow>clic droit</yellow> sur le panneau de l'emplacement pour y installer ton marché."
+  no-market-yet: "<red>Tu n'as pas encore de marché. <gray>Installe-le sur un emplacement libre : clic droit sur son panneau."
+  not-on-spot: "<red>Tu n'es pas sur un emplacement du marché."
+  nothing-to-pack: "<red>Ton marché n'est installé nulle part."
+  not-deployed: "<red>Ton marché est rangé : installe-le d'abord sur un emplacement."
+  no-auctions: "<gray>Il n'y a plus d'enchères : les emplacements sont <green>gratuits</green>, il suffit de les prendre quand ils sont libres."
+  admin-give-online: "<red>Le joueur doit être connecté pour qu'on installe son marché."
+  gui:
+    header-lore:
+      - "<gray>Marchés ouverts : <white><rented>"
+      - "<gray>Emplacements libres : <green><free>"
+      - "<gray>Ton argent : <gold><balance>"
+    free-title: "<dark_gray>Emplacements libres (<count>)"
+    free-spots:
+      name: "<green><b>Emplacements libres <gray>(<count>)"
+      lore: ["<gray>Prends un emplacement libre", "<gray>et ton marché apparaît dessus.", "", "<yellow>▶ Clic"]
+    free-spot:
+      name: "<green><b>Emplacement <stall> libre"
+      lore: ["<gray>Taille : <white><size>", "", "<yellow>▶ Clic : y aller"]
+    no-free:
+      name: "<gray>Aucun emplacement libre"
+      lore: ["<gray>Reviens un peu plus tard !"]
+    no-market:
+      name: "<gray><b>Mon marché"
+      lore: ["<gray>Tu n'as pas encore de marché.", "<gray>Prends un emplacement libre", "<gray>pour l'installer !"]
+    my-market-open:
+      name: "<green><b>Mon marché"
+      lore: ["<gray><shop>", "<green>● Installé</green> <gray>· <white><count></white> article(s)", "", "<yellow>▶ Clic pour gérer"]
+    my-market-packed:
+      name: "<green><b>Mon marché"
+      lore: ["<gray><shop>", "<yellow>📦 Rangé</yellow> <gray>· <white><count></white> article(s)", "<gray>(achetables à distance)", "", "<yellow>▶ Clic pour gérer"]
+    help:
+      name: "<white><b>Comment ça marche ?"
+      lore:
+        - "<yellow>1.</yellow> <gray>Va sur un <green>emplacement libre</green>."
+        - "<yellow>2.</yellow> <gray>Clic droit sur son panneau :"
+        - "    <gray>ton marché apparaît."
+        - "<yellow>3.</yellow> <gray>Objet en main + vise un bloc :"
+        - "    <aqua>/marche vitrine <prix>"
+        - "<yellow>4.</yellow> <gray>Tu pars à plus de <white><distance></white> blocs"
+        - "    <gray>ou tu te déconnectes : il est <white>rangé</white>."
+        - "<yellow>5.</yellow> <gray>Rangé, ton stock reste achetable"
+        - "    <gray>à distance (recherche) !"
+        - ""
+        - "<gray>Taxe sur les ventes : <white><tax>%"
+    packed-lore:
+      - "<gray>De <white><owner></white> <yellow>· rangé"
+      - "<gray>Articles en vente : <white><count>"
+      - "<top>"
+      - ""
+      - "<yellow>▶ Clic : acheter à distance"
+    packed-info:
+      name: "<yellow><b>📦 Marché rangé"
+      lore: ["<gray>Son propriétaire n'est pas là,", "<gray>mais tu peux acheter à distance."]
+    header-open:
+      name: "<gold><b><shop>"
+      lore:
+        - "<green>● Installé</green> <gray>sur l'emplacement <white><stall>"
+        - "<gray>Rangé si tu t'éloignes à plus de <white><distance></white> blocs"
+        - "<gray>Objets vendus : <white><sold>"
+        - "<gray>Recettes : <gold><revenue>"
+        - "<gray>Vitrines : <white><used>/<max>"
+        - "<gray>Catalogue : <white><catalog>/<catalog-max>"
+    header-packed:
+      name: "<gold><b><shop>"
+      lore:
+        - "<yellow>📦 Rangé</yellow> <gray>· ton stock reste achetable à distance"
+        - "<gray>Objets vendus : <white><sold>"
+        - "<gray>Recettes : <gold><revenue>"
+        - "<gray>Vitrines : <white><used>"
+        - "<gray>Catalogue : <white><catalog>/<catalog-max>"
+    pack:
+      name: "<yellow><b>📦 Ranger mon marché"
+      lore: ["<gray>Libère l'emplacement.", "<gray>Tout est gardé, ton stock reste", "<gray>achetable à distance.", "", "<yellow>▶ Clic"]
+    find-spot:
+      name: "<green><b>Installer mon marché"
+      lore: ["<gray>Voir les emplacements libres.", "", "<yellow>▶ Clic"]

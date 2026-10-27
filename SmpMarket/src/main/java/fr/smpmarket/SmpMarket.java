@@ -20,6 +20,7 @@ public final class SmpMarket extends JavaPlugin {
     private Economy economy;
     private MarketStore store;
     private Auctions auctions;
+    private Claims claims;
     private Shops shops;
     private Visuals visuals;
     private Mannequins mannequins;
@@ -49,10 +50,12 @@ public final class SmpMarket extends JavaPlugin {
         store = new MarketStore(this);
         store.load();
         auctions = new Auctions(this);
+        claims = new Claims(this);
         shops = new Shops(this);
         visuals = new Visuals(this);
         mannequins = new Mannequins(this);
         input = new ChatInput(this);
+        claims.migrate();
 
         getServer().getPluginManager().registerEvents(new MarketListener(this), this);
         getServer().getPluginManager().registerEvents(new SpawnerFix(this), this);
@@ -64,8 +67,7 @@ public final class SmpMarket extends JavaPlugin {
         }
 
         Bukkit.getScheduler().runTaskTimer(this, () -> {
-            auctions.tick();
-            visuals.tickSigns();
+            claims.tick();
         }, 40L, 20L);
         Bukkit.getScheduler().runTaskTimer(this, () -> visuals.spin(40), 40L, 40L);
         Bukkit.getScheduler().runTaskTimer(this, () -> visuals.ensureAll(), 20L, 100L);
@@ -132,6 +134,10 @@ public final class SmpMarket extends JavaPlugin {
 
     public Auctions auctions() {
         return auctions;
+    }
+
+    public Claims claims() {
+        return claims;
     }
 
     public Shops shops() {

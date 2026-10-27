@@ -1,12 +1,26 @@
 config-version: 2
 # =====================================================================
-#  SmpMarket - marché de joueurs (stands loués aux enchères + vitrines)
+#  SmpMarket - marché de joueurs (emplacements à claim + vitrines)
 #  Les textes sont dans messages.yml. Après une modification : /marche admin reload
 # =====================================================================
 
 currency-symbol: "$"
 
-# ---------------------------------------------------------------- Location des stands
+# ---------------------------------------------------------------- Emplacements à claim
+# Plus de location ni d'enchères : un emplacement libre se prend (clic droit sur son panneau, ou /marche installer),
+# le marché du joueur apparaît dessus. S'il s'éloigne ou se déconnecte, son marché est rangé (gardé) et
+# l'emplacement se libère. Rangé, son stock reste achetable à distance (recherche / catalogue).
+claim:
+  # on s'éloigne à plus de X blocs du marché...
+  leave-distance: 24
+  # ...pendant X secondes -> rangé
+  leave-grace-seconds: 45
+  # déconnecté depuis X secondes -> rangé (laisse le temps de se reconnecter après un crash)
+  offline-grace-seconds: 60
+  # construire sur les emplacements (non conseillé : le joueur suivant récupérerait les blocs)
+  allow-building: false
+
+# ---------------------------------------------------------------- (ancien) Location des stands — plus utilisé
 lease:
   # durée d'une location gagnée aux enchères (jours)
   days: 7
