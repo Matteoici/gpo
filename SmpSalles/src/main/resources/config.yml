@@ -15,6 +15,12 @@ max-attempts: 3
 lockout-seconds: 30
 # voice chat insonorisé (nécessite Simple Voice Chat)
 voice-isolation: true
+# sons Minecraft de l'extérieur coupés pour ceux dans la salle (nécessite ProtocolLib)
+sound-isolation: true
+# ceux qui n'ont pas tapé le code sont repoussés dehors (les op passent : permission smpsalles.bypass)
+push-intruders: true
+# après le bon code : secondes pour entrer (une fois sorti, il faut retaper le code)
+entry-seconds: 15
 
 messages:
   keypad-title: "<dark_gray>🔒 Salle <white><room>"
@@ -28,3 +34,4 @@ messages:
   locked: "<red>⛔ Trop d'essais. Réessaie dans <seconds> s."
   enter-voice: "<aqua>🔇 Salle insonorisée <gray>· seuls ceux dans la salle t'entendent"
   leave-voice: "<gray>🔊 Tu es sorti de la salle insonorisée"
+  intruder: "<red>🔒 Tu n'as pas composé le code de cette salle."

@@ -52,6 +52,11 @@ public final class SmpSalles extends JavaPlugin implements Listener {
     private final Map<UUID, Integer> fails = new HashMap<>();
     private final Map<UUID, Long> lockedUntil = new HashMap<>();
     private VoiceLink voice;
+    /** joueur -> salle -> autorisé jusqu'à (ms) : bon code tapé, ou déjà dedans */
+    private final Map<UUID, Map<String, Long>> access = new HashMap<>();
+    /** pour SoundWall (fil réseau) : salle où est chaque joueur */
+    private final Map<UUID, SoundWall.Snap> soundView = new java.util.concurrent.ConcurrentHashMap<>();
+    private boolean soundWall;
     private File file;
 
     // pavé : 1 2 3 / 4 5 6 / 7 8 9 / ✖ 0 ✔
@@ -74,7 +79,17 @@ public final class SmpSalles extends JavaPlugin implements Listener {
         } else {
             getLogger().info("Simple Voice Chat absent : les portes à code marchent, mais pas l'insonorisation.");
         }
+        if (getServer().getPluginManager().getPlugin("ProtocolLib") != null) {
+            try {
+                Class.forName("fr.smpsalles.SoundWall").getDeclaredMethod("register", SmpSalles.class, Map.class).invoke(null, this, soundView);
+                soundWall = true;
+                getLogger().info("ProtocolLib détecté : les sons de l'extérieur sont coupés dans les salles.");
+            } catch (Throwable t) {
+                getLogger().warning("ProtocolLib présent mais incompatible : les sons de l'extérieur restent audibles (" + t + ")");
+            }
+        }
         Bukkit.getScheduler().runTaskTimer(this, this::voiceTick, 40L, 10L);
+        Bukkit.getScheduler().runTaskTimer(this, this::guardTick, 20L, 5L);
     }
 
     @Override
@@ -156,9 +171,118 @@ public final class SmpSalles extends JavaPlugin implements Listener {
         return null;
     }
 
+    // ================================================================= accès (code)
+
+    private boolean allowed(Player p, Room r) {
+        if (!getConfig().getBoolean("push-intruders", true) || p.hasPermission("smpsalles.bypass")) return true;
+        if (r.code == null || r.code.isEmpty()) return true;
+        Map<String, Long> m = access.get(p.getUniqueId());
+        Long until = m == null ? null : m.get(r.name);
+        return until != null && until > System.currentTimeMillis();
+    }
+
+    private void grant(Player p, Room r, long ms) {
+        access.computeIfAbsent(p.getUniqueId(), k -> new HashMap<>()).put(r.name, System.currentTimeMillis() + ms);
+    }
+
+    /** Point juste devant la porte, côté extérieur. */
+    private Location outside(Room r, Player p) {
+        World w = Bukkit.getWorld(r.world);
+        if (w == null) return null;
+        Location best = null;
+        double bestD = Double.MAX_VALUE;
+        for (int[] d : r.doors) {
+            for (int[] n : new int[][]{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
+                Location l = new Location(w, d[0] + n[0] * 1 + 0.5, d[1], d[2] + n[1] * 1 + 0.5);
+                if (r.contains(l)) l = new Location(w, d[0] + n[0] * 2 + 0.5, d[1], d[2] + n[1] * 2 + 0.5);
+                if (r.contains(l) || !l.getBlock().isPassable() || !l.clone().add(0, 1, 0).getBlock().isPassable()) continue;
+                double dist = l.distanceSquared(p.getLocation());
+                if (dist < bestD) {
+                    bestD = dist;
+                    best = l;
+                    best.setYaw((float) Math.toDegrees(Math.atan2(-n[0], n[1])));
+                }
+            }
+        }
+        return best;
+    }
+
+    private void eject(Player p, Room r) {
+        Location out = outside(r, p);
+        if (out == null) {
+            // pas de porte utilisable : on le pose juste au-dessus du toit de la salle
+            out = new Location(Bukkit.getWorld(r.world), (r.box[0] + r.box[3]) / 2.0 + 0.5, r.box[4] + 1, (r.box[2] + r.box[5]) / 2.0 + 0.5);
+        }
+        p.teleport(out);
+        p.setVelocity(out.getDirection().setY(0).normalize().multiply(0.4).setY(0.2));
+        p.sendActionBar(parse(msg("intruder")));
+        p.playSound(p.getLocation(), Sound.BLOCK_IRON_DOOR_CLOSE, 1f, 0.7f);
+    }
+
+    /** Entrer dans une salle sans le code : repoussé. */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onEnter(org.bukkit.event.player.PlayerMoveEvent e) {
+        Location to = e.getTo();
+        if (e.getFrom().getBlockX() == to.getBlockX() && e.getFrom().getBlockY() == to.getBlockY() && e.getFrom().getBlockZ() == to.getBlockZ()) return;
+        Room r = roomAt(to);
+        if (r == null || r.contains(e.getFrom())) return;
+        Player p = e.getPlayer();
+        if (allowed(p, r)) return;
+        e.setCancelled(true);
+        Location from = e.getFrom();
+        org.bukkit.util.Vector back = from.toVector().subtract(to.toVector()).setY(0);
+        if (back.lengthSquared() > 1e-4) p.setVelocity(back.normalize().multiply(0.5).setY(0.15));
+        p.sendActionBar(parse(msg("intruder")));
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onTeleportIn(org.bukkit.event.player.PlayerTeleportEvent e) {
+        Room r = roomAt(e.getTo());
+        if (r == null || r.contains(e.getFrom()) || allowed(e.getPlayer(), r)) return;
+        e.setCancelled(true);
+        e.getPlayer().sendActionBar(parse(msg("intruder")));
+    }
+
+    /** Toutes les 5 ticks : dedans avec le code = reste autorisé ; dedans sans code (connexion, tp...) = dehors. */
+    private void guardTick() {
+        long now = System.currentTimeMillis();
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            Room r = roomAt(p.getLocation());
+            if (r == null) continue;
+            if (allowed(p, r)) {
+                Map<String, Long> m = access.computeIfAbsent(p.getUniqueId(), k -> new HashMap<>());
+                m.merge(r.name, now + 4000, Math::max);
+            } else {
+                eject(p, r);
+            }
+        }
+        access.values().forEach(m -> m.values().removeIf(t -> t < now));
+        access.values().removeIf(Map::isEmpty);
+    }
+
     // ================================================================= voix
 
     private void voiceTick() {
+        if (soundWall) {
+            Map<String, SoundWall.Snap> snaps = new HashMap<>();
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                Room r = getConfig().getBoolean("sound-isolation", true) ? roomAt(p.getLocation()) : null;
+                if (r == null) {
+                    soundView.remove(p.getUniqueId());
+                    continue;
+                }
+                SoundWall.Snap s = snaps.computeIfAbsent(r.name, k -> {
+                    java.util.Set<Integer> ids = new java.util.HashSet<>();
+                    World w = Bukkit.getWorld(r.world);
+                    if (w != null) {
+                        org.bukkit.util.BoundingBox bb = new org.bukkit.util.BoundingBox(r.box[0], r.box[1], r.box[2], r.box[3] + 1, r.box[4] + 1, r.box[5] + 1);
+                        for (org.bukkit.entity.Entity en : w.getNearbyEntities(bb)) ids.add(en.getEntityId());
+                    }
+                    return new SoundWall.Snap(r.name, r.world, r.box.clone(), java.util.Set.copyOf(ids));
+                });
+                soundView.put(p.getUniqueId(), s);
+            }
+        }
         if (voice == null || !getConfig().getBoolean("voice-isolation", true)) return;
         for (Player p : Bukkit.getOnlinePlayers()) {
             Room r = roomAt(p.getLocation());
@@ -174,6 +298,8 @@ public final class SmpSalles extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onQuit(PlayerQuitEvent e) {
+        soundView.remove(e.getPlayer().getUniqueId());
+        access.remove(e.getPlayer().getUniqueId());
         if (voice != null) voice.forget(e.getPlayer());
     }
 
@@ -307,6 +433,7 @@ public final class SmpSalles extends JavaPlugin implements Listener {
         p.closeInventory();
         if (k.typed.toString().equals(k.room.code)) {
             fails.remove(p.getUniqueId());
+            grant(p, k.room, getConfig().getLong("entry-seconds", 15) * 1000);
             p.sendActionBar(parse(msg("granted")));
             p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 1.6f);
             openDoor(k.door);
@@ -420,7 +547,8 @@ public final class SmpSalles extends JavaPlugin implements Listener {
                 s.sendMessage(parse("<gray>Zone : <white>" + (r.ready() ? r.world + " " + r.box[0] + " " + r.box[1] + " " + r.box[2] + " → "
                         + r.box[3] + " " + r.box[4] + " " + r.box[5] : "<red>manquante")));
                 s.sendMessage(parse("<gray>Portes : <white>" + r.doors.size() + " <gray>· Code : <white>" + (r.code.isEmpty() ? "<red>aucun" : r.code)));
-                s.sendMessage(parse("<gray>Insonorisation : " + (voice != null ? "<green>active (Simple Voice Chat)" : "<red>Simple Voice Chat absent")));
+                s.sendMessage(parse("<gray>Voix : " + (voice != null ? "<green>insonorisée (Simple Voice Chat)" : "<red>Simple Voice Chat absent")));
+                s.sendMessage(parse("<gray>Sons Minecraft : " + (soundWall ? "<green>extérieur coupé (ProtocolLib)" : "<red>ProtocolLib absent")));
             }
             default -> help(s);
         }
