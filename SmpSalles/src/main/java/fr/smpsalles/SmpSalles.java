@@ -305,13 +305,22 @@ public final class SmpSalles extends JavaPlugin implements Listener {
 
     // ================================================================= porte
 
-    @EventHandler(priority = EventPriority.HIGH)
+    private final Map<UUID, Long> doorClick = new HashMap<>();
+
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onDoor(PlayerInteractEvent e) {
-        if (e.getAction() != Action.RIGHT_CLICK_BLOCK || e.getHand() != EquipmentSlot.HAND || e.getClickedBlock() == null) return;
+        if (e.getAction() != Action.RIGHT_CLICK_BLOCK || e.getClickedBlock() == null) return;
         Room r = roomOfDoor(e.getClickedBlock());
         if (r == null) return;
+        // bloqué pour LES DEUX mains : sinon le clic de la main gauche ouvrait la porte quand on spammait
         e.setCancelled(true);
+        e.setUseInteractedBlock(org.bukkit.event.Event.Result.DENY);
+        e.setUseItemInHand(org.bukkit.event.Event.Result.DENY);
+        if (e.getHand() != EquipmentSlot.HAND) return;
         Player p = e.getPlayer();
+        long now = System.currentTimeMillis();
+        if (now - doorClick.getOrDefault(p.getUniqueId(), 0L) < 400) return; // anti-spam
+        doorClick.put(p.getUniqueId(), now);
         Block base = doorBase(e.getClickedBlock());
         if (r.contains(p.getLocation()) || r.code == null || r.code.isEmpty()) {
             openDoor(base); // de l'intérieur : on sort sans code
@@ -326,19 +335,31 @@ public final class SmpSalles extends JavaPlugin implements Listener {
         openKeypad(p, r, base);
     }
 
+    /** Bouton, plaque de pression, levier... : une porte de salle ne s'ouvre qu'avec le code. */
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onRedstone(org.bukkit.event.block.BlockRedstoneEvent e) {
+        Block b = e.getBlock();
+        if (!(b.getBlockData() instanceof Openable) || roomOfDoor(b) == null || opening.contains(doorBase(b))) return;
+        e.setNewCurrent(e.getOldCurrent());
+    }
+
     /** Les portes d'une salle ne se cassent qu'avec la permission admin. */
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onBreak(BlockBreakEvent e) {
         if (roomOfDoor(e.getBlock()) != null && !e.getPlayer().hasPermission("smpsalles.admin")) e.setCancelled(true);
     }
 
+    private final java.util.Set<Block> opening = new java.util.HashSet<>();
+
     private void openDoor(Block base) {
+        opening.add(base);
         setOpen(base, true);
         World w = base.getWorld();
         boolean iron = base.getType() == Material.IRON_DOOR || base.getType() == Material.IRON_TRAPDOOR;
         w.playSound(base.getLocation().add(0.5, 0.5, 0.5), iron ? Sound.BLOCK_IRON_DOOR_OPEN : Sound.BLOCK_WOODEN_DOOR_OPEN, 1f, 1f);
         long ticks = Math.max(1, Math.round(getConfig().getDouble("open-seconds", 3) * 20));
         Bukkit.getScheduler().runTaskLater(this, () -> {
+            opening.remove(base);
             setOpen(base, false);
             w.playSound(base.getLocation().add(0.5, 0.5, 0.5), iron ? Sound.BLOCK_IRON_DOOR_CLOSE : Sound.BLOCK_WOODEN_DOOR_CLOSE, 1f, 1f);
         }, ticks);
