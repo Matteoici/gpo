@@ -117,8 +117,24 @@ public final class SmpZones extends JavaPlugin implements Listener {
         return f.memberOk && p != null && z.members.containsKey(p.getUniqueId());
     }
 
+    /** true seulement si une zone AUTORISE explicitement cette permission ici. */
+    boolean allowedExplicit(Location l, Flag f) {
+        Zone z = decider(l, f);
+        return z != null && z.flags.get(f);
+    }
+
     int floodRadius() {
         return getConfig().getInt("anti-flood.radius", 1000);
+    }
+
+    /** Dans le rayon protégé autour du spawn (mondes concernés), sans tenir compte des zones ni des joueurs. */
+    boolean inSpawnRadius(Location l) {
+        if (!getConfig().getBoolean("anti-flood.enabled", true) || l == null || l.getWorld() == null) return false;
+        List<String> worlds = getConfig().getStringList("anti-flood.worlds");
+        if (!worlds.isEmpty() && !worlds.contains(l.getWorld().getName())) return false;
+        Location c = center(l.getWorld());
+        double dx = l.getX() - c.getX(), dz = l.getZ() - c.getZ(), r = floodRadius();
+        return dx * dx + dz * dz <= r * r;
     }
 
     /** true = vider un seau est interdit ici (rayon autour du spawn), sauf si une zone autorise les seaux. */

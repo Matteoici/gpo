@@ -8,8 +8,7 @@
 #  /zone monde : les permissions de TOUT le monde (ex. interdire le PvP partout sauf dans une zone "arene-pvp").
 # =====================================================================
 
-# Anti-flood : AUCUN seau (eau, lave, poudreuse, seaux à poissons...) ne peut être vidé près du spawn,
-# ni par les joueurs ni par les distributeurs. Une zone avec "seaux" autorisé passe outre (ferme, etc.).
+# Paysage protégé autour du spawn (anti-flood / anti-machines) : dans ce rayon...
 anti-flood:
   enabled: true
   radius: 1000
@@ -17,9 +16,15 @@ anti-flood:
   # center: {x: 0, z: 0}
   # mondes concernés (vide = tous les mondes)
   worlds: [world]
+  # ...AUCUN seau (eau, lave, poudreuse, seaux à poissons) ne peut être vidé, ni par un joueur ni par un distributeur
+  # (une zone avec "seaux" autorisé passe outre : ferme, base...)
+  # ...les explosions (TNT, creepers, wagonnets de TNT) ne cassent aucun bloc (une zone avec "explosions" autorisé passe outre)
+  no-explosion-damage: true
+  # ...les pistons ne déplacent pas de slime / miel : pas de machines volantes ni de "mangeuses de monde"
+  no-flying-machines: true
 
 messages:
-  anti-flood: "<red>🪣 Pas de seaux à moins de <white><radius></white> blocs du spawn (anti-flood)."
+  anti-flood: "<red>🪣 Pas de seaux à moins de <white><radius></white> blocs du spawn (paysage protégé)."
   denied:
     default: "<red>✖ Interdit ici."
     casser: "<red>✖ Tu ne peux pas casser ici."

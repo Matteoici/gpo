@@ -1,4 +1,4 @@
-config-version: 18
+config-version: 19
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -243,13 +243,17 @@ weapons:
     chance: 0.5
     # dégâts du rayon (2 = 1 cœur ; traverse l'armure comme le Warden)
     damage: 10
-    cooldown-seconds: 6
+    cooldown-seconds: 3
     range: 32
     # temps de tension minimum (ms) : l'arc doit être chargé au maximum
     full-charge-ms: 950
   tranche-mace:
     chance: 0.5
-    damage: 6
+    # dégâts au corps à corps (épée netherite Tranchant V = 11) ; on peut encore l'enchanter
+    attack-damage: 13
+    attack-speed: 1.6
+    # dégâts de la lame lancée (clic droit)
+    damage: 8
     cooldown-seconds: 8
     # longueur de la lame qui file (en blocs, environ)
     length: 18

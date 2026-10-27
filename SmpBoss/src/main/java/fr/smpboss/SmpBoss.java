@@ -198,6 +198,13 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 18);
             saveConfig();
         }
+        // v19 : Sonic Bow plus rapide, Tranche Mace plus forte
+        if (getConfig().getInt("config-version", 1) < 19) {
+            harder("weapons.sonic-bow.cooldown-seconds", 6, 3);
+            harder("weapons.tranche-mace.damage", 6, 8);
+            getConfig().set("config-version", 19);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);

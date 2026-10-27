@@ -86,6 +86,15 @@ final class Weapons implements Listener {
                     .replace("<cooldown>", fmt(cfg((bow ? "sonic-bow" : "tranche-mace") + ".cooldown-seconds", bow ? 6 : 8)))));
         }
         m.lore(lore);
+        if (!bow) {
+            // plus fort qu'une épée en netherite Tranchant V (11) : 13 de base, et on peut encore l'enchanter
+            m.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_DAMAGE, new org.bukkit.attribute.AttributeModifier(
+                    new NamespacedKey(plugin, "tranche_damage"), cfg("tranche-mace.attack-damage", 13) - 1,
+                    org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND));
+            m.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_SPEED, new org.bukkit.attribute.AttributeModifier(
+                    new NamespacedKey(plugin, "tranche_speed"), cfg("tranche-mace.attack-speed", 1.6) - 4,
+                    org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND));
+        }
         m.setUnbreakable(true);
         m.setEnchantmentGlintOverride(true);
         m.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
@@ -117,6 +126,36 @@ final class Weapons implements Listener {
     }
 
     // ================================================================= Sonic Bow
+
+    /** Met à jour une arme déjà donnée (nouveaux dégâts, nouvelle description), en gardant ses enchantements. */
+    private void refresh(org.bukkit.inventory.Inventory inv) {
+        for (int i = 0; i < inv.getSize(); i++) {
+            ItemStack it = inv.getItem(i);
+            String id = id(it);
+            if (id == null) continue;
+            ItemStack fresh = create(id);
+            ItemMeta fm = fresh.getItemMeta();
+            for (Map.Entry<Enchantment, Integer> en : it.getEnchantments().entrySet()) fm.addEnchant(en.getKey(), en.getValue(), true);
+            if (!fm.equals(it.getItemMeta())) {
+                fresh.setItemMeta(fm);
+                inv.setItem(i, fresh);
+            }
+        }
+    }
+
+    @EventHandler
+    public void onJoin(org.bukkit.event.player.PlayerJoinEvent e) {
+        Player p = e.getPlayer();
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (p.isOnline()) refresh(p.getInventory());
+        }, 20L);
+    }
+
+    @EventHandler
+    public void onHeld(org.bukkit.event.player.PlayerItemHeldEvent e) {
+        ItemStack it = e.getPlayer().getInventory().getItem(e.getNewSlot());
+        if (id(it) != null) Bukkit.getScheduler().runTask(plugin, () -> refresh(e.getPlayer().getInventory()));
+    }
 
     @EventHandler
     public void onDraw(PlayerInteractEvent e) {

@@ -218,14 +218,40 @@ final class ZoneListener implements Listener {
         if (!plugin.allowed(null, l, Flag.MOBS_CASSENT)) e.setCancelled(true);
     }
 
+    /** Le paysage près du spawn : les explosions (TNT, creepers, machines...) n'y cassent aucun bloc. */
+    private boolean keepLandscape(Location l) {
+        if (!plugin.getConfig().getBoolean("anti-flood.no-explosion-damage", true) || !plugin.inSpawnRadius(l)) return false;
+        return !plugin.allowedExplicit(l, Flag.EXPLOSIONS);
+    }
+
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onEntityExplode(EntityExplodeEvent e) {
-        e.blockList().removeIf(b -> !plugin.allowed(null, b.getLocation(), Flag.EXPLOSIONS));
+        e.blockList().removeIf(b -> !plugin.allowed(null, b.getLocation(), Flag.EXPLOSIONS) || keepLandscape(b.getLocation()));
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onBlockExplode(BlockExplodeEvent e) {
-        e.blockList().removeIf(b -> !plugin.allowed(null, b.getLocation(), Flag.EXPLOSIONS));
+        e.blockList().removeIf(b -> !plugin.allowed(null, b.getLocation(), Flag.EXPLOSIONS) || keepLandscape(b.getLocation()));
+    }
+
+    /** Machines volantes / mangeuses de monde : près du spawn, un piston ne déplace pas de slime ni de miel. */
+    private boolean flyingMachine(Block piston, List<Block> moved) {
+        if (!plugin.getConfig().getBoolean("anti-flood.no-flying-machines", true) || !plugin.inSpawnRadius(piston.getLocation())) return false;
+        for (Block b : moved) {
+            Material m = b.getType();
+            if (m == Material.SLIME_BLOCK || m == Material.HONEY_BLOCK) return true;
+        }
+        return false;
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onPistonOut(org.bukkit.event.block.BlockPistonExtendEvent e) {
+        if (flyingMachine(e.getBlock(), e.getBlocks())) e.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onPistonIn(org.bukkit.event.block.BlockPistonRetractEvent e) {
+        if (flyingMachine(e.getBlock(), e.getBlocks())) e.setCancelled(true);
     }
 
     // ================================================================= entités
