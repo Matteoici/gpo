@@ -58,6 +58,7 @@ public final class SmpIle extends JavaPlugin {
     /** blocs modifiés par la dernière île : "monde;x;y;z;ancien blockdata" */
     private final List<String> undo = new ArrayList<>();
     private Location lastCenter;
+    private int[] lastShift = {0, 0, 0};
 
     @Override
     public void onEnable() {
@@ -117,25 +118,43 @@ public final class SmpIle extends JavaPlugin {
                     msg(s, "<red>/ile monter <hauteur></red> <gray>(au moins 20, ex. <white>/ile monter 120</white>)");
                     return true;
                 }
-                if (job != null) {
-                    msg(s, "<red>Une île est déjà en cours de construction. <gray>/ile stop");
-                    return true;
-                }
-                int maxY = Math.max(c[0].getBlockY(), c[1].getBlockY()) + dy;
-                if (maxY >= c[0].getWorld().getMaxHeight() - 2) {
-                    msg(s, "<red>Trop haut : le haut de l'île serait en Y " + maxY + " (limite " + (c[0].getWorld().getMaxHeight() - 1) + ").");
-                    return true;
-                }
+                int x0 = Math.min(c[0].getBlockX(), c[1].getBlockX()), x1 = Math.max(c[0].getBlockX(), c[1].getBlockX());
+                int y0 = Math.min(c[0].getBlockY(), c[1].getBlockY()) - 1, y1 = Math.max(c[0].getBlockY(), c[1].getBlockY());
+                int z0 = Math.min(c[0].getBlockZ(), c[1].getBlockZ()), z1 = Math.max(c[0].getBlockZ(), c[1].getBlockZ());
+                if (!check(s, c[0].getWorld(), x0, x1, y0, y1, z0, z1, 0, dy, 0)) return true;
                 if (a.length < 3 || !a[2].equalsIgnoreCase("confirmer")) {
                     info(s, c, dy);
                     msg(s, "<yellow>Pour lancer : <white>/ile monter " + dy + " confirmer");
                     return true;
                 }
-                if (!undo.isEmpty()) {
-                    msg(s, "<red>Il y a déjà une île. <gray>Fais <white>/ile annuler</white> d'abord si tu veux la refaire.");
+                start(s, c, 0, dy, 0);
+            }
+            case "placer", "ici", "place" -> {
+                if (p == null) return true;
+                Location[] c = sel.get(p.getUniqueId());
+                if (c == null || c[0] == null || c[1] == null || c[0].getWorld() != c[1].getWorld()) {
+                    msg(s, "<red>Fais d'abord <white>/ile pos1</white> et <white>/ile pos2</white> (même monde).");
                     return true;
                 }
-                start(s, c, dy);
+                if (p.getWorld() != c[0].getWorld()) {
+                    msg(s, "<red>Place-toi dans le même monde que le spawn.");
+                    return true;
+                }
+                int x0 = Math.min(c[0].getBlockX(), c[1].getBlockX()), x1 = Math.max(c[0].getBlockX(), c[1].getBlockX());
+                int y0 = Math.min(c[0].getBlockY(), c[1].getBlockY()) - 1, y1 = Math.max(c[0].getBlockY(), c[1].getBlockY());
+                int z0 = Math.min(c[0].getBlockZ(), c[1].getBlockZ()), z1 = Math.max(c[0].getBlockZ(), c[1].getBlockZ());
+                Location l = p.getLocation();
+                // là où tu es = le centre de l'île, ses pieds posés sur le sol de l'île
+                int dx = l.getBlockX() - (x0 + x1) / 2, dz = l.getBlockZ() - (z0 + z1) / 2, dy = (l.getBlockY() - 1) - y0;
+                if (!check(s, c[0].getWorld(), x0, x1, y0, y1, z0, z1, dx, dy, dz)) return true;
+                if (a.length < 2 || !a[1].equalsIgnoreCase("confirmer")) {
+                    info(s, c, dy);
+                    msg(s, "<gray>Le centre de l'île sera ici : <white>" + l.getBlockX() + " " + l.getBlockY() + " " + l.getBlockZ()
+                            + "</white> <dark_gray>(décalage " + dx + " " + dy + " " + dz + ")");
+                    msg(s, "<yellow>Reste à cette place et tape : <white>/ile placer confirmer");
+                    return true;
+                }
+                start(s, c, dx, dy, dz);
             }
             case "annuler", "undo" -> undoAll(s);
             case "stop" -> {
@@ -153,6 +172,7 @@ public final class SmpIle extends JavaPlugin {
             default -> {
                 msg(s, "<white>/ile pos1</white> <gray>et</gray> <white>/ile pos2</white> <gray>: deux coins du spawn (pos1 au sol, pos2 en haut)");
                 msg(s, "<white>/ile monter <hauteur></white> <gray>: copie le spawn X blocs plus haut, avec le dessous et le décor");
+                msg(s, "<white>/ile placer</white> <gray>: copie le spawn là où tu es (vole à l'endroit voulu : tes pieds = le sol de l'île)");
                 msg(s, "<white>/ile tp</white> <gray>·</gray> <white>/ile annuler</white> <gray>·</gray> <white>/ile stop");
             }
         }
@@ -161,10 +181,39 @@ public final class SmpIle extends JavaPlugin {
 
     @Override
     public List<String> onTabComplete(CommandSender s, Command cmd, String alias, String[] a) {
-        if (a.length == 1) return List.of("pos1", "pos2", "info", "monter", "tp", "annuler", "stop");
+        if (a.length == 1) return List.of("pos1", "pos2", "info", "monter", "placer", "tp", "annuler", "stop");
+        if (a.length == 2 && a[0].equalsIgnoreCase("placer")) return List.of("confirmer");
         if (a.length == 2 && a[0].equalsIgnoreCase("monter")) return List.of("80", "100", "120", "150");
         if (a.length == 3 && a[0].equalsIgnoreCase("monter")) return List.of("confirmer");
         return List.of();
+    }
+
+    /** Vérifications avant de lancer : pas déjà en cours, pas d'île existante, pas trop haut, pas par-dessus le spawn. */
+    private boolean check(CommandSender s, World w, int x0, int x1, int y0, int y1, int z0, int z1, int dx, int dy, int dz) {
+        if (job != null) {
+            msg(s, "<red>Une île est déjà en cours de construction. <gray>/ile stop");
+            return false;
+        }
+        if (!undo.isEmpty()) {
+            msg(s, "<red>Il y a déjà une île. <gray>Fais <white>/ile annuler</white> d'abord si tu veux la refaire.");
+            return false;
+        }
+        if (y1 + dy >= w.getMaxHeight() - 2) {
+            msg(s, "<red>Trop haut : le haut de l'île serait en Y " + (y1 + dy) + " (limite " + (w.getMaxHeight() - 1) + ").");
+            return false;
+        }
+        int under = getConfig().getInt("underside.max-depth", 42);
+        if (y0 + dy - under < w.getMinHeight()) {
+            msg(s, "<red>Trop bas : le dessous de l'île passerait sous le monde.");
+            return false;
+        }
+        // la copie ne doit pas recouvrir le spawn d'origine (ni son futur dessous)
+        boolean overlap = x0 + dx <= x1 && x1 + dx >= x0 && z0 + dz <= z1 && z1 + dz >= z0 && y0 + dy - under <= y1 && y1 + dy >= y0;
+        if (overlap) {
+            msg(s, "<red>L'île toucherait le spawn d'origine. <gray>Monte plus haut ou éloigne-toi.");
+            return false;
+        }
+        return true;
     }
 
     private void info(CommandSender s, Location[] c, int dy) {
@@ -172,7 +221,7 @@ public final class SmpIle extends JavaPlugin {
                 sz = Math.abs(c[0].getBlockZ() - c[1].getBlockZ()) + 1;
         msg(s, "<gray>Zone : <white>" + sx + "×" + sz + "</white>, <white>" + sy + "</white> de haut <dark_gray>(" + ((long) sx * sy * sz) + " blocs)");
         if (dy > 0) {
-            int minY = Math.min(c[0].getBlockY(), c[1].getBlockY());
+            int minY = Math.min(c[0].getBlockY(), c[1].getBlockY()) - 1;
             msg(s, "<gray>Le sol de l'île sera en <white>Y " + (minY + dy) + "</white>, le dessous descendra jusqu'à ~<white>Y "
                     + (minY + dy - getConfig().getInt("underside.max-depth", 42)) + "</white>.");
         }
@@ -180,14 +229,16 @@ public final class SmpIle extends JavaPlugin {
 
     // ================================================================= construction
 
-    private void start(CommandSender s, Location[] c, int dy) {
+    private void start(CommandSender s, Location[] c, int dx, int dy, int dz) {
         World w = c[0].getWorld();
         int x0 = Math.min(c[0].getBlockX(), c[1].getBlockX()), x1 = Math.max(c[0].getBlockX(), c[1].getBlockX());
-        int y0 = Math.min(c[0].getBlockY(), c[1].getBlockY()), y1 = Math.max(c[0].getBlockY(), c[1].getBlockY());
+        // une couche sous le point le plus bas : le sol sous les pieds est toujours copié
+        int y0 = Math.min(c[0].getBlockY(), c[1].getBlockY()) - 1, y1 = Math.max(c[0].getBlockY(), c[1].getBlockY());
         int z0 = Math.min(c[0].getBlockZ(), c[1].getBlockZ()), z1 = Math.max(c[0].getBlockZ(), c[1].getBlockZ());
         int per = Math.max(200, getConfig().getInt("blocks-per-tick", 5000));
         long total = (long) (x1 - x0 + 1) * (y1 - y0 + 1) * (z1 - z0 + 1);
-        lastCenter = new Location(w, (x0 + x1) / 2.0 + 0.5, y0 + dy + 1, (z0 + z1) / 2.0 + 0.5);
+        lastCenter = new Location(w, (x0 + x1) / 2.0 + 0.5 + dx, y0 + dy + 1, (z0 + z1) / 2.0 + 0.5 + dz);
+        lastShift = new int[]{dx, dy, dz};
         msg(s, "<green>Copie du spawn lancée</green> <gray>(" + total + " blocs à lire, ~" + Math.max(1, total / per / 20) + " s)...");
         // la copie se fait de bas en haut (les torches, portes... trouvent leur support)
         int[] cur = {y0, x0, z0};
@@ -198,12 +249,12 @@ public final class SmpIle extends JavaPlugin {
                 if (cur[0] > y1) {
                     job.cancel();
                     job = null;
-                    afterCopy(s, w, x0, x1, y0, y1, z0, z1, dy);
+                    afterCopy(s, w, x0, x1, y0, y1, z0, z1, dx, dy, dz);
                     return;
                 }
                 Block from = w.getBlockAt(cur[1], cur[0], cur[2]);
                 if (!from.getType().isAir()) {
-                    Block to = w.getBlockAt(cur[1], cur[0] + dy, cur[2]);
+                    Block to = w.getBlockAt(cur[1] + dx, cur[0] + dy, cur[2] + dz);
                     remember(to);
                     try {
                         BlockState st = from.getState();
@@ -229,7 +280,7 @@ public final class SmpIle extends JavaPlugin {
         }, 1L, 1L);
     }
 
-    private void afterCopy(CommandSender s, World w, int x0, int x1, int y0, int y1, int z0, int z1, int dy) {
+    private void afterCopy(CommandSender s, World w, int x0, int x1, int y0, int y1, int z0, int z1, int dx, int dy, int dz) {
         if (getConfig().getBoolean("copy-entities", true)) {
             int ents = 0;
             BoundingBox box = new BoundingBox(x0, y0, z0, x1 + 1, y1 + 1, z1 + 1);
@@ -237,7 +288,7 @@ public final class SmpIle extends JavaPlugin {
                 boolean ok = e instanceof Hanging || (e instanceof ArmorStand as && as.getPersistentDataContainer().isEmpty());
                 if (!ok || !e.getPersistentDataContainer().getKeys().isEmpty()) continue;
                 try {
-                    e.copy(e.getLocation().add(0, dy, 0));
+                    e.copy(e.getLocation().add(dx, dy, dz));
                     ents++;
                 } catch (RuntimeException ignored) {
                 }
@@ -272,7 +323,7 @@ public final class SmpIle extends JavaPlugin {
         job = Bukkit.getScheduler().runTaskTimer(this, () -> {
             for (int k = 0; k < perTick && i[0] < columns.size(); k++, i[0]++) {
                 int[] col = columns.get(i[0]);
-                int x = x0 + col[0], z = z0 + col[1];
+                int x = x0 + dx + col[0], z = z0 + dz + col[1];
                 if (!under) continue;
                 double e = edge[col[0]][col[1]];
                 double noise = hash(x, 0, z, 1) * 3 + Math.sin(x * 0.21) * Math.cos(z * 0.17) * 2.2;
@@ -296,7 +347,7 @@ public final class SmpIle extends JavaPlugin {
             if (i[0] >= columns.size()) {
                 job.cancel();
                 job = null;
-                decorate(s, w, x0, z0, sx, sz, foot, edge, bottom, baseY);
+                decorate(s, w, x0 + dx, z0 + dz, sx, sz, foot, edge, bottom, baseY);
             }
         }, 1L, 1L);
     }
@@ -420,7 +471,8 @@ public final class SmpIle extends JavaPlugin {
         saveUndo();
         msg(s, "<green><b>Île terminée !</b></green> <gray>" + undo.size() + " blocs posés. <white>/ile tp</white> <gray>pour aller la voir.");
         msg(s, "<yellow>N'oublie pas :</yellow> <gray>refais <white>/setworldspawn</white> (et <white>/setspawn</white> d'Essentials) sur l'île, "
-                + "et déplace les zones des plugins (marché : <white>/marche admin decaler <hauteur></white>, portail de l'arène, PNJ...).");
+                + "et déplace les zones des plugins (marché : <white>/marche admin decaler " + lastShift[0] + " " + lastShift[1] + " " + lastShift[2]
+                + "</white>, portail de l'arène, PNJ...).");
     }
 
     /** Petits îlots qui flottent autour de l'île. */

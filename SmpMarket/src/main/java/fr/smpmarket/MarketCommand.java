@@ -30,7 +30,7 @@ public final class MarketCommand implements TabExecutor {
     private static final List<String> SUBS = List.of("chercher", "installer", "ranger", "vitrine", "gerer", "colis", "tp",
             "ami", "retirer-ami", "nom", "catalogue", "mannequin", "aide");
     private static final List<String> ADMIN = List.of("wand", "create", "delete", "setentrance", "list", "reset", "give",
-            "end", "showcases", "price", "decaler", "reload");
+            "end", "showcases", "price", "decaler", "vider", "reload");
 
     private final SmpMarket plugin;
 
@@ -323,31 +323,41 @@ public final class MarketCommand implements TabExecutor {
                 sel[1] = null;
             }
             case "decaler", "shift" -> {
-                int dy;
+                int dx = 0, dy = 0, dz = 0;
                 try {
-                    dy = a.length > 1 ? Integer.parseInt(a[1]) : 0;
+                    if (a.length >= 4) {
+                        dx = Integer.parseInt(a[1]);
+                        dy = Integer.parseInt(a[2]);
+                        dz = Integer.parseInt(a[3]);
+                    } else if (a.length > 1) dy = Integer.parseInt(a[1]);
                 } catch (NumberFormatException e) {
-                    dy = 0;
+                    dx = dy = dz = 0;
                 }
-                if (dy == 0) {
-                    t().send(sender, "error.usage", ph("usage", "/marche admin decaler <hauteur>  (ex. 120 après /ile monter 120)"));
+                if (dx == 0 && dy == 0 && dz == 0) {
+                    t().send(sender, "error.usage", ph("usage", "/marche admin decaler <x> <y> <z>  (les chiffres donnés par /ile)"));
                     return;
                 }
                 int n = 0;
                 for (Stall st : store.stalls()) {
                     plugin.visuals().removeStall(st);
                     Cuboid r = st.region;
-                    st.region = new Cuboid(r.world(), r.minX(), r.minY() + dy, r.minZ(), r.maxX(), r.maxY() + dy, r.maxZ());
+                    st.region = new Cuboid(r.world(), r.minX() + dx, r.minY() + dy, r.minZ() + dz, r.maxX() + dx, r.maxY() + dy, r.maxZ() + dz);
+                    st.ex += dx;
                     st.ey += dy;
+                    st.ez += dz;
                     if (st.floorY != Integer.MIN_VALUE) st.floorY += dy;
-                    if (st.npcSpot != null) st.npcSpot[1] += dy;
+                    if (st.npcSpot != null) {
+                        st.npcSpot[0] += dx;
+                        st.npcSpot[1] += dy;
+                        st.npcSpot[2] += dz;
+                    }
                     List<Showcase> moved = new ArrayList<>();
                     for (Showcase c : st.showcases) {
                         if (c.virtual) {
                             moved.add(c);
                             continue;
                         }
-                        Showcase m = new Showcase(c.id, c.template, c.price, c.stock, c.x, c.y + dy, c.z);
+                        Showcase m = new Showcase(c.id, c.template, c.price, c.stock, c.x + dx, c.y + dy, c.z + dz);
                         m.sold = c.sold;
                         m.revenue = c.revenue;
                         moved.add(m);
@@ -358,7 +368,7 @@ public final class MarketCommand implements TabExecutor {
                     for (String k : st.containers) {
                         String[] p = k.split(",");
                         try {
-                            cont.add(p[0] + "," + (Integer.parseInt(p[1]) + dy) + "," + p[2]);
+                            cont.add((Integer.parseInt(p[0]) + dx) + "," + (Integer.parseInt(p[1]) + dy) + "," + (Integer.parseInt(p[2]) + dz));
                         } catch (RuntimeException ignored) {
                         }
                     }
@@ -369,7 +379,17 @@ public final class MarketCommand implements TabExecutor {
                     n++;
                 }
                 store.save();
-                sender.sendMessage(Texts.MM.deserialize("<green>" + n + " emplacement(s) décalé(s) de " + dy + " blocs en hauteur."));
+                sender.sendMessage(Texts.MM.deserialize("<green>" + n + " emplacement(s) décalé(s) de " + dx + " " + dy + " " + dz + "."));
+            }
+            case "vider", "clear" -> {
+                // range tous les marchés installés (chacun garde sa construction, elle revient quand il réinstalle)
+                int n = 0;
+                for (Stall st : new ArrayList<>(store.stalls())) {
+                    if (!st.isRented()) continue;
+                    plugin.claims().pack(st, "claim.packed-admin");
+                    n++;
+                }
+                sender.sendMessage(Texts.MM.deserialize("<green>" + n + " marché(s) rangé(s) : tous les emplacements sont libres et vides."));
             }
             case "delete", "reset", "setentrance", "give", "end", "showcases", "price" -> {
                 if (a.length < 2) {
