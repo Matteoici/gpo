@@ -220,6 +220,9 @@ public final class SmpBoss extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new BossListener(this), this);
         guildTop = new GuildTop(this);
         hologram = new AltarHologram(this);
+        Bukkit.getScheduler().runTaskTimer(this, () -> {
+            if (arena != null) arena.portalTick();
+        }, 40L, 5L);
         Bukkit.getScheduler().runTaskTimer(this, hologram::tick, 40L, 10L);
         arena = new Arena(this);
         ArenaGuard guard = new ArenaGuard(this, arena);
@@ -610,7 +613,7 @@ public final class SmpBoss extends JavaPlugin {
         else if (a.length == 2 && a[0].toLowerCase(Locale.ROOT).startsWith("ar"))
             out.addAll(List.of("construire", "annuler", "tp", "setspawn", "portail", "recuperer", "definir", "supprimer"));
         else if (a.length == 3 && a[0].toLowerCase(Locale.ROOT).startsWith("ar") && a[1].equalsIgnoreCase("portail"))
-            out.addAll(List.of("pos1", "pos2", "supprimer"));
+            out.addAll(List.of("pos1", "pos2", "info", "supprimer"));
         else if (a.length == 3 && a[0].toLowerCase(Locale.ROOT).startsWith("ar") && a[1].equalsIgnoreCase("construire"))
             out.addAll(List.of("16", "20", "24", "28"));
         else if (a.length == 4 && a[0].toLowerCase(Locale.ROOT).startsWith("ar") && a[1].equalsIgnoreCase("construire"))

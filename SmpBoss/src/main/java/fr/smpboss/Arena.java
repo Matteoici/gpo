@@ -494,6 +494,16 @@ public final class Arena {
 
     private void portalCommand(CommandSender sender, String[] a) {
         String what = a.length >= 3 ? a[2].toLowerCase(java.util.Locale.ROOT) : "";
+        if (what.equals("info") || what.equals("voir")) {
+            if (portal == null) sender.sendMessage(parse("<red>Pas de zone portail. <gray>/boss arene portail pos1 puis pos2"));
+            else {
+                sender.sendMessage(parse("<gold>Zone portail</gold> <gray>" + portalWorld + " : <white>" + portal[0] + " " + portal[1] + " " + portal[2]
+                        + "</white> → <white>" + portal[3] + " " + portal[4] + " " + portal[5] + "</white> · arrivée : "
+                        + (entrance() == null ? "<red>pas d'arène" : "<green>ok")));
+                if (sender instanceof Player p) showPortal(p);
+            }
+            return;
+        }
         if (what.equals("supprimer") || what.equals("remove")) {
             portal = null;
             portalWorld = null;
@@ -516,8 +526,10 @@ public final class Arena {
                     Math.min(portalPos1.getBlockZ(), portalPos2.getBlockZ()), Math.max(portalPos1.getBlockX(), portalPos2.getBlockX()),
                     Math.max(portalPos1.getBlockY(), portalPos2.getBlockY()) + 1, Math.max(portalPos1.getBlockZ(), portalPos2.getBlockZ())};
             save();
-            sender.sendMessage(parse("<green>Zone portail créée <gray>(" + (portal[3] - portal[0] + 1) + "×" + (portal[5] - portal[2] + 1)
-                    + ") : entrer dedans = téléporté dans l'arène."));
+            sender.sendMessage(parse("<green>Zone portail créée <gray>(" + (portal[3] - portal[0] + 1) + "×" + (portal[4] - portal[1] + 1) + "×"
+                    + (portal[5] - portal[2] + 1) + ") : entrer dedans = téléporté dans l'arène. <white>/boss arene portail info</white> pour la revoir."));
+            if (entrance() == null) sender.sendMessage(parse("<red>Attention : l'arène n'est pas encore construite / définie, le portail ne mènera nulle part."));
+            showPortal(p);
         }
     }
 
@@ -525,6 +537,37 @@ public final class Arena {
         if (portal == null || portalWorld == null || l.getWorld() == null || !l.getWorld().getName().equals(portalWorld)) return false;
         int x = l.getBlockX(), y = l.getBlockY(), z = l.getBlockZ();
         return x >= portal[0] && x <= portal[3] && y >= portal[1] && y <= portal[4] && z >= portal[2] && z <= portal[5];
+    }
+
+    /** Contour de la zone portail (10 s), visible par l'admin. */
+    void showPortal(Player p) {
+        if (portal == null) return;
+        World w = Bukkit.getWorld(portalWorld);
+        if (w == null || p.getWorld() != w) return;
+        Particle.DustOptions d = new Particle.DustOptions(org.bukkit.Color.fromRGB(255, 60, 60), 1.3f);
+        int[] t = {0};
+        org.bukkit.scheduler.BukkitTask[] task = new org.bukkit.scheduler.BukkitTask[1];
+        task[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            if ((t[0] += 10) > 200 || !p.isOnline()) {
+                task[0].cancel();
+                return;
+            }
+            double x0 = portal[0], y0 = portal[1], z0 = portal[2], x1 = portal[3] + 1, y1 = portal[4] + 1, z1 = portal[5] + 1;
+            for (double x = x0; x <= x1; x += 0.5) for (double[] yz : new double[][]{{y0, z0}, {y0, z1}, {y1, z0}, {y1, z1}}) p.spawnParticle(Particle.DUST, x, yz[0], yz[1], 1, 0, 0, 0, 0, d);
+            for (double y = y0; y <= y1; y += 0.5) for (double[] xz : new double[][]{{x0, z0}, {x0, z1}, {x1, z0}, {x1, z1}}) p.spawnParticle(Particle.DUST, xz[0], y, xz[1], 1, 0, 0, 0, 0, d);
+            for (double z = z0; z <= z1; z += 0.5) for (double[] xy : new double[][]{{x0, y0}, {x0, y1}, {x1, y0}, {x1, y1}}) p.spawnParticle(Particle.DUST, xy[0], xy[1], z, 1, 0, 0, 0, 0, d);
+        }, 0L, 10L);
+    }
+
+    /** Toutes les 5 ticks : ceux qui sont dans la zone portail (même sans bouger) partent dans l'arène. */
+    void portalTick() {
+        if (portal == null || portalWorld == null) return;
+        World w = Bukkit.getWorld(portalWorld);
+        if (w == null) return;
+        for (Player p : w.getPlayers()) {
+            if (p.getGameMode() == org.bukkit.GameMode.SPECTATOR) continue;
+            if (inPortal(p.getLocation()) || inPortal(p.getLocation().add(0, 1, 0))) checkPortal(p, p.getLocation().add(0, inPortal(p.getLocation()) ? 0 : 1, 0));
+        }
     }
 
     /** Appelé quand un joueur change de bloc. */
