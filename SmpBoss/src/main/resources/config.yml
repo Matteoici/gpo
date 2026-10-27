@@ -1,11 +1,11 @@
-config-version: 14
+config-version: 15
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
 #  1) /boss autel en regardant le bloc de ton arène qui sert d'autel
 #  2) les joueurs farment des Graines maudites (zombies, squelettes...)
 #  3) 8 graines + 1 citrouille taillée (établi) = Citrouille sacrificielle
-#  4) la nuit, clic droit sur l'autel avec la citrouille = le boss apparaît
+#  4) clic droit sur l'autel avec la citrouille = le boss apparaît
 #  Après une modification : /boss reload
 # =====================================================================
 
@@ -50,7 +50,7 @@ boss:
   seed-rain-count: 22
   # rayon de l'arène autour de l'autel (il ne peut pas en sortir)
   arena-radius: 18
-  night-only: true
+  night-only: false
   cooldown-minutes: 15
   max-minutes: 20
   damage:
@@ -391,7 +391,7 @@ messages:
     sacrifice:
       name: "<gradient:#ff7a00:#7a1fa2><b>Citrouille sacrificielle"
       lore:
-        - "<gray>Pose-la sur l'autel, la nuit..."
+        - "<gray>Pose-la sur l'autel (clic droit)..."
         - "<gray>et le <#ff7a00>Roi Citrouille</#ff7a00> se réveillera."
         - ""
         - "<red>⚠ Venez nombreux."
@@ -491,7 +491,7 @@ messages:
     fight-header: "<gold><b>🏆 Guildes de ce combat :"
     fight-line: "<gray>  <white>#<rank></white> <guild> <dark_gray>(<percent>% des dégâts)"
   altar:
-    hologram: "<gradient:#ff7a00:#ffd36b><b>♛ Autel du Roi Citrouille ♛</b></gradient>\n<gray>Clic droit avec une <gold>Citrouille sacrificielle</gold>\n<gray>pour réveiller le Roi <dark_gray>(la nuit)</dark_gray>\n<dark_gray>8 Graines maudites + 1 citrouille sculptée\n\n<status>"
+    hologram: "<gradient:#ff7a00:#ffd36b><b>♛ Autel du Roi Citrouille ♛</b></gradient>\n<gray>Clic droit avec une <gold>Citrouille sacrificielle</gold>\n<gray>pour réveiller le Roi\n<dark_gray>8 Graines maudites + 1 citrouille sculptée\n\n<status>"
     status-ready: "<green><b>✔ Le Roi peut être réveillé"
     status-day: "<yellow>☀ Le Roi dort... revenez la nuit"
     status-cooldown: "<red>⏳ Le Roi se repose encore <white><minutes> min"

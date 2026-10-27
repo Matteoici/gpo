@@ -147,6 +147,14 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 14);
             saveConfig();
         }
+        // v15 : le Roi peut aussi être réveillé le jour
+        if (getConfig().getInt("config-version", 1) < 15) {
+            getConfig().set("boss.night-only", false);
+            getConfig().set("messages.altar.hologram", null);
+            getConfig().set("messages.items.sacrifice.lore", null);
+            getConfig().set("config-version", 15);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);
@@ -355,7 +363,7 @@ public final class SmpBoss extends JavaPlugin {
     String altarStatus() {
         long left = lastEnd + getConfig().getLong("boss.cooldown-minutes", 15) * 60_000L - System.currentTimeMillis();
         if (left > 0) return msg("altar.status-cooldown").replace("<minutes>", String.valueOf(left / 60_000 + 1));
-        if (getConfig().getBoolean("boss.night-only", true) && altar != null) {
+        if (getConfig().getBoolean("boss.night-only", false) && altar != null) {
             long t = altar.getWorld().getTime();
             if (t < 13000 || t > 23000) return msg("altar.status-day");
         }
@@ -374,7 +382,7 @@ public final class SmpBoss extends JavaPlugin {
             p.sendMessage(parse(msg("summon.cooldown").replace("<minutes>", String.valueOf(left / 60_000 + 1))));
             return;
         }
-        if (getConfig().getBoolean("boss.night-only", true)) {
+        if (getConfig().getBoolean("boss.night-only", false)) {
             long t = altar.getWorld().getTime();
             if (t < 13000 || t > 23000) {
                 p.sendMessage(parse(msg("summon.day")));
