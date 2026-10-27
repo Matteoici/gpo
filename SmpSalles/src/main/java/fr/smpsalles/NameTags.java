@@ -59,7 +59,7 @@ final class NameTags {
             t.prefix(cur.prefix());
             t.suffix(cur.suffix());
             try {
-                t.color(cur.color());
+                if (cur.color() instanceof net.kyori.adventure.text.format.NamedTextColor c) t.color(c);
             } catch (RuntimeException ignored) {
             }
         }
