@@ -38,7 +38,7 @@ public final class StallMenu extends Menu {
         }
         long now = System.currentTimeMillis();
         TagResolver tags = plugin.auctions().stallTags(stall);
-        set(4, Items.glow(item(Material.EMERALD, stall.isPacked() ? "claim.gui.header-packed" : "claim.gui.header-open", tags,
+        set(4, Items.glow(item(Material.EMERALD, stall.isPacked() ? "claim.v2.header-packed" : "claim.v2.header-open", tags,
                 ph("distance", (int) plugin.settings().leaveDistance),
                 ph("sold", stall.totalSold), ph("revenue", money(stall.totalRevenue)),
                 ph("used", stall.physicalCount()), ph("max", stall.showcaseLimit()),

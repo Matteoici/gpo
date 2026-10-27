@@ -120,7 +120,7 @@ public final class Search {
     public static List<Result> find(SmpMarket plugin, String query) {
         List<Result> out = new ArrayList<>();
         List<Stall> all = new ArrayList<>(plugin.store().stalls());
-        all.addAll(plugin.store().markets()); // marchés rangés : achetables à distance
+        if (plugin.settings().offlineBuy) all.addAll(plugin.store().markets()); // marchés rangés : achetables à distance
         for (Stall st : all) {
             if (!st.isRented()) continue;
             for (Showcase c : st.showcases) {

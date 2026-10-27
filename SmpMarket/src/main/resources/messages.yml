@@ -677,3 +677,53 @@ claim:
     find-spot:
       name: "<green><b>Installer mon marché"
       lore: ["<gray>Voir les emplacements libres.", "", "<yellow>▶ Clic"]
+
+  # textes de la version "le marché reste tant que le joueur est connecté"
+  v2:
+    help:
+      - ""
+      - "<gradient:#ffd36b:#ff8a3d><b>🏪 Le marché</b></gradient>"
+      - "<gray>Trouve un <green>emplacement libre</green>, fais <yellow>clic droit</yellow> sur son panneau : <white>ton marché apparaît</white>."
+      - "<gray>Il reste ouvert <white>tant que tu es connecté</white>. Tu te déconnectes : il est <white>rangé</white> (rien n'est perdu) et l'emplacement se libère."
+      - "<aqua>/marche</aqua> <dark_gray>- <gray>menu du marché"
+      - "<aqua>/marche installer</aqua> <dark_gray>- <gray>installer ton marché sur l'emplacement où tu es"
+      - "<aqua>/marche ranger</aqua> <dark_gray>- <gray>ranger ton marché"
+      - "<aqua>/marche chercher <objet></aqua> <dark_gray>- <gray>trouver le meilleur prix"
+      - "<aqua>/marche vitrine <prix></aqua> <dark_gray>- <gray>exposer l'objet en main sur le bloc visé"
+      - "<aqua>/marche gerer</aqua> <dark_gray>- <gray>gérer ton marché (même rangé)"
+      - "<aqua>/marche colis</aqua> <dark_gray>- <gray>récupérer tes objets"
+      - ""
+    deployed-new: "<green>🏪 Ton marché est installé !</green> <gray>Objet en main + vise un bloc : <aqua>/marche vitrine <prix></aqua><gray>. Il reste ouvert tant que tu es connecté."
+    deployed: "<green>🏪 Ton marché <white><shop></white> est de retour !</green> <gray>(<white><count></white> article(s) en vente) · ouvert tant que tu es connecté."
+    packed-quit: "<yellow>📦 Tu t'es déconnecté : ton marché <white><shop></white> a été rangé.</yellow> <gray>Réinstalle-le sur n'importe quel emplacement libre."
+    owner-offline: "<gray>Le marché de <white><player></white> est fermé : il n'est pas connecté."
+    gui-help:
+      name: "<white><b>Comment ça marche ?"
+      lore:
+        - "<yellow>1.</yellow> <gray>Va sur un <green>emplacement libre</green>."
+        - "<yellow>2.</yellow> <gray>Clic droit sur son panneau :"
+        - "    <gray>ton marché apparaît."
+        - "<yellow>3.</yellow> <gray>Objet en main + vise un bloc :"
+        - "    <aqua>/marche vitrine <prix>"
+        - "<yellow>4.</yellow> <gray>Il reste ouvert tant que"
+        - "    <gray>tu es connecté. Tu pars : il est <white>rangé</white>,"
+        - "    <gray>l'emplacement est libre."
+        - ""
+        - "<gray>Taxe sur les ventes : <white><tax>%"
+    header-open:
+      name: "<gold><b><shop>"
+      lore:
+        - "<green>● Ouvert</green> <gray>sur l'emplacement <white><stall>"
+        - "<gray>Rangé quand tu te déconnectes"
+        - "<gray>Objets vendus : <white><sold>"
+        - "<gray>Recettes : <gold><revenue>"
+        - "<gray>Vitrines : <white><used>/<max>"
+        - "<gray>Catalogue : <white><catalog>/<catalog-max>"
+    header-packed:
+      name: "<gold><b><shop>"
+      lore:
+        - "<yellow>📦 Rangé</yellow> <gray>· installe-le sur un emplacement libre"
+        - "<gray>Objets vendus : <white><sold>"
+        - "<gray>Recettes : <gold><revenue>"
+        - "<gray>Vitrines : <white><used>"
+        - "<gray>Catalogue : <white><catalog>/<catalog-max>"

@@ -42,7 +42,7 @@ public final class DirectoryMenu extends Menu {
     protected void build() {
         List<Stall> list = new ArrayList<>();
         for (Stall st : plugin.store().stalls()) if (st.isRented() != freeOnly) list.add(st);
-        if (!freeOnly) list.addAll(plugin.store().markets()); // marchés rangés : catalogue à distance
+        if (!freeOnly && plugin.settings().offlineBuy) list.addAll(plugin.store().markets()); // marchés rangés : catalogue à distance
         list.sort(Comparator.comparing((Stall s) -> !s.isRented()).thenComparing(s -> -s.itemsForSale())
                 .thenComparing(s -> s.id));
         int pages = pageCount(list.size(), GRID.length);

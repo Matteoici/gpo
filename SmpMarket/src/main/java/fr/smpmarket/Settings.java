@@ -42,7 +42,8 @@ public final class Settings {
     /** Emplacements à claim : on part à plus de X blocs (ou on se déconnecte) -> le marché est rangé après Y s. */
     public final double leaveDistance;
     public final long leaveGraceMs, offlineGraceMs;
-    public final boolean claimBuilding;
+    public final boolean claimBuilding, offlineBuy;
+    public final long quitDelayMs;
 
     Settings(FileConfiguration c) {
         currency = c.getString("currency-symbol", "$");
@@ -50,6 +51,8 @@ public final class Settings {
         leaveGraceMs = Math.max(0, (long) (c.getDouble("claim.leave-grace-seconds", 45) * 1000));
         offlineGraceMs = Math.max(0, (long) (c.getDouble("claim.offline-grace-seconds", 60) * 1000));
         claimBuilding = c.getBoolean("claim.allow-building", false);
+        quitDelayMs = Math.max(0, (long) (c.getDouble("claim.quit-delay-seconds", 0) * 1000));
+        offlineBuy = c.getBoolean("claim.offline-buy", true);
         leaseMs = Math.max(1, (long) (c.getDouble("lease.days", 7) * 24 * H));
         renewWindowMs = Math.max(H, (long) (c.getDouble("lease.renew-window-hours", 24) * H));
         maxPerPlayer = Math.max(1, c.getInt("lease.max-per-player", 1));

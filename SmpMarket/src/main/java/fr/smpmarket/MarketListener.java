@@ -375,6 +375,7 @@ final class MarketListener implements Listener {
     @EventHandler
     public void onQuit(PlayerQuitEvent e) {
         plugin.input().forget(e.getPlayer().getUniqueId());
+        plugin.claims().onQuit(e.getPlayer());
     }
 
     // ================================================================= chat (saisie de prix, nom...)

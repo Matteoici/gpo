@@ -85,8 +85,8 @@ public final class Claims {
         plugin.store().save();
         plugin.visuals().rebuild(spot);
         plugin.mannequins().refresh(spot);
-        t().send(p, m == null ? "claim.deployed-new" : "claim.deployed", plugin.auctions().stallTags(spot),
-                ph("count", spot.itemsForSale()), ph("distance", (int) plugin.settings().leaveDistance));
+        t().send(p, m == null ? "claim.v2.deployed-new" : "claim.v2.deployed", plugin.auctions().stallTags(spot),
+                ph("count", spot.itemsForSale()));
         Fx.sound(p, "block.barrel.open", 1f);
         Fx.sound(p, "entity.player.levelup", 1.4f);
         return true;
@@ -173,37 +173,27 @@ public final class Claims {
 
     // ================================================================= chaque seconde
 
-    void tick() {
-        long now = System.currentTimeMillis();
-        Settings s = plugin.settings();
+    /** Le joueur quitte le serveur : son marché se range (tout de suite, ou après le délai réglé). */
+    void onQuit(Player p) {
         for (Stall st : new java.util.ArrayList<>(plugin.store().stalls())) {
-            if (!st.isRented()) continue;
-            Player p = Bukkit.getPlayer(st.owner);
-            boolean offline = p == null;
-            boolean far = !offline && !near(p, st, s.leaveDistance);
-            if (!offline && !far) {
-                if (away.remove(st.owner) != null) t().send(p, "claim.back");
-                continue;
-            }
-            long since = away.computeIfAbsent(st.owner, k -> now);
-            long grace = offline ? s.offlineGraceMs : s.leaveGraceMs;
-            long left = grace - (now - since);
-            if (left <= 0) {
-                pack(st, offline ? "claim.packed-offline" : "claim.packed-far");
-                if (p != null) Fx.sound(p, "block.barrel.close", 0.8f);
-            } else if (p != null) {
-                p.sendActionBar(t().get("claim.leaving", ph("seconds", left / 1000 + 1)));
-            }
+            if (!st.isOwner(p.getUniqueId())) continue;
+            if (plugin.settings().quitDelayMs <= 0) pack(st, "claim.v2.packed-quit");
+            else away.put(p.getUniqueId(), System.currentTimeMillis());
         }
     }
 
-    private static boolean near(Player p, Stall st, double d) {
-        Location l = p.getLocation();
-        if (l.getWorld() == null || !l.getWorld().getName().equals(st.region.world())) return false;
-        double cx = (st.region.minX() + st.region.maxX() + 1) / 2.0, cz = (st.region.minZ() + st.region.maxZ() + 1) / 2.0;
-        double r = Math.max(st.region.sizeX(), st.region.sizeZ()) / 2.0 + d;
-        double dx = l.getX() - cx, dz = l.getZ() - cz;
-        return dx * dx + dz * dz <= r * r && Math.abs(l.getY() - st.region.minY()) < 40 + d;
+    /** Chaque seconde : marchés dont le propriétaire n'est plus connecté (délai, redémarrage...). */
+    void tick() {
+        long now = System.currentTimeMillis();
+        for (Stall st : new java.util.ArrayList<>(plugin.store().stalls())) {
+            if (!st.isRented()) continue;
+            if (Bukkit.getPlayer(st.owner) != null) {
+                away.remove(st.owner);
+                continue;
+            }
+            long since = away.computeIfAbsent(st.owner, k -> now);
+            if (now - since >= plugin.settings().quitDelayMs) pack(st, "claim.v2.packed-quit");
+        }
     }
 
     /** Au démarrage : les vieilles enchères sont annulées et remboursées (on ne loue plus, on claim). */

@@ -87,7 +87,7 @@ public final class MarketCommand implements TabExecutor {
         }
         switch (sub) {
             case "" -> new MainMenu(plugin, p).open();
-            case "aide", "help" -> t().sendLines(p, "claim.help");
+            case "aide", "help" -> t().sendLines(p, "claim.v2.help");
             case "chercher", "search", "find" -> {
                 String q = join(args, 1);
                 if (q.isEmpty()) t().send(p, "error.usage", ph("usage", "/marche chercher <objet>"));
@@ -178,7 +178,8 @@ public final class MarketCommand implements TabExecutor {
                     }
                 }
                 if (st == null) t().send(p, "stall.unknown", ph("stall", args[1]));
-                else if (st.isPacked()) new fr.smpmarket.gui.CatalogMenu(plugin, p, st).open();
+                else if (st.isPacked() && plugin.settings().offlineBuy) new fr.smpmarket.gui.CatalogMenu(plugin, p, st).open();
+                else if (st.isPacked()) t().send(p, "claim.v2.owner-offline", ph("player", st.ownerName));
                 else teleport(p, st);
             }
             case "ami", "trust" -> {
@@ -209,7 +210,7 @@ public final class MarketCommand implements TabExecutor {
                 if (st == null) return true;
                 rename(p, st, join(args, 1));
             }
-            default -> t().sendLines(p, "claim.help");
+            default -> t().sendLines(p, "claim.v2.help");
         }
         return true;
     }

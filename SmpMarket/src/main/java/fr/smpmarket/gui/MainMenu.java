@@ -45,7 +45,7 @@ public final class MainMenu extends Menu {
         var p = item(Material.BARREL, "gui.main.parcels", ph("count", parcels));
         button(24, parcels > 0 ? Items.glow(p) : p, c -> new MailboxMenu(plugin, viewer).open());
 
-        set(40, item(Material.BOOK, "claim.gui.help", ph("distance", (int) s().leaveDistance), ph("tax", (int) s().taxPercent)));
+        set(40, item(Material.BOOK, "claim.v2.gui-help", ph("distance", (int) s().leaveDistance), ph("tax", (int) s().taxPercent)));
         close(44);
     }
 }

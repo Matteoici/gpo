@@ -45,7 +45,7 @@ public final class CatalogMenu extends Menu {
 
     /** Le joueur est-il assez près pour acheter dans ce stand ? */
     static boolean near(SmpMarket plugin, Player p, Stall st) {
-        if (st.isPacked()) return true; // marché rangé : on achète à distance
+        if (st.isPacked()) return plugin.settings().offlineBuy; // marché rangé : on achète à distance (si autorisé)
         Location e = st.entrance();
         if (e == null || e.getWorld() != p.getWorld()) return false;
         double d = plugin.settings().buyDistance;
