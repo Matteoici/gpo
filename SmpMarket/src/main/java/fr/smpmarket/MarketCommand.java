@@ -30,7 +30,7 @@ public final class MarketCommand implements TabExecutor {
     private static final List<String> SUBS = List.of("chercher", "installer", "ranger", "vitrine", "gerer", "colis", "tp",
             "ami", "retirer-ami", "nom", "catalogue", "mannequin", "aide");
     private static final List<String> ADMIN = List.of("wand", "create", "delete", "setentrance", "list", "reset", "give",
-            "end", "showcases", "price", "reload");
+            "end", "showcases", "price", "decaler", "reload");
 
     private final SmpMarket plugin;
 
@@ -320,6 +320,54 @@ public final class MarketCommand implements TabExecutor {
                 t().send(p, "admin.created", plugin.auctions().stallTags(st), ph("price", plugin.settings().money(price)));
                 sel[0] = null;
                 sel[1] = null;
+            }
+            case "decaler", "shift" -> {
+                int dy;
+                try {
+                    dy = a.length > 1 ? Integer.parseInt(a[1]) : 0;
+                } catch (NumberFormatException e) {
+                    dy = 0;
+                }
+                if (dy == 0) {
+                    t().send(sender, "error.usage", ph("usage", "/marche admin decaler <hauteur>  (ex. 120 après /ile monter 120)"));
+                    return;
+                }
+                int n = 0;
+                for (Stall st : store.stalls()) {
+                    plugin.visuals().removeStall(st);
+                    Cuboid r = st.region;
+                    st.region = new Cuboid(r.world(), r.minX(), r.minY() + dy, r.minZ(), r.maxX(), r.maxY() + dy, r.maxZ());
+                    st.ey += dy;
+                    if (st.npcSpot != null) st.npcSpot[1] += dy;
+                    List<Showcase> moved = new ArrayList<>();
+                    for (Showcase c : st.showcases) {
+                        if (c.virtual) {
+                            moved.add(c);
+                            continue;
+                        }
+                        Showcase m = new Showcase(c.id, c.template, c.price, c.stock, c.x, c.y + dy, c.z);
+                        m.sold = c.sold;
+                        m.revenue = c.revenue;
+                        moved.add(m);
+                    }
+                    st.showcases.clear();
+                    st.showcases.addAll(moved);
+                    java.util.Set<String> cont = new java.util.LinkedHashSet<>();
+                    for (String k : st.containers) {
+                        String[] p = k.split(",");
+                        try {
+                            cont.add(p[0] + "," + (Integer.parseInt(p[1]) + dy) + "," + p[2]);
+                        } catch (RuntimeException ignored) {
+                        }
+                    }
+                    st.containers.clear();
+                    st.containers.addAll(cont);
+                    plugin.visuals().ensure(st);
+                    plugin.mannequins().refresh(st);
+                    n++;
+                }
+                store.save();
+                sender.sendMessage(Texts.MM.deserialize("<green>" + n + " emplacement(s) décalé(s) de " + dy + " blocs en hauteur."));
             }
             case "delete", "reset", "setentrance", "give", "end", "showcases", "price" -> {
                 if (a.length < 2) {

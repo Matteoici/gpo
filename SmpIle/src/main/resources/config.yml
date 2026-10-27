@@ -1,0 +1,25 @@
+# =====================================================================
+#  SmpIle - le spawn sur une île flottante
+#  1) /ile pos1 et /ile pos2 : deux coins opposés du spawn (pos1 AU NIVEAU DU SOL ou un peu dessous,
+#     pos2 tout en haut du plus haut bâtiment)
+#  2) /ile monter <hauteur>   ex. /ile monter 120  (aperçu, puis on retape avec "confirmer")
+#  3) /ile tp pour aller voir ; /ile annuler pour tout enlever
+#  Le spawn d'origine reste au sol (rien n'est cassé). Pense à refaire /setworldspawn (et /setspawn d'Essentials).
+# =====================================================================
+
+# blocs copiés par tick (plus haut = plus rapide mais plus de lag pendant la copie)
+blocks-per-tick: 5000
+# dessous de l'île : profondeur minimale, et combien elle s'enfonce vers le centre (par bloc depuis le bord)
+underside:
+  enabled: true
+  min-depth: 3
+  depth-per-block: 0.85
+  max-depth: 42
+# décor : racines / lianes lumineuses / chaînes avec lanternes sous l'île, petits îlots autour
+decor:
+  enabled: true
+  hanging-chance: 0.10
+  lanterns-chance: 0.025
+  islets: 7
+  # copier aussi les cadres, tableaux et porte-armures
+copy-entities: true

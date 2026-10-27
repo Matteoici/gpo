@@ -1,0 +1,15 @@
+name: SmpIle
+version: '${version}'
+main: fr.smpile.SmpIle
+api-version: '26.2'
+description: "Monte le spawn dans le ciel : île flottante avec dessous en roche et décor"
+commands:
+  ile:
+    description: Monter le spawn sur une île flottante
+    usage: /ile <pos1|pos2|info|monter|annuler|tp|stop>
+    aliases: [island, ilespawn]
+    permission: smpile.admin
+permissions:
+  smpile.admin:
+    description: Utiliser /ile
+    default: op
