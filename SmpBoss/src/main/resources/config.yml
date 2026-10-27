@@ -259,6 +259,20 @@ weapons:
     length: 18
     levitation-seconds: 1.5
     levitation-level: 1
+  brise-terre:
+    chance: 0.5
+    # clic droit : bond puis onde de choc au sol
+    damage: 8
+    radius: 6
+    cooldown-seconds: 12
+  arbalete-spectrale:
+    chance: 0.5
+    # le tir devient un crâne d'âmes qui suit l'ennemi le plus proche devant toi
+    damage: 8
+    range: 24
+    wither-seconds: 3
+    glow-seconds: 6
+    cooldown-seconds: 5
 
 # ---------------------------------------------------------------- Reliques
 # health = cœurs en plus · speed = % de vitesse · regen = demi-cœurs toutes les 4 s hors combat (8 s sans dégâts)
@@ -586,6 +600,26 @@ messages:
         - ""
         - "<white>☄ <damage> ❤</white> <gray>· traverse l'armure"
         - "<white>⏳ <cooldown> s</white> <gray>entre deux rayons"
+        - "<dark_gray>Ne tombe pas à la mort."
+    brise-terre:
+      name: "Brise-Terre"
+      lore:
+        - "<yellow>Clic droit :</yellow> <gray>tu bondis puis tu t'écrases"
+        - "<gray>au sol : une <gold>onde de choc</gold> projette"
+        - "<gray>et ralentit tout ce qui est autour."
+        - "<gray>Pas de dégâts de chute pendant le saut."
+        - ""
+        - "<white>💥 <damage> ❤</white> <gray>· rayon <white><radius></white> · <white>⏳ <cooldown> s"
+        - "<dark_gray>Ne tombe pas à la mort."
+    arbalete-spectrale:
+      name: "Arbalète Spectrale"
+      lore:
+        - "<gray>Le tir devient un <aqua>crâne d'âmes</aqua>"
+        - "<gray>qui <white>poursuit</white> l'ennemi le plus proche."
+        - "<gray>Il le flétrit et le fait <white>briller</white>"
+        - "<gray>(impossible de se cacher)."
+        - ""
+        - "<white>☠ <damage> ❤</white> <gray>· <white>⏳ <cooldown> s"
         - "<dark_gray>Ne tombe pas à la mort."
     tranche-mace:
       name: "Tranche Mace"

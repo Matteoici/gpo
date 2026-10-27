@@ -547,6 +547,8 @@ public final class SmpBoss extends JavaPlugin {
                         case "faucille", "sickle" -> items.sickle();
                         case "sonicbow", "sonic_bow", "arc" -> weapons.create(Weapons.SONIC);
                         case "tranchemace", "tranche_mace", "epee", "épée" -> weapons.create(Weapons.TRANCHE);
+                        case "briseterre", "brise_terre", "hache" -> weapons.create(Weapons.BRISE);
+                        case "arbalete", "arbalète", "arbalete_spectrale" -> weapons.create(Weapons.SPECTRAL);
                         default -> null;
                     };
                 }
@@ -625,7 +627,7 @@ public final class SmpBoss extends JavaPlugin {
             if (t != null) out.addAll(store.of(t.getUniqueId()).relics);
         }
         else if (a.length == 3 && a[0].equalsIgnoreCase("give")) {
-            out.addAll(List.of("graine", "citrouille", "faucille", "sonicbow", "tranchemace"));
+            out.addAll(List.of("graine", "citrouille", "faucille", "sonicbow", "tranchemace", "briseterre", "arbalete"));
             for (String id : relics.all().keySet()) out.add("relique:" + id);
         }
         String last = a.length == 0 ? "" : a[a.length - 1].toLowerCase(Locale.ROOT);

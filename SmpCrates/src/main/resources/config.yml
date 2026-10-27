@@ -85,6 +85,8 @@ crates:
       - {weight: 3, command: "boss give %player% relique:couronne", name: "<rainbow>Couronne du Roi Citrouille</rainbow> <gray>(relique)", icon: GOLDEN_HELMET, broadcast: true}
       - {weight: 1, command: "boss give %player% sonicbow", name: "<white><b>Sonic Bow", icon: BOW, broadcast: true}
       - {weight: 1, command: "boss give %player% tranchemace", name: "<white><b>Tranche Mace", icon: NETHERITE_SWORD, broadcast: true}
+      - {weight: 1, command: "boss give %player% briseterre", name: "<white><b>Brise-Terre", icon: NETHERITE_AXE, broadcast: true}
+      - {weight: 1, command: "boss give %player% arbalete", name: "<white><b>Arbalète Spectrale", icon: CROSSBOW, broadcast: true}
 
 messages:
   prefix: "<dark_gray>[<gold>Caisses</gold>]</dark_gray> "
