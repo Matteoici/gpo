@@ -83,7 +83,7 @@ final class ZoneListener implements Listener {
         Long last = warned.get(p.getUniqueId());
         if (last != null && now - last < 1500) return;
         warned.put(p.getUniqueId(), now);
-        p.sendActionBar(SmpZones.parse(plugin.msg("denied." + f.key, plugin.msg("denied.default"))));
+        p.sendActionBar(SmpZones.parse(plugin.msg("denied." + f.key, plugin.msg("denied.default", "<red>✖ Interdit ici."))));
     }
 
     @EventHandler
