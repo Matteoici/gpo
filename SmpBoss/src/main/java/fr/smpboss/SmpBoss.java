@@ -34,6 +34,7 @@ public final class SmpBoss extends JavaPlugin {
     private BossItems items;
     private Relics relics;
     private Loot loot;
+    private Weapons weapons;
     private Backpacks backpacks;
     private Cosmetics cosmetics;
     private InvButtons invButtons;
@@ -201,6 +202,8 @@ public final class SmpBoss extends JavaPlugin {
         items = new BossItems(this);
         relics = new Relics(this);
         loot = new Loot(this);
+        weapons = new Weapons(this);
+        getServer().getPluginManager().registerEvents(weapons, this);
         backpacks = new Backpacks(this);
         cosmetics = new Cosmetics(this);
         store.load();
@@ -235,6 +238,7 @@ public final class SmpBoss extends JavaPlugin {
     @Override
     public void onDisable() {
         if (king != null) king.cleanup();
+        if (weapons != null) weapons.saveKept();
         if (arena != null) arena.shutdown();
         if (hologram != null) hologram.remove();
         if (relics != null) relics.removeAll();
@@ -531,6 +535,8 @@ public final class SmpBoss extends JavaPlugin {
                             yield s;
                         }
                         case "faucille", "sickle" -> items.sickle();
+                        case "sonicbow", "sonic_bow", "arc" -> weapons.create(Weapons.SONIC);
+                        case "tranchemace", "tranche_mace", "epee", "épée" -> weapons.create(Weapons.TRANCHE);
                         default -> null;
                     };
                 }
@@ -609,7 +615,7 @@ public final class SmpBoss extends JavaPlugin {
             if (t != null) out.addAll(store.of(t.getUniqueId()).relics);
         }
         else if (a.length == 3 && a[0].equalsIgnoreCase("give")) {
-            out.addAll(List.of("graine", "citrouille", "faucille"));
+            out.addAll(List.of("graine", "citrouille", "faucille", "sonicbow", "tranchemace"));
             for (String id : relics.all().keySet()) out.add("relique:" + id);
         }
         String last = a.length == 0 ? "" : a[a.length - 1].toLowerCase(Locale.ROOT);
@@ -629,6 +635,10 @@ public final class SmpBoss extends JavaPlugin {
 
     public Relics relics() {
         return relics;
+    }
+
+    public Weapons weapons() {
+        return weapons;
     }
 
     public Loot loot() {

@@ -280,6 +280,10 @@ public final class Arena {
 
     /** Joueur : /arene. Le combat (SmpCombat) peut l'en empêcher. */
     public void join(Player p) {
+        if (contains(p.getLocation())) {
+            p.sendMessage(parse("<red>Tu es déjà dans l'arène."));
+            return;
+        }
         Location e = entrance();
         if (e == null) {
             p.sendMessage(parse("<red>L'arène n'est pas encore construite."));

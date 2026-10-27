@@ -114,6 +114,12 @@ final class BossListener implements Listener {
                     e.setCancelled(true);
                     return;
                 }
+                // tirée depuis l'extérieur de la piste : ne compte pas, même si le tireur est descendu depuis
+                if (pr.getPersistentDataContainer().has(offFloorKey, org.bukkit.persistence.PersistentDataType.BYTE)) {
+                    e.setCancelled(true);
+                    p.sendActionBar(SmpBoss.parse("<red>☠ Tir depuis l'extérieur de l'arène : le Roi ne sent rien."));
+                    return;
+                }
                 by = p;
             }
         }
@@ -137,12 +143,30 @@ final class BossListener implements Listener {
         // dégâts bruts (épée + Tranchant + coup critique), sans l'armure du boss qui les réduisait d'un quart ;
         // bonus pour le corps à corps (plus risqué que l'arc)
         boolean melee = e instanceof EntityDamageByEntityEvent ed2 && ed2.getDamager() instanceof Player;
-        double amount = e.getDamage() * (melee ? plugin.getConfig().getDouble("boss.melee-bonus", 1.3) : 1.0);
+        boolean arrow = e instanceof EntityDamageByEntityEvent ed3 && ed3.getDamager() instanceof org.bukkit.entity.AbstractArrow
+                && !(ed3.getDamager() instanceof org.bukkit.entity.Trident);
+        double amount = e.getDamage() * (melee ? plugin.getConfig().getDouble("boss.melee-bonus", 1.3)
+                : arrow ? plugin.getConfig().getDouble("boss.bow-bonus", 1.25) : 1.0);
         if (!k.hurt(by, amount)) {
             e.setCancelled(true);
             return;
         }
         e.setDamage(0);
+    }
+
+    private final org.bukkit.NamespacedKey offFloorKey = new org.bukkit.NamespacedKey("smpboss", "off_floor");
+
+    /** Projectile tiré depuis l'extérieur de la piste (pont, muret, dehors...) : marqué, il ne touchera pas le Roi. */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onLaunch(org.bukkit.event.entity.ProjectileLaunchEvent e) {
+        if (!(e.getEntity().getShooter() instanceof Player p)) return;
+        Arena ar = plugin.arena();
+        if (ar == null || !ar.defined() || !plugin.getConfig().getBoolean("arena.protection.floor-only-damage", true)) return;
+        PumpkinKing k = plugin.king();
+        if (k == null || !k.active()) return;
+        if (!ar.onFightFloor(p.getLocation())) {
+            e.getEntity().getPersistentDataContainer().set(offFloorKey, org.bukkit.persistence.PersistentDataType.BYTE, (byte) 1);
+        }
     }
 
     @EventHandler

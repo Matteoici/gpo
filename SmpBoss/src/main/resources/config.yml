@@ -28,6 +28,8 @@ boss:
   extra-player-health: 0.7
   # dégâts des coups à l'épée / à la hache sur le boss (1.3 = +30 % ; l'arc reste normal)
   melee-bonus: 1.3
+  # dégâts des flèches sur le boss (1.25 = +25 %)
+  bow-bonus: 1.25
   # tableau sur le côté de l'écran : vie + part des dégâts de chacun (vert = assez pour le butin)
   damage-sidebar: true
   # taille (1 = taille normale) puis à chaque phase
@@ -233,6 +235,26 @@ loot:
     prestige:
       - {relic: couronne_roi_eternel, title: "Le Roi Éternel"}
       - {relic: ailes_eclipse, title: "Survivant de l'Apocalypse"}
+
+# ---------------------------------------------------------------- Armes du Roi (butin rare, gardées à la mort)
+weapons:
+  sonic-bow:
+    # chance (%) de la gagner à chaque victoire
+    chance: 0.5
+    # dégâts du rayon (2 = 1 cœur ; traverse l'armure comme le Warden)
+    damage: 10
+    cooldown-seconds: 6
+    range: 32
+    # temps de tension minimum (ms) : l'arc doit être chargé au maximum
+    full-charge-ms: 950
+  tranche-mace:
+    chance: 0.5
+    damage: 6
+    cooldown-seconds: 8
+    # longueur de la lame qui file (en blocs, environ)
+    length: 18
+    levitation-seconds: 1.5
+    levitation-level: 1
 
 # ---------------------------------------------------------------- Reliques
 # health = cœurs en plus · speed = % de vitesse · regen = demi-cœurs toutes les 4 s hors combat (8 s sans dégâts)
@@ -546,6 +568,31 @@ messages:
     status-ready: "<green><b>✔ Le Roi peut être réveillé"
     status-day: "<yellow>☀ Le Roi dort... revenez la nuit"
     status-cooldown: "<red>⏳ Le Roi se repose encore <white><minutes> min"
+  weapons:
+    cooldown: "<gray>⏳ Encore <white><seconds> s"
+    kept: "<aqua>✦ Tes armes du Roi sont restées avec toi."
+    broadcast: "<gradient:#ffffff:#4a4a4a:#ffffff><b>✧ ARME DU ROI ✧</b></gradient> <white><player></white> <gray>a obtenu</gray> <item> <gray>!!!"
+    sonic-bow:
+      name: "Sonic Bow"
+      not-charged: "<red>Tends l'arc au maximum pour lancer le rayon."
+      lore:
+        - "<gray>Tir chargé au maximum :"
+        - "<aqua>un rayon sonique de Warden"
+        - "<gray>au lieu d'une flèche."
+        - ""
+        - "<white>☄ <damage> ❤</white> <gray>· traverse l'armure"
+        - "<white>⏳ <cooldown> s</white> <gray>entre deux rayons"
+        - "<dark_gray>Ne tombe pas à la mort."
+    tranche-mace:
+      name: "Tranche Mace"
+      lore:
+        - "<yellow>Clic droit :</yellow> <gray>une longue lame verticale"
+        - "<gray>file droit devant toi."
+        - "<gray>Ceux qu'elle touche <aqua>lévitent</aqua> :"
+        - "<gray>fini les coups de masse en piqué."
+        - ""
+        - "<white>⚔ <damage> ❤</white> <gray>· <white>⏳ <cooldown> s"
+        - "<dark_gray>Ne tombe pas à la mort."
   board:
     title: "<gradient:#ff7a00:#ffd36b><b>♛ Roi Citrouille ♛"
     hp: "<red>❤ <white><hp></white><gray> / <max>"

@@ -39,6 +39,8 @@ public final class Loot {
         int min = seeds.isEmpty() ? 1 : seeds.get(0), max = seeds.size() > 1 ? seeds.get(1) : min;
         int n = ThreadLocalRandom.current().nextInt(min, max + 1);
         if (n > 0) give(p, plugin.items().seed(n));
+        // ---- armes rares (Sonic Bow, Tranche Mace) : tirage à part
+        plugin.weapons().roll(p);
 
         // ---- tirage de rareté (avec garantie)
         ThreadLocalRandom r = ThreadLocalRandom.current();
