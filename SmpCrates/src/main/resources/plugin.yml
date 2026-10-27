@@ -1,0 +1,16 @@
+name: SmpCrates
+version: '${version}'
+main: fr.smpcrates.SmpCrates
+api-version: '26.2'
+depend: [Vault]
+softdepend: [SmpBoss]
+description: "Caisses Rare / Épique / Légendaire / Mythique, payées avec l'argent du jeu, avec roulette animée"
+commands:
+  caisse:
+    description: Les caisses
+    usage: /caisse [placer|retirer|ajouter|cle|reload]
+    aliases: [caisses, crate, crates]
+permissions:
+  smpcrates.admin:
+    description: Placer les caisses, ajouter des lots, donner des clés
+    default: op

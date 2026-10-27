@@ -1,0 +1,98 @@
+# =====================================================================
+#  SmpCrates - caisses payées avec l'argent du jeu
+#  - /caisse                     -> menu de toutes les caisses (voir les lots, acheter, ouvrir)
+#  - /caisse placer <caisse>     -> en regardant un bloc (coffre, ender chest...) : il devient cette caisse
+#  - /caisse retirer             -> en regardant une caisse
+#  - /caisse ajouter <caisse> <poids>  -> ajoute l'objet que tu tiens comme lot (avec ses enchantements, son nom...)
+#  - /caisse cle <joueur> <caisse> [n] -> donne des clés (ouvertures gratuites)
+#  Lots : poids = chance relative (un lot de poids 20 sort 2 fois plus qu'un lot de poids 10).
+#   item: MATERIAU, amount, name, enchants {sharpness: 5}  |  money: 10000  |  command: "..." (%player%) + name + icon
+#   broadcast: true -> tout le serveur est prévenu
+#  Après une modification : /caisse reload
+# =====================================================================
+
+# ouvrir depuis le menu /caisse n'importe où (sinon : seulement en cliquant sur la caisse posée)
+open-anywhere: true
+# annonce à tout le serveur pour ces caisses (en plus des lots "broadcast: true")
+broadcast-crates: [legendaire, mythique]
+
+crates:
+  rare:
+    name: "<#4aa8ff><b>Caisse Rare"
+    price: 15000
+    icon: LIGHT_BLUE_SHULKER_BOX
+    color: "#4aa8ff"
+    rewards:
+      - {weight: 30, item: IRON_INGOT, amount: 24}
+      - {weight: 25, money: 8000}
+      - {weight: 20, item: GOLDEN_CARROT, amount: 32}
+      - {weight: 15, item: EXPERIENCE_BOTTLE, amount: 32}
+      - {weight: 10, item: DIAMOND, amount: 3}
+      - {weight: 8, item: ENCHANTED_BOOK, stored-enchants: {efficiency: 4}}
+      - {weight: 8, item: ENCHANTED_BOOK, stored-enchants: {unbreaking: 3}}
+      - {weight: 5, item: GOLDEN_APPLE, amount: 4}
+      - {weight: 3, money: 30000}
+      - {weight: 2, command: "boss give %player% graine 4", name: "<#c0392b>4 Graines maudites", icon: NETHER_WART}
+
+  epique:
+    name: "<#b45cff><b>Caisse Épique"
+    price: 60000
+    icon: PURPLE_SHULKER_BOX
+    color: "#b45cff"
+    rewards:
+      - {weight: 25, item: DIAMOND, amount: 8}
+      - {weight: 20, money: 40000}
+      - {weight: 15, item: ENCHANTED_BOOK, stored-enchants: {sharpness: 5}}
+      - {weight: 15, item: ENCHANTED_BOOK, stored-enchants: {protection: 4}}
+      - {weight: 10, item: GOLDEN_APPLE, amount: 12}
+      - {weight: 8, item: NETHERITE_SCRAP, amount: 2}
+      - {weight: 5, item: TOTEM_OF_UNDYING}
+      - {weight: 4, item: SHULKER_BOX}
+      - {weight: 3, money: 150000}
+      - {weight: 3, command: "boss give %player% citrouille 1", name: "<#ff7a00>Citrouille sacrificielle", icon: CARVED_PUMPKIN}
+
+  legendaire:
+    name: "<gradient:#ffd36b:#ff8a3d><b>Caisse Légendaire"
+    price: 200000
+    icon: YELLOW_SHULKER_BOX
+    color: "#ffb43d"
+    rewards:
+      - {weight: 20, item: NETHERITE_INGOT, amount: 2}
+      - {weight: 20, money: 150000}
+      - {weight: 15, item: ENCHANTED_BOOK, stored-enchants: {mending: 1}}
+      - {weight: 12, item: ENCHANTED_GOLDEN_APPLE, amount: 2}
+      - {weight: 10, item: TOTEM_OF_UNDYING, amount: 2}
+      - {weight: 8, item: ELYTRA}
+      - {weight: 6, item: BEACON}
+      - {weight: 5, item: DIAMOND_BLOCK, amount: 16}
+      - {weight: 3, money: 600000, broadcast: true}
+      - {weight: 1, command: "boss give %player% citrouille 3", name: "<#ff7a00>3 Citrouilles sacrificielles", icon: JACK_O_LANTERN, broadcast: true}
+
+  mythique:
+    name: "<gradient:#ff1a1a:#ffd700:#ff1a1a><b>Caisse Mythique"
+    price: 600000
+    icon: RED_SHULKER_BOX
+    color: "#ff3030"
+    rewards:
+      - {weight: 20, item: NETHERITE_INGOT, amount: 6}
+      - {weight: 15, money: 500000}
+      - {weight: 15, item: ENCHANTED_GOLDEN_APPLE, amount: 6}
+      - {weight: 12, item: NETHERITE_SWORD, name: "<gradient:#ff1a1a:#ffd700>Lame Mythique", enchants: {sharpness: 5, unbreaking: 3, mending: 1, looting: 3, fire_aspect: 2, sweeping_edge: 3}}
+      - {weight: 10, item: NETHERITE_CHESTPLATE, name: "<gradient:#ff1a1a:#ffd700>Plastron Mythique", enchants: {protection: 4, unbreaking: 3, mending: 1}}
+      - {weight: 8, item: ELYTRA, enchants: {unbreaking: 3, mending: 1}}
+      - {weight: 8, item: BEACON, amount: 2}
+      - {weight: 5, money: 2000000, broadcast: true}
+      - {weight: 3, command: "boss give %player% relique:couronne", name: "<rainbow>Couronne du Roi Citrouille</rainbow> <gray>(relique)", icon: GOLDEN_HELMET, broadcast: true}
+      - {weight: 1, command: "boss give %player% sonicbow", name: "<white><b>Sonic Bow", icon: BOW, broadcast: true}
+      - {weight: 1, command: "boss give %player% tranchemace", name: "<white><b>Tranche Mace", icon: NETHERITE_SWORD, broadcast: true}
+
+messages:
+  prefix: "<dark_gray>[<gold>Caisses</gold>]</dark_gray> "
+  no-money: "<red>Il te faut <gold><price></gold> (tu as <gold><balance></gold>)."
+  bought: "<green>Caisse achetée pour <gold><price></gold> !"
+  key-used: "<green>Clé utilisée.</green> <gray>(il t'en reste <white><keys></white>)"
+  won: "<green>Tu as gagné :</green> <reward>"
+  broadcast: "<gold>✦</gold> <white><player></white> <gray>a gagné</gray> <reward> <gray>dans une</gray> <crate><gray> !"
+  busy: "<red>Une caisse est déjà en train de s'ouvrir."
+  only-here: "<red>Va sur la caisse pour l'ouvrir."
+  no-vault: "<red>L'économie n'est pas disponible (Vault)."
