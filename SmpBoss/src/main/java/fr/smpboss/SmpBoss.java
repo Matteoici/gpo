@@ -173,6 +173,24 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 16);
             saveConfig();
         }
+        // v17 : reliques prestige rééquilibrées (fortes, mais pas injouables en PvP)
+        if (getConfig().getInt("config-version", 1) < 17) {
+            if (getConfig().isSet("relics.list.couronne_roi_eternel")) {
+                harder("relics.list.couronne_roi_eternel.health", 10, 6);
+                harder("relics.list.couronne_roi_eternel.damage", 35, 25);
+                harder("relics.list.couronne_roi_eternel.armor", 10, 5);
+                harder("relics.list.couronne_roi_eternel.regen", 4, 3);
+            }
+            if (getConfig().isSet("relics.list.ailes_eclipse")) {
+                harder("relics.list.ailes_eclipse.speed", 30, 20);
+                harder("relics.list.ailes_eclipse.health", 8, 5);
+                harder("relics.list.ailes_eclipse.damage", 25, 15);
+                harder("relics.list.ailes_eclipse.armor", 8, 4);
+                harder("relics.list.ailes_eclipse.regen", 3, 2);
+            }
+            getConfig().set("config-version", 17);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);
