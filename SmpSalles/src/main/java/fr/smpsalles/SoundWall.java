@@ -9,6 +9,7 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import org.bukkit.entity.Player;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -32,6 +33,9 @@ final class SoundWall {
         }
     }
 
+    /** toutes les salles (pour ceux qui sont dehors) */
+    static volatile List<Snap> ALL = List.of();
+
     static void register(SmpSalles plugin, Map<UUID, Snap> viewers) {
         ProtocolLibrary.getProtocolManager().addPacketListener(new PacketAdapter(plugin, ListenerPriority.HIGH,
                 PacketType.Play.Server.NAMED_SOUND_EFFECT, PacketType.Play.Server.ENTITY_SOUND, PacketType.Play.Server.WORLD_EVENT) {
@@ -40,8 +44,11 @@ final class SoundWall {
                 Player p = event.getPlayer();
                 if (p == null) return;
                 Snap room = viewers.get(p.getUniqueId());
-                if (room == null) return; // pas dans une salle : rien ne change
                 try {
+                    if (room == null) {
+                        outside(event, p);
+                        return;
+                    }
                     PacketContainer pk = event.getPacket();
                     PacketType t = event.getPacketType();
                     if (t == PacketType.Play.Server.NAMED_SOUND_EFFECT) {
@@ -60,5 +67,32 @@ final class SoundWall {
                 }
             }
         });
+    }
+
+    /** Dehors : on n'entend rien de ce qui se passe dans une salle. */
+    private static void outside(PacketEvent event, Player p) {
+        List<Snap> all = ALL;
+        if (all.isEmpty()) return;
+        PacketContainer pk = event.getPacket();
+        PacketType t = event.getPacketType();
+        String w = p.getWorld().getName();
+        if (t == PacketType.Play.Server.ENTITY_SOUND) {
+            int id = pk.getIntegers().read(0);
+            for (Snap s : all) if (s.entities().contains(id)) event.setCancelled(true);
+            return;
+        }
+        double x, y, z;
+        if (t == PacketType.Play.Server.WORLD_EVENT) {
+            BlockPosition b = pk.getBlockPositionModifier().read(0);
+            if (b == null) return;
+            x = b.getX() + 0.5;
+            y = b.getY() + 0.5;
+            z = b.getZ() + 0.5;
+        } else {
+            x = pk.getIntegers().read(0) / 8.0;
+            y = pk.getIntegers().read(1) / 8.0;
+            z = pk.getIntegers().read(2) / 8.0;
+        }
+        for (Snap s : all) if (s.world().equals(w) && s.contains(x, y, z)) event.setCancelled(true);
     }
 }

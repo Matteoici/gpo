@@ -15,7 +15,9 @@ max-attempts: 3
 lockout-seconds: 30
 # voice chat insonorisé (nécessite Simple Voice Chat)
 voice-isolation: true
-# sons Minecraft de l'extérieur coupés pour ceux dans la salle (nécessite ProtocolLib)
+# pseudos au-dessus de la tête cachés pour ceux qui sont dans une salle (on ne les voit pas à travers les murs)
+hide-nametags: true
+# sons Minecraft insonorisés (nécessite ProtocolLib) : dedans on n'entend pas dehors, dehors on n'entend pas dedans
 sound-isolation: true
 # ceux qui n'ont pas tapé le code sont repoussés dehors (les op passent : permission smpsalles.bypass)
 push-intruders: true

@@ -57,6 +57,10 @@ public final class SmpSalles extends JavaPlugin implements Listener {
     /** pour SoundWall (fil réseau) : salle où est chaque joueur */
     private final Map<UUID, SoundWall.Snap> soundView = new java.util.concurrent.ConcurrentHashMap<>();
     private boolean soundWall;
+    /** joueur -> salle où il est (lu par le filtre de voix, sur le fil du voice chat) */
+    final Map<UUID, String> roomOf = new java.util.concurrent.ConcurrentHashMap<>();
+    volatile boolean voiceIsolation = true;
+    private final NameTags tags = new NameTags();
     private File file;
 
     // pavé : 1 2 3 / 4 5 6 / 7 8 9 / ✖ 0 ✔
@@ -88,13 +92,15 @@ public final class SmpSalles extends JavaPlugin implements Listener {
                 getLogger().warning("ProtocolLib présent mais incompatible : les sons de l'extérieur restent audibles (" + t + ")");
             }
         }
-        Bukkit.getScheduler().runTaskTimer(this, this::voiceTick, 40L, 10L);
+        voiceIsolation = getConfig().getBoolean("voice-isolation", true);
+        Bukkit.getScheduler().runTaskTimer(this, this::zoneTick, 20L, 5L);
         Bukkit.getScheduler().runTaskTimer(this, this::guardTick, 20L, 5L);
     }
 
     @Override
     public void onDisable() {
         if (voice != null) voice.shutdown();
+        tags.restoreAll();
         save();
     }
 
@@ -262,45 +268,50 @@ public final class SmpSalles extends JavaPlugin implements Listener {
 
     // ================================================================= voix
 
-    private void voiceTick() {
-        if (soundWall) {
-            Map<String, SoundWall.Snap> snaps = new HashMap<>();
-            for (Player p : Bukkit.getOnlinePlayers()) {
-                Room r = getConfig().getBoolean("sound-isolation", true) ? roomAt(p.getLocation()) : null;
-                if (r == null) {
-                    soundView.remove(p.getUniqueId());
-                    continue;
+    /** Toutes les 5 ticks : qui est dans quelle salle (voix, sons, pseudos). */
+    private void zoneTick() {
+        boolean sounds = getConfig().getBoolean("sound-isolation", true);
+        Map<String, SoundWall.Snap> snaps = new HashMap<>();
+        if (soundWall && sounds) {
+            for (Room r : rooms.values()) {
+                if (!r.ready()) continue;
+                World w = Bukkit.getWorld(r.world);
+                if (w == null) continue;
+                java.util.Set<Integer> ids = new java.util.HashSet<>();
+                if (w.isChunkLoaded(r.box[0] >> 4, r.box[2] >> 4)) {
+                    org.bukkit.util.BoundingBox bb = new org.bukkit.util.BoundingBox(r.box[0], r.box[1], r.box[2], r.box[3] + 1, r.box[4] + 1, r.box[5] + 1);
+                    for (org.bukkit.entity.Entity en : w.getNearbyEntities(bb)) ids.add(en.getEntityId());
                 }
-                SoundWall.Snap s = snaps.computeIfAbsent(r.name, k -> {
-                    java.util.Set<Integer> ids = new java.util.HashSet<>();
-                    World w = Bukkit.getWorld(r.world);
-                    if (w != null) {
-                        org.bukkit.util.BoundingBox bb = new org.bukkit.util.BoundingBox(r.box[0], r.box[1], r.box[2], r.box[3] + 1, r.box[4] + 1, r.box[5] + 1);
-                        for (org.bukkit.entity.Entity en : w.getNearbyEntities(bb)) ids.add(en.getEntityId());
-                    }
-                    return new SoundWall.Snap(r.name, r.world, r.box.clone(), java.util.Set.copyOf(ids));
-                });
-                soundView.put(p.getUniqueId(), s);
+                snaps.put(r.name, new SoundWall.Snap(r.name, r.world, r.box.clone(), java.util.Set.copyOf(ids)));
             }
+            SoundWall.ALL = List.copyOf(snaps.values());
+        } else if (soundWall) {
+            SoundWall.ALL = List.of();
         }
-        if (voice == null || !getConfig().getBoolean("voice-isolation", true)) return;
+        java.util.Set<String> inside = new java.util.HashSet<>();
         for (Player p : Bukkit.getOnlinePlayers()) {
             Room r = roomAt(p.getLocation());
-            boolean changed;
-            try {
-                changed = voice.update(p, r);
-            } catch (Throwable t) {
-                continue;
+            String before = r == null ? roomOf.remove(p.getUniqueId()) : roomOf.put(p.getUniqueId(), r.name);
+            if (r != null) inside.add(p.getName());
+            if (soundWall) {
+                SoundWall.Snap s = r == null ? null : snaps.get(r.name);
+                if (s == null) soundView.remove(p.getUniqueId());
+                else soundView.put(p.getUniqueId(), s);
             }
-            if (changed) p.sendActionBar(parse(msg(r != null ? "enter-voice" : "leave-voice")));
+            String now = r == null ? null : r.name;
+            if (!java.util.Objects.equals(before, now)) p.sendActionBar(parse(msg(now != null ? "enter-voice" : "leave-voice")));
         }
+        if (getConfig().getBoolean("hide-nametags", true)) tags.update(inside);
+        else tags.restoreAll();
     }
 
     @EventHandler
     public void onQuit(PlayerQuitEvent e) {
         soundView.remove(e.getPlayer().getUniqueId());
         access.remove(e.getPlayer().getUniqueId());
-        if (voice != null) voice.forget(e.getPlayer());
+        roomOf.remove(e.getPlayer().getUniqueId());
+        tags.update(new java.util.HashSet<>(roomOf.keySet().stream().map(Bukkit::getPlayer).filter(java.util.Objects::nonNull)
+                .filter(x -> !x.equals(e.getPlayer())).map(Player::getName).toList()));
     }
 
     // ================================================================= porte
@@ -492,6 +503,7 @@ public final class SmpSalles extends JavaPlugin implements Listener {
         }
         if (sub.equals("reload")) {
             reloadConfig();
+            voiceIsolation = getConfig().getBoolean("voice-isolation", true);
             s.sendMessage(parse("<green>Config rechargée."));
             return true;
         }
@@ -568,7 +580,10 @@ public final class SmpSalles extends JavaPlugin implements Listener {
                 s.sendMessage(parse("<gray>Zone : <white>" + (r.ready() ? r.world + " " + r.box[0] + " " + r.box[1] + " " + r.box[2] + " → "
                         + r.box[3] + " " + r.box[4] + " " + r.box[5] : "<red>manquante")));
                 s.sendMessage(parse("<gray>Portes : <white>" + r.doors.size() + " <gray>· Code : <white>" + (r.code.isEmpty() ? "<red>aucun" : r.code)));
-                s.sendMessage(parse("<gray>Voix : " + (voice != null ? "<green>insonorisée (Simple Voice Chat)" : "<red>Simple Voice Chat absent")));
+                s.sendMessage(parse("<gray>Voix : " + (voice == null ? "<red>Simple Voice Chat absent"
+                        : !voice.ready() ? "<yellow>Simple Voice Chat pas encore démarré"
+                        : "<green>insonorisée (Simple Voice Chat)") + (voice != null && voice.problem() != null ? " <red>(" + MM.escapeTags(voice.problem()) + ")" : "")));
+                s.sendMessage(parse("<gray>Pseudos : " + (getConfig().getBoolean("hide-nametags", true) ? "<green>cachés pour ceux qui sont dedans" : "<yellow>visibles")));
                 s.sendMessage(parse("<gray>Sons Minecraft : " + (soundWall ? "<green>extérieur coupé (ProtocolLib)" : "<red>ProtocolLib absent")));
             }
             default -> help(s);
