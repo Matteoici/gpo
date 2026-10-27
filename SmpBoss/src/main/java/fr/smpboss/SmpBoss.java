@@ -155,6 +155,24 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 15);
             saveConfig();
         }
+        // v16 : reliques prestige encore plus fortes
+        if (getConfig().getInt("config-version", 1) < 16) {
+            if (getConfig().isSet("relics.list.couronne_roi_eternel")) {
+                harder("relics.list.couronne_roi_eternel.health", 5, 10);
+                harder("relics.list.couronne_roi_eternel.damage", 20, 35);
+                harder("relics.list.couronne_roi_eternel.armor", 4, 10);
+                harder("relics.list.couronne_roi_eternel.regen", 2, 4);
+            }
+            if (getConfig().isSet("relics.list.ailes_eclipse")) {
+                harder("relics.list.ailes_eclipse.speed", 15, 30);
+                harder("relics.list.ailes_eclipse.health", 4, 8);
+                harder("relics.list.ailes_eclipse.damage", 12, 25);
+                harder("relics.list.ailes_eclipse.armor", 3, 8);
+                harder("relics.list.ailes_eclipse.regen", 1, 3);
+            }
+            getConfig().set("config-version", 16);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);

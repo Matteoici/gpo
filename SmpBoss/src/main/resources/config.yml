@@ -1,4 +1,4 @@
-config-version: 15
+config-version: 16
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -362,21 +362,21 @@ relics:
       icon: GOLDEN_HELMET
       visual: eternalcrown
       lore: ["<gray>La vraie couronne du Roi Citrouille.", "<gray>Une chance sur dix mille... et elle est à toi."]
-      health: 5
-      damage: 20
-      armor: 4
-      regen: 2
+      health: 10
+      damage: 35
+      armor: 10
+      regen: 4
     ailes_eclipse:
       name: "Ailes de l'Éclipse"
       rarity: prestige
       icon: ELYTRA
       visual: eclipse
       lore: ["<gray>Arrachées à l'éclipse de l'Apocalypse.", "<gray>Le ciel s'assombrit sur ton passage."]
-      speed: 15
-      health: 4
-      damage: 12
-      armor: 3
-      regen: 1
+      speed: 30
+      health: 8
+      damage: 25
+      armor: 8
+      regen: 3
 
 # ---------------------------------------------------------------- Sac (relique secrète)
 backpack:
