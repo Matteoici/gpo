@@ -1,0 +1,16 @@
+name: SmpSalles
+version: '${version}'
+main: fr.smpsalles.SmpSalles
+api-version: '26.2'
+softdepend: [voicechat]
+description: "Salles à code : porte avec pavé numérique, voice chat insonorisé (Simple Voice Chat)"
+commands:
+  salle:
+    description: Gérer les salles à code
+    usage: /salle <creer|pos1|pos2|porte|code|supprimer|liste|info|reload>
+    aliases: [salles, room]
+    permission: smpsalles.admin
+permissions:
+  smpsalles.admin:
+    description: Créer et gérer les salles
+    default: op

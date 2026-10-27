@@ -1,0 +1,30 @@
+# =====================================================================
+#  SmpSalles - salles à code + voice chat insonorisé
+#  1) /salle creer <nom>
+#  2) /salle pos1 <nom> puis /salle pos2 <nom> : deux coins opposés de la salle (murs compris)
+#  3) regarde la porte (de préférence une PORTE EN FER) : /salle porte <nom>
+#  4) /salle code <nom> <code>   (chiffres, 1 à 8)
+#  Clic droit sur la porte dehors = pavé numérique ; dedans = la porte s'ouvre pour sortir.
+#  Avec Simple Voice Chat : dans la salle on n'entend QUE ceux de la salle, et dehors on ne les entend pas.
+# =====================================================================
+
+# temps d'ouverture de la porte (secondes)
+open-seconds: 3
+# mauvais codes avant d'être bloqué, et durée du blocage (secondes)
+max-attempts: 3
+lockout-seconds: 30
+# voice chat insonorisé (nécessite Simple Voice Chat)
+voice-isolation: true
+
+messages:
+  keypad-title: "<dark_gray>🔒 Salle <white><room>"
+  display: "<white><b>Code :</b> <yellow><code>"
+  display-empty: "<gray>Tape le code..."
+  digit: "<white><b><n>"
+  clear: "<red><b>✖ Effacer"
+  confirm: "<green><b>✔ Valider"
+  granted: "<green>🔓 Code bon, entre vite !"
+  denied: "<red>✖ Mauvais code. <gray>(<left> essai(s) restant(s))"
+  locked: "<red>⛔ Trop d'essais. Réessaie dans <seconds> s."
+  enter-voice: "<aqua>🔇 Salle insonorisée <gray>· seuls ceux dans la salle t'entendent"
+  leave-voice: "<gray>🔊 Tu es sorti de la salle insonorisée"
