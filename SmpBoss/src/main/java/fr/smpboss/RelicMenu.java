@@ -243,7 +243,7 @@ public final class RelicMenu implements InventoryHolder {
             lore.add(Component.empty());
             lore.add(parse(plugin.msg("menu.info-titles")));
             for (String t : d.titles) {
-                boolean pr = plugin.getConfig().getMapList("loot.pools.prestige").stream().anyMatch(m -> t.equals(m.get("title")));
+                boolean pr = plugin.getConfig().getMapList("loot.pools.prestige").stream().anyMatch(pm -> t.equals(pm.get("title")));
                 lore.add(parse("<dark_gray> - " + (pr ? Rarity.PRESTIGE : Rarity.SECRET).name(t, 0)));
             }
         }
