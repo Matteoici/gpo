@@ -1,4 +1,4 @@
-config-version: 23
+config-version: 24
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -275,8 +275,9 @@ weapons:
     # passif SÉISME : le 3e coup en moins de 4 s fait trembler la terre autour de la cible
     quake-damage: 10
   # (le nom de section est resté "arbalete-spectrale" pour ne pas casser les armes déjà lootées : c'est la Faux des Âmes)
+  # retirée du butin (chance 0) : celles déjà lootées marchent toujours
   arbalete-spectrale:
-    chance: 0.1
+    chance: 0
     # faux : 18 de dégâts au corps à corps · en main : Vitesse I
     attack-damage: 18
     attack-speed: 1.2
@@ -294,6 +295,45 @@ weapons:
     rain-radius: 5
     rain-damage: 4
     rain-cooldown-seconds: 15
+  # ✧ SECRET
+  croc-de-givre:
+    chance: 0.1
+    # épée : 15 au corps à corps (comme la Tranche Mace, un peu moins)
+    attack-damage: 15
+    attack-speed: 1.6
+    # clic droit : RUÉE GLACIALE — ruée de ~10 blocs, ceux traversés prennent des dégâts et gèlent
+    damage: 10
+    dash-power: 2.2
+    freeze-seconds: 3
+    cooldown-seconds: 8
+  arc-tempete:
+    chance: 0.1
+    # tir tendu au maximum : la foudre tombe sur la cible puis saute sur les ennemis proches
+    damage: 10
+    chain: 4
+    chain-range: 8
+    chain-falloff: 0.8
+    cooldown-seconds: 8
+  # ❂ PRESTIGE — attaques finales (clic droit). Rien à l'écran : l'incantation passe dans le chat des joueurs autour.
+  # Seuls les joueurs et les monstres sont touchés (pas les animaux / villageois / familiers). Aucun bloc cassé.
+  ultimate-chat-radius: 250
+  hollow-purple:
+    chance: 0.1
+    radius: 200
+    # pleins dégâts dans le cœur, puis ça baisse jusqu'à 30 % au bord des 200 blocs
+    damage: 60
+    core-radius: 30
+    path-damage: 30
+    range: 120
+    cooldown-minutes: 30
+  fuga:
+    chance: 0.1
+    radius: 200
+    damage: 50
+    core-radius: 30
+    burn-seconds: 10
+    range: 140
+    cooldown-minutes: 30
 # ---------------------------------------------------------------- Reliques
 # health = cœurs en plus · speed = % de vitesse · regen = demi-cœurs toutes les 4 s hors combat (8 s sans dégâts)
 # trail = particules sous les pieds · backpack = le sac (27 cases)
@@ -601,6 +641,14 @@ messages:
     mine: "<gray>Ta guilde : <white>#<rank></white> <dark_gray>·</dark_gray> <gold><wins></gold> <gray>victoire(s), <red><damage></red> <gray>dégâts"
     fight-header: "<gold><b>🏆 Guildes de ce combat :"
     fight-line: "<gray>  <white>#<rank></white> <guild> <dark_gray>(<percent>% des dégâts)"
+  portal:
+    hologram: "<gradient:#ff7a00:#ffd36b><b>☠ BOSS FIGHT ☠</b></gradient>\n<#ffb347><b>♛ Roi Citrouille ♛</b>\n\n<status>\n\n<dark_gray>Entre dans le portail pour rejoindre l'arène"
+    status-fight: "<red><b>⚔ EN COMBAT ⚔</b>\n<gray>Phase <white><phase></white>/3  <dark_gray>·</dark_gray>  <red>❤</red> <white><hp></white><gray>/<max>\n<gray>⚔ <white><fighters></white> combattant(s)"
+    status-cooldown: "<yellow>⏳ Disponible dans <white><b><time></b>"
+    status-day: "<aqua>☾ Disponible à la nuit, dans <white><b><time></b>"
+    status-ready: "<green><b>✔ DISPONIBLE MAINTENANT"
+    status-closed: "<gray>L'autel n'est pas encore placé"
+    exit-hologram: "<green><b>⇦ Retour au spawn</b>\n<gray>Entre dans la zone"
   altar:
     hologram: "<gradient:#ff7a00:#ffd36b><b>♛ Autel du Roi Citrouille ♛</b></gradient>\n<gray>Clic droit avec une <gold>Citrouille sacrificielle</gold>\n<gray>pour réveiller le Roi\n<dark_gray>8 Graines maudites + 1 citrouille sculptée\n\n<status>"
     status-ready: "<green><b>✔ Le Roi peut être réveillé"
@@ -609,6 +657,7 @@ messages:
   weapons:
     cooldown: "<gray>⏳ Encore <white><seconds> s"
     kept: "<aqua>✦ Tes armes du Roi sont restées avec toi."
+    ult-cooldown: "<dark_gray>[<#6d8cff>❂</#6d8cff>]</dark_gray> <gray><item> <gray>se recharge encore <white><time></white>."
     broadcast: "<gradient:#ffffff:#4a4a4a:#ffffff><b>✧ ARME DU ROI ✧</b></gradient> <white><player></white> <gray>a obtenu</gray> <item> <gray>!!!"
     sonic-bow:
       name: "Sonic Bow"
@@ -662,6 +711,68 @@ messages:
         - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
         - "<white>⚔ 18</white>   <dark_gray>|</dark_gray>   <white>☠ <damage> ❤</white>   <dark_gray>|</dark_gray>   <white>⏳ <cooldown> s"
         - "<dark_gray>✧ Ne tombe pas à la mort · incassable"
+    croc-de-givre:
+      name: "Croc de Givre"
+      lore:
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<#aae6ff>✦ <b>RUÉE GLACIALE</b> <gray>(clic droit)"
+        - "<gray>Tu fonces sur <white>10 blocs</white> : tout ce que"
+        - "<gray>tu traverses est <white>gelé 3 s</white>."
+        - "<gray>Pas de dégâts de chute après la ruée."
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<white>⚔ 15</white>   <dark_gray>|</dark_gray>   <white>❄ <damage> ❤</white>   <dark_gray>|</dark_gray>   <white>⏳ <cooldown> s"
+        - "<dark_gray>✧ Ne tombe pas à la mort · incassable"
+    arc-tempete:
+      name: "Arc Tempête"
+      lore:
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<#78c8ff>✦ <b>FLÈCHE D'ORAGE</b>"
+        - "<gray>Arc tendu au maximum : la <white>foudre</white> tombe"
+        - "<gray>sur la cible puis <white>saute</white> sur 4 ennemis"
+        - "<gray>autour (ils brillent et ralentissent)."
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<white>⚡ <damage> ❤</white>   <dark_gray>|</dark_gray>   <white>⏳ <cooldown> s"
+        - "<dark_gray>✧ Ne tombe pas à la mort · incassable"
+    hollow-purple:
+      name: "Violet Imaginaire"
+      lore:
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<#9b5cff>✦ <b>VIOLET IMAGINAIRE — 200 %</b> <gray>(clic droit)"
+        - "<gray>Incantation, puis <#3c82ff>Bleu</#3c82ff> et <#ff2330>Rouge</#ff2330> fusionnent."
+        - "<gray>La sphère part droit devant et explose"
+        - "<gray>sur <white><radius> blocs</white> : le temps s'arrête,"
+        - "<gray>tout le monde est <white>figé</white> jusqu'au passage"
+        - "<gray>du mur violet. Aucun bloc détruit."
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<white>☄ <damage> ❤</white> <gray>au cœur   <dark_gray>|</dark_gray>   <white>⏳ <minutes> min"
+        - "<dark_gray>✧ Ne tombe pas à la mort"
+      chant:
+        - "<dark_gray>[<#9b5cff>❂</#9b5cff>]</dark_gray> <white><player></white> <dark_gray>»</dark_gray> <i><#c9b6ff>Phase…"
+        - "<dark_gray>[<#9b5cff>❂</#9b5cff>]</dark_gray> <white><player></white> <dark_gray>»</dark_gray> <i><#c9b6ff>Crépuscule."
+        - "<dark_gray>[<#9b5cff>❂</#9b5cff>]</dark_gray> <white><player></white> <dark_gray>»</dark_gray> <i><#c9b6ff>Les yeux de la sagesse."
+        - "<dark_gray>[<#9b5cff>❂</#9b5cff>]</dark_gray> <white><player></white> <dark_gray>»</dark_gray> <i><#c9b6ff>Neuf cordes. Lumière polarisée."
+        - "<dark_gray>[<#9b5cff>❂</#9b5cff>]</dark_gray> <white><player></white> <dark_gray>»</dark_gray> <i><#c9b6ff>Corbeau et déclaration."
+        - "<dark_gray>[<#9b5cff>❂</#9b5cff>]</dark_gray> <white><player></white> <dark_gray>»</dark_gray> <i><#c9b6ff>Entre l'avant et l'arrière."
+      final: "<dark_gray>[<#9b5cff>❂</#9b5cff>]</dark_gray> <white><player></white> <dark_gray>»</dark_gray> <gradient:#3c82ff:#9b5cff:#ff2330><b>✦ VIOLET IMAGINAIRE — 200 % ✦"
+      summary: "<dark_gray>[<#9b5cff>❂</#9b5cff>]</dark_gray> <gray>Le Violet Imaginaire de <white><player></white> a effacé le paysage… <white><n></white> <gray>cible(s) touchée(s)."
+    fuga:
+      name: "Fûga"
+      lore:
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<#ff7a1e>✦ <b>FÛGA — FLÈCHE DE FEU</b> <gray>(clic droit)"
+        - "<gray>Un arc de flammes se forme, la corde se"
+        - "<gray>tend et la flèche part. À l'impact, un dôme"
+        - "<gray>de feu s'étend sur <white><radius> blocs</white> : tout le"
+        - "<gray>monde est <white>figé</white> puis brûlé quand le feu"
+        - "<gray>l'atteint. Aucun bloc détruit."
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<white>🔥 <damage> ❤</white> <gray>au cœur   <dark_gray>|</dark_gray>   <white>⏳ <minutes> min"
+        - "<dark_gray>✧ Ne tombe pas à la mort"
+      chant:
+        - "<dark_gray>[<#ff7a1e>❂</#ff7a1e>]</dark_gray> <white><player></white> <dark_gray>»</dark_gray> <i><#ffc58a>Ouverture…"
+        - "<dark_gray>[<#ff7a1e>❂</#ff7a1e>]</dark_gray> <white><player></white> <dark_gray>»</dark_gray> <i><#ffc58a>■ 竈 ■"
+      final: "<dark_gray>[<#ff7a1e>❂</#ff7a1e>]</dark_gray> <white><player></white> <dark_gray>»</dark_gray> <gradient:#ffd23c:#ff7a1e:#ff2a00><b>🔥 FÛGA 🔥"
+      summary: "<dark_gray>[<#ff7a1e>❂</#ff7a1e>]</dark_gray> <gray>Le Fûga de <white><player></white> a tout embrasé… <white><n></white> <gray>cible(s) touchée(s)."
   board:
     title: "<gradient:#ff7a00:#ffd36b><b>♛ Roi Citrouille ♛"
     hp: "<red>❤ <white><hp></white><gray> / <max>"

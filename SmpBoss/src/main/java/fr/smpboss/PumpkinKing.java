@@ -134,6 +134,23 @@ public final class PumpkinKing {
         return !ended;
     }
 
+    /** Pour l'hologramme du portail. */
+    double hp() {
+        return hp;
+    }
+
+    double maxHp() {
+        return maxHp;
+    }
+
+    int phase() {
+        return phase;
+    }
+
+    int fighters() {
+        return fighters;
+    }
+
     // ================================================================= invocation
 
     void start(Player summoner) {

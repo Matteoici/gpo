@@ -258,6 +258,12 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 23);
             saveConfig();
         }
+        if (getConfig().getInt("config-version", 1) < 24) {
+            // la Faux des Âmes sort du butin ; nouvelles armes (Croc de Givre, Arc Tempête, Violet Imaginaire, Fûga)
+            getConfig().set("weapons.arbalete-spectrale.chance", 0);
+            getConfig().set("config-version", 24);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);
@@ -301,7 +307,10 @@ public final class SmpBoss extends JavaPlugin {
     @Override
     public void onDisable() {
         if (king != null) king.cleanup();
-        if (weapons != null) weapons.saveKept();
+        if (weapons != null) {
+            weapons.saveKept();
+            weapons.ultimates.shutdown();
+        }
         if (arena != null) arena.shutdown();
         if (hologram != null) hologram.remove();
         if (relics != null) relics.removeAll();
@@ -479,6 +488,29 @@ public final class SmpBoss extends JavaPlugin {
         return msg("altar.status-ready");
     }
 
+    /** Statut du boss pour l'hologramme du portail : en combat, disponible, ou dans combien de temps. */
+    String bossStatus() {
+        if (king != null && king.active()) {
+            return msg("portal.status-fight").replace("<phase>", String.valueOf(king.phase()))
+                    .replace("<hp>", String.valueOf((long) Math.ceil(Math.max(0, king.hp())))).replace("<max>", String.valueOf((long) king.maxHp()))
+                    .replace("<fighters>", String.valueOf(king.fighters()));
+        }
+        if (altar == null || altar.getWorld() == null) return msg("portal.status-closed");
+        long left = lastEnd + getConfig().getLong("boss.cooldown-minutes", 15) * 60_000L - System.currentTimeMillis();
+        if (left > 0) {
+            long s = left / 1000;
+            return msg("portal.status-cooldown").replace("<time>", String.format("%d:%02d", s / 60, s % 60));
+        }
+        if (getConfig().getBoolean("boss.night-only", false)) {
+            long tm = altar.getWorld().getTime();
+            if (tm < 13000 || tm > 23000) {
+                long s = ((13000 - tm + 24000) % 24000) / 20;
+                return msg("portal.status-day").replace("<time>", String.format("%d:%02d", s / 60, s % 60));
+            }
+        }
+        return msg("portal.status-ready");
+    }
+
     /** Un joueur utilise la citrouille sacrificielle sur l'autel. */
     public void trySummon(Player p) {
         if (king != null && king.active()) {
@@ -564,6 +596,15 @@ public final class SmpBoss extends JavaPlugin {
                     sender.sendMessage(parse("<green>Classement des guildes remis à zéro."));
                 } else guildTop.show(sender);
             }
+            case "ult", "ulti" -> {
+                Player t = a.length >= 3 ? Bukkit.getPlayerExact(a[2]) : sender instanceof Player sp ? sp : null;
+                if (a.length < 2 || !a[1].equalsIgnoreCase("reset") || t == null) {
+                    sender.sendMessage(parse("<red>/boss ult reset [joueur] <gray>- remet à zéro la recharge du Violet Imaginaire et de Fûga"));
+                    return true;
+                }
+                weapons.ultimates.resetCooldown(t);
+                sender.sendMessage(parse("<green>Recharge des attaques finales remise à zéro pour " + t.getName() + "."));
+            }
             case "stop" -> {
                 if (king != null) king.leave("boss.stopped");
                 lastEnd = 0;
@@ -602,6 +643,10 @@ public final class SmpBoss extends JavaPlugin {
                         case "tranchemace", "tranche_mace", "epee", "épée" -> weapons.create(Weapons.TRANCHE);
                         case "briseterre", "brise_terre", "hache" -> weapons.create(Weapons.BRISE);
                         case "faux", "fauxdesames", "arbalete", "arbalète", "arbalete_spectrale" -> weapons.create(Weapons.SPECTRAL);
+                        case "crocdegivre", "croc_de_givre", "givre" -> weapons.create(Weapons.GIVRE);
+                        case "arctempete", "arc_tempete", "tempete", "tempête" -> weapons.create(Weapons.TEMPETE);
+                        case "hollowpurple", "hollow_purple", "violet", "hollow" -> weapons.create(Weapons.HOLLOW);
+                        case "fuga", "fûga" -> weapons.create(Weapons.FUGA);
                         default -> null;
                     };
                 }
@@ -664,10 +709,10 @@ public final class SmpBoss extends JavaPlugin {
     public List<String> onTabComplete(CommandSender sender, Command cmd, String label, String[] a) {
         List<String> out = new ArrayList<>();
         if (!cmd.getName().equalsIgnoreCase("boss")) return out;
-        if (a.length == 1) out.addAll(List.of("autel", "invoquer", "stop", "give", "retirer", "reload", "arene", "topguildes"));
+        if (a.length == 1) out.addAll(List.of("autel", "invoquer", "stop", "give", "retirer", "reload", "arene", "topguildes", "ult"));
         else if (a.length == 2 && a[0].toLowerCase(Locale.ROOT).startsWith("ar"))
-            out.addAll(List.of("construire", "annuler", "tp", "setspawn", "portail", "recuperer", "definir", "supprimer"));
-        else if (a.length == 3 && a[0].toLowerCase(Locale.ROOT).startsWith("ar") && a[1].equalsIgnoreCase("portail"))
+            out.addAll(List.of("construire", "annuler", "tp", "setspawn", "portail", "sortie", "recuperer", "definir", "supprimer"));
+        else if (a.length == 3 && a[0].toLowerCase(Locale.ROOT).startsWith("ar") && (a[1].equalsIgnoreCase("portail") || a[1].equalsIgnoreCase("sortie")))
             out.addAll(List.of("pos1", "pos2", "info", "supprimer"));
         else if (a.length == 3 && a[0].toLowerCase(Locale.ROOT).startsWith("ar") && a[1].equalsIgnoreCase("construire"))
             out.addAll(List.of("16", "20", "24", "28"));
@@ -680,7 +725,7 @@ public final class SmpBoss extends JavaPlugin {
             if (t != null) out.addAll(store.of(t.getUniqueId()).relics);
         }
         else if (a.length == 3 && a[0].equalsIgnoreCase("give")) {
-            out.addAll(List.of("graine", "citrouille", "faucille", "sonicbow", "tranchemace", "briseterre", "faux"));
+            out.addAll(List.of("graine", "citrouille", "faucille", "sonicbow", "tranchemace", "briseterre", "faux", "crocdegivre", "arctempete", "hollowpurple", "fuga"));
             for (String id : relics.all().keySet()) out.add("relique:" + id);
         }
         String last = a.length == 0 ? "" : a[a.length - 1].toLowerCase(Locale.ROOT);

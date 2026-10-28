@@ -66,6 +66,11 @@ public final class Arena {
     private int[] portal; // minX, minY, minZ, maxX, maxY, maxZ
     private Location portalPos1, portalPos2;
     private final Map<UUID, Long> portalCooldown = new HashMap<>();
+    // zone "sortie" (dans l'arène) : y entrer = retour au spawn
+    private String exitWorld;
+    private int[] exitBox;
+    private Location exitPos1, exitPos2;
+    private org.bukkit.entity.TextDisplay portalHolo, exitHolo;
     /** Protection d'arrivée : intouchable quelques secondes en entrant dans l'arène. */
     private final Map<UUID, Long> shield = new HashMap<>();
 
@@ -126,6 +131,11 @@ public final class Arena {
             List<Integer> b = y.getIntegerList("portal.box");
             if (b.size() == 6) portal = new int[]{b.get(0), b.get(1), b.get(2), b.get(3), b.get(4), b.get(5)};
         }
+        if (y.isSet("exit.world")) {
+            exitWorld = y.getString("exit.world");
+            List<Integer> b = y.getIntegerList("exit.box");
+            if (b.size() == 6) exitBox = new int[]{b.get(0), b.get(1), b.get(2), b.get(3), b.get(4), b.get(5)};
+        }
         if (!y.getBoolean("defined", false)) return;
         worldName = y.getString("world", "world");
         cx = y.getInt("x");
@@ -158,6 +168,10 @@ public final class Arena {
         if (portal != null && portalWorld != null) {
             y.set("portal.world", portalWorld);
             y.set("portal.box", List.of(portal[0], portal[1], portal[2], portal[3], portal[4], portal[5]));
+        }
+        if (exitBox != null && exitWorld != null) {
+            y.set("exit.world", exitWorld);
+            y.set("exit.box", List.of(exitBox[0], exitBox[1], exitBox[2], exitBox[3], exitBox[4], exitBox[5]));
         }
         try {
             y.save(file);
@@ -323,6 +337,8 @@ public final class Arena {
     /** Toutes les 10 ticks : brume rouge, spores, braises au-dessus de la lave. */
     void ambience() {
         portalParticles();
+        exitParticles();
+        holograms();
         shieldParticles();
         if (!defined || !plugin.getConfig().getBoolean("arena.ambience", true)) return;
         World w = world();
@@ -402,6 +418,7 @@ public final class Arena {
                         + "<white>/arene</white><gray>, le portail du spawn et /boss arene tp y mènent."));
             }
             case "portail", "portal" -> portalCommand(sender, a);
+            case "sortie", "exit" -> exitCommand(sender, a);
             case "recuperer", "récupérer", "restaurer", "recover" -> recover(sender);
             case "supprimer", "remove" -> {
                 defined = false;
@@ -416,6 +433,7 @@ public final class Arena {
                 sender.sendMessage(parse("<aqua>/boss arene definir <rayon> [marge]</aqua> <gray>- protège une arène collée avec WorldEdit"));
                 sender.sendMessage(parse("<aqua>/boss arene setspawn [reset]</aqua> <gray>- le point d'arrivée = là où tu es"));
                 sender.sendMessage(parse("<aqua>/boss arene portail pos1|pos2|supprimer</aqua> <gray>- une zone (au spawn) où entrer = tp dans l'arène"));
+                sender.sendMessage(parse("<aqua>/boss arene sortie pos1|pos2|supprimer</aqua> <gray>- une zone (dans l'arène) où entrer = retour au spawn"));
                 sender.sendMessage(parse("<aqua>/boss arene supprimer</aqua> <gray>- coupe la protection"));
                 sender.sendMessage(parse("<aqua>/boss arene recuperer</aqua> <gray>- retrouve la zone de l'arène construite (après un /definir par erreur)"));
                 if (defined) {
@@ -561,6 +579,7 @@ public final class Arena {
 
     /** Toutes les 5 ticks : ceux qui sont dans la zone portail (même sans bouger) partent dans l'arène. */
     void portalTick() {
+        exitTick();
         if (portal == null || portalWorld == null) return;
         World w = Bukkit.getWorld(portalWorld);
         if (w == null) return;
@@ -591,6 +610,144 @@ public final class Arena {
             p.getWorld().playSound(e, org.bukkit.Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 0.6f);
             p.sendActionBar(parse("<dark_red><b>☠ L'arène du Roi Citrouille</b>"));
         });
+    }
+
+    // ================================================================= zone de sortie (arène -> spawn)
+
+    private void exitCommand(CommandSender sender, String[] a) {
+        String what = a.length >= 3 ? a[2].toLowerCase(java.util.Locale.ROOT) : "";
+        if (what.equals("info") || what.equals("voir")) {
+            if (exitBox == null) sender.sendMessage(parse("<red>Pas de zone de sortie. <gray>/boss arene sortie pos1 puis pos2"));
+            else {
+                sender.sendMessage(parse("<green>Zone de sortie</green> <gray>" + exitWorld + " : <white>" + exitBox[0] + " " + exitBox[1] + " " + exitBox[2]
+                        + "</white> → <white>" + exitBox[3] + " " + exitBox[4] + " " + exitBox[5]));
+                if (sender instanceof Player p) outline(p, exitWorld, exitBox, Color.fromRGB(80, 255, 120));
+            }
+            return;
+        }
+        if (what.equals("supprimer") || what.equals("remove")) {
+            exitBox = null;
+            exitWorld = null;
+            if (exitHolo != null) exitHolo.remove();
+            exitHolo = null;
+            save();
+            sender.sendMessage(parse("<yellow>Zone de sortie supprimée."));
+            return;
+        }
+        if (!(sender instanceof Player p) || !(what.equals("pos1") || what.equals("pos2"))) {
+            sender.sendMessage(parse("<green>/boss arene sortie pos1</green> <gray>(un coin)</gray> <green>puis pos2</green> <gray>(le coin opposé) · "
+                    + "<green>/boss arene sortie info|supprimer"));
+            return;
+        }
+        Location l = p.getLocation().getBlock().getLocation();
+        if (what.equals("pos1")) exitPos1 = l;
+        else exitPos2 = l;
+        sender.sendMessage(parse("<green>Sortie " + what + " : <white>" + l.getBlockX() + " " + l.getBlockY() + " " + l.getBlockZ()));
+        if (exitPos1 != null && exitPos2 != null && exitPos1.getWorld() == exitPos2.getWorld()) {
+            exitWorld = exitPos1.getWorld().getName();
+            exitBox = new int[]{Math.min(exitPos1.getBlockX(), exitPos2.getBlockX()), Math.min(exitPos1.getBlockY(), exitPos2.getBlockY()),
+                    Math.min(exitPos1.getBlockZ(), exitPos2.getBlockZ()), Math.max(exitPos1.getBlockX(), exitPos2.getBlockX()),
+                    Math.max(exitPos1.getBlockY(), exitPos2.getBlockY()) + 1, Math.max(exitPos1.getBlockZ(), exitPos2.getBlockZ())};
+            save();
+            sender.sendMessage(parse("<green>Zone de sortie créée <gray>(" + (exitBox[3] - exitBox[0] + 1) + "×" + (exitBox[4] - exitBox[1] + 1) + "×"
+                    + (exitBox[5] - exitBox[2] + 1) + ") : entrer dedans = retour au spawn."));
+            outline(p, exitWorld, exitBox, Color.fromRGB(80, 255, 120));
+        }
+    }
+
+    private static boolean inBox(String world, int[] box, Location l) {
+        if (box == null || world == null || l.getWorld() == null || !l.getWorld().getName().equals(world)) return false;
+        int x = l.getBlockX(), y = l.getBlockY(), z = l.getBlockZ();
+        return x >= box[0] && x <= box[3] && y >= box[1] && y <= box[4] && z >= box[2] && z <= box[5];
+    }
+
+    private void exitTick() {
+        if (exitBox == null || exitWorld == null) return;
+        World w = Bukkit.getWorld(exitWorld);
+        if (w == null) return;
+        for (Player p : w.getPlayers()) {
+            if (p.getGameMode() == org.bukkit.GameMode.SPECTATOR) continue;
+            if (!inBox(exitWorld, exitBox, p.getLocation()) && !inBox(exitWorld, exitBox, p.getLocation().add(0, 1, 0))) continue;
+            long now = System.currentTimeMillis();
+            Long last = portalCooldown.get(p.getUniqueId());
+            if (last != null && now - last < 3000) continue;
+            portalCooldown.put(p.getUniqueId(), now);
+            p.getWorld().playSound(p.getLocation(), org.bukkit.Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 1.2f);
+            p.getWorld().spawnParticle(Particle.END_ROD, p.getLocation().add(0, 1, 0), 30, 0.3, 0.6, 0.3, 0.08);
+            exit(p);
+        }
+    }
+
+    /** Contour d'une zone (10 s), visible par l'admin. */
+    private void outline(Player p, String world, int[] box, Color color) {
+        World w = Bukkit.getWorld(world);
+        if (w == null || p.getWorld() != w) return;
+        Particle.DustOptions d = new Particle.DustOptions(color, 1.3f);
+        int[] t = {0};
+        BukkitTask[] task = new BukkitTask[1];
+        task[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            if ((t[0] += 10) > 200 || !p.isOnline()) {
+                task[0].cancel();
+                return;
+            }
+            double x0 = box[0], y0 = box[1], z0 = box[2], x1 = box[3] + 1, y1 = box[4] + 1, z1 = box[5] + 1;
+            for (double x = x0; x <= x1; x += 0.5) for (double[] yz : new double[][]{{y0, z0}, {y0, z1}, {y1, z0}, {y1, z1}}) p.spawnParticle(Particle.DUST, x, yz[0], yz[1], 1, 0, 0, 0, 0, d);
+            for (double y = y0; y <= y1; y += 0.5) for (double[] xz : new double[][]{{x0, z0}, {x0, z1}, {x1, z0}, {x1, z1}}) p.spawnParticle(Particle.DUST, xz[0], y, xz[1], 1, 0, 0, 0, 0, d);
+            for (double z = z0; z <= z1; z += 0.5) for (double[] xy : new double[][]{{x0, y0}, {x0, y1}, {x1, y0}, {x1, y1}}) p.spawnParticle(Particle.DUST, xy[0], xy[1], z, 1, 0, 0, 0, 0, d);
+        }, 0L, 10L);
+    }
+
+    // ================================================================= hologrammes (portail du spawn, sortie de l'arène)
+
+    /** Toutes les 10 ticks. */
+    private void holograms() {
+        boolean on = plugin.getConfig().getBoolean("arena.portal-hologram", true);
+        double above = plugin.getConfig().getDouble("arena.portal-hologram-height", 0.6);
+        portalHolo = holo(portalHolo, on ? portalWorld : null, portal, above,
+                plugin.msg("portal.hologram").replace("<status>", plugin.bossStatus()));
+        exitHolo = holo(exitHolo, on ? exitWorld : null, exitBox, above, plugin.msg("portal.exit-hologram"));
+    }
+
+    private org.bukkit.entity.TextDisplay holo(org.bukkit.entity.TextDisplay d, String world, int[] box, double above, String text) {
+        World w = world == null ? null : Bukkit.getWorld(world);
+        int bx = box == null ? 0 : (box[0] + box[3]) / 2, bz = box == null ? 0 : (box[2] + box[5]) / 2;
+        if (w == null || box == null || !w.isChunkLoaded(bx >> 4, bz >> 4)) {
+            if (d != null) d.remove();
+            return null;
+        }
+        Location at = new Location(w, (box[0] + box[3] + 1) / 2.0, box[4] + 1 + above, (box[2] + box[5] + 1) / 2.0);
+        if (d == null || !d.isValid() || d.getWorld() != w || d.getLocation().distanceSquared(at) > 0.25) {
+            if (d != null) d.remove();
+            d = w.spawn(at, org.bukkit.entity.TextDisplay.class, x -> {
+                x.setPersistent(false);
+                x.setBillboard(org.bukkit.entity.Display.Billboard.CENTER);
+                x.setShadowed(true);
+                x.setBackgroundColor(Color.fromARGB(110, 10, 0, 0));
+                x.setLineWidth(260);
+                x.setViewRange(0.6f);
+            });
+        }
+        d.text(parse(text));
+        return d;
+    }
+
+    /** Toutes les 10 ticks : la zone de sortie scintille de vert. */
+    private void exitParticles() {
+        if (exitBox == null || exitWorld == null) return;
+        World w = Bukkit.getWorld(exitWorld);
+        if (w == null) return;
+        Location c = new Location(w, (exitBox[0] + exitBox[3] + 1) / 2.0, exitBox[1], (exitBox[2] + exitBox[5] + 1) / 2.0);
+        boolean near = false;
+        for (Player p : w.getPlayers()) if (p.getLocation().distanceSquared(c) < 48 * 48) near = true;
+        if (!near) return;
+        ThreadLocalRandom r = ThreadLocalRandom.current();
+        Particle.DustOptions green = new Particle.DustOptions(Color.fromRGB(80, 255, 120), 1.2f);
+        int n = Math.min(30, 6 + (exitBox[3] - exitBox[0] + 1) * (exitBox[5] - exitBox[2] + 1) / 2);
+        for (int i = 0; i < n; i++) {
+            Location l = new Location(w, exitBox[0] + r.nextDouble() * (exitBox[3] - exitBox[0] + 1), exitBox[1] + r.nextDouble() * 2.2,
+                    exitBox[2] + r.nextDouble() * (exitBox[5] - exitBox[2] + 1));
+            w.spawnParticle(i % 4 == 0 ? Particle.END_ROD : Particle.DUST, l, 1, 0, 0, 0, 0, i % 4 == 0 ? null : green);
+        }
     }
 
     /** Toutes les 10 ticks : la zone portail scintille de rouge. */
@@ -868,6 +1025,8 @@ public final class Arena {
     }
 
     void shutdown() {
+        if (portalHolo != null) portalHolo.remove();
+        if (exitHolo != null) exitHolo.remove();
         for (var en : tints.entrySet()) {
             Player p = Bukkit.getPlayer(en.getKey());
             if (p != null && p.getWorldBorder() == en.getValue()) p.setWorldBorder(null);

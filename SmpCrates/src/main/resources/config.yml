@@ -83,7 +83,8 @@ crates:
       - {weight: 8, item: BEACON, amount: 2}
       - {weight: 5, money: 2000000, broadcast: true}
       - {weight: 3, command: "boss give %player% relique:couronne", name: "<rainbow>Couronne du Roi Citrouille</rainbow> <gray>(relique)", icon: GOLDEN_HELMET, broadcast: true}
-      - {weight: 1, command: "boss give %player% sonicbow", name: "<white><b>Sonic Bow", icon: BOW, broadcast: true}
+      - {weight: 1, command: "boss give %player% arctempete", name: "<white><b>Arc Tempête", icon: BOW, broadcast: true}
+      - {weight: 1, command: "boss give %player% crocdegivre", name: "<white><b>Croc de Givre", icon: DIAMOND_SWORD, broadcast: true}
       - {weight: 1, command: "boss give %player% tranchemace", name: "<white><b>Tranche Mace", icon: NETHERITE_SWORD, broadcast: true}
 
 messages:

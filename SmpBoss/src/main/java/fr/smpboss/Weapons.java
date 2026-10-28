@@ -53,8 +53,9 @@ import static fr.smpboss.SmpBoss.parse;
  */
 final class Weapons implements Listener {
 
-    static final String SONIC = "sonic_bow", TRANCHE = "tranche_mace", BRISE = "brise_terre", SPECTRAL = "arbalete_spectrale";
-    static final String[] ALL = {SONIC, TRANCHE, BRISE, SPECTRAL};
+    static final String SONIC = "sonic_bow", TRANCHE = "tranche_mace", BRISE = "brise_terre", SPECTRAL = "arbalete_spectrale",
+            GIVRE = "croc_de_givre", TEMPETE = "arc_tempete", HOLLOW = "hollow_purple", FUGA = "fuga";
+    static final String[] ALL = {SONIC, TRANCHE, BRISE, SPECTRAL, GIVRE, TEMPETE, HOLLOW, FUGA};
 
     /** Section du config / des textes de chaque arme. */
     static String path(String id) {
@@ -62,6 +63,10 @@ final class Weapons implements Listener {
             case SONIC -> "sonic-bow";
             case TRANCHE -> "tranche-mace";
             case BRISE -> "brise-terre";
+            case GIVRE -> "croc-de-givre";
+            case TEMPETE -> "arc-tempete";
+            case HOLLOW -> "hollow-purple";
+            case FUGA -> "fuga";
             default -> "arbalete-spectrale";
         };
     }
@@ -71,13 +76,17 @@ final class Weapons implements Listener {
             case SONIC -> Material.BOW;
             case TRANCHE -> Material.NETHERITE_SWORD;
             case BRISE -> Material.NETHERITE_AXE;
+            case GIVRE -> Material.DIAMOND_SWORD;
+            case TEMPETE -> Material.BOW;
+            case HOLLOW -> Material.AMETHYST_SHARD;
+            case FUGA -> Material.BLAZE_ROD;
             default -> Material.NETHERITE_HOE;
         };
     }
 
-    /** Brise-Terre et Faux des Âmes : PRESTIGE (0,001 %). */
+    /** PRESTIGE : Sonic Bow, Brise-Terre, Faux des Âmes, Violet Imaginaire, Fûga. SECRET : le reste. */
     static Rarity rarity(String id) {
-        return BRISE.equals(id) || SPECTRAL.equals(id) ? Rarity.PRESTIGE : Rarity.SECRET;
+        return TRANCHE.equals(id) || GIVRE.equals(id) || TEMPETE.equals(id) ? Rarity.SECRET : Rarity.PRESTIGE;
     }
 
     private static double defDamage(String id) {
@@ -85,6 +94,9 @@ final class Weapons implements Listener {
             case SONIC -> 10;
             case TRANCHE -> 12;
             case BRISE -> 16;
+            case GIVRE, TEMPETE -> 10;
+            case HOLLOW -> 60;
+            case FUGA -> 50;
             default -> 14;
         };
     }
@@ -94,6 +106,7 @@ final class Weapons implements Listener {
             case SONIC -> 10;
             case TRANCHE -> 8;
             case BRISE -> 7;
+            case GIVRE, TEMPETE -> 8;
             default -> 2;
         };
     }
@@ -105,9 +118,14 @@ final class Weapons implements Listener {
     /** armes gardées à la mort, rendues à la réapparition */
     private final Map<UUID, List<ItemStack>> kept = new HashMap<>();
 
+    final Ultimates ultimates;
+    private final NamespacedKey stormKey;
+
     Weapons(SmpBoss plugin) {
         this.plugin = plugin;
         this.key = new NamespacedKey(plugin, "weapon");
+        this.stormKey = new NamespacedKey(plugin, "storm_arrow");
+        this.ultimates = new Ultimates(plugin);
         Bukkit.getScheduler().runTaskTimer(plugin, this::aura, 40L, 3L);
     }
 
@@ -118,7 +136,7 @@ final class Weapons implements Listener {
     // ================================================================= objets
 
     ItemStack create(String id) {
-        boolean bow = SONIC.equals(id);
+        boolean bow = SONIC.equals(id) || TEMPETE.equals(id);
         ItemStack it = new ItemStack(material(id));
         ItemMeta m = it.getItemMeta();
         String base = "weapons." + path(id) + ".";
@@ -129,7 +147,8 @@ final class Weapons implements Listener {
         for (String l : plugin.getConfig().getStringList("messages." + base + "lore")) {
             lore.add(parse(l.replace("<damage>", fmt(cfg(path(id) + ".damage", defDamage(id)) / 2))
                     .replace("<cooldown>", fmt(cfg(path(id) + ".cooldown-seconds", defCooldown(id))))
-                    .replace("<radius>", fmt(cfg(path(id) + ".radius", 10)))));
+                    .replace("<radius>", fmt(cfg(path(id) + ".radius", 10)))
+                    .replace("<minutes>", fmt(cfg(path(id) + ".cooldown-minutes", 30)))));
         }
         m.lore(lore);
         if (BRISE.equals(id)) {
@@ -139,6 +158,15 @@ final class Weapons implements Listener {
                     org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND));
             m.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_SPEED, new org.bukkit.attribute.AttributeModifier(
                     new NamespacedKey(plugin, "brise_speed"), cfg("brise-terre.attack-speed", 1.1) - 4,
+                    org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND));
+        }
+        if (GIVRE.equals(id)) {
+            // épée SECRÈTE, dans la lignée de la Tranche Mace
+            m.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_DAMAGE, new org.bukkit.attribute.AttributeModifier(
+                    new NamespacedKey(plugin, "givre_damage"), cfg("croc-de-givre.attack-damage", 15) - 1,
+                    org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND));
+            m.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_SPEED, new org.bukkit.attribute.AttributeModifier(
+                    new NamespacedKey(plugin, "givre_speed"), cfg("croc-de-givre.attack-speed", 1.6) - 4,
                     org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND));
         }
         if (SPECTRAL.equals(id)) {
@@ -770,6 +798,185 @@ final class Weapons implements Listener {
         }, 0L, 2L);
     }
 
+    // ================================================================= Croc de Givre (épée SECRÈTE) : RUÉE GLACIALE
+
+    private final Map<UUID, Long> noFall = new HashMap<>();
+
+    /** Clic droit : une ruée de 10 blocs ; tout ce que tu traverses prend des dégâts et gèle 3 s. */
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onFrostDash(PlayerInteractEvent e) {
+        if (e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        if (e.getHand() != EquipmentSlot.HAND || !GIVRE.equals(id(e.getItem()))) return;
+        Block b = e.getClickedBlock();
+        if (b != null && b.getType().isInteractable() && !e.getPlayer().isSneaking()) return;
+        Player p = e.getPlayer();
+        if (!ready(p, GIVRE, cfg("croc-de-givre.cooldown-seconds", 8))) return;
+        frostDash(p);
+    }
+
+    private void frostDash(Player p) {
+        World w = p.getWorld();
+        Vector dir = p.getLocation().getDirection();
+        dir.setY(Math.max(-0.2, Math.min(0.3, dir.getY())));
+        dir.normalize();
+        double power = cfg("croc-de-givre.dash-power", 2.2), dmg = cfg("croc-de-givre.damage", 10);
+        int freeze = (int) (cfg("croc-de-givre.freeze-seconds", 3) * 20);
+        p.setVelocity(dir.clone().multiply(power).setY(dir.getY() * power + 0.2));
+        noFall.put(p.getUniqueId(), System.currentTimeMillis() + 3000);
+        w.playSound(p.getLocation(), org.bukkit.Sound.ENTITY_BREEZE_WIND_BURST, 1.4f, 1.3f);
+        w.playSound(p.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_HURT_FREEZE, 1.2f, 0.7f);
+        Particle.DustOptions ice = new Particle.DustOptions(Color.fromRGB(170, 230, 255), 1.4f), white = new Particle.DustOptions(Color.WHITE, 1.0f);
+        org.bukkit.block.data.BlockData packed = Material.PACKED_ICE.createBlockData();
+        PumpkinKing k = plugin.king();
+        Set<UUID> hit = new HashSet<>();
+        int[] t = {0};
+        org.bukkit.scheduler.BukkitTask[] task = new org.bukkit.scheduler.BukkitTask[1];
+        task[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            if (++t[0] > 10 || !p.isOnline() || p.isDead()) {
+                task[0].cancel();
+                if (p.isOnline()) {
+                    w.spawnParticle(Particle.SNOWFLAKE, p.getLocation().add(0, 1, 0), 40, 0.6, 0.6, 0.6, 0.08);
+                    w.playSound(p.getLocation(), org.bukkit.Sound.BLOCK_POWDER_SNOW_BREAK, 1.2f, 0.8f);
+                }
+                return;
+            }
+            Location l = p.getLocation().add(0, 1, 0);
+            w.spawnParticle(Particle.SNOWFLAKE, l, 6, 0.35, 0.5, 0.35, 0.02);
+            w.spawnParticle(Particle.DUST, l, 4, 0.3, 0.5, 0.3, 0, ice);
+            w.spawnParticle(Particle.DUST, l, 2, 0.3, 0.5, 0.3, 0, white);
+            w.spawnParticle(Particle.ITEM_SNOWBALL, l, 2, 0.3, 0.3, 0.3, 0.05);
+            w.spawnParticle(Particle.BLOCK, p.getLocation(), 4, 0.3, 0.05, 0.3, 0, packed);
+            for (Entity en : w.getNearbyEntities(l, 1.8, 1.6, 1.8)) {
+                if (!(en instanceof LivingEntity le) || en.equals(p) || !hit.add(en.getUniqueId())) continue;
+                if (en instanceof Player pl && (pl.getGameMode() == org.bukkit.GameMode.SPECTATOR || pl.getGameMode() == org.bukkit.GameMode.CREATIVE)) continue;
+                le.setNoDamageTicks(0);
+                le.damage(dmg, p);
+                le.setFreezeTicks(le.getMaxFreezeTicks() + freeze);
+                if (k == null || !k.isBoss(en)) {
+                    le.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, freeze, 3, false, true, true));
+                    le.setVelocity(dir.clone().multiply(0.4).setY(0.2));
+                }
+                Location c = le.getLocation().add(0, 1, 0);
+                w.spawnParticle(Particle.BLOCK, c, 30, 0.4, 0.6, 0.4, 0, packed);
+                w.spawnParticle(Particle.SNOWFLAKE, c, 20, 0.4, 0.6, 0.4, 0.05);
+                w.playSound(c, org.bukkit.Sound.BLOCK_GLASS_BREAK, 1.2f, 1.4f);
+            }
+        }, 1L, 1L);
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onDashFall(org.bukkit.event.entity.EntityDamageEvent e) {
+        if (e.getCause() != org.bukkit.event.entity.EntityDamageEvent.DamageCause.FALL || noFall.isEmpty()) return;
+        Long until = noFall.get(e.getEntity().getUniqueId());
+        if (until == null) return;
+        if (until > System.currentTimeMillis()) e.setCancelled(true);
+        noFall.remove(e.getEntity().getUniqueId());
+    }
+
+    // ================================================================= Arc Tempête (arc SECRET) : FLÈCHE D'ORAGE
+
+    /** Tir tendu au maximum : la flèche porte l'orage ; à l'impact la foudre tombe et saute d'ennemi en ennemi. */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onStormShoot(EntityShootBowEvent e) {
+        if (!(e.getEntity() instanceof Player p) || !TEMPETE.equals(id(e.getBow()))) return;
+        if (e.getForce() < 0.95f || !(e.getProjectile() instanceof org.bukkit.entity.AbstractArrow a)) return;
+        if (!ready(p, TEMPETE, cfg("arc-tempete.cooldown-seconds", 8))) return;
+        a.getPersistentDataContainer().set(stormKey, PersistentDataType.BYTE, (byte) 1);
+        a.setPickupStatus(org.bukkit.entity.AbstractArrow.PickupStatus.CREATIVE_ONLY);
+        p.getWorld().playSound(p.getLocation(), org.bukkit.Sound.ITEM_TRIDENT_THUNDER, 0.5f, 1.8f);
+        Particle.DustOptions sky = new Particle.DustOptions(Color.fromRGB(120, 200, 255), 1.1f);
+        int[] t = {0};
+        org.bukkit.scheduler.BukkitTask[] task = new org.bukkit.scheduler.BukkitTask[1];
+        task[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            if (++t[0] > 100 || !a.isValid() || a.isInBlock() || !a.getPersistentDataContainer().has(stormKey)) {
+                task[0].cancel();
+                return;
+            }
+            Location l = a.getLocation();
+            a.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, l, 3, 0.1, 0.1, 0.1, 0.02);
+            a.getWorld().spawnParticle(Particle.DUST, l, 1, 0.05, 0.05, 0.05, 0, sky);
+            if (t[0] % 2 == 0) a.getWorld().spawnParticle(Particle.END_ROD, l, 1, 0, 0, 0, 0);
+        }, 1L, 1L);
+    }
+
+    @EventHandler
+    public void onStormHit(org.bukkit.event.entity.ProjectileHitEvent e) {
+        if (!(e.getEntity() instanceof org.bukkit.entity.AbstractArrow a) || !a.getPersistentDataContainer().has(stormKey)) return;
+        a.getPersistentDataContainer().remove(stormKey);
+        if (!(a.getShooter() instanceof Player p)) return;
+        Location at = e.getHitEntity() != null ? e.getHitEntity().getLocation() : a.getLocation();
+        LivingEntity first = e.getHitEntity() instanceof LivingEntity le && !le.equals(p) ? le : nearestFoe(p, at, 4, Set.of());
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            at.getWorld().strikeLightningEffect(first != null ? first.getLocation() : at);
+            if (first != null) storm(p, first, first.getLocation().add(0, 1, 0), new HashSet<>(), 0, cfg("arc-tempete.damage", 10));
+        });
+        if (e.getHitEntity() == null) Bukkit.getScheduler().runTaskLater(plugin, a::remove, 2L);
+    }
+
+    /** Un joueur ou un monstre proche (pas les animaux, villageois, familiers). */
+    private LivingEntity nearestFoe(Player p, Location c, double r, Set<UUID> skip) {
+        LivingEntity best = null;
+        double bd = r * r;
+        PumpkinKing k = plugin.king();
+        for (Entity en : c.getWorld().getNearbyEntities(c, r, r, r)) {
+            if (!(en instanceof LivingEntity le) || en.equals(p) || le.isDead() || skip.contains(en.getUniqueId())) continue;
+            if (en instanceof Player t) {
+                if (t.getGameMode() == org.bukkit.GameMode.SPECTATOR || t.getGameMode() == org.bukkit.GameMode.CREATIVE) continue;
+            } else if (!(en instanceof org.bukkit.entity.Enemy) && (k == null || !k.isBoss(en))) continue;
+            double d = en.getLocation().distanceSquared(c);
+            if (d < bd) {
+                bd = d;
+                best = le;
+            }
+        }
+        return best;
+    }
+
+    /** La foudre saute de cible en cible (un saut toutes les 3 ticks), un peu plus faible à chaque fois. */
+    private void storm(Player p, LivingEntity cur, Location from, Set<UUID> done, int jump, double dmg) {
+        if (!cur.isValid() || cur.isDead()) return;
+        done.add(cur.getUniqueId());
+        World w = cur.getWorld();
+        Location to = cur.getLocation().add(0, cur.getHeight() * 0.6, 0);
+        // l'arc électrique, en zigzag
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        Vector seg = to.toVector().subtract(from.toVector());
+        double len = seg.length();
+        Particle.DustOptions sky = new Particle.DustOptions(Color.fromRGB(150, 215, 255), 1.2f);
+        for (double s = 0; s <= len; s += 0.3) {
+            Location at = from.clone().add(seg.clone().multiply(s / Math.max(len, 0.01))).add(rnd.nextDouble(-0.2, 0.2), rnd.nextDouble(-0.2, 0.2), rnd.nextDouble(-0.2, 0.2));
+            w.spawnParticle(Particle.ELECTRIC_SPARK, at, 1, 0, 0, 0, 0);
+            if (rnd.nextInt(3) == 0) w.spawnParticle(Particle.DUST, at, 1, 0, 0, 0, 0, sky);
+        }
+        w.spawnParticle(Particle.END_ROD, to, 15, 0.3, 0.5, 0.3, 0.08);
+        w.spawnParticle(Particle.ELECTRIC_SPARK, to, 25, 0.4, 0.6, 0.4, 0.2);
+        w.playSound(to, org.bukkit.Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 1.2f, 1.4f);
+        if (jump > 0) w.playSound(to, org.bukkit.Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 0.35f, 1.8f);
+        cur.setNoDamageTicks(0);
+        cur.damage(dmg, p);
+        cur.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 40, 0, false, false, true));
+        PumpkinKing k = plugin.king();
+        if (k == null || !k.isBoss(cur)) cur.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 30, 2, false, true, true));
+        if (jump >= (int) cfg("arc-tempete.chain", 4)) return;
+        LivingEntity next = nearestFoe(p, cur.getLocation(), cfg("arc-tempete.chain-range", 8), done);
+        if (next == null) return;
+        Bukkit.getScheduler().runTaskLater(plugin, () -> storm(p, next, to, done, jump + 1, dmg * cfg("arc-tempete.chain-falloff", 0.8)), 3L);
+    }
+
+    // ================================================================= attaques finales (Violet Imaginaire, Fûga)
+
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onUltimate(PlayerInteractEvent e) {
+        if (e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        if (e.getHand() != EquipmentSlot.HAND) return;
+        String id = id(e.getItem());
+        if (!HOLLOW.equals(id) && !FUGA.equals(id)) return;
+        Block b = e.getClickedBlock();
+        if (b != null && b.getType().isInteractable() && !e.getPlayer().isSneaking()) return;
+        e.setCancelled(true);
+        ultimates.cast(e.getPlayer(), id);
+    }
+
     // ================================================================= aura des armes prestige
 
     /** Toutes les 3 ticks : une aura autour de l'arme prestige tenue en main (et un bonus passif). */
@@ -801,6 +1008,23 @@ final class Weapons implements Listener {
                 // braises autour des pieds
                 double a = auraTick * 0.35;
                 w.spawnParticle(Particle.FLAME, p.getLocation().add(Math.cos(a) * 0.7, 0.1, Math.sin(a) * 0.7), 1, 0, 0, 0, 0);
+            } else if (GIVRE.equals(id)) {
+                if (auraTick % 2 == 0) w.spawnParticle(Particle.DUST, hand, 1, 0.1, 0.2, 0.1, 0, new Particle.DustOptions(Color.fromRGB(170, 230, 255), 0.9f));
+                if (auraTick % 3 == 0) w.spawnParticle(Particle.SNOWFLAKE, hand, 1, 0.12, 0.2, 0.12, 0.005);
+            } else if (TEMPETE.equals(id)) {
+                if (auraTick % 2 == 0) w.spawnParticle(Particle.ELECTRIC_SPARK, hand, 2, 0.12, 0.2, 0.12, 0.02);
+                if (auraTick % 4 == 0) w.spawnParticle(Particle.DUST, hand, 1, 0.1, 0.15, 0.1, 0, new Particle.DustOptions(Color.fromRGB(120, 200, 255), 0.8f));
+            } else if (HOLLOW.equals(id)) {
+                // Bleu et Rouge qui tournent autour de la main, Violet au centre
+                double a = auraTick * 0.4;
+                w.spawnParticle(Particle.DUST, hand.clone().add(Math.cos(a) * 0.35, 0.1, Math.sin(a) * 0.35), 1, 0, 0, 0, 0, new Particle.DustOptions(Color.fromRGB(60, 130, 255), 0.8f));
+                w.spawnParticle(Particle.DUST, hand.clone().add(-Math.cos(a) * 0.35, 0.1, -Math.sin(a) * 0.35), 1, 0, 0, 0, 0, new Particle.DustOptions(Color.fromRGB(255, 35, 45), 0.8f));
+                if (auraTick % 3 == 0) w.spawnParticle(Particle.DUST, hand, 1, 0.05, 0.05, 0.05, 0, new Particle.DustOptions(Color.fromRGB(150, 60, 255), 1.1f));
+                if (auraTick % 8 == 0) w.spawnParticle(Particle.REVERSE_PORTAL, hand, 2, 0.1, 0.1, 0.1, 0.01);
+            } else if (FUGA.equals(id)) {
+                w.spawnParticle(Particle.FLAME, hand, 1, 0.08, 0.15, 0.08, 0.01);
+                if (auraTick % 2 == 0) w.spawnParticle(Particle.DUST, hand, 1, 0.1, 0.18, 0.1, 0, new Particle.DustOptions(Color.fromRGB(255, 120 + (auraTick * 17) % 70, 0), 0.9f));
+                if (auraTick % 5 == 0) w.spawnParticle(Particle.LAVA, hand, 1, 0.05, 0.05, 0.05, 0);
             } else {
                 w.spawnParticle(Particle.SOUL_FIRE_FLAME, hand, 1, 0.08, 0.15, 0.08, 0.005);
                 w.spawnParticle(Particle.DUST, hand, 2, 0.12, 0.2, 0.12, 0, new Particle.DustOptions(Color.fromRGB(70, 235, 220), 0.9f));
