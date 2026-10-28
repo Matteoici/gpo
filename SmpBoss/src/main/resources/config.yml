@@ -1,4 +1,4 @@
-config-version: 20
+config-version: 21
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -243,21 +243,22 @@ weapons:
     chance: 0.5
     # dégâts du rayon (2 = 1 cœur ; traverse l'armure comme le Warden)
     damage: 10
-    cooldown-seconds: 3
-    range: 32
+    # recharge plus longue, mais l'onde va 3 fois plus loin
+    cooldown-seconds: 10
+    range: 96
     # temps de tension minimum (ms) : l'arc doit être chargé au maximum
     full-charge-ms: 950
   tranche-mace:
     chance: 0.5
     # dégâts au corps à corps (épée netherite Tranchant V = 11) ; on peut encore l'enchanter
-    attack-damage: 13
+    attack-damage: 16
     attack-speed: 1.6
     # dégâts de la lame lancée (clic droit)
-    damage: 8
+    damage: 12
     cooldown-seconds: 8
     # longueur de la lame qui file (en blocs, environ)
     length: 18
-    levitation-seconds: 1.5
+    levitation-seconds: 5
     levitation-level: 1
   # ❂ PRESTIGE (0,001 % = 1 chance sur 100 000 par victoire)
   brise-terre:
@@ -598,15 +599,27 @@ messages:
     broadcast: "<gradient:#ffffff:#4a4a4a:#ffffff><b>✧ ARME DU ROI ✧</b></gradient> <white><player></white> <gray>a obtenu</gray> <item> <gray>!!!"
     sonic-bow:
       name: "Sonic Bow"
-      not-charged: "<red>Tends l'arc au maximum pour lancer le rayon."
+      not-charged: "<red>Tends l'arc au maximum pour lancer l'onde."
       lore:
-        - "<gray>Tir chargé au maximum :"
-        - "<aqua>un rayon sonique de Warden"
-        - "<gray>au lieu d'une flèche."
-        - ""
-        - "<white>☄ <damage> ❤</white> <gray>· traverse l'armure"
-        - "<white>⏳ <cooldown> s</white> <gray>entre deux rayons"
-        - "<dark_gray>Ne tombe pas à la mort."
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<#aa5aff>✦ <b>ONDE SONIQUE</b>"
+        - "<gray>Arc tendu au maximum : une onde"
+        - "<gray>violette file sur <white>96 blocs</white>, traverse"
+        - "<gray>l'armure et repousse tout sur sa ligne."
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<white>☄ <damage> ❤</white>   <dark_gray>|</dark_gray>   <white>⏳ <cooldown> s"
+        - "<dark_gray>✧ Ne tombe pas à la mort · incassable"
+    tranche-mace:
+      name: "Tranche Mace"
+      lore:
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<#c80a1e>✦ <b>LAME DE SANG</b>"
+        - "<gray>Clic droit : une lame rouge sang file"
+        - "<gray>là où tu vises. Chaque cible <white>lévite 5 s</white>"
+        - "<gray>— fini les piqués à la masse."
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<white>⚔ 16</white> <gray>au corps à corps   <dark_gray>|</dark_gray>   <white>🗡 <damage> ❤</white>   <dark_gray>|</dark_gray>   <white>⏳ <cooldown> s"
+        - "<dark_gray>✧ Ne tombe pas à la mort · incassable"
     brise-terre:
       name: "Brise-Terre"
       lore:

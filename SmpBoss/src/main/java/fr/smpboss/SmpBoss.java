@@ -222,6 +222,18 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 20);
             saveConfig();
         }
+        // v21 : Sonic Bow (portée x3, recharge plus longue), Tranche Mace (plus de dégâts, lévitation 5 s), nouveau style
+        if (getConfig().getInt("config-version", 1) < 21) {
+            harder("weapons.sonic-bow.cooldown-seconds", 3, 10);
+            harder("weapons.sonic-bow.range", 32, 96);
+            harder("weapons.tranche-mace.attack-damage", 13, 16);
+            harder("weapons.tranche-mace.damage", 8, 12);
+            harder("weapons.tranche-mace.levitation-seconds", 1.5, 5);
+            getConfig().set("messages.weapons.sonic-bow.lore", null);
+            getConfig().set("messages.weapons.tranche-mace.lore", null);
+            getConfig().set("config-version", 21);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);
