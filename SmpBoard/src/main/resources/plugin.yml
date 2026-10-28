@@ -6,8 +6,8 @@ softdepend: [Vault, PlaceholderAPI, SmpBoss, SmpDuel, SmpTitles, LuckPerms]
 description: "Scoreboard animé + TAB (en-tête, pied, grades)"
 commands:
   sb:
-    description: "Afficher / cacher le scoreboard (staff : /sb reload)"
-    usage: /sb [reload]
+    description: "Afficher / cacher le scoreboard (staff : /sb nom <nom>, /sb ip <ip>, /sb reload)"
+    usage: /sb [nom <nom>|ip <ip>|reload]
     aliases: [board, togglesb]
 permissions:
   smpboard.admin:

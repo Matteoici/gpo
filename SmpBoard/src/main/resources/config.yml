@@ -1,11 +1,13 @@
 # ==================================================================== SmpBoard
 # Variables : {player} {rank} (préfixe du grade, via Vault/LuckPerms) {group} {money} {online} {max} {ping}
 #   {kills} {deaths} {kd} {playtime} {world} {x} {y} {z} {date} {time} {tps} {ip}
-#   {boss} (statut du Roi Citrouille) {duel_elo} {duel_wins} {duel_losses}
+#   {server} (nom du serveur) {boss} (statut du Roi Citrouille) {duel_elo} {duel_wins} {duel_losses}
 #   + toutes les variables PlaceholderAPI (%...%), ex : %smpguilds_name_formatted%
 # Couleurs : MiniMessage (<red>, <#ff7a00>, <gradient:...>, <b>) ; les codes & et § marchent aussi.
 # Après une modif : /sb reload
 
+# nom du serveur : utilisé par le titre du scoreboard et {server} (en jeu : /sb nom <nom>  ·  /sb ip <ip>)
+server-name: "Mon Serveur"
 server-ip: "play.ton-serveur.fr"
 timezone: "Europe/Paris"
 date-format: "dd/MM/yyyy"
@@ -17,7 +19,8 @@ disabled-worlds: []
 no-boss: "<gray>—"
 
 title:
-  text: "GPO SMP"
+  # vide = le nom du serveur (server-name)
+  text: ""
   # reflet qui passe sur le texte (sinon : titre fixe)
   shine: true
   color: "<gradient:#ff7a00:#ffd36b>"
@@ -52,7 +55,7 @@ tab:
   enabled: true
   header:
     - ""
-    - "<#ff7a00>☠ <gradient:#ff7a00:#ffd36b><b>GPO SMP</b></gradient> <#ff7a00>☠"
+    - "<#ff7a00>☠ <gradient:#ff7a00:#ffd36b><b>{server}</b></gradient> <#ff7a00>☠"
     - "<gray>Bienvenue <white>{player}</white> !"
     - ""
   footer:

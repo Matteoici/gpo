@@ -118,7 +118,8 @@ public final class SmpBoard extends JavaPlugin implements Listener {
     private List<String> buildTitle() {
         List<String> frames = getConfig().getStringList("title.frames");
         if (!frames.isEmpty()) return frames;
-        String text = getConfig().getString("title.text", "GPO SMP");
+        String text = getConfig().getString("title.text", "");
+        if (text == null || text.isBlank()) text = getConfig().getString("server-name", "Mon Serveur");
         String base = getConfig().getString("title.color", "<gradient:#ff7a00:#ffd36b>");
         String shine = getConfig().getString("title.shine-color", "#fff3d6");
         String deco = getConfig().getString("title.decoration", "<b>");
@@ -318,6 +319,7 @@ public final class SmpBoard extends JavaPlugin implements Listener {
             s = rep(s, "{date}", now.format(dateFmt));
             s = rep(s, "{time}", now.format(timeFmt));
             s = rep(s, "{ip}", getConfig().getString("server-ip", ""));
+            s = rep(s, "{server}", getConfig().getString("server-name", ""));
             if (s.contains("{tps}")) s = rep(s, "{tps}", String.format(Locale.FRANCE, "%.1f", Math.min(20, Bukkit.getTPS()[0])));
             if (s.contains("{kills}")) s = rep(s, "{kills}", String.valueOf(p.getStatistic(Statistic.PLAYER_KILLS)));
             if (s.contains("{deaths}")) s = rep(s, "{deaths}", String.valueOf(p.getStatistic(Statistic.DEATHS)));
@@ -463,6 +465,17 @@ public final class SmpBoard extends JavaPlugin implements Listener {
 
     @Override
     public boolean onCommand(CommandSender s, Command cmd, String label, String[] a) {
+        if (a.length >= 2 && (a[0].equalsIgnoreCase("nom") || a[0].equalsIgnoreCase("ip")) && s.hasPermission("smpboard.admin")) {
+            String v = String.join(" ", java.util.Arrays.copyOfRange(a, 1, a.length));
+            boolean name = a[0].equalsIgnoreCase("nom");
+            getConfig().set(name ? "server-name" : "server-ip", v);
+            if (name) getConfig().set("title.text", "");
+            saveConfig();
+            load();
+            s.sendMessage(MM.deserialize("<green>" + (name ? "Nom du serveur" : "IP") + " : <white>" + MM.escapeTags(v)
+                    + "</white> <gray>(scoreboard + tab mis à jour)"));
+            return true;
+        }
         if (a.length >= 1 && a[0].equalsIgnoreCase("reload") && s.hasPermission("smpboard.admin")) {
             load();
             s.sendMessage(MM.deserialize("<green>SmpBoard rechargé."));
