@@ -434,6 +434,35 @@ public final class SmpCombat extends JavaPlugin implements Listener, TabExecutor
      * Enlève le combat causé par des coups entre alliés (amis, même guilde, guildes alliées).
      * Le combat contre les autres joueurs reste : impossible de s'en servir pour fuir un vrai combat.
      */
+    /** demandes /mb envoyées à un adversaire (pas allié) : joueur -> (adversaire -> heure) */
+    private final Map<UUID, Map<UUID, Long>> mbAsked = new HashMap<>();
+
+    private boolean asked(UUID from, UUID to) {
+        Map<UUID, Long> m = mbAsked.get(from);
+        Long t = m == null ? null : m.get(to);
+        return t != null && System.currentTimeMillis() - t <= getConfig().getLong("mb.delai-secondes", 30) * 1000;
+    }
+
+    /** Enlève le combat entre p et l'autre (des deux côtés). */
+    private void forgive(Player p, UUID id, Danger d) {
+        d.enemies.remove(id);
+        Player t = Bukkit.getPlayer(id);
+        Danger od = danger.get(id);
+        if (od != null) {
+            od.enemies.remove(p.getUniqueId());
+            if (p.getUniqueId().equals(od.lastEnemy)) od.lastEnemy = od.enemies.isEmpty() ? null : od.enemies.keySet().iterator().next();
+            if (od.enemies.isEmpty() && t != null) {
+                clear(t, false);
+                send(t, "mb-cleared-other", "player", p.getName());
+                sound(t, "block.beacon.deactivate", 0.6f, 1.6f);
+            }
+        }
+        Map<UUID, Long> m = mbAsked.get(p.getUniqueId());
+        if (m != null) m.remove(id);
+        m = mbAsked.get(id);
+        if (m != null) m.remove(p.getUniqueId());
+    }
+
     private void myBad(Player p, String who) {
         Danger d = danger.get(p.getUniqueId());
         if (d == null || !inDanger(p)) {
@@ -451,30 +480,32 @@ public final class SmpCombat extends JavaPlugin implements Listener, TabExecutor
             targets.add(t.getUniqueId());
         }
         List<String> forgiven = new ArrayList<>();
-        int notAlly = 0;
+        List<String> waiting = new ArrayList<>();
+        boolean mutual = getConfig().getBoolean("mb.ennemis-si-les-deux", true);
         for (UUID id : targets) {
-            if (!ally(p.getUniqueId(), id)) {
-                notAlly++;
+            Player t = Bukkit.getPlayer(id);
+            String name = t == null ? "?" : t.getName();
+            if (ally(p.getUniqueId(), id)) {
+                forgive(p, id, d);
+                forgiven.add(name);
                 continue;
             }
-            d.enemies.remove(id);
-            Player t = Bukkit.getPlayer(id);
-            forgiven.add(t == null ? "?" : t.getName());
-            // de son côté aussi
-            Danger od = danger.get(id);
-            if (od != null) {
-                od.enemies.remove(p.getUniqueId());
-                if (p.getUniqueId().equals(od.lastEnemy)) od.lastEnemy = od.enemies.isEmpty() ? null : od.enemies.keySet().iterator().next();
-                if (od.enemies.isEmpty() && t != null) {
-                    clear(t, false);
-                    send(t, "mb-cleared-other", "player", p.getName());
-                    sound(t, "block.beacon.deactivate", 0.6f, 1.6f);
-                }
+            if (!mutual || t == null) continue;
+            // adversaire : il faut que les deux fassent /mb
+            if (asked(id, p.getUniqueId())) {
+                forgive(p, id, d);
+                forgiven.add(name);
+            } else {
+                mbAsked.computeIfAbsent(p.getUniqueId(), k -> new HashMap<>()).put(id, System.currentTimeMillis());
+                waiting.add(name);
+                send(t, "mb-request", "player", p.getName(), "s", String.valueOf(getConfig().getLong("mb.delai-secondes", 30)));
+                sound(t, "block.note_block.chime", 0.8f, 1.2f);
             }
         }
+        if (!waiting.isEmpty()) send(p, "mb-waiting", "players", String.join(", ", waiting), "s", String.valueOf(getConfig().getLong("mb.delai-secondes", 30)));
         if (d.lastEnemy != null && !d.enemies.containsKey(d.lastEnemy)) d.lastEnemy = d.enemies.isEmpty() ? null : d.enemies.keySet().iterator().next();
         if (forgiven.isEmpty()) {
-            send(p, notAlly > 0 ? "mb-no-ally" : "mb-nothing");
+            if (waiting.isEmpty()) send(p, mutual ? "mb-nothing" : "mb-no-ally");
             return;
         }
         if (d.enemies.isEmpty()) {

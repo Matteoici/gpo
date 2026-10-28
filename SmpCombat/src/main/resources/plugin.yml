@@ -9,7 +9,7 @@ commands:
     usage: /combat [clear <joueur>|reload]
     aliases: [danger, ct]
   mb:
-    description: "My bad : enlève le combat causé en tapant un ami, ta guilde ou un allié"
+    description: "My bad : enlève le combat avec tes amis / ta guilde / tes alliés, ou avec un adversaire s'il fait /mb aussi"
     usage: /mb all  ou  /mb <joueur>
     aliases: [mybad, pardon]
 permissions:

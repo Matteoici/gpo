@@ -90,6 +90,9 @@ mb:
   amis: true      # amis (SmpFriends)
   guilde: true    # même guilde
   allies: true    # guildes alliées
+  # contre un adversaire (pas allié) : le combat s'arrête seulement si LES DEUX font /mb all
+  ennemis-si-les-deux: true
+  delai-secondes: 30   # temps pour que l'autre accepte
 
 messages:
   mb-not-in-combat: "<gray>Tu n'es pas en combat."
@@ -98,7 +101,9 @@ messages:
   mb-nothing: "<gray>Rien à enlever."
   mb-cleared: "<green>My bad accepté : plus en combat avec <white><players></white>."
   mb-partial: "<yellow>Plus en combat avec <white><players></white>, mais tu restes en danger contre <white><n></white> autre(s) joueur(s)."
-  mb-cleared-other: "<green><white><player></white> s'est excusé (/mb) : tu n'es plus en combat."
+  mb-request: "<yellow><white><player></white> veut arrêter le combat. <white><click:run_command:/mb all><u>Tape /mb all</u></click></white> <yellow>dans les <s> s pour accepter."
+  mb-waiting: "<gray>Demande envoyée à <white><players></white> : le combat s'arrête s'il fait aussi /mb all (<s> s)."
+  mb-cleared-other: "<green>Combat avec <white><player></white> arrêté (/mb) : tu n'es plus en combat."
   prefix: "<dark_red>[<red>☠</red>]</dark_red> "
   enter: "<red><b>EN DANGER</b> <gray>— pas de téléportation, pas de boutique. <dark_gray>Se déconnecter = mourir."
   leave: "<gray>Tu n'es plus en danger."
