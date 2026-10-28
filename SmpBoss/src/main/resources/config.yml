@@ -1,4 +1,4 @@
-config-version: 26
+config-version: 27
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -89,11 +89,11 @@ boss:
     # multiplicateur des dégâts par phase
     phase-1-multiplier: 1.3
     phase-2-multiplier: 1.45
-    phase-3-multiplier: 1.5
+    phase-3-multiplier: 1.3
     # part de chaque coup qui traverse l'armure (seuls les enchantements Protection la réduisent)
     # 0.3 = 30 % ; sans ça, une armure en netherite enchantée ne prend presque rien
     armor-pierce: 0.3
-    armor-pierce-phase-3: 0.3
+    armor-pierce-phase-3: 0.25
     # Jugement Dernier : ceux qui sont juste à côté du cercle (projetés)
     judgment-blast: 4
     # Apocalypse : un météore ; ceux qui survivent dans l'abri
@@ -103,10 +103,10 @@ boss:
   # usure de l'armure pendant le combat (0.25 = 4 fois moins vite que d'habitude)
   armor-wear: 0.25
   phase-2-at-v2: 0.7
-  # vie de la phase 3 (Roi Sans Tête) par rapport à la vie de départ (0.6 = 60 %)
-  phase-3-health-multiplier: 0.6
+  # vie de la phase 3 (Roi Sans Tête) par rapport à la vie de départ (0.5 = 50 %)
+  phase-3-health-multiplier: 0.5
   scale-phase-3-v2: 4.6
-  attack-interval-phase-3: 48
+  attack-interval-phase-3: 60
   # chance d'enchaîner une 2e attaque juste après (phase 2 / phase 3)
   phase-2-combo-chance: 0.25
   # Jugement Infernal : temps pour rejoindre un cercle vert (ticks)
@@ -136,8 +136,9 @@ boss:
   guard-health: 40
   guard-health-per-player: 15
   guard-damage: 9
-  # chance qu'il enchaîne une 2e attaque en phase 3
-  phase-3-combo-chance: 0.5
+  # chance qu'il enchaîne une 2e attaque en phase 3 (et quand il est enragé)
+  phase-3-combo-chance: 0.3
+  enrage-combo-chance: 0.6
   # Festin : % de sa vie max qu'il récupère à chaque morsure
   feast-heal-percent: 0.0
   scythe-radius: 6.5

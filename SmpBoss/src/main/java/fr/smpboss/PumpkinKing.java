@@ -85,6 +85,8 @@ public final class PumpkinKing {
     /** Jugement Dernier : l'attaque ultime de la phase 3, une seule fois par combat */
     private boolean judgmentDone;
     private boolean apocalypseDone;
+    /** pendant l'Apocalypse : aucun autre cercle "sûr" ne doit apparaître (un seul abri) */
+    private boolean apocalypseActive;
     private final Map<UUID, Double> damage = new HashMap<>();
 
     private Mob boss;
@@ -434,7 +436,7 @@ public final class PumpkinKing {
         // attaques
         if (invulnerable > 0 || !boss.hasAI()) return;
         if (--nextAttack <= 0) {
-            nextAttack = (int) (phase == 3 ? cfg("attack-interval-phase-3", 48) : cfg("attack-interval." + phase, phase == 1 ? 75 : 60));
+            nextAttack = (int) (phase == 3 ? cfg("attack-interval-phase-3", 60) : cfg("attack-interval." + phase, phase == 1 ? 75 : 60));
             if (enraged) nextAttack = (int) (nextAttack * 0.7);
             List<Attack> pool = switch (phase) {
                 // La Récolte : coups d'épée, citrouilles, lianes, pics, mains des damnés
@@ -457,7 +459,7 @@ public final class PumpkinKing {
             last = a;
             run(a);
             // phase 2 parfois, phase 3 souvent (toujours s'il est enragé) : il enchaîne une deuxième attaque
-            double combo = phase == 3 ? (enraged ? 1.0 : cfg("phase-3-combo-chance", 0.5)) : phase == 2 ? cfg("phase-2-combo-chance", 0.25) : 0;
+            double combo = phase == 3 ? (enraged ? cfg("enrage-combo-chance", 0.6) : cfg("phase-3-combo-chance", 0.3)) : phase == 2 ? cfg("phase-2-combo-chance", 0.25) : 0;
             if (ThreadLocalRandom.current().nextDouble() < combo) {
                 Attack first = a;
                 later(30, () -> {
@@ -802,7 +804,7 @@ public final class PumpkinKing {
     }
 
     private double mult() {
-        return cfg("damage.multiplier", 1.35) * (enraged ? 1.25 : 1.0) * (phase == 3 ? cfg("damage.phase-3-multiplier", 1.5)
+        return cfg("damage.multiplier", 1.35) * (enraged ? 1.25 : 1.0) * (phase == 3 ? cfg("damage.phase-3-multiplier", 1.3)
                 : phase == 2 ? cfg("damage.phase-2-multiplier", 1.45) : cfg("damage.phase-1-multiplier", 1.3));
     }
 
@@ -813,7 +815,7 @@ public final class PumpkinKing {
     private void hit(Player p, double amount) {
         if (boss == null || p.isDead()) return;
         if (plugin.arena() != null && plugin.arena().isProtected(p)) return; // protection d'arrivée
-        double pierce = Math.max(0, Math.min(1, phase == 3 ? cfg("damage.armor-pierce-phase-3", 0.3) : cfg("damage.armor-pierce", 0.3)));
+        double pierce = Math.max(0, Math.min(1, phase == 3 ? cfg("damage.armor-pierce-phase-3", 0.25) : cfg("damage.armor-pierce", 0.3)));
         double normal = amount * (1 - pierce);
         if (normal > 0) p.damage(normal, boss);
         if (pierce > 0 && !p.isDead()) {
@@ -1674,6 +1676,7 @@ public final class PumpkinKing {
         int charge = (int) cfg("nova-warning-ticks", 70);
         Particle.DustOptions green = new Particle.DustOptions(Color.fromRGB(60, 255, 90), 1.8f);
         repeat(4, charge / 4, i -> {
+            if (apocalypseActive) return; // un seul abri pendant l'Apocalypse
             // les zones sûres en vert, tout le reste se couvre de rouge
             for (Location s : safe) {
                 int pts = 30;
@@ -1690,6 +1693,7 @@ public final class PumpkinKing {
             sound(c, "block.note_block.basedrum", 3f, 0.5f + i * 0.08f);
             if (i % 4 == 0) for (Player p : nearby(c, arena + 8)) p.sendActionBar(parse(plugin.msg("boss.nova-warning")));
         }, () -> {
+            if (apocalypseActive) return;
             Set<UUID> spared = new HashSet<>();
             for (Player p : nearby(c, arena + 10)) {
                 for (Location s : safe) if (horizontalDist(p.getLocation(), s) <= safeR + 0.3) spared.add(p.getUniqueId());
@@ -2514,6 +2518,7 @@ public final class PumpkinKing {
      */
     private void apocalypse() {
         apocalypseDone = true;
+        apocalypseActive = true;
         Location base = ground(altar.clone().add(0.5, 0, 0.5));
         World w = base.getWorld();
         double arena = cfg("arena-radius", 18);
@@ -2634,6 +2639,23 @@ public final class PumpkinKing {
             if (i % 25 == 0) w.strikeLightningEffect(ground(base.clone().add(ThreadLocalRandom.current().nextDouble(-arena, arena), 0,
                     ThreadLocalRandom.current().nextDouble(-arena, arena))));
         }, null);
+        // ---- l'abri unique : choisi tout de suite et visible pendant toute l'Apocalypse
+        Location[] shelter = new Location[1];
+        double shR0 = cfg("apocalypse-shelter-start-radius", 6.5), shR1 = cfg("apocalypse-shelter-radius", 4);
+        {
+            double a = ThreadLocalRandom.current().nextDouble(Math.PI * 2);
+            shelter[0] = ground(base.clone().add(Math.cos(a) * arena * 0.55, 0, Math.sin(a) * arena * 0.55));
+        }
+        Particle.DustOptions safeEarly = new Particle.DustOptions(Color.fromRGB(80, 255, 200), 1.4f);
+        repeat(2, phaseB / 2, i -> {
+            Location s = shelter[0];
+            int pts = (int) (shR0 * 9);
+            for (int k = 0; k < pts; k++) {
+                double a = Math.PI * 2 * k / pts + i * 0.08;
+                w.spawnParticle(Particle.DUST, s.clone().add(Math.cos(a) * shR0, 0.2, Math.sin(a) * shR0), 1, 0, 0, 0, 0, safeEarly, true);
+            }
+            if (i % 3 == 0) for (double y = 0; y < 18; y += 1.2) w.spawnParticle(Particle.END_ROD, s.clone().add(0, y, 0), 1, 0.15, 0, 0.15, 0, null, true);
+        }, null);
         // ---- 1) pluie de météores
         double mr = cfg("apocalypse-meteor-radius", 4);
         for (int wave = 0; wave < waves; wave++) {
@@ -2649,15 +2671,21 @@ public final class PumpkinKing {
                 }
                 sound(sky[0], "entity.blaze.shoot", 6f, 0.4f);
                 sound(sky[0], "entity.ghast.shoot", 6f, 0.5f);
-                for (Location tl : spots) meteor(sky[0].clone(), tl, mr, meteorFall);
+                for (Location tl : spots) {
+                    // jamais sur l'abri : on pousse le point d'impact en dehors
+                    Location s = shelter[0];
+                    double d = horizontalDist(tl, s), min = shR0 + mr + 0.5;
+                    if (d < min) {
+                        Vector out = tl.toVector().subtract(s.toVector()).setY(0);
+                        if (out.lengthSquared() < 0.01) out = new Vector(1, 0, 0);
+                        tl = ground(s.clone().add(out.normalize().multiply(min)));
+                    }
+                    meteor(sky[0].clone(), tl, mr, meteorFall);
+                }
             });
         }
-        // ---- 2) le cœur de l'éclipse : un seul abri
-        Location[] shelter = new Location[1];
-        double shR0 = cfg("apocalypse-shelter-start-radius", 6.5), shR1 = cfg("apocalypse-shelter-radius", 4);
+        // ---- 2) le cœur de l'éclipse : un seul abri (déjà visible depuis le début)
         later(phaseB, () -> {
-            double a = ThreadLocalRandom.current().nextDouble(Math.PI * 2);
-            shelter[0] = ground(base.clone().add(Math.cos(a) * arena * 0.55, 0, Math.sin(a) * arena * 0.55));
             announce("apocalypse-2");
             sound(base, "block.beacon.activate", 8f, 0.5f);
             sound(base, "entity.elder_guardian.curse", 8f, 0.4f);
@@ -2722,6 +2750,7 @@ public final class PumpkinKing {
         });
         // le Roi redescend
         later(boom + 55, () -> {
+            apocalypseActive = false;
             if (boss == null || !boss.isValid()) return;
             Location from = boss.getLocation().clone();
             Location down = base.clone();
@@ -3268,7 +3297,7 @@ public final class PumpkinKing {
     }
 
     private double perPlayer() {
-        return Math.max(1, cfg("health-per-player", 1800)) * (phase == 3 ? cfg("phase-3-health-multiplier", 0.6) : 1.0);
+        return Math.max(1, cfg("health-per-player", 1800)) * (phase == 3 ? cfg("phase-3-health-multiplier", 0.5) : 1.0);
     }
 
     private double minPct() {

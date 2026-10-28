@@ -282,6 +282,16 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 26);
             saveConfig();
         }
+        if (getConfig().getInt("config-version", 1) < 27) {
+            // phase 3 un peu plus facile
+            harder("boss.damage.phase-3-multiplier", 1.5, 1.3);
+            harder("boss.damage.armor-pierce-phase-3", 0.3, 0.25);
+            harder("boss.phase-3-health-multiplier", 0.6, 0.5);
+            harder("boss.attack-interval-phase-3", 48, 60);
+            harder("boss.phase-3-combo-chance", 0.5, 0.3);
+            getConfig().set("config-version", 27);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);
