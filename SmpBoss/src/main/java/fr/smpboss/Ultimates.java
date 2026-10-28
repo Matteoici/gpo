@@ -434,7 +434,7 @@ final class Ultimates {
 
     /** Petit noyau lumineux net (bloc translucide qui tourne, contour lumineux) qui suit une orbe. */
     private BlockDisplay core(Location at, Material m, float size, Color glow) {
-        return at.getWorld().spawn(at, BlockDisplay.class, d -> {
+        return at.getWorld().spawn(flat(at), BlockDisplay.class, d -> {
             d.setPersistent(false);
             d.setBlock(m.createBlockData());
             d.setTransformation(centered(new Quaternionf(), size, size, size, true));
@@ -630,8 +630,16 @@ final class Ultimates {
         return new Transformation(c.negate(), q, new Vector3f(sx, sy, sz), new Quaternionf());
     }
 
+    /** Même endroit, sans l'orientation du joueur (sinon les effets s'inclinent quand il regarde en haut/bas). */
+    private static Location flat(Location l) {
+        Location c = l.clone();
+        c.setYaw(0);
+        c.setPitch(0);
+        return c;
+    }
+
     private BlockDisplay block(Location at, BlockData data, Transformation tr, float view, float box) {
-        return at.getWorld().spawn(at, BlockDisplay.class, d -> {
+        return at.getWorld().spawn(flat(at), BlockDisplay.class, d -> {
             d.setPersistent(false);
             d.setBlock(data);
             d.setTransformation(tr);
@@ -695,13 +703,13 @@ final class Ultimates {
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 if (!sh.isValid()) return;
                 sh.setTeleportDuration(4);
-                sh.teleport(g.clone().add(0, -sy * 0.45, 0));
+                sh.teleport(flat(g).add(0, -sy * 0.45, 0));
                 g.getWorld().spawnParticle(Particle.BLOCK, g, 15, 0.6, 0.2, 0.6, 0, sh.getBlock(), true);
             }, 2L + delay);
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 if (!sh.isValid()) return;
                 sh.setTeleportDuration(20);
-                sh.teleport(g.clone().add(0, -sy - 0.5, 0));
+                sh.teleport(flat(g).add(0, -sy - 0.5, 0));
             }, 2L + delay + hold);
             Bukkit.getScheduler().runTaskLater(plugin, sh::remove, 25L + delay + hold);
         }

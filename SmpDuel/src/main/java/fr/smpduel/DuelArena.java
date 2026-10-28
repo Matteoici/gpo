@@ -38,7 +38,44 @@ final class DuelArena {
     final String name;
     final String world;
     final int cx, cy, cz, r;
+    /** couleur du thème : BLUE, GREEN, RED... (préfixe des blocs colorés de Minecraft) */
+    String color = "BLUE";
     Location spawn1, spawn2;
+
+    /** Couleurs proposées, dans l'ordre : arène 1 bleue, arène 2 verte... */
+    static final String[][] COLORS = {
+            {"bleu", "BLUE"}, {"vert", "GREEN"}, {"rouge", "RED"}, {"violet", "PURPLE"}, {"jaune", "YELLOW"},
+            {"orange", "ORANGE"}, {"rose", "PINK"}, {"cyan", "CYAN"}, {"citron", "LIME"}, {"magenta", "MAGENTA"},
+            {"bleu-clair", "LIGHT_BLUE"}, {"blanc", "WHITE"}, {"noir", "BLACK"}, {"gris", "GRAY"}};
+
+    static String colorOf(String s) {
+        if (s == null) return null;
+        String l = s.toLowerCase(java.util.Locale.ROOT);
+        for (String[] c : COLORS) if (c[0].equals(l) || c[1].equalsIgnoreCase(l)) return c[1];
+        return null;
+    }
+
+    static String colorName(String mat) {
+        for (String[] c : COLORS) if (c[1].equals(mat)) return c[0];
+        return mat.toLowerCase(java.util.Locale.ROOT);
+    }
+
+    private Material col(String suffix) {
+        Material m = Material.matchMaterial(color + "_" + suffix);
+        return m == null ? Material.matchMaterial("BLUE_" + suffix) : m;
+    }
+
+    private boolean warm() {
+        return color.equals("RED") || color.equals("ORANGE") || color.equals("YELLOW") || color.equals("MAGENTA");
+    }
+
+    int dome() {
+        return r + 8;
+    }
+
+    int islandDepth() {
+        return (int) (r * 0.9) + 8;
+    }
     /** occupée par un duel */
     transient Match match;
 
@@ -71,14 +108,14 @@ final class DuelArena {
     boolean inside(Location l) {
         if (l.getWorld() == null || !l.getWorld().getName().equals(world)) return false;
         double dx = l.getX() - (cx + 0.5), dz = l.getZ() - (cz + 0.5);
-        return dx * dx + dz * dz <= (r + 0.6) * (r + 0.6) && l.getY() >= cy - 1.5 && l.getY() <= cy + 30;
+        return dx * dx + dz * dz <= (r + 0.6) * (r + 0.6) && l.getY() >= cy - 1.5 && l.getY() <= cy + dome();
     }
 
     /** Toute la zone protégée (muret, lave, bord). */
     boolean region(Location l) {
         if (l.getWorld() == null || !l.getWorld().getName().equals(world)) return false;
         double dx = l.getX() - (cx + 0.5), dz = l.getZ() - (cz + 0.5);
-        return dx * dx + dz * dz <= (r + 8) * (r + 8) && l.getY() >= cy - 5 && l.getY() <= cy + 32;
+        return dx * dx + dz * dz <= (r + 12) * (r + 12) && l.getY() >= cy - islandDepth() - 6 && l.getY() <= cy + dome() + 2;
     }
 
     /** Bloc de la structure (sol, muret, piliers...) : jamais cassé ni détruit par une explosion. */
@@ -86,7 +123,7 @@ final class DuelArena {
         if (!b.getWorld().getName().equals(world)) return false;
         double dx = b.getX() - cx, dz = b.getZ() - cz;
         double d2 = dx * dx + dz * dz;
-        if (d2 > (r + 8) * (r + 8) || b.getY() < cy - 5 || b.getY() > cy + 32) return false;
+        if (d2 > (r + 12) * (r + 12) || b.getY() < cy - islandDepth() - 6 || b.getY() > cy + dome() + 2) return false;
         return b.getY() <= cy || d2 > (r + 0.5) * (r + 0.5);
     }
 
@@ -98,12 +135,14 @@ final class DuelArena {
         s.set("y", cy);
         s.set("z", cz);
         s.set("radius", r);
+        s.set("color", color);
         if (spawn1 != null) s.set("spawn1", loc(spawn1));
         if (spawn2 != null) s.set("spawn2", loc(spawn2));
     }
 
     static DuelArena load(String name, ConfigurationSection s) {
         DuelArena a = new DuelArena(name, s.getString("world", "world"), s.getInt("x"), s.getInt("y"), s.getInt("z"), s.getInt("radius", 14));
+        a.color = s.getString("color", "BLUE");
         a.spawn1 = loc(a.w(), s.getString("spawn1"));
         a.spawn2 = loc(a.w(), s.getString("spawn2"));
         if (a.spawn1 == null || a.spawn2 == null) a.defaultSpawns();
@@ -175,84 +214,117 @@ final class DuelArena {
         return m.createBlockData();
     }
 
-    /** Dalles du sol : sombres, fissures de magma en étoile, cercle doré au centre. */
+    /** Dalles du sol : pierre sombre, fissures colorées en étoile, rosace colorée au centre. */
     BlockData floor(int x, int z) {
         double d = Math.sqrt(x * x + z * z);
         double ang = Math.atan2(z, x);
-        if (d < 1.5) return bd(Material.CHISELED_POLISHED_BLACKSTONE);
-        if (d < 2.6) return bd(Material.GILDED_BLACKSTONE);
+        if (d < 1.5) return bd(Material.SEA_LANTERN);
+        if (d < 3.2) return bd(col("GLAZED_TERRACOTTA"));
+        if (d < 3.9) return bd(col("CONCRETE"));
         // fissures en étoile (8 branches)
         double sector = Math.PI / 4;
         double off = Math.abs(((ang % sector) + sector) % sector - sector / 2);
-        if (d > 3 && d < r - 1 && off * d > sector / 2 * d - 0.55 && h(x, z, 3) % 5 != 0) return bd(Material.MAGMA_BLOCK);
-        // anneau intérieur
-        if (Math.abs(d - r * 0.55) < 0.5) return bd(Material.POLISHED_BLACKSTONE);
+        if (d > 4 && d < r - 1 && off * d > sector / 2 * d - 0.55 && h(x, z, 3) % 5 != 0) return bd(col("CONCRETE"));
+        // anneau intérieur coloré
+        if (Math.abs(d - r * 0.55) < 0.5) return bd(col("TERRACOTTA"));
+        if (Math.abs(d - (r - 1.2)) < 0.5) return bd(col("CONCRETE"));
         int v = h(x, z, 1) % 100;
-        if (v < 55) return bd(Material.POLISHED_BLACKSTONE_BRICKS);
-        if (v < 75) return bd(Material.CRACKED_POLISHED_BLACKSTONE_BRICKS);
-        if (v < 88) return bd(Material.BLACKSTONE);
-        if (v < 96) return bd(Material.BASALT);
-        return bd(Material.MAGMA_BLOCK);
+        if (v < 45) return bd(Material.POLISHED_DEEPSLATE);
+        if (v < 70) return bd(Material.DEEPSLATE_TILES);
+        if (v < 85) return bd(Material.CRACKED_DEEPSLATE_TILES);
+        if (v < 95) return bd(Material.POLISHED_BLACKSTONE_BRICKS);
+        return bd(col("TERRACOTTA"));
     }
 
-    /** Le plan complet (relatif au centre). */
+    /** Le plan complet (relatif au centre) : île flottante, sol, muret, rivière, piliers, dôme de verre. */
     Map<Long, BlockData> design() {
         Map<Long, BlockData> m = new LinkedHashMap<>();
-        int outer = r + 7;
-        for (int x = -outer; x <= outer; x++) {
-            for (int z = -outer; z <= outer; z++) {
+        int outer = r + 9, D = dome(), deep = islandDepth();
+        Material liquid = warm() ? Material.LAVA : Material.WATER;
+        for (int x = -outer - 2; x <= outer + 2; x++) {
+            for (int z = -outer - 2; z <= outer + 2; z++) {
                 double d = Math.sqrt(x * x + z * z);
-                if (d > outer + 0.5) continue;
-                // on fait de la place au-dessus
-                for (int y = 1; y <= 22; y++) m.put(key(x, y, z), bd(Material.AIR));
-                // fondations
-                for (int y = -4; y <= -1; y++) m.put(key(x, y, z), bd(y == -1 && d <= r ? Material.POLISHED_BLACKSTONE : Material.BLACKSTONE));
+                double edge = outer + (h(x, z, 21) % 3) - 1; // bord irrégulier
+                if (d > edge + 0.5) continue;
+                // on fait de la place au-dessus (jusqu'au dôme)
+                for (int y = 1; y <= D + 1; y++) m.put(key(x, y, z), bd(Material.AIR));
+                // ---- l'île flottante en dessous : une pointe de roche qui s'affine
+                double t = Math.min(1, d / edge);
+                int bottom = (int) Math.round(deep * Math.pow(1 - t * t, 0.75)) + (h(x, z, 31) % 3);
+                for (int y = -1; y >= -Math.max(2, bottom); y--) {
+                    int depth = -y;
+                    Material mat;
+                    if (depth <= 2 && d <= r) mat = Material.POLISHED_DEEPSLATE;
+                    else if (depth <= 3) mat = d > r + 4.5 ? Material.DIRT : Material.DEEPSLATE;
+                    else {
+                        int v = h(x * 7 + y, z * 3 - y, 41) % 100;
+                        mat = v < 40 ? Material.STONE : v < 62 ? Material.DEEPSLATE : v < 76 ? Material.ANDESITE : v < 86 ? Material.TUFF
+                                : v < 94 ? col("TERRACOTTA") : v < 97 ? Material.AMETHYST_BLOCK : Material.CALCITE;
+                    }
+                    m.put(key(x, y, z), bd(mat));
+                }
+                // racines et lianes qui pendent sous l'île
+                if (bottom > 4 && h(x, z, 51) % 9 == 0) {
+                    int len = 1 + h(x, z, 53) % 3;
+                    for (int k = 1; k <= len; k++) m.put(key(x, -bottom - k, z), bd(k == len ? Material.HANGING_ROOTS : Material.ROOTED_DIRT));
+                }
                 if (d <= r + 0.5) {
                     m.put(key(x, 0, z), floor(x, z));
                 } else if (d <= r + 1.5) {
-                    // muret
-                    m.put(key(x, 0, z), bd(Material.NETHER_BRICKS));
-                    m.put(key(x, 1, z), bd(Material.RED_NETHER_BRICKS));
-                    m.put(key(x, 2, z), bd(Material.NETHER_BRICKS));
-                    Slab s = (Slab) bd(Material.NETHER_BRICK_SLAB);
+                    // muret coloré
+                    m.put(key(x, 0, z), bd(Material.POLISHED_BLACKSTONE_BRICKS));
+                    m.put(key(x, 1, z), bd(col("CONCRETE")));
+                    m.put(key(x, 2, z), bd(Material.POLISHED_BLACKSTONE_BRICKS));
+                    Slab s = (Slab) bd(Material.POLISHED_BLACKSTONE_BRICK_SLAB);
                     s.setType(Slab.Type.BOTTOM);
                     m.put(key(x, 3, z), s);
                 } else if (d <= r + 4.5) {
-                    // rivière de lave
-                    m.put(key(x, -1, z), bd(Material.MAGMA_BLOCK));
-                    m.put(key(x, 0, z), bd(Material.LAVA));
+                    // rivière : eau (couleurs froides) ou lave (couleurs chaudes)
+                    m.put(key(x, -1, z), bd(warm() ? Material.MAGMA_BLOCK : Material.PRISMARINE));
+                    m.put(key(x, 0, z), bd(liquid));
                 } else {
-                    // bord rocheux qui remonte
-                    int top = (int) Math.min(3, Math.max(1, (d - r - 4) + h(x, z, 7) % 2));
-                    for (int y = 0; y < top; y++) {
-                        int v = h(x, z, 11 + y) % 10;
-                        m.put(key(x, y, z), bd(v < 5 ? Material.BLACKSTONE : v < 8 ? Material.BASALT : Material.NETHERRACK));
-                    }
+                    // bord de l'île : herbe, mousse, quelques fleurs et rochers
+                    int v = h(x, z, 11) % 10;
+                    m.put(key(x, 0, z), bd(v < 6 ? Material.GRASS_BLOCK : v < 8 ? Material.MOSS_BLOCK : Material.MOSSY_COBBLESTONE));
+                    int deco = d > r + 6 ? h(x, z, 13) % 12 : 99;
+                    if (deco == 0) m.put(key(x, 1, z), bd(Material.SHORT_GRASS));
+                    else if (deco == 1) m.put(key(x, 1, z), bd(Material.FERN));
+                    else if (deco == 2) m.put(key(x, 1, z), bd(Material.MOSS_CARPET));
                 }
             }
         }
-        // piliers à citrouilles sur le muret
+        // ---- le dôme de verre coloré, avec des arêtes sombres et une couronne de lumière en haut
+        for (int x = -D; x <= D; x++) {
+            for (int z = -D; z <= D; z++) {
+                for (int y = 1; y <= D; y++) {
+                    double dist = Math.sqrt(x * x + y * y + z * z);
+                    if (dist > D + 0.5 || dist <= D - 0.5) continue;
+                    double ang = Math.atan2(z, x), lat = Math.asin(Math.min(1, y / Math.max(dist, 0.01)));
+                    boolean rib = Math.abs(((ang * 8 / Math.PI) % 1 + 1) % 1 - 0.5) > 0.47 * (1 - lat / 1.8) || y == 1 || Math.abs(lat - 0.6) < 0.03;
+                    Material mat = y >= D - 1 ? Material.SEA_LANTERN : rib ? Material.POLISHED_BLACKSTONE : col("STAINED_GLASS");
+                    m.put(key(x, y, z), bd(mat));
+                }
+            }
+        }
+        // piliers sur le muret, lanterne de mer coiffée de verre coloré
         for (int k = 0; k < 8; k++) {
             double a = Math.PI * 2 * k / 8 + Math.PI / 8;
             int x = (int) Math.round(Math.cos(a) * (r + 1)), z = (int) Math.round(Math.sin(a) * (r + 1));
-            for (int y = 1; y <= 4; y++) m.put(key(x, y, z), bd(y == 1 ? Material.CHISELED_POLISHED_BLACKSTONE : Material.POLISHED_BLACKSTONE_BRICKS));
-            Directional pump = (Directional) bd(Material.JACK_O_LANTERN);
-            pump.setFacing(facingTo(-x, -z));
-            m.put(key(x, 5, z), pump);
-            m.put(key(x, 6, z), bd(Material.SOUL_SOIL));
-            m.put(key(x, 7, z), bd(Material.SOUL_FIRE));
+            for (int y = 1; y <= 4; y++) m.put(key(x, y, z), bd(y == 1 ? Material.CHISELED_POLISHED_BLACKSTONE : y % 2 == 0 ? col("CONCRETE") : Material.POLISHED_BLACKSTONE_BRICKS));
+            m.put(key(x, 5, z), bd(Material.SEA_LANTERN));
+            m.put(key(x, 6, z), bd(col("STAINED_GLASS")));
         }
         // lumières dans le sol
         for (int k = 0; k < 6; k++) {
             double a = Math.PI * 2 * k / 6;
-            m.put(key((int) Math.round(Math.cos(a) * r * 0.55), 0, (int) Math.round(Math.sin(a) * r * 0.55)), bd(Material.SHROOMLIGHT));
+            m.put(key((int) Math.round(Math.cos(a) * r * 0.55), 0, (int) Math.round(Math.sin(a) * r * 0.55)), bd(Material.SEA_LANTERN));
         }
         // plots de départ : rouge au nord, bleu au sud
         for (int dx = -1; dx <= 1; dx++) {
             for (int dz = -1; dz <= 1; dz++) {
                 boolean mid = dx == 0 && dz == 0;
-                m.put(key(dx, 0, -(r - 3) + dz), bd(mid ? Material.SHROOMLIGHT : Material.NETHER_WART_BLOCK));
-                m.put(key(dx, 0, (r - 3) + dz), bd(mid ? Material.SEA_LANTERN : Material.WARPED_WART_BLOCK));
+                m.put(key(dx, 0, -(r - 3) + dz), bd(mid ? Material.SHROOMLIGHT : Material.RED_CONCRETE));
+                m.put(key(dx, 0, (r - 3) + dz), bd(mid ? Material.SEA_LANTERN : Material.BLUE_CONCRETE));
             }
         }
         return m;
@@ -274,8 +346,8 @@ final class DuelArena {
         // l'air d'abord, puis du bas vers le haut (la lave posée en dernier sur son lit)
         order.sort((a, b) -> {
             BlockData da = plan.get(a[0]), db = plan.get(b[0]);
-            int ra = da.getMaterial().isAir() ? 0 : da.getMaterial() == Material.LAVA || da.getMaterial() == Material.SOUL_FIRE ? 2 : 1;
-            int rb = db.getMaterial().isAir() ? 0 : db.getMaterial() == Material.LAVA || db.getMaterial() == Material.SOUL_FIRE ? 2 : 1;
+            int ra = da.getMaterial().isAir() ? 0 : da.getMaterial() == Material.LAVA || da.getMaterial() == Material.WATER || da.getMaterial() == Material.SOUL_FIRE ? 2 : 1;
+            int rb = db.getMaterial().isAir() ? 0 : db.getMaterial() == Material.LAVA || db.getMaterial() == Material.WATER || db.getMaterial() == Material.SOUL_FIRE ? 2 : 1;
             if (ra != rb) return ra - rb;
             return Integer.compare((int) (a[0] & 0x1FFFFF), (int) (b[0] & 0x1FFFFF));
         });

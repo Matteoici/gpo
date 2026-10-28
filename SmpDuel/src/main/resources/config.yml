@@ -1,5 +1,5 @@
 # ==================================================================== SmpDuel
-# Arènes : /duel arene construire <nom> [rayon 14-40, défaut 20 = taille de l'arène du boss] [ici|ciel|Y]  (plusieurs arènes = plusieurs duels en même temps)
+# Arènes : /duel arene construire <nom> [rayon 14-40] [couleur] [ici|ciel|Y]  -> île flottante sous un dôme de verre coloré (arène 1 bleue, 2 verte, 3 rouge...). Plusieurs arènes = plusieurs duels en même temps.
 # Joueurs : /duel (menu) · /duel amical|mort|pari (recherche) · /duel <joueur> [amical|mort|pari] (défi)
 
 # durée max d'un duel (minutes) : ensuite égalité

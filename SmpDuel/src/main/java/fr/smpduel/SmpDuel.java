@@ -519,23 +519,49 @@ public final class SmpDuel extends JavaPlugin implements Listener {
         switch (what) {
             case "construire", "build" -> {
                 if (p == null || name == null) {
-                    sendRaw(s, "<red>/duel arene construire <nom> [rayon 14-40, défaut 20 comme le boss] [ici|ciel|Y]");
+                    sendRaw(s, "<red>/duel arene construire <nom> [rayon 14-40] [couleur] [ici|ciel|Y] <gray>(par défaut : île flottante en dôme, 50 blocs au-dessus de toi, couleurs dans l'ordre bleu, vert, rouge...)");
                     return;
                 }
                 if (arenas.containsKey(name)) {
                     sendRaw(s, "<red>Une arène s'appelle déjà comme ça.");
                     return;
                 }
-                int r = a.length >= 4 ? clamp(parse(a[3], 20), 14, 40) : 20;
-                Location c = p.getLocation();
-                int y = c.getBlockY() - 1;
-                if (a.length >= 5) {
-                    if (a[4].equalsIgnoreCase("ciel")) y = Math.min(c.getWorld().getMaxHeight() - 40, c.getBlockY() + 60);
-                    else if (!a[4].equalsIgnoreCase("ici")) y = parse(a[4], y);
+                // options dans n'importe quel ordre : rayon, couleur, ici|ciel|Y
+                Integer r0 = null, y0 = null;
+                String color = null;
+                boolean here = false;
+                for (int i = 3; i < a.length; i++) {
+                    String o = a[i];
+                    String col = DuelArena.colorOf(o);
+                    if (col != null) color = col;
+                    else if (o.equalsIgnoreCase("ici")) here = true;
+                    else if (o.equalsIgnoreCase("ciel")) here = false;
+                    else if (o.matches("-?\\d+")) {
+                        if (r0 == null) r0 = parse(o, 20);
+                        else y0 = parse(o, 0);
+                    } else {
+                        sendRaw(s, "<red>Option inconnue : " + o + " <gray>(couleurs : " + colorList() + ")");
+                        return;
+                    }
                 }
-                DuelArena arena = new DuelArena(name, c.getWorld().getName(), c.getBlockX(), y, c.getBlockZ(), r);
+                int r = clamp(r0 == null ? 20 : r0, 14, 40);
+                if (color == null) color = DuelArena.COLORS[arenas.size() % DuelArena.COLORS.length][1];
+                Location c = p.getLocation();
+                World cw = c.getWorld();
+                int top = cw.getMaxHeight() - (r + 8) - 4, bottom = cw.getMinHeight() + (int) (r * 0.9) + 14;
+                // par défaut : une île flottante 50 blocs au-dessus de toi
+                int y = y0 != null ? y0 : here ? c.getBlockY() - 1 : c.getBlockY() + 50;
+                if (y > top || y < bottom) {
+                    if (y0 != null || here) {
+                        sendRaw(s, "<red>Pas la place pour le dôme et l'île à cette hauteur (entre Y " + bottom + " et " + top + ").");
+                        return;
+                    }
+                    y = clamp(y, bottom, top);
+                }
+                DuelArena arena = new DuelArena(name, cw.getName(), c.getBlockX(), y, c.getBlockZ(), r);
+                arena.color = color;
                 arena.defaultSpawns();
-                sendRaw(s, "<yellow>Construction de l'arène <white>" + name + "</white> (rayon " + r + ")…");
+                sendRaw(s, "<yellow>Construction de l'arène <white>" + name + "</white> (rayon " + r + ", " + DuelArena.colorName(color) + ", Y " + y + ")…");
                 arena.build(this, new File(getDataFolder(), "sauvegardes/" + name + ".dat"), n -> {
                     arenas.put(name, arena);
                     saveArenas();
@@ -600,18 +626,25 @@ public final class SmpDuel extends JavaPlugin implements Listener {
             case "liste", "list" -> {
                 if (arenas.isEmpty()) sendRaw(s, "<gray>Aucune arène. <white>/duel arene construire <nom>");
                 for (DuelArena ar : arenas.values()) {
-                    sendRaw(s, "<gold>" + ar.name + " <gray>" + ar.world + " " + ar.cx + " " + ar.cy + " " + ar.cz + " · rayon " + ar.r + " · "
+                    sendRaw(s, "<gold>" + ar.name + " <gray>" + ar.world + " " + ar.cx + " " + ar.cy + " " + ar.cz + " · rayon " + ar.r + " · " + DuelArena.colorName(ar.color) + " · "
                             + (ar.match != null ? "<red>duel en cours" : ar.ready() ? "<green>libre" : "<red>monde introuvable"));
                 }
             }
             default -> {
                 sendRaw(s, "<gold><b>Arènes de duel");
-                sendRaw(s, "<aqua>/duel arene construire <nom> [rayon] [ici|ciel|Y]</aqua> <gray>- construit une arène ici");
+                sendRaw(s, "<aqua>/duel arene construire <nom> [rayon] [couleur] [ici|ciel|Y]</aqua> <gray>- île flottante en dôme au-dessus de toi");
+                sendRaw(s, "<gray>Couleurs : " + colorList());
                 sendRaw(s, "<aqua>/duel arene definir <nom> <rayon></aqua> <gray>- une arène déjà construite (tu es au centre)");
                 sendRaw(s, "<aqua>/duel arene spawn1|spawn2 <nom></aqua> <gray>- les deux points de départ");
                 sendRaw(s, "<aqua>/duel arene liste · tp <nom> · supprimer <nom> · annuler <nom>");
             }
         }
+    }
+
+    private static String colorList() {
+        StringBuilder b = new StringBuilder();
+        for (String[] c : DuelArena.COLORS) b.append(b.length() == 0 ? "" : ", ").append(c[0]);
+        return b.toString();
     }
 
     private static int parse(String s, int def) {
@@ -637,6 +670,9 @@ public final class SmpDuel extends JavaPlugin implements Listener {
             out.addAll(List.of("construire", "definir", "spawn1", "spawn2", "liste", "tp", "supprimer", "annuler"));
         } else if (a.length == 3 && a[0].equalsIgnoreCase("arene") && s.hasPermission("smpduel.admin")) {
             out.addAll(arenas.keySet());
+        } else if (a.length >= 4 && a[0].equalsIgnoreCase("arene") && a[1].equalsIgnoreCase("construire") && s.hasPermission("smpduel.admin")) {
+            for (String[] c : DuelArena.COLORS) out.add(c[0]);
+            out.addAll(List.of("ici", "ciel", "20", "30", "40"));
         } else if (a.length == 2 && Bukkit.getPlayerExact(a[0]) != null) {
             out.addAll(List.of("amical", "mort", "pari"));
         }
