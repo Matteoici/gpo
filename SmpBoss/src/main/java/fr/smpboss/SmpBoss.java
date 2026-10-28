@@ -234,6 +234,16 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 21);
             saveConfig();
         }
+        // v22 : armes à 0,1 %, prestige en bleu nocturne
+        if (getConfig().getInt("config-version", 1) < 22) {
+            harder("weapons.sonic-bow.chance", 0.5, 0.1);
+            harder("weapons.tranche-mace.chance", 0.5, 0.1);
+            harder("weapons.brise-terre.chance", 0.001, 0.1);
+            harder("weapons.arbalete-spectrale.chance", 0.001, 0.1);
+            getConfig().set("messages.loot.broadcast-prestige", null);
+            getConfig().set("config-version", 22);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);

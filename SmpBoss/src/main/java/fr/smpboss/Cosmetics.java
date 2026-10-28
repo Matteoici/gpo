@@ -170,228 +170,243 @@ final class Cosmetics {
         }
     }
 
+    // palettes des nouveaux styles
+    private static final Color NAVY = Color.fromRGB(11, 26, 74), NIGHT = Color.fromRGB(42, 63, 158), STAR = Color.fromRGB(109, 140, 255),
+            SILVER = Color.fromRGB(227, 233, 255), PUMPKIN = Color.fromRGB(255, 130, 20), STEM = Color.fromRGB(70, 150, 40),
+            VIOLET = Color.fromRGB(150, 60, 220), CRIMSON = Color.fromRGB(200, 10, 40), ASH = Color.fromRGB(90, 85, 90),
+            TEAL = Color.fromRGB(60, 220, 200), CREAM = Color.fromRGB(255, 240, 210);
+
     private void draw(String visual, Draw d, Worn w, boolean moving) {
         ThreadLocalRandom r = ThreadLocalRandom.current();
         int t = w.t;
         switch (visual) {
-            // ---------------------------------------------------------- couronne dorée posée sur la tête
+            // ---------------------------------------------------------- couronne citrouille : anneau orange, pointes en tiges vertes
             case "crown" -> {
-                if (t % 3 != 0) return;
-                double spin = t * 0.02;
-                for (int k = 0; k < 12; k++) {
-                    double a = spin + Math.PI * 2 * k / 12;
-                    d.dust(true, Math.cos(a) * 0.3, 1.98, Math.sin(a) * 0.3, GOLD, 0.7f);
+                if (t % 2 != 0) return;
+                double spin = t * 0.025, bob = Math.sin(t * 0.07) * 0.03;
+                for (int k = 0; k < 10; k++) {
+                    double a = spin + Math.PI * 2 * k / 10;
+                    d.dust(true, Math.cos(a) * 0.31, 2.0 + bob, Math.sin(a) * 0.31, PUMPKIN, 0.75f);
                 }
                 for (int k = 0; k < 5; k++) {
                     double a = spin + Math.PI * 2 * k / 5;
-                    d.dust(true, Math.cos(a) * 0.3, 2.1, Math.sin(a) * 0.3, GOLD_DARK, 0.6f);
+                    d.dust(true, Math.cos(a) * 0.29, 2.11 + bob, Math.sin(a) * 0.29, PUMPKIN, 0.6f);
+                    d.dust(true, Math.cos(a) * 0.27, 2.22 + bob, Math.sin(a) * 0.27, STEM, 0.55f);
                 }
-                d.dust(true, 0, 1.98, 0.31, RED, 0.75f);
-                if (t % 24 == 0) d.part(Particle.WAX_OFF, true, 0, 2.05, 0, 1, 0.2, 0);
+                if (t % 30 == 0) d.part(Particle.WAX_ON, true, 0, 2.15, 0, 2, 0.2, 0);
             }
-            // ---------------------------------------------------------- couronne des enfers : noire, pointes en feu
+            // ---------------------------------------------------------- couronne des enfers : flammes d'âmes sur des pointes noires
             case "hellcrown" -> {
-                if (t % 3 != 0) return;
-                double spin = -t * 0.02;
-                for (int k = 0; k < 12; k++) {
-                    double a = spin + Math.PI * 2 * k / 12;
-                    d.dust(true, Math.cos(a) * 0.3, 1.98, Math.sin(a) * 0.3, k % 3 == 0 ? RED : BLACK, 0.75f);
+                if (t % 2 != 0) return;
+                double spin = -t * 0.03;
+                for (int k = 0; k < 7; k++) {
+                    double a = spin + Math.PI * 2 * k / 7;
+                    double x = Math.cos(a) * 0.3, z = Math.sin(a) * 0.3;
+                    d.dust(true, x, 1.98, z, BLACK, 0.8f);
+                    d.dust(true, x * 0.92, 2.1, z * 0.92, BLACK, 0.6f);
+                    d.dust(true, x * 0.85, 2.21, z * 0.85, CRIMSON, 0.5f);
+                    if (t % 6 == k % 3 * 2) d.part(Particle.SOUL_FIRE_FLAME, true, x * 0.85, 2.27, z * 0.85, 1, 0, 0.005);
                 }
-                for (int k = 0; k < 6; k++) {
-                    double a = spin + Math.PI * 2 * k / 6;
-                    d.dust(true, Math.cos(a) * 0.3, 2.09, Math.sin(a) * 0.3, BLACK, 0.6f);
-                    if (t % 6 == 0) d.part(Particle.SMALL_FLAME, true, Math.cos(a) * 0.3, 2.18, Math.sin(a) * 0.3, 1, 0, 0);
-                }
+                if (t % 20 == 0) d.part(Particle.ASH, true, 0, 2.2, 0, 3, 0.25, 0);
             }
-            // ---------------------------------------------------------- cornes de démon
+            // ---------------------------------------------------------- cornes d'obsidienne aux veines violettes
             case "horns" -> {
                 if (t % 2 != 0) return;
+                double pulse = 0.5 + 0.5 * Math.sin(t * 0.12);
                 for (int s = -1; s <= 1; s += 2) {
-                    for (int i = 0; i <= 7; i++) {
-                        double u = i / 7.0;
-                        double x = s * (0.2 + 0.2 * u - 0.05 * u * u);
-                        double y = 1.86 + 0.34 * u;
-                        double z = 0.04 - 0.18 * u * u;
-                        Color c = u > 0.85 ? BONE : u > 0.45 ? RED : BLACK;
-                        d.dust(true, x, y, z, c, (float) (0.85 - 0.45 * u));
+                    for (int i = 0; i <= 8; i++) {
+                        double u = i / 8.0;
+                        double x = s * (0.18 + 0.24 * u - 0.08 * u * u), y = 1.85 + 0.38 * u, z = 0.05 - 0.22 * u * u;
+                        Color c = u > 0.85 ? (pulse > 0.5 ? VIOLET : SILVER) : i % 3 == 1 ? VIOLET : BLACK;
+                        d.dust(true, x, y, z, c, (float) (0.9 - 0.5 * u));
                     }
+                    if (t % 16 == 0) d.part(Particle.PORTAL, true, s * 0.38, 2.22, -0.17, 3, 0.05, 0.2);
                 }
             }
-            // ---------------------------------------------------------- ailes de démon (battent doucement)
+            // ---------------------------------------------------------- ailes de cendre : grandes, battent, des braises s'en détachent
             case "wings" -> {
-                if (t % 3 != 0) return;
-                double flap = Math.sin(t * 0.12) * 0.07;
+                if (t % 2 != 0) return;
+                double flap = Math.sin(t * 0.18) * 0.16;
                 for (int s = -1; s <= 1; s += 2) {
-                    // os principal, de l'omoplate vers le haut et l'extérieur
-                    for (int i = 0; i <= 10; i++) {
-                        double u = i / 10.0;
-                        d.dust(false, s * (0.12 + 0.85 * u), 1.3 + 0.38 * Math.sin(u * 2.6) + flap * u, -0.2 - 0.32 * u, BLACK, 0.85f);
+                    for (int i = 0; i <= 11; i++) {
+                        double u = i / 11.0;
+                        double x = s * (0.12 + 1.0 * u), y = 1.3 + 0.45 * Math.sin(u * 2.5) + flap * u, z = -0.22 - 0.35 * u;
+                        d.dust(false, x, y, z, i > 8 ? ORANGE : ASH, 0.85f);
                     }
-                    // trois doigts qui descendent depuis l'os
-                    double[][] fingers = {{0.35, 0.85}, {0.6, 0.95}, {0.85, 1.12}};
-                    for (double[] f : fingers) {
-                        double ux = (f[0] - 0.12) / 0.85;
-                        double topY = 1.3 + 0.38 * Math.sin(ux * 2.6) + flap * ux, topZ = -0.2 - 0.32 * ux;
+                    for (int f = 1; f <= 4; f++) {
+                        double u = f / 4.5;
+                        double topY = 1.3 + 0.45 * Math.sin(u * 2.5) + flap * u;
                         for (int i = 0; i <= 5; i++) {
                             double v = i / 5.0;
-                            d.dust(false, s * f[0], topY + (f[1] - topY) * v, topZ - 0.05 * v, BLACK, 0.6f);
+                            d.dust(false, s * (0.12 + 1.0 * u), topY - (0.55 - 0.1 * f) * v, -0.22 - 0.35 * u - 0.04 * v, v > 0.7 ? ORANGE : ASH, 0.6f);
                         }
                     }
-                    // membrane rouge entre les os
-                    for (int i = 0; i < 9; i++) {
-                        double u = 0.05 + r.nextDouble() * 0.9;
-                        double top = 1.3 + 0.38 * Math.sin(u * 2.6) + flap * u;
-                        double bottom = 0.85 + 0.3 * u;
-                        double y = bottom + (top - bottom) * r.nextDouble();
-                        d.dust(false, s * (0.12 + 0.85 * u), y, -0.22 - 0.32 * u, BLOOD, 0.7f);
-                    }
+                    if (r.nextInt(5) == 0) d.part(Particle.SMALL_FLAME, false, s * r.nextDouble(0.3, 1.1), 1.0 + r.nextDouble(0.5), -0.4, 1, 0.02, 0.005);
                 }
             }
-            // ---------------------------------------------------------- cape noire doublée de rouge, flotte en courant
+            // ---------------------------------------------------------- cape de nuit étoilée qui flotte
             case "cape" -> {
-                if (t % 3 != 0) return;
-                double flow = moving ? 0.35 : 0.05;
-                for (int i = 0; i <= 6; i++) {
-                    double v = i / 6.0; // 0 = épaules, 1 = genoux
-                    double y = 1.4 - 0.9 * v;
-                    double z = -0.18 - flow * v * v - 0.03 * Math.sin(t * 0.2 + v * 3);
+                if (t % 2 != 0) return;
+                double flow = moving ? 0.4 : 0.07;
+                for (int i = 0; i <= 7; i++) {
+                    double v = i / 7.0;
+                    double y = 1.42 - 0.95 * v;
+                    double z = -0.18 - flow * v * v - 0.04 * Math.sin(t * 0.25 + v * 4);
                     for (int j = 0; j <= 4; j++) {
-                        double x = -0.26 + 0.13 * j;
-                        boolean edge = j == 0 || j == 4 || i == 6;
-                        d.dust(false, x, y, z, edge ? RED : BLACK, 0.8f);
+                        double x = (-0.28 + 0.14 * j) * (1 + 0.25 * v);
+                        boolean edge = j == 0 || j == 4 || i == 7;
+                        d.dust(false, x, y, z, edge ? NIGHT : NAVY, 0.8f);
                     }
                 }
+                // étoiles qui scintillent sur la cape
+                if (r.nextInt(3) == 0) d.dust(false, r.nextDouble(-0.25, 0.25), r.nextDouble(0.5, 1.4), -0.2 - flow * 0.5, SILVER, 0.5f);
             }
-            // ---------------------------------------------------------- feu follet d'âme qui tourne autour de la tête
+            // ---------------------------------------------------------- deux feux follets (bleu et orange) qui se poursuivent
             case "wisp" -> {
-                double a = t * 0.12;
-                d.part(Particle.SOUL_FIRE_FLAME, false, Math.cos(a) * 0.65, 1.85 + Math.sin(t * 0.1) * 0.1, Math.sin(a) * 0.65, 1, 0, 0);
-                if (t % 12 == 0) d.part(Particle.SOUL, false, Math.cos(a) * 0.65, 1.85, Math.sin(a) * 0.65, 1, 0.05, 0.01);
-            }
-            // ---------------------------------------------------------- crâne maudit : âmes sur l'épaule droite
-            case "skull" -> {
-                if (t % 4 == 0) d.part(Particle.SOUL, false, -0.38, 1.55, 0, 1, 0.08, 0.01);
+                double a = t * 0.13;
+                double y = 1.75 + Math.sin(t * 0.09) * 0.15;
+                d.part(Particle.SOUL_FIRE_FLAME, false, Math.cos(a) * 0.7, y, Math.sin(a) * 0.7, 1, 0, 0);
+                d.part(Particle.FLAME, false, Math.cos(a + Math.PI) * 0.7, y + 0.1, Math.sin(a + Math.PI) * 0.7, 1, 0, 0);
                 if (t % 3 == 0) {
-                    double a = t * 0.15;
-                    d.dust(false, -0.38 + Math.cos(a) * 0.18, 1.6, Math.sin(a) * 0.18, Color.fromRGB(60, 60, 60), 0.7f);
-                    d.dust(false, -0.38, 1.62, 0.12, Color.fromRGB(120, 255, 200), 0.5f);
+                    d.dust(false, Math.cos(a - 0.3) * 0.7, y, Math.sin(a - 0.3) * 0.7, TEAL, 0.5f);
+                    d.dust(false, Math.cos(a + Math.PI - 0.3) * 0.7, y + 0.1, Math.sin(a + Math.PI - 0.3) * 0.7, PUMPKIN, 0.5f);
                 }
             }
-            // ---------------------------------------------------------- lanterne à la ceinture
+            // ---------------------------------------------------------- petit crâne qui flotte près de l'épaule
+            case "skull" -> {
+                if (t % 3 != 0) return;
+                double bob = Math.sin(t * 0.1) * 0.05;
+                double x0 = -0.5, y0 = 1.75 + bob;
+                for (int i = 0; i < 6; i++) {
+                    double a = Math.PI * 2 * i / 6;
+                    d.dust(false, x0 + Math.cos(a) * 0.12, y0 + Math.sin(a) * 0.12, 0, BONE, 0.55f);
+                }
+                d.dust(false, x0 - 0.05, y0 + 0.02, 0.06, TEAL, 0.45f);
+                d.dust(false, x0 + 0.05, y0 + 0.02, 0.06, TEAL, 0.45f);
+                d.dust(false, x0, y0 - 0.14, 0.02, BONE, 0.5f);
+                if (t % 24 == 0) d.part(Particle.SOUL, false, x0, y0, 0, 1, 0.05, 0.01);
+            }
+            // ---------------------------------------------------------- lanterne qui se balance à la hanche
             case "lantern" -> {
-                if (t % 3 == 0) d.dust(false, -0.3, 0.62, 0.02, ORANGE, 1.1f);
-                if (t % 8 == 0) d.part(Particle.SMALL_FLAME, false, -0.3, 0.66, 0.02, 1, 0.02, 0);
+                if (t % 2 != 0) return;
+                double swing = Math.sin(t * (moving ? 0.35 : 0.1)) * 0.06;
+                d.dust(false, -0.32, 0.78, 0.02 + swing * 0.5, BLACK, 0.5f);
+                d.dust(false, -0.32, 0.62, 0.03 + swing, ORANGE, 1.1f);
+                d.dust(false, -0.32, 0.62, 0.03 + swing, CREAM, 0.5f);
+                if (t % 10 == 0) d.part(Particle.SMALL_FLAME, false, -0.32, 0.66, 0.03 + swing, 1, 0.01, 0);
             }
-            // ---------------------------------------------------------- amulette sur le torse
+            // ---------------------------------------------------------- pendentif dont la pierre change de couleur
             case "amulet" -> {
-                if (t % 4 != 0) return;
-                d.dust(false, 0, 1.25, 0.16, GOLD, 0.6f);
-                d.dust(false, 0.07, 1.15, 0.16, GOLD, 0.6f);
-                d.dust(false, -0.07, 1.15, 0.16, GOLD, 0.6f);
-                d.dust(false, 0, 1.05, 0.16, GOLD, 0.6f);
-                d.dust(false, 0, 1.15, 0.17, ORANGE, 0.8f);
+                if (t % 3 != 0) return;
+                double ph = (Math.sin(t * 0.08) + 1) / 2;
+                Color gem = Color.fromRGB(255, (int) (120 + 110 * ph), (int) (20 + 40 * ph));
+                for (int i = 0; i <= 4; i++) {
+                    double u = i / 4.0;
+                    d.dust(false, (u - 0.5) * 0.28, 1.42 - 0.22 * Math.sin(Math.PI * u), 0.15, GOLD_DARK, 0.4f);
+                }
+                d.dust(false, 0, 1.17, 0.17, gem, 1.0f);
+                if (t % 15 == 0) d.part(Particle.WAX_OFF, false, 0, 1.17, 0.2, 1, 0.05, 0);
             }
-            // ---------------------------------------------------------- orbes de magma en orbite
+            // ---------------------------------------------------------- orbes de magma sur un anneau penché, avec une queue
             case "orbs" -> {
                 for (int k = 0; k < 3; k++) {
-                    double a = t * 0.1 + Math.PI * 2 * k / 3;
-                    double y = 1.0 + Math.sin(t * 0.08 + k) * 0.1;
-                    d.dust(false, Math.cos(a) * 0.8, y, Math.sin(a) * 0.8, ORANGE, 1.2f);
-                    if (t % 4 == k) d.part(Particle.FLAME, false, Math.cos(a) * 0.8, y, Math.sin(a) * 0.8, 1, 0, 0);
+                    double a = t * 0.11 + Math.PI * 2 * k / 3;
+                    double x = Math.cos(a) * 0.85, z = Math.sin(a) * 0.85, y = 1.0 + Math.sin(a) * 0.35;
+                    d.dust(false, x, y, z, ORANGE, 1.25f);
+                    double b = a - 0.25;
+                    if (t % 2 == 0) d.dust(false, Math.cos(b) * 0.85, 1.0 + Math.sin(b) * 0.35, Math.sin(b) * 0.85, CRIMSON, 0.7f);
+                    if (t % 6 == k * 2) d.part(Particle.LAVA, false, x, y, z, 1, 0, 0);
                 }
             }
             // ---------------------------------------------------------- sac : un peu de poussière sur le dos
             case "backpack" -> {
                 if (t % 10 == 0) d.dust(false, 0, 1.05, -0.3, Color.fromRGB(120, 75, 35), 1.4f);
             }
-            // ---------------------------------------------------------- halo rouge au-dessus de la tête
+            // ---------------------------------------------------------- double auréole : rouge et blanche qui tournent en sens inverse
             case "halo" -> {
                 if (t % 2 != 0) return;
-                for (int k = 0; k < 4; k++) {
-                    double a = t * 0.1 + Math.PI * 2 * k / 4;
-                    d.dust(true, Math.cos(a) * 0.32, 2.25, Math.sin(a) * 0.32, Color.fromRGB(220, 10, 20), 0.9f);
+                for (int k = 0; k < 6; k++) {
+                    double a = t * 0.1 + Math.PI * 2 * k / 6;
+                    d.dust(true, Math.cos(a) * 0.33, 2.25, Math.sin(a) * 0.33, CRIMSON, 0.8f);
+                    double b = -t * 0.14 + Math.PI * 2 * k / 6 + 0.5;
+                    d.dust(true, Math.cos(b) * 0.24, 2.3, Math.sin(b) * 0.24, CREAM, 0.55f);
                 }
-                if (t % 20 == 0) d.part(Particle.CRIMSON_SPORE, true, 0, 2.2, 0, 3, 0.2, 0);
+                if (t % 24 == 0) d.part(Particle.CRIMSON_SPORE, true, 0, 2.25, 0, 4, 0.2, 0);
             }
-            // ---------------------------------------------------------- braises qui tournent autour du joueur
+            // ---------------------------------------------------------- braises qui montent en spirale autour du corps
             case "embers" -> {
                 if (t % 2 != 0) return;
                 for (int k = 0; k < 2; k++) {
-                    double a = t * 0.18 + Math.PI * k;
-                    d.dust(false, Math.cos(a) * 0.55, 0.8 + Math.sin(t * 0.05 + k) * 0.5, Math.sin(a) * 0.55,
-                            Color.fromRGB(255, 70 + r.nextInt(60), 0), 0.8f);
+                    double h = ((t * 0.04 + k * 0.5) % 1.0);
+                    double a = t * 0.2 + Math.PI * k;
+                    d.dust(false, Math.cos(a) * 0.55, 0.1 + h * 2.0, Math.sin(a) * 0.55, Color.fromRGB(255, 60 + (int) (h * 150), 0), (float) (1.0 - h * 0.6));
                 }
-                if (moving && t % 4 == 0) d.part(Particle.LAVA, false, 0, 0.1, 0, 1, 0.1, 0);
+                if (moving && t % 6 == 0) d.part(Particle.LAVA, false, 0, 0.1, 0, 1, 0.1, 0);
             }
-            // ---------------------------------------------------------- empreintes de flammes
+            // ---------------------------------------------------------- empreintes de flammes gauche / droite
             case "flames" -> {
-                if (moving && t % 2 == 0) {
-                    d.part(Particle.FLAME, false, r.nextDouble(-0.15, 0.15), 0.05, 0, 1, 0.02, 0.005);
-                    d.part(Particle.SMALL_FLAME, false, 0, 0.1, 0, 1, 0.12, 0.01);
-                } else if (!moving && t % 10 == 0) {
-                    d.part(Particle.SMALL_FLAME, false, 0, 0.05, 0, 1, 0.2, 0.015);
+                if (moving && t % 4 == 0) {
+                    double side = (t / 4) % 2 == 0 ? 0.12 : -0.12;
+                    d.part(Particle.FLAME, false, side, 0.05, 0, 2, 0.03, 0.005);
+                    d.dust(false, side, 0.03, 0, ORANGE, 0.9f);
+                } else if (!moving && t % 8 == 0) {
+                    d.part(Particle.SMALL_FLAME, false, 0, 0.05, 0, 2, 0.2, 0.01);
                 }
             }
-            // ---------------------------------------------------------- feuilles d'automne
+            // ---------------------------------------------------------- feuilles d'automne portées par le vent
             case "boots" -> {
-                if (moving && t % 2 == 0) {
-                    d.dust(false, r.nextDouble(-0.2, 0.2), 0.15, r.nextDouble(-0.2, 0.2), LEAVES[r.nextInt(LEAVES.length)],
-                            (float) r.nextDouble(0.6, 1.0));
-                } else if (!moving && t % 4 == 0) {
-                    for (int k = 0; k < 2; k++) {
-                        double a = t * 0.25 + Math.PI * k;
-                        d.dust(false, Math.cos(a) * 0.45, 0.15 + Math.sin(t * 0.1) * 0.08, Math.sin(a) * 0.45,
-                                LEAVES[(t / 4 + k) % LEAVES.length], 0.7f);
-                    }
+                if (t % 3 != 0) return;
+                double a = t * 0.07;
+                double rr = moving ? 0.35 : 0.55;
+                for (int k = 0; k < 2; k++) {
+                    double b = a + Math.PI * k;
+                    double h = 0.1 + ((t * 0.02 + k * 0.4) % 0.8);
+                    d.dust(false, Math.cos(b) * rr, h, Math.sin(b) * rr - (moving ? 0.25 : 0), LEAVES[(t / 3 + k) % LEAVES.length], 0.75f);
                 }
             }
-            // ---------------------------------------------------------- ❂ PRESTIGE : couronne du Roi Éternel
-            // grande couronne d'or à pointes et rubis, cercle de runes doré qui tourne au sol, étincelles qui montent
+            // ---------------------------------------------------------- ❂ PRESTIGE : couronne du Roi Éternel, nuit étoilée
             case "eternalcrown" -> {
                 double spin = t * 0.03;
                 if (t % 2 == 0) {
-                    for (int k = 0; k < 16; k++) {
-                        double a = spin + Math.PI * 2 * k / 16;
-                        d.dust(true, Math.cos(a) * 0.34, 1.97, Math.sin(a) * 0.34, k % 2 == 0 ? GOLD : GOLD_DARK, 0.75f);
+                    for (int k = 0; k < 14; k++) {
+                        double a = spin + Math.PI * 2 * k / 14;
+                        d.dust(true, Math.cos(a) * 0.34, 1.98, Math.sin(a) * 0.34, k % 2 == 0 ? NIGHT : SILVER, 0.75f);
                     }
-                    for (int k = 0; k < 8; k++) {
-                        double a = spin + Math.PI * 2 * k / 8;
-                        double h = k % 2 == 0 ? 0.26 : 0.16;
-                        for (double y = 0.06; y <= h; y += 0.06) {
-                            double in = 0.34 - y * 0.25;
-                            d.dust(true, Math.cos(a) * in, 1.97 + y, Math.sin(a) * in, GOLD, 0.6f);
+                    for (int k = 0; k < 7; k++) {
+                        double a = spin + Math.PI * 2 * k / 7;
+                        for (double y = 0.07; y <= 0.28; y += 0.07) {
+                            double in = 0.34 - y * 0.3;
+                            d.dust(true, Math.cos(a) * in, 1.98 + y, Math.sin(a) * in, y > 0.2 ? STAR : NAVY, 0.6f);
                         }
-                        d.dust(true, Math.cos(a) * 0.3, 1.97 + h + 0.05, Math.sin(a) * 0.3, k % 2 == 0 ? RED : Color.WHITE, 0.7f);
+                        d.dust(true, Math.cos(a) * 0.26, 2.32, Math.sin(a) * 0.26, SILVER, 0.7f);
                     }
                 }
-                if (t % 3 == 0) {
-                    // cercle de runes au sol (deux anneaux qui tournent en sens inverse)
-                    for (int k = 0; k < 24; k++) {
-                        double a = t * 0.04 + Math.PI * 2 * k / 24;
-                        d.dust(false, Math.cos(a) * 1.1, 0.06, Math.sin(a) * 1.1, GOLD, 0.8f);
+                // constellation au sol : 7 étoiles reliées qui tournent lentement
+                if (t % 4 == 0) {
+                    double[][] stars = new double[7][2];
+                    for (int k = 0; k < 7; k++) {
+                        double a = -t * 0.01 + Math.PI * 2 * k / 7;
+                        double rr = k % 2 == 0 ? 1.15 : 0.75;
+                        stars[k] = new double[]{Math.cos(a) * rr, Math.sin(a) * rr};
+                        d.dust(false, stars[k][0], 0.07, stars[k][1], SILVER, 1.0f);
                     }
-                    for (int k = 0; k < 6; k++) {
-                        double a1 = -t * 0.04 + Math.PI * 2 * k / 6, a2 = a1 + Math.PI * 2 * 2 / 6;
-                        for (double u = 0; u <= 1; u += 0.2) {
-                            double x = Math.cos(a1) * 0.8 * (1 - u) + Math.cos(a2) * 0.8 * u, z = Math.sin(a1) * 0.8 * (1 - u) + Math.sin(a2) * 0.8 * u;
-                            d.dust(false, x, 0.06, z, RED, 0.6f);
-                        }
+                    for (int k = 0; k < 7; k++) {
+                        double[] p0 = stars[k], p1 = stars[(k + 1) % 7];
+                        for (double u = 0.2; u < 0.9; u += 0.2) d.dust(false, p0[0] + (p1[0] - p0[0]) * u, 0.07, p0[1] + (p1[1] - p0[1]) * u, NIGHT, 0.5f);
                     }
                 }
-                if (t % 4 == 0) d.part(Particle.END_ROD, false, r.nextDouble(-0.9, 0.9), 0.1, r.nextDouble(-0.9, 0.9), 1, 0, 0.03);
-                if (t % 30 == 0) d.part(Particle.TOTEM_OF_UNDYING, false, 0, 1.2, 0, 8, 0.4, 0.15);
-                if (moving && t % 2 == 0) d.part(Particle.WAX_OFF, false, 0, 0.1, -0.2, 1, 0.1, 0);
+                if (t % 5 == 0) d.part(Particle.END_ROD, false, r.nextDouble(-1, 1), 0.2, r.nextDouble(-1, 1), 1, 0, 0.02);
+                // étoile filante de temps en temps
+                if (t % 60 == 0) for (int k = 0; k < 8; k++) d.dust(true, 0.8 - k * 0.15, 2.9 - k * 0.07, 0.3, k == 0 ? SILVER : STAR, (float) (0.9 - k * 0.08));
             }
-            // ---------------------------------------------------------- ❂ PRESTIGE : ailes de l'Éclipse
-            // grandes ailes noires aux bords de feu, éclipse noire à couronne de flammes au-dessus de la tête
+            // ---------------------------------------------------------- ❂ PRESTIGE : ailes de la nuit et croissant de lune
             case "eclipse" -> {
                 if (t % 2 == 0) {
-                    double flap = Math.sin(t * 0.1) * 0.12;
+                    double flap = Math.sin(t * 0.1) * 0.14;
                     for (int s = -1; s <= 1; s += 2) {
                         for (int i = 0; i <= 14; i++) {
                             double u = i / 14.0;
-                            double x = s * (0.14 + 1.35 * u), y = 1.35 + 0.6 * Math.sin(u * 2.4) + flap * u, z = -0.22 - 0.4 * u;
-                            d.dust(false, x, y, z, i > 10 ? ORANGE : BLACK, 0.95f);
+                            d.dust(false, s * (0.14 + 1.35 * u), 1.35 + 0.6 * Math.sin(u * 2.4) + flap * u, -0.22 - 0.4 * u, i > 10 ? SILVER : NIGHT, 0.95f);
                         }
                         double[][] fingers = {{0.45, 0.75}, {0.75, 0.8}, {1.05, 0.95}, {1.35, 1.15}};
                         for (double[] f : fingers) {
@@ -399,32 +414,27 @@ final class Cosmetics {
                             double topY = 1.35 + 0.6 * Math.sin(ux * 2.4) + flap * ux, topZ = -0.22 - 0.4 * ux;
                             for (int i = 0; i <= 6; i++) {
                                 double v = i / 6.0;
-                                d.dust(false, s * f[0], topY + (f[1] - topY) * v, topZ - 0.06 * v, v > 0.8 ? RED : BLACK, 0.65f);
+                                d.dust(false, s * f[0], topY + (f[1] - topY) * v, topZ - 0.06 * v, v > 0.8 ? STAR : NAVY, 0.65f);
                             }
                         }
-                        for (int i = 0; i < 6; i++) {
+                        // membrane parsemée d'étoiles
+                        for (int i = 0; i < 4; i++) {
                             double u = 0.05 + r.nextDouble() * 0.95;
                             double top = 1.35 + 0.6 * Math.sin(u * 2.4) + flap * u, bottom = 0.75 + 0.4 * u;
-                            d.dust(false, s * (0.14 + 1.35 * u), bottom + (top - bottom) * r.nextDouble(), -0.24 - 0.4 * u, BLOOD, 0.7f);
+                            d.dust(false, s * (0.14 + 1.35 * u), bottom + (top - bottom) * r.nextDouble(), -0.24 - 0.4 * u, r.nextInt(4) == 0 ? SILVER : NAVY, 0.6f);
                         }
                     }
-                }
-                // l'éclipse au-dessus de la tête
-                if (t % 2 == 1) {
-                    double cy = 2.55 + Math.sin(t * 0.06) * 0.06;
-                    for (int k = 0; k < 7; k++) {
-                        double a = Math.PI * 2 * k / 7;
-                        d.dust(false, Math.cos(a) * 0.1, cy + Math.sin(a) * 0.1, 0, BLACK, 1.1f);
-                    }
-                    d.dust(false, 0, cy, 0, BLACK, 1.6f);
-                    for (int k = 0; k < 14; k++) {
-                        double a = t * 0.08 + Math.PI * 2 * k / 14;
-                        d.dust(false, Math.cos(a) * 0.3, cy + Math.sin(a) * 0.3, 0, k % 2 == 0 ? RED : ORANGE, 0.6f);
+                } else {
+                    // croissant de lune argenté au-dessus de la tête
+                    double cy = 2.6 + Math.sin(t * 0.06) * 0.05;
+                    for (int k = 0; k <= 10; k++) {
+                        double a = -Math.PI / 2 + Math.PI * k / 10;
+                        d.dust(false, Math.cos(a) * 0.28, cy + Math.sin(a) * 0.28, 0, SILVER, 0.65f);
+                        if (k > 1 && k < 9) d.dust(false, Math.cos(a) * 0.18 + 0.05, cy + Math.sin(a) * 0.18, 0, STAR, 0.45f);
                     }
                 }
-                if (t % 5 == 0) d.part(Particle.FLAME, false, r.nextDouble(-0.3, 0.3), 2.55, 0, 1, 0.05, 0.01);
-                if (moving && t % 2 == 0) d.part(Particle.SOUL_FIRE_FLAME, false, r.nextDouble(-0.2, 0.2), 0.08, -0.2, 1, 0.05, 0.01);
-                if (t % 40 == 0) d.part(Particle.SOUL, false, 0, 1.2, -0.4, 3, 0.4, 0.02);
+                if (t % 7 == 0) d.part(Particle.END_ROD, false, r.nextDouble(-1.2, 1.2), r.nextDouble(1.0, 2.2), -0.5, 1, 0, 0.005);
+                if (moving && t % 3 == 0) d.dust(false, r.nextDouble(-0.25, 0.25), 0.1, -0.3, STAR, 0.7f);
             }
             default -> {
             }

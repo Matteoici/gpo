@@ -10,7 +10,7 @@ public enum Rarity {
     LEGENDARY("<rainbow>", "<rainbow><b>✦ LÉGENDAIRE ✦", "RAINBOW"),
     SECRET("<gradient:#ffffff:#6b6b6b:#ffffff>", "<gradient:#ffffff:#4a4a4a:#ffffff><b>✧ SECRET ✧", "SECRET"),
     /** 0,01 % : au-dessus de tout. */
-    PRESTIGE("<gradient:#ff0000:#ffd700:#ff0000>", "<gradient:#ff1a1a:#ffd700:#ffffff:#ffd700:#ff1a1a><b>❂ PRESTIGE ❂", "PRESTIGE");
+    PRESTIGE("<gradient:#1b2f7a:#6d8cff:#1b2f7a>", "<gradient:#0b1a4a:#4a6cf0:#e3e9ff:#4a6cf0:#0b1a4a><b>❂ PRESTIGE ❂", "PRESTIGE");
 
     /** Couleur MiniMessage à placer devant le nom. */
     public final String color;
@@ -43,7 +43,7 @@ public enum Rarity {
             case LEGENDARY -> "<rainbow:" + phase + "><b>" + safe;
             case SECRET -> (phase % 2 == 0 ? "<gradient:#ffffff:#5a5a5a:#ffffff>" : "<gradient:#5a5a5a:#ffffff:#5a5a5a>")
                     + "<b>" + safe;
-            case PRESTIGE -> "<gradient:#ff1a1a:#ffd700:#ffffff:#ffd700:#ff1a1a:" + String.format(java.util.Locale.ROOT, "%.1f", phase / 5.0 - 1)
+            case PRESTIGE -> "<gradient:#1b2f7a:#6d8cff:#e3e9ff:#6d8cff:#1b2f7a:" + String.format(java.util.Locale.ROOT, "%.1f", phase / 5.0 - 1)
                     + "><b>" + safe;
             default -> color + "<b>" + safe;
         };

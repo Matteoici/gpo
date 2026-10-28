@@ -44,7 +44,7 @@ final class Reveal {
             case EPIC -> Color.fromRGB(0xb45cff);
             case LEGENDARY -> Color.fromRGB(0xffd36b);
             case SECRET -> Color.WHITE;
-            case PRESTIGE -> Color.fromRGB(0xffd700);
+            case PRESTIGE -> Color.fromRGB(0x6d8cff);
             default -> Color.fromRGB(0xdddddd);
         };
     }
@@ -135,9 +135,11 @@ final class Reveal {
                 w.spawnParticle(Particle.END_ROD, l, 40, 0.1, 0.1, 0.1, 0.18, null, true);
                 w.spawnParticle(Particle.DUST, l, 60, 0.7, 0.7, 0.7, 0, new Particle.DustOptions(col, 1.6f), true);
                 if (rarity == Rarity.PRESTIGE) {
-                    w.spawnParticle(Particle.TOTEM_OF_UNDYING, l, 250, 0.6, 0.6, 0.6, 0.9, null, true);
-                    w.spawnParticle(Particle.FLAME, l, 120, 0.2, 0.2, 0.2, 0.35, null, true);
-                    w.spawnParticle(Particle.SOUL_FIRE_FLAME, l, 60, 0.2, 0.2, 0.2, 0.3, null, true);
+                    // nuit étoilée : éclats bleu nuit, étoiles blanches, flammes bleues
+                    w.spawnParticle(Particle.DUST, l, 200, 1.0, 1.0, 1.0, 0, new Particle.DustOptions(Color.fromRGB(0x2a3f9e), 1.8f), true);
+                    w.spawnParticle(Particle.END_ROD, l, 120, 0.2, 0.2, 0.2, 0.45, null, true);
+                    w.spawnParticle(Particle.SOUL_FIRE_FLAME, l, 90, 0.2, 0.2, 0.2, 0.35, null, true);
+                    w.spawnParticle(Particle.FIREWORK, l, 80, 0.3, 0.3, 0.3, 0.3, null, true);
                     w.strikeLightningEffect(p.getLocation());
                     sound(p, "entity.ender_dragon.death", 1f, 1.2f);
                 }
@@ -165,7 +167,7 @@ final class Reveal {
                             new Particle.DustOptions(col, 0.8f), true);
                 }
                 if (rarity == Rarity.PRESTIGE && i % 3 == 0) {
-                    w.spawnParticle(Particle.DUST, l, 6, 0.6, 0.6, 0.6, 0, new Particle.DustOptions(i % 6 == 0 ? Color.RED : Color.fromRGB(0xffd700), 1.3f), true);
+                    w.spawnParticle(Particle.DUST, l, 6, 0.6, 0.6, 0.6, 0, new Particle.DustOptions(i % 6 == 0 ? Color.fromRGB(0x0b1a4a) : Color.fromRGB(0x6d8cff), 1.3f), true);
                     w.spawnParticle(Particle.END_ROD, l, 1, 0.5, 0.5, 0.5, 0.02, null, true);
                 }
                 if ((rarity == Rarity.LEGENDARY || rarity == Rarity.PRESTIGE) && i % 4 == 0) {

@@ -181,9 +181,9 @@ public final class RelicMenu implements InventoryHolder {
             case LEGENDARY -> RAINBOW[Math.floorMod(frame + k * 3, RAINBOW.length)];
             case SECRET -> (frame + k) % 2 == 0 ? Material.WHITE_STAINED_GLASS_PANE : Material.GRAY_STAINED_GLASS_PANE;
             case PRESTIGE -> switch (Math.floorMod(frame + k, 3)) {
-                case 0 -> Material.RED_STAINED_GLASS_PANE;
-                case 1 -> Material.YELLOW_STAINED_GLASS_PANE;
-                default -> Material.WHITE_STAINED_GLASS_PANE;
+                case 0 -> Material.BLUE_STAINED_GLASS_PANE;
+                case 1 -> Material.BLACK_STAINED_GLASS_PANE;
+                default -> Material.LIGHT_BLUE_STAINED_GLASS_PANE;
             };
         };
     }

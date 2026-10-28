@@ -1,4 +1,4 @@
-config-version: 21
+config-version: 22
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -239,8 +239,8 @@ loot:
 # ---------------------------------------------------------------- Armes du Roi (butin rare, gardées à la mort)
 weapons:
   sonic-bow:
-    # chance (%) de la gagner à chaque victoire
-    chance: 0.5
+    # chance (%) de la gagner à chaque victoire (0.1 = 1 chance sur 1 000)
+    chance: 0.1
     # dégâts du rayon (2 = 1 cœur ; traverse l'armure comme le Warden)
     damage: 10
     # recharge plus longue, mais l'onde va 3 fois plus loin
@@ -249,7 +249,7 @@ weapons:
     # temps de tension minimum (ms) : l'arc doit être chargé au maximum
     full-charge-ms: 950
   tranche-mace:
-    chance: 0.5
+    chance: 0.1
     # dégâts au corps à corps (épée netherite Tranchant V = 11) ; on peut encore l'enchanter
     attack-damage: 16
     attack-speed: 1.6
@@ -260,9 +260,9 @@ weapons:
     length: 18
     levitation-seconds: 5
     levitation-level: 1
-  # ❂ PRESTIGE (0,001 % = 1 chance sur 100 000 par victoire)
+  # ❂ PRESTIGE
   brise-terre:
-    chance: 0.001
+    chance: 0.1
     # hache : 18 de dégâts au corps à corps (netherite = 10)
     attack-damage: 22
     attack-speed: 1.1
@@ -272,7 +272,7 @@ weapons:
     radius: 10
     cooldown-seconds: 6
   arbalete-spectrale:
-    chance: 0.001
+    chance: 0.1
     # le tir devient 5 crânes d'âmes qui poursuivent chacun un ennemi devant toi
     skulls: 5
     damage: 16
@@ -674,7 +674,7 @@ messages:
     new-item: "<white>Nouvel objet <dark_gray>‹</dark_gray><item><dark_gray>›"
     new-title: "<white>Nouveau titre débloqué : <dark_gray>‹</dark_gray><title><dark_gray>›"
     broadcast-legendary: "<rainbow><b>✦</b></rainbow> <white><player></white> <gray>a obtenu</gray> <item> <gray>sur le Roi Citrouille !"
-    broadcast-prestige: "<gradient:#ff1a1a:#ffd700:#ff1a1a><b>❂❂❂ PRESTIGE ❂❂❂</b></gradient> <white><b><player></b></white> <gray>a obtenu</gray> <item> <gray>! <dark_gray>(1 chance sur 10 000)"
+    broadcast-prestige: "<gradient:#0b1a4a:#6d8cff:#e3e9ff:#6d8cff:#0b1a4a><b>❂❂❂ PRESTIGE ❂❂❂</b></gradient> <white><b><player></b></white> <gray>a obtenu</gray> <item> <gray>! <dark_gray>(1 chance sur 10 000)"
     prestige-subtitle: "<white><player></white> <gray>a obtenu</gray> <item>"
     broadcast-secret: "<gradient:#ffffff:#4a4a4a:#ffffff><b>✧ SECRET ✧</b></gradient> <white><player></white> <gray>a obtenu</gray> <item> <gray>!!!"
   relics:
