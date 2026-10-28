@@ -71,11 +71,11 @@ final class Weapons implements Listener {
             case SONIC -> Material.BOW;
             case TRANCHE -> Material.NETHERITE_SWORD;
             case BRISE -> Material.NETHERITE_AXE;
-            default -> Material.CROSSBOW;
+            default -> Material.NETHERITE_HOE;
         };
     }
 
-    /** Brise-Terre et Arbalète Spectrale : PRESTIGE (0,001 %). */
+    /** Brise-Terre et Faux des Âmes : PRESTIGE (0,001 %). */
     static Rarity rarity(String id) {
         return BRISE.equals(id) || SPECTRAL.equals(id) ? Rarity.PRESTIGE : Rarity.SECRET;
     }
@@ -84,8 +84,8 @@ final class Weapons implements Listener {
         return switch (id) {
             case SONIC -> 10;
             case TRANCHE -> 12;
-            case BRISE -> 20;
-            default -> 16;
+            case BRISE -> 16;
+            default -> 14;
         };
     }
 
@@ -93,8 +93,8 @@ final class Weapons implements Listener {
         return switch (id) {
             case SONIC -> 10;
             case TRANCHE -> 8;
-            case BRISE -> 6;
-            default -> 2.5;
+            case BRISE -> 7;
+            default -> 2;
         };
     }
 
@@ -139,6 +139,15 @@ final class Weapons implements Listener {
                     org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND));
             m.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_SPEED, new org.bukkit.attribute.AttributeModifier(
                     new NamespacedKey(plugin, "brise_speed"), cfg("brise-terre.attack-speed", 1.1) - 4,
+                    org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND));
+        }
+        if (SPECTRAL.equals(id)) {
+            // faux PRESTIGE : 18 de dégâts au corps à corps
+            m.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_DAMAGE, new org.bukkit.attribute.AttributeModifier(
+                    new NamespacedKey(plugin, "faux_damage"), cfg("arbalete-spectrale.attack-damage", 18) - 1,
+                    org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND));
+            m.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_SPEED, new org.bukkit.attribute.AttributeModifier(
+                    new NamespacedKey(plugin, "faux_speed"), cfg("arbalete-spectrale.attack-speed", 1.2) - 4,
                     org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND));
         }
         if (TRANCHE.equals(id)) {
@@ -390,286 +399,375 @@ final class Weapons implements Listener {
         w.playSound(le.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_ATTACK_CRIT, 1f, 0.7f);
     }
 
-    // ================================================================= Brise-Terre (hache)
+    // ================================================================= Brise-Terre (hache) : FAILLE + SÉISME
 
-    private final java.util.Set<UUID> slamming = new HashSet<>();
+    /** Coups à la hache comptés pour le séisme (3e coup en moins de 4 s). */
+    private final Map<UUID, long[]> combo = new HashMap<>();
 
-    /** Clic droit : bond en l'air puis on s'écrase au sol, onde de choc tout autour. */
+    /**
+     * Clic droit : FAILLE. La terre s'ouvre devant toi sur 24 blocs : des pics de pierre jaillissent du sol
+     * l'un après l'autre et projettent en l'air ce qu'ils touchent ; une seconde plus tard, toute la ligne
+     * explose une 2e fois (réplique).
+     */
     @EventHandler(priority = EventPriority.HIGH)
-    public void onQuake(PlayerInteractEvent e) {
+    public void onRift(PlayerInteractEvent e) {
         if (e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
         if (e.getHand() != EquipmentSlot.HAND || !BRISE.equals(id(e.getItem()))) return;
         Block b = e.getClickedBlock();
         if (b != null && b.getType().isInteractable() && !e.getPlayer().isSneaking()) return;
         Player p = e.getPlayer();
         e.setCancelled(true); // pas d'écorçage de bûche
-        if (slamming.contains(p.getUniqueId()) || !ready(p, BRISE, cfg("brise-terre.cooldown-seconds", 6))) return;
-        slamming.add(p.getUniqueId());
-        World w = p.getWorld();
-        boolean onGround = ((org.bukkit.entity.Entity) p).isOnGround();
-        if (onGround) {
-            p.setVelocity(p.getLocation().getDirection().setY(0).normalize().multiply(0.4).setY(1.05));
-            w.playSound(p.getLocation(), org.bukkit.Sound.ENTITY_WIND_CHARGE_WIND_BURST, 1f, 0.7f);
-            w.spawnParticle(Particle.CLOUD, p.getLocation(), 20, 0.4, 0.1, 0.4, 0.05, null, true);
-        }
-        int[] t = {0};
-        org.bukkit.scheduler.BukkitTask[] task = new org.bukkit.scheduler.BukkitTask[1];
-        task[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
-            t[0]++;
-            if (!p.isOnline() || p.isDead() || t[0] > 80) {
-                slamming.remove(p.getUniqueId());
-                task[0].cancel();
-                return;
-            }
-            // au sommet du bond (ou déjà en l'air) : on pique vers le sol
-            if (t[0] == (onGround ? 9 : 1)) {
-                p.setVelocity(new Vector(0, -1.6, 0));
-                w.playSound(p.getLocation(), org.bukkit.Sound.ITEM_MACE_SMASH_AIR, 1f, 0.6f);
-            }
-            if (t[0] > 3) w.spawnParticle(Particle.DUST, p.getLocation().add(0, 1, 0), 4, 0.3, 0.5, 0.3, 0,
-                    new Particle.DustOptions(Color.fromRGB(255, 120, 30), 1.4f), true);
-            if (t[0] > (onGround ? 10 : 2) && ((org.bukkit.entity.Entity) p).isOnGround()) {
-                task[0].cancel();
-                quake(p);
-                Bukkit.getScheduler().runTaskLater(plugin, () -> slamming.remove(p.getUniqueId()), 5L);
-            }
-        }, 1L, 1L);
+        if (!ready(p, BRISE, cfg("brise-terre.cooldown-seconds", 7))) return;
+        rift(p);
     }
 
-    private void quake(Player p) {
-        Location c = p.getLocation();
-        World w = c.getWorld();
-        double r = cfg("brise-terre.radius", 10), dmg = cfg("brise-terre.damage", 20);
-        p.setFallDistance(0);
+    private void rift(Player p) {
+        World w = p.getWorld();
+        Vector dir = p.getLocation().getDirection().setY(0);
+        if (dir.lengthSquared() < 0.01) dir = new Vector(0, 0, 1);
+        dir.normalize();
+        Vector fwd = dir;
+        int len = (int) cfg("brise-terre.rift-length", 24);
+        double dmg = cfg("brise-terre.damage", 16), after = cfg("brise-terre.aftershock-damage", 8);
         PumpkinKing k = plugin.king();
+        Location origin = p.getLocation();
+        List<Location> line = new ArrayList<>();
+        Set<UUID> hit = new HashSet<>();
         ThreadLocalRandom rnd = ThreadLocalRandom.current();
-        w.playSound(c, org.bukkit.Sound.ITEM_MACE_SMASH_GROUND_HEAVY, 2f, 0.5f);
-        w.playSound(c, org.bukkit.Sound.ENTITY_GENERIC_EXPLODE, 1.6f, 0.6f);
-        w.playSound(c, org.bukkit.Sound.ENTITY_WARDEN_SONIC_BOOM, 0.8f, 0.5f);
-        w.spawnParticle(Particle.EXPLOSION_EMITTER, c, 1, 0, 0, 0, 0, null, true);
-        w.spawnParticle(Particle.FLASH, c.clone().add(0, 0.5, 0), 1, 0, 0, 0, 0, Particle.FLASH.getDataType() == Color.class ? Color.ORANGE : null, true);
-        org.bukkit.block.data.BlockData ground = c.clone().add(0, -1, 0).getBlock().getBlockData();
-        if (ground.getMaterial().isAir()) ground = Material.DIRT.createBlockData();
-        org.bukkit.block.data.BlockData gd = ground;
-        // fissures qui partent du centre
-        Particle.DustOptions lava = new Particle.DustOptions(Color.fromRGB(255, 90, 0), 1.6f);
-        Particle.DustOptions gold = new Particle.DustOptions(Color.fromRGB(255, 210, 60), 1.2f);
-        for (int n = 0; n < 10; n++) {
-            double a = Math.PI * 2 * n / 10 + rnd.nextDouble(0.3);
-            for (double d = 0.5; d < r; d += 0.35) {
-                double wob = Math.sin(d * 1.7 + n) * 0.25;
-                Location l = c.clone().add(Math.cos(a) * d - Math.sin(a) * wob, 0.08, Math.sin(a) * d + Math.cos(a) * wob);
-                w.spawnParticle(Particle.DUST, l, 1, 0, 0, 0, 0, d < r * 0.6 ? lava : gold, true);
-                if (rnd.nextDouble() < 0.12) w.spawnParticle(Particle.LAVA, l, 1, 0, 0, 0, 0, null, true);
-            }
-        }
-        // trois ondes de choc qui s'élargissent
-        for (int wave = 0; wave < 3; wave++) {
-            int ww = wave;
-            Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                int[] i = {0};
-                org.bukkit.scheduler.BukkitTask[] task = new org.bukkit.scheduler.BukkitTask[1];
-                task[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
-                    double rr = 1 + (r - 1) * (i[0] + 1) / 10.0;
-                    int pts = (int) (rr * 9);
-                    for (int n = 0; n < pts; n++) {
-                        double a = Math.PI * 2 * n / pts;
-                        Location l = c.clone().add(Math.cos(a) * rr, 0.2 + ww * 0.35, Math.sin(a) * rr);
-                        if (ww == 0) w.spawnParticle(Particle.BLOCK, l, 2, 0.1, 0.15, 0.1, 0, gd, true);
-                        else if (ww == 1) w.spawnParticle(Particle.FLAME, l, 1, 0, 0.05, 0, 0.01, null, true);
-                        else w.spawnParticle(Particle.DUST, l, 1, 0, 0, 0, 0, gold, true);
-                    }
-                    if (++i[0] >= 10) task[0].cancel();
-                }, 0L, 1L);
-            }, wave * 3L);
-        }
-        // morceaux du sol arrachés et projetés en l'air
-        for (int n = 0; n < 14; n++) {
-            double a = rnd.nextDouble(Math.PI * 2), d = rnd.nextDouble(1, r * 0.7);
-            Location from = c.clone().add(Math.cos(a) * d, -0.2, Math.sin(a) * d);
-            float sz = (float) rnd.nextDouble(0.5, 1.1);
-            org.bukkit.entity.BlockDisplay chunk = w.spawn(from, org.bukkit.entity.BlockDisplay.class, e -> {
-                e.setPersistent(false);
-                e.setBlock(gd);
-                e.setTeleportDuration(1);
-                e.setTransformation(new org.bukkit.util.Transformation(new org.joml.Vector3f(-sz / 2, 0, -sz / 2),
-                        new org.joml.Quaternionf().rotateXYZ(rnd.nextFloat() * 3, rnd.nextFloat() * 3, rnd.nextFloat() * 3),
-                        new org.joml.Vector3f(sz, sz, sz), new org.joml.Quaternionf()));
-            });
-            Vector vel = new Vector(Math.cos(a) * 0.15, rnd.nextDouble(0.45, 0.8), Math.sin(a) * 0.15);
-            Location[] at = {from.clone()};
-            int[] life = {0};
-            org.bukkit.scheduler.BukkitTask[] task = new org.bukkit.scheduler.BukkitTask[1];
-            task[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
-                if (++life[0] > 26 || !chunk.isValid()) {
-                    if (chunk.isValid()) w.spawnParticle(Particle.BLOCK, chunk.getLocation(), 12, 0.2, 0.2, 0.2, 0, gd, true);
-                    chunk.remove();
-                    task[0].cancel();
-                    return;
-                }
-                vel.setY(vel.getY() - 0.06);
-                at[0].add(vel);
-                at[0].setYaw(life[0] * 18f);
-                chunk.teleport(at[0]);
-            }, 1L, 1L);
-        }
-        // la caméra tremble pour ceux autour
-        for (Player o : w.getPlayers()) if (o.getLocation().distanceSquared(c) < r * r * 4) o.playHurtAnimation((float) rnd.nextDouble(360));
-        for (Entity en : w.getNearbyEntities(c, r, 4, r)) {
-            if (!(en instanceof LivingEntity le) || en.equals(p) || en.getLocation().distanceSquared(c) > r * r) continue;
-            if (en instanceof Player t && (t.getGameMode() == org.bukkit.GameMode.SPECTATOR || t.getGameMode() == org.bukkit.GameMode.CREATIVE)) continue;
-            double near = 1 - Math.min(1, en.getLocation().distance(c) / r) * 0.5; // plus près = plus fort
-            le.setNoDamageTicks(0);
-            le.damage(dmg * near, p);
-            if (k != null && k.isBoss(en)) continue;
-            Vector kb = en.getLocation().toVector().subtract(c.toVector()).setY(0);
-            if (kb.lengthSquared() < 0.01) kb = new Vector(0.1, 0, 0);
-            le.setVelocity(kb.normalize().multiply(1.3).setY(1.0));
-            le.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 70, 2, false, true, true));
-            le.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 70, 1, false, true, true));
-            le.setFireTicks(60);
-        }
-        // la fureur de la terre : le porteur est renforcé quelques secondes
-        p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 100, 1, false, true, true));
-        p.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 100, 0, false, true, true));
-    }
-
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onSlamFall(org.bukkit.event.entity.EntityDamageEvent e) {
-        if (e.getCause() == org.bukkit.event.entity.EntityDamageEvent.DamageCause.FALL && slamming.contains(e.getEntity().getUniqueId())) e.setCancelled(true);
-    }
-
-    // ================================================================= Arbalète Spectrale
-
-    /** Tir : un crâne d'âmes qui CHERCHE l'ennemi le plus proche devant toi ; il flétrit et fait briller sa cible. */
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onCrossbow(EntityShootBowEvent e) {
-        if (!(e.getEntity() instanceof Player p) || !SPECTRAL.equals(id(e.getBow()))) return;
-        e.setCancelled(true);
-        if (!ready(p, SPECTRAL, cfg("arbalete-spectrale.cooldown-seconds", 2.5))) return; // elle reste chargée
-        ItemStack bow = e.getBow();
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            for (ItemStack it : new ItemStack[]{p.getInventory().getItemInMainHand(), p.getInventory().getItemInOffHand()}) {
-                if (SPECTRAL.equals(id(it)) && it.getItemMeta() instanceof org.bukkit.inventory.meta.CrossbowMeta cm) {
-                    cm.setChargedProjectiles(new ArrayList<>());
-                    it.setItemMeta(cm);
-                }
-            }
-            p.updateInventory();
-        });
-        if (bow == null) return;
-        // trois crânes en éventail : chacun cherche sa cible
-        int n = (int) cfg("arbalete-spectrale.skulls", 5);
-        Set<UUID> taken = new HashSet<>();
-        for (int i = 0; i < n; i++) {
-            double yaw = Math.toRadians((i - (n - 1) / 2.0) * 12);
-            Vector d = p.getEyeLocation().getDirection().normalize().rotateAroundY(yaw);
-            int delay = i * 2;
-            Bukkit.getScheduler().runTaskLater(plugin, () -> spectral(p, d, taken), delay);
-        }
-    }
-
-    private void spectral(Player p, Vector start, Set<UUID> taken) {
-        World w = p.getWorld();
-        Location pos = p.getEyeLocation().add(start.clone().multiply(0.8));
-        Vector dir = start.clone().normalize();
-        double dmg = cfg("arbalete-spectrale.damage", 16), range = cfg("arbalete-spectrale.range", 36);
-        PumpkinKing k = plugin.king();
-        w.playSound(pos, org.bukkit.Sound.ENTITY_WITHER_SHOOT, 0.8f, 1.5f);
-        w.playSound(pos, org.bukkit.Sound.PARTICLE_SOUL_ESCAPE, 1.5f, 0.7f);
-        // le crâne lui-même : une tête de squelette wither qui tourne, entourée d'âmes
-        ItemDisplay skull = w.spawn(pos, ItemDisplay.class, d -> {
-            d.setPersistent(false);
-            d.setItemStack(new ItemStack(Material.WITHER_SKELETON_SKULL));
-            d.setBrightness(new org.bukkit.entity.Display.Brightness(15, 15));
-            d.setGlowing(true);
-            d.setGlowColorOverride(Color.fromRGB(60, 240, 220));
-            d.setTeleportDuration(1);
-            d.setTransformation(new org.bukkit.util.Transformation(new org.joml.Vector3f(), new org.joml.Quaternionf(),
-                    new org.joml.Vector3f(0.7f, 0.7f, 0.7f), new org.joml.Quaternionf()));
-        });
-        LivingEntity[] target = {null};
-        int[] t = {0};
-        Particle.DustOptions teal = new Particle.DustOptions(Color.fromRGB(70, 235, 220), 1.4f);
-        Particle.DustOptions dark = new Particle.DustOptions(Color.fromRGB(20, 40, 45), 1.8f);
+        w.playSound(origin, org.bukkit.Sound.ITEM_MACE_SMASH_GROUND_HEAVY, 1.6f, 0.6f);
+        w.playSound(origin, org.bukkit.Sound.ENTITY_RAVAGER_ROAR, 0.8f, 0.6f);
+        int[] i = {0};
         org.bukkit.scheduler.BukkitTask[] task = new org.bukkit.scheduler.BukkitTask[1];
         task[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
-            if (++t[0] > 70 || !p.isOnline()) {
-                w.spawnParticle(Particle.SOUL, pos, 15, 0.3, 0.3, 0.3, 0.03, null, true);
-                skull.remove();
+            for (int rep = 0; rep < 2; rep++) {
+                if (i[0] >= len) {
+                    task[0].cancel();
+                    aftershock(p, line, after);
+                    return;
+                }
+                i[0]++;
+                Location at = origin.clone().add(fwd.clone().multiply(1.5 + i[0]));
+                // suit le relief
+                Location g = groundAt(at);
+                if (g == null) {
+                    task[0].cancel();
+                    aftershock(p, line, after);
+                    return;
+                }
+                line.add(g);
+                org.bukkit.block.data.BlockData bd = g.clone().add(0, -1, 0).getBlock().getBlockData();
+                if (bd.getMaterial().isAir() || !bd.getMaterial().isSolid()) bd = Material.STONE.createBlockData();
+                spike(g, bd, 1.4 + rnd.nextDouble(1.2));
+                if (i[0] % 2 == 0) {
+                    Vector side = new Vector(-fwd.getZ(), 0, fwd.getX());
+                    Location g2 = groundAt(g.clone().add(side.multiply(rnd.nextBoolean() ? 1.2 : -1.2)));
+                    if (g2 != null) spike(g2, bd, 0.8 + rnd.nextDouble(0.8));
+                }
+                w.spawnParticle(Particle.BLOCK, g.clone().add(0, 0.3, 0), 18, 0.4, 0.2, 0.4, 0, bd, true);
+                w.spawnParticle(Particle.DUST, g.clone().add(0, 0.1, 0), 6, 0.3, 0.05, 0.3, 0, new Particle.DustOptions(Color.fromRGB(255, 100, 10), 1.5f), true);
+                if (i[0] % 3 == 0) w.playSound(g, org.bukkit.Sound.BLOCK_POINTED_DRIPSTONE_LAND, 1.4f, 0.6f);
+                for (Entity en : w.getNearbyEntities(g, 1.6, 2.5, 1.6)) {
+                    if (!(en instanceof LivingEntity le) || en.equals(p) || !hit.add(en.getUniqueId())) continue;
+                    if (en instanceof Player t && (t.getGameMode() == org.bukkit.GameMode.SPECTATOR || t.getGameMode() == org.bukkit.GameMode.CREATIVE)) continue;
+                    le.setNoDamageTicks(0);
+                    le.damage(dmg, p);
+                    if (k != null && k.isBoss(en)) continue;
+                    le.setVelocity(new Vector(fwd.getX() * 0.3, 1.25, fwd.getZ() * 0.3));
+                    le.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 60, 2, false, true, true));
+                }
+            }
+        }, 0L, 1L);
+    }
+
+    /** Sol sous (ou juste au-dessus de) cette position, sinon null (vide / mur). */
+    private static Location groundAt(Location l) {
+        Location c = l.clone();
+        c.setY(Math.floor(c.getY()));
+        for (int k = 0; k < 4 && !c.getBlock().getType().isAir(); k++) c.add(0, 1, 0);
+        if (!c.getBlock().getType().isAir()) return null;
+        for (int k = 0; k < 5 && c.clone().add(0, -1, 0).getBlock().getType().isAir(); k++) c.add(0, -1, 0);
+        if (c.clone().add(0, -1, 0).getBlock().getType().isAir()) return null;
+        return c;
+    }
+
+    /** Un pic de pierre qui jaillit du sol puis y retourne. */
+    private void spike(Location g, org.bukkit.block.data.BlockData bd, double height) {
+        World w = g.getWorld();
+        float h = (float) height;
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        float tilt = (float) rnd.nextDouble(-0.25, 0.25);
+        org.bukkit.entity.BlockDisplay sp = w.spawn(g.clone().add(rnd.nextDouble(-0.2, 0.2), -h, rnd.nextDouble(-0.2, 0.2)),
+                org.bukkit.entity.BlockDisplay.class, d -> {
+                    d.setPersistent(false);
+                    d.setBlock(bd);
+                    d.setTransformation(new org.bukkit.util.Transformation(new org.joml.Vector3f(-0.35f, 0, -0.35f),
+                            new org.joml.Quaternionf().rotateY(rnd.nextFloat() * 3).rotateX(tilt), new org.joml.Vector3f(0.7f, h, 0.7f),
+                            new org.joml.Quaternionf()));
+                });
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (!sp.isValid()) return;
+            sp.setInterpolationDelay(0);
+            sp.setInterpolationDuration(3);
+            org.bukkit.util.Transformation tr = sp.getTransformation();
+            sp.setTransformation(new org.bukkit.util.Transformation(new org.joml.Vector3f(-0.35f, h, -0.35f), tr.getLeftRotation(), tr.getScale(), tr.getRightRotation()));
+        }, 1L);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (!sp.isValid()) return;
+            sp.setInterpolationDelay(0);
+            sp.setInterpolationDuration(8);
+            org.bukkit.util.Transformation tr = sp.getTransformation();
+            sp.setTransformation(new org.bukkit.util.Transformation(new org.joml.Vector3f(-0.35f, 0, -0.35f), tr.getLeftRotation(), tr.getScale(), tr.getRightRotation()));
+        }, 22L);
+        Bukkit.getScheduler().runTaskLater(plugin, sp::remove, 31L);
+    }
+
+    /** Réplique : 1 s plus tard, toute la faille explose une 2e fois. */
+    private void aftershock(Player p, List<Location> line, double dmg) {
+        if (line.isEmpty()) return;
+        PumpkinKing k = plugin.king();
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            Set<UUID> hit = new HashSet<>();
+            World w = line.get(0).getWorld();
+            w.playSound(line.get(line.size() / 2), org.bukkit.Sound.ENTITY_GENERIC_EXPLODE, 1.4f, 0.7f);
+            for (int n = 0; n < line.size(); n += 2) {
+                Location g = line.get(n);
+                w.spawnParticle(Particle.EXPLOSION, g.clone().add(0, 0.5, 0), 1, 0, 0, 0, 0, null, true);
+                w.spawnParticle(Particle.LAVA, g, 3, 0.4, 0.1, 0.4, 0, null, true);
+                w.spawnParticle(Particle.FLAME, g, 8, 0.4, 0.3, 0.4, 0.03, null, true);
+                for (Entity en : w.getNearbyEntities(g, 2, 2.5, 2)) {
+                    if (!(en instanceof LivingEntity le) || en.equals(p) || !hit.add(en.getUniqueId())) continue;
+                    if (en instanceof Player t && (t.getGameMode() == org.bukkit.GameMode.SPECTATOR || t.getGameMode() == org.bukkit.GameMode.CREATIVE)) continue;
+                    le.setNoDamageTicks(0);
+                    le.damage(dmg, p);
+                    le.setFireTicks(80);
+                }
+            }
+        }, 20L);
+    }
+
+    /** SÉISME : le 3e coup de hache en moins de 4 s fait trembler la terre autour de la cible. */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onAxeHit(org.bukkit.event.entity.EntityDamageByEntityEvent e) {
+        if (!(e.getDamager() instanceof Player p) || e.getCause() != org.bukkit.event.entity.EntityDamageEvent.DamageCause.ENTITY_ATTACK) return;
+        if (!BRISE.equals(id(p.getInventory().getItemInMainHand()))) return;
+        long now = System.currentTimeMillis();
+        long[] c = combo.computeIfAbsent(p.getUniqueId(), x -> new long[2]);
+        if (now - c[1] > 4000) c[0] = 0;
+        c[1] = now;
+        if (++c[0] < 3) return;
+        c[0] = 0;
+        Location at = e.getEntity().getLocation();
+        World w = at.getWorld();
+        double dmg = cfg("brise-terre.quake-damage", 10);
+        PumpkinKing k = plugin.king();
+        w.playSound(at, org.bukkit.Sound.ITEM_MACE_SMASH_GROUND, 1.4f, 0.6f);
+        w.spawnParticle(Particle.EXPLOSION, at, 2, 0.5, 0.1, 0.5, 0, null, true);
+        org.bukkit.block.data.BlockData bd = at.clone().add(0, -1, 0).getBlock().getBlockData();
+        if (bd.getMaterial().isAir()) bd = Material.STONE.createBlockData();
+        for (int n = 0; n < 24; n++) {
+            double a = Math.PI * 2 * n / 24;
+            w.spawnParticle(Particle.BLOCK, at.clone().add(Math.cos(a) * 3, 0.2, Math.sin(a) * 3), 3, 0.1, 0.1, 0.1, 0, bd, true);
+        }
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            for (Entity en : w.getNearbyEntities(at, 4, 2, 4)) {
+                if (!(en instanceof LivingEntity le) || en.equals(p)) continue;
+                if (en instanceof Player t && (t.getGameMode() == org.bukkit.GameMode.SPECTATOR || t.getGameMode() == org.bukkit.GameMode.CREATIVE)) continue;
+                le.setNoDamageTicks(0);
+                le.damage(dmg, p);
+                if (k != null && k.isBoss(en)) continue;
+                Vector kb = en.getLocation().toVector().subtract(at.toVector()).setY(0);
+                if (kb.lengthSquared() < 0.01) kb = new Vector(0.1, 0, 0);
+                le.setVelocity(kb.normalize().multiply(0.8).setY(0.6));
+            }
+        });
+        p.sendActionBar(parse("<gold><b>⚡ SÉISME"));
+    }
+
+    // ================================================================= Faux des Âmes : LANCE D'ÂMES + MARQUE + PLUIE
+
+    /** entité marquée -> fin de la marque (ms) */
+    private final Map<UUID, Long> marked = new HashMap<>();
+
+    /**
+     * Clic droit : LANCE D'ÂMES. Une lance traverse jusqu'à 3 cibles en ligne droite et les MARQUE 6 s :
+     * une cible marquée prend +50 % de dégâts de partout. Toucher une cible déjà marquée la fait EXPLOSER
+     * (dégâts autour, et tu récupères de la vie) — à la lance OU d'un coup de faux.
+     * Accroupi + clic droit : PLUIE D'ÂMES. Une pluie de flèches d'âmes tombe 3 s là où tu vises.
+     */
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onScythe(PlayerInteractEvent e) {
+        if (e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        if (e.getHand() != EquipmentSlot.HAND || !SPECTRAL.equals(id(e.getItem()))) return;
+        Player p = e.getPlayer();
+        Block b = e.getClickedBlock();
+        if (b != null && b.getType().isInteractable() && !p.isSneaking()) return;
+        e.setCancelled(true); // pas de labour
+        boolean rain = p.isSneaking();
+        if (rain ? !ready(p, SPECTRAL + "_rain", cfg("arbalete-spectrale.rain-cooldown-seconds", 15))
+                : !ready(p, SPECTRAL, cfg("arbalete-spectrale.cooldown-seconds", 2))) return;
+        p.swingMainHand();
+        if (rain) soulRain(p);
+        else soulLance(p);
+    }
+
+    /** Coup de faux sur une cible marquée : son âme explose. */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onScytheHit(org.bukkit.event.entity.EntityDamageByEntityEvent e) {
+        if (!(e.getDamager() instanceof Player p) || e.getCause() != org.bukkit.event.entity.EntityDamageEvent.DamageCause.ENTITY_ATTACK) return;
+        if (!(e.getEntity() instanceof LivingEntity le) || !SPECTRAL.equals(id(p.getInventory().getItemInMainHand()))) return;
+        if (!isMarked(le)) return;
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            if (le.isValid() && !le.isDead() && isMarked(le)) detonate(p, le);
+        });
+    }
+
+    private boolean isMarked(Entity en) {
+        Long until = marked.get(en.getUniqueId());
+        return until != null && until > System.currentTimeMillis();
+    }
+
+    private void soulLance(Player p) {
+        World w = p.getWorld();
+        Location eye = p.getEyeLocation();
+        Vector dir = eye.getDirection().normalize();
+        double range = cfg("arbalete-spectrale.range", 40), dmg = cfg("arbalete-spectrale.damage", 14);
+        RayTraceResult wall = w.rayTraceBlocks(eye, dir, range, FluidCollisionMode.NEVER, true);
+        double len = wall == null ? range : wall.getHitPosition().distance(eye.toVector());
+        PumpkinKing k = plugin.king();
+        w.playSound(eye, org.bukkit.Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1f, 0.6f);
+        w.playSound(eye, org.bukkit.Sound.PARTICLE_SOUL_ESCAPE, 2f, 0.6f);
+        Particle.DustOptions teal = new Particle.DustOptions(Color.fromRGB(70, 235, 220), 1.3f);
+        Set<UUID> hit = new HashSet<>();
+        int pierced = 0;
+        for (double d = 0.8; d <= len && pierced < 3; d += 0.4) {
+            Location at = eye.clone().add(dir.clone().multiply(d));
+            w.spawnParticle(Particle.SOUL_FIRE_FLAME, at, 1, 0.02, 0.02, 0.02, 0, null, true);
+            if (((int) (d * 10)) % 8 == 0) w.spawnParticle(Particle.DUST, at, 1, 0.05, 0.05, 0.05, 0, teal, true);
+            for (Entity en : w.getNearbyEntities(at, 0.6, 0.6, 0.6)) {
+                if (!(en instanceof LivingEntity le) || en.equals(p) || !hit.add(en.getUniqueId())) continue;
+                if (en instanceof Player t && (t.getGameMode() == org.bukkit.GameMode.SPECTATOR || t.getGameMode() == org.bukkit.GameMode.CREATIVE)) continue;
+                pierced++;
+                boolean wasMarked = isMarked(en);
+                le.setNoDamageTicks(0);
+                le.damage(dmg, p);
+                if (wasMarked) detonate(p, le);
+                else if (k == null || !k.isBoss(en)) {
+                    marked.put(en.getUniqueId(), System.currentTimeMillis() + (long) (cfg("arbalete-spectrale.mark-seconds", 6) * 1000));
+                    le.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, (int) (cfg("arbalete-spectrale.mark-seconds", 6) * 20), 0, false, false, true));
+                    le.addPotionEffect(new PotionEffect(PotionEffectType.WITHER, 80, 1, false, true, true));
+                    markFx(le);
+                    w.playSound(le.getLocation(), org.bukkit.Sound.ENTITY_VEX_CHARGE, 1f, 0.7f);
+                }
+            }
+        }
+    }
+
+    /** Marque visible : un anneau d'âmes tourne autour de la cible tant qu'elle est marquée. */
+    private void markFx(LivingEntity le) {
+        int[] t = {0};
+        org.bukkit.scheduler.BukkitTask[] task = new org.bukkit.scheduler.BukkitTask[1];
+        task[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            t[0] += 2;
+            if (!le.isValid() || le.isDead() || !isMarked(le)) {
                 task[0].cancel();
                 return;
             }
-            if (target[0] == null || !target[0].isValid() || target[0].isDead()) {
-                target[0] = null;
-                double best = range * range;
-                for (Entity en : w.getNearbyEntities(pos, range, range, range)) {
-                    if (!(en instanceof LivingEntity le) || en.equals(p) || en instanceof org.bukkit.entity.ArmorStand) continue;
+            Location c = le.getLocation().add(0, le.getHeight() + 0.35, 0);
+            for (int n = 0; n < 3; n++) {
+                double a = t[0] * 0.25 + Math.PI * 2 * n / 3;
+                le.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, c.clone().add(Math.cos(a) * 0.5, 0, Math.sin(a) * 0.5), 1, 0, 0, 0, 0, null, true);
+            }
+        }, 0L, 2L);
+    }
+
+    /** Une cible marquée touchée à nouveau : son âme explose. */
+    private void detonate(Player p, LivingEntity le) {
+        marked.remove(le.getUniqueId());
+        World w = le.getWorld();
+        Location c = le.getLocation().add(0, 1, 0);
+        double dmg = cfg("arbalete-spectrale.burst-damage", 16), heal = cfg("arbalete-spectrale.burst-heal", 8);
+        PumpkinKing k = plugin.king();
+        w.playSound(c, org.bukkit.Sound.ENTITY_WARDEN_SONIC_BOOM, 1f, 1.6f);
+        w.playSound(c, org.bukkit.Sound.ENTITY_WITHER_BREAK_BLOCK, 0.6f, 1.4f);
+        w.spawnParticle(Particle.SOUL, c, 60, 0.6, 0.8, 0.6, 0.12, null, true);
+        w.spawnParticle(Particle.SCULK_SOUL, c, 40, 0.5, 0.6, 0.5, 0.12, null, true);
+        w.spawnParticle(Particle.SOUL_FIRE_FLAME, c, 80, 0.2, 0.2, 0.2, 0.25, null, true);
+        for (int n = 0; n < 36; n++) {
+            double a = Math.PI * 2 * n / 36;
+            w.spawnParticle(Particle.DUST, c.clone().add(Math.cos(a) * 3.5, -0.6, Math.sin(a) * 3.5), 1, 0, 0, 0, 0,
+                    new Particle.DustOptions(Color.fromRGB(70, 235, 220), 1.6f), true);
+        }
+        le.setNoDamageTicks(0);
+        le.damage(dmg, p);
+        for (Entity en : w.getNearbyEntities(c, 3.5, 3, 3.5)) {
+            if (!(en instanceof LivingEntity o) || en.equals(p) || en.equals(le)) continue;
+            if (en instanceof Player t && (t.getGameMode() == org.bukkit.GameMode.SPECTATOR || t.getGameMode() == org.bukkit.GameMode.CREATIVE)) continue;
+            o.setNoDamageTicks(0);
+            o.damage(dmg * 0.6, p);
+            if (k == null || !k.isBoss(en)) o.setVelocity(en.getLocation().toVector().subtract(c.toVector()).setY(0).normalize().multiply(0.8).setY(0.5));
+        }
+        var max = p.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
+        p.setHealth(Math.min(max == null ? 20 : max.getValue(), p.getHealth() + heal));
+        p.sendActionBar(parse("<aqua><b>☠ ÂME BRISÉE</b> <gray>+" + fmt(heal / 2) + " ❤"));
+    }
+
+    /** +50 % de dégâts sur une cible marquée, quelle que soit la source. */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onMarkedHurt(org.bukkit.event.entity.EntityDamageEvent e) {
+        if (marked.isEmpty() || !isMarked(e.getEntity())) return;
+        e.setDamage(e.getDamage() * cfg("arbalete-spectrale.mark-bonus", 1.5));
+    }
+
+    /** Accroupi : une pluie de flèches d'âmes tombe pendant 3 s là où tu vises. */
+    private void soulRain(Player p) {
+        World w = p.getWorld();
+        RayTraceResult rt = w.rayTraceBlocks(p.getEyeLocation(), p.getEyeLocation().getDirection(), cfg("arbalete-spectrale.rain-range", 40),
+                FluidCollisionMode.NEVER, true);
+        Location c = rt == null ? p.getEyeLocation().add(p.getEyeLocation().getDirection().multiply(20)) : rt.getHitPosition().toLocation(w);
+        Location ground = groundAt(c.clone().add(0, 1, 0));
+        Location center = ground == null ? c : ground;
+        double r = cfg("arbalete-spectrale.rain-radius", 5), dmg = cfg("arbalete-spectrale.rain-damage", 4);
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        PumpkinKing k = plugin.king();
+        w.playSound(p.getLocation(), org.bukkit.Sound.ENTITY_EVOKER_CAST_SPELL, 1f, 0.6f);
+        w.playSound(center, org.bukkit.Sound.ENTITY_ALLAY_ITEM_THROWN, 2f, 0.5f);
+        int[] t = {0};
+        org.bukkit.scheduler.BukkitTask[] task = new org.bukkit.scheduler.BukkitTask[1];
+        task[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            if (++t[0] > 30) {
+                task[0].cancel();
+                return;
+            }
+            // cercle au sol
+            for (int n = 0; n < 24; n++) {
+                double a = Math.PI * 2 * n / 24 + t[0] * 0.05;
+                w.spawnParticle(Particle.SOUL_FIRE_FLAME, center.clone().add(Math.cos(a) * r, 0.1, Math.sin(a) * r), 1, 0, 0, 0, 0, null, true);
+            }
+            // flèches d'âmes qui tombent
+            for (int n = 0; n < 6; n++) {
+                double a = rnd.nextDouble(Math.PI * 2), d = Math.sqrt(rnd.nextDouble()) * r;
+                Location top = center.clone().add(Math.cos(a) * d, 10, Math.sin(a) * d);
+                for (double y = 0; y < 10; y += 0.8) w.spawnParticle(Particle.SOUL, top.clone().add(0, -y, 0), 1, 0, 0, 0, 0, null, true);
+                w.spawnParticle(Particle.SCULK_SOUL, top.clone().add(0, -10, 0), 3, 0.1, 0.1, 0.1, 0.03, null, true);
+            }
+            if (t[0] % 5 == 0) {
+                w.playSound(center, org.bukkit.Sound.ENTITY_ARROW_HIT, 1.5f, 0.6f);
+                for (Entity en : w.getNearbyEntities(center, r, 4, r)) {
+                    if (!(en instanceof LivingEntity le) || en.equals(p) || en.getLocation().distanceSquared(center) > r * r) continue;
                     if (en instanceof Player pl && (pl.getGameMode() == org.bukkit.GameMode.SPECTATOR || pl.getGameMode() == org.bukkit.GameMode.CREATIVE)) continue;
-                    Vector to = le.getEyeLocation().toVector().subtract(pos.toVector());
-                    double d2 = to.lengthSquared();
-                    if (d2 < best && to.normalize().dot(dir) > 0.35 && !taken.contains(en.getUniqueId())) {
-                        best = d2;
-                        target[0] = le;
-                    }
-                }
-            }
-            if (target[0] != null) {
-                taken.add(target[0].getUniqueId());
-                Vector to = target[0].getLocation().add(0, target[0].getHeight() * 0.6, 0).toVector().subtract(pos.toVector()).normalize();
-                dir.multiply(0.65).add(to.multiply(0.35)).normalize();
-            }
-            for (int s = 0; s < 3; s++) {
-                pos.add(dir.clone().multiply(0.5));
-                if (pos.getBlock().getType().isSolid()) {
-                    w.spawnParticle(Particle.SCULK_SOUL, pos, 20, 0.3, 0.3, 0.3, 0.06, null, true);
-                    w.playSound(pos, org.bukkit.Sound.BLOCK_SCULK_BREAK, 1f, 0.6f);
-                    skull.remove();
-                    task[0].cancel();
-                    return;
-                }
-                for (Entity en : w.getNearbyEntities(pos, 0.8, 0.8, 0.8)) {
-                    if (!(en instanceof LivingEntity le) || en.equals(p)) continue;
                     le.setNoDamageTicks(0);
                     le.damage(dmg, p);
                     if (k == null || !k.isBoss(en)) {
-                        le.addPotionEffect(new PotionEffect(PotionEffectType.WITHER, (int) (cfg("arbalete-spectrale.wither-seconds", 5) * 20), 2, false, true, true));
-                        le.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, (int) (cfg("arbalete-spectrale.glow-seconds", 10) * 20), 0, false, false, true));
-                        le.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 40, 2, false, true, true));
-                        le.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 30, 0, false, false, true));
+                        le.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 25, 1, false, true, true));
+                        if (!isMarked(en)) {
+                            marked.put(en.getUniqueId(), System.currentTimeMillis() + (long) (cfg("arbalete-spectrale.mark-seconds", 6) * 1000));
+                            le.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, (int) (cfg("arbalete-spectrale.mark-seconds", 6) * 20), 0, false, false, true));
+                            markFx(le);
+                        }
                     }
-                    // explosion d'âmes
-                    Location hit = le.getLocation().add(0, 1, 0);
-                    w.spawnParticle(Particle.SOUL, hit, 40, 0.4, 0.6, 0.4, 0.08, null, true);
-                    w.spawnParticle(Particle.SCULK_SOUL, hit, 25, 0.3, 0.5, 0.3, 0.08, null, true);
-                    w.spawnParticle(Particle.SOUL_FIRE_FLAME, hit, 30, 0.2, 0.2, 0.2, 0.15, null, true);
-                    for (int n = 0; n < 24; n++) {
-                        double a = Math.PI * 2 * n / 24;
-                        w.spawnParticle(Particle.DUST, hit.clone().add(Math.cos(a) * 1.3, 0, Math.sin(a) * 1.3), 1, 0, 0, 0, 0, teal, true);
-                    }
-                    w.playSound(le.getLocation(), org.bukkit.Sound.ENTITY_WITHER_HURT, 0.9f, 1.5f);
-                    w.playSound(le.getLocation(), org.bukkit.Sound.ENTITY_VEX_CHARGE, 1f, 0.6f);
-                    skull.remove();
-                    task[0].cancel();
-                    return;
                 }
             }
-            Location look = pos.clone();
-            look.setDirection(dir);
-            skull.teleport(look);
-            // traînée : spirale d'âmes autour du crâne
-            for (int n = 0; n < 2; n++) {
-                double a = t[0] * 0.9 + Math.PI * n;
-                Vector side = dir.clone().crossProduct(new Vector(0, 1, 0));
-                if (side.lengthSquared() < 0.01) side = new Vector(1, 0, 0);
-                side.normalize();
-                Vector up = side.clone().crossProduct(dir).normalize();
-                Location sp = pos.clone().add(side.multiply(Math.cos(a) * 0.35)).add(up.multiply(Math.sin(a) * 0.35));
-                w.spawnParticle(Particle.SOUL_FIRE_FLAME, sp, 1, 0, 0, 0, 0, null, true);
-            }
-            w.spawnParticle(Particle.DUST, pos, 3, 0.12, 0.12, 0.12, 0, t[0] % 2 == 0 ? teal : dark, true);
-            if (t[0] % 3 == 0) w.spawnParticle(Particle.SCULK_SOUL, pos, 1, 0.05, 0.05, 0.05, 0.01, null, true);
-        }, 0L, 1L);
+        }, 0L, 2L);
     }
 
     // ================================================================= aura des armes prestige
@@ -698,6 +796,8 @@ final class Weapons implements Listener {
                 w.spawnParticle(Particle.DUST, hand, 2, 0.12, 0.2, 0.12, 0, new Particle.DustOptions(Color.fromRGB(255, 110 + (auraTick * 13) % 80, 10), 0.9f));
                 if (auraTick % 3 == 0) w.spawnParticle(Particle.FALLING_LAVA, hand, 1, 0.1, 0.1, 0.1, 0);
                 if (auraTick % 5 == 0) w.spawnParticle(Particle.WAX_OFF, hand.clone().add(0, 0.3, 0), 1, 0.15, 0.15, 0.15, 0);
+                // passif : peau de pierre (Résistance) en main
+                if (auraTick % 10 == 0) p.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 40, 0, false, false, true));
                 // braises autour des pieds
                 double a = auraTick * 0.35;
                 w.spawnParticle(Particle.FLAME, p.getLocation().add(Math.cos(a) * 0.7, 0.1, Math.sin(a) * 0.7), 1, 0, 0, 0, 0);
@@ -709,7 +809,7 @@ final class Weapons implements Listener {
                     double b = a + Math.PI * n;
                     w.spawnParticle(Particle.SOUL, p.getLocation().add(Math.cos(b) * 0.8, 1.0 + Math.sin(auraTick * 0.1) * 0.6, Math.sin(b) * 0.8), 1, 0, 0, 0, 0);
                 }
-                // passif : on se déplace plus vite, arbalète en main
+                // passif : on se déplace plus vite, faux en main
                 if (auraTick % 10 == 0) p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 40, 0, false, false, true));
             }
         }

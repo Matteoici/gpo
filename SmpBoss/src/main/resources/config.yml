@@ -1,4 +1,4 @@
-config-version: 22
+config-version: 23
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -263,24 +263,37 @@ weapons:
   # ❂ PRESTIGE
   brise-terre:
     chance: 0.1
-    # hache : 18 de dégâts au corps à corps (netherite = 10)
+    # hache : 22 de dégâts au corps à corps (netherite = 10) · en main : Résistance I
     attack-damage: 22
     attack-speed: 1.1
-    # clic droit : bond puis onde de choc au sol (dégâts, projette, enflamme, ralentit, affaiblit)
-    # et le porteur gagne Force II + Résistance 5 s
-    damage: 20
-    radius: 10
-    cooldown-seconds: 6
+    # clic droit : FAILLE — des pics de pierre jaillissent sur une ligne devant toi (projettent + lenteur),
+    # puis 1 s plus tard toute la ligne explose (réplique, enflamme)
+    damage: 16
+    aftershock-damage: 8
+    rift-length: 24
+    cooldown-seconds: 7
+    # passif SÉISME : le 3e coup en moins de 4 s fait trembler la terre autour de la cible
+    quake-damage: 10
+  # (le nom de section est resté "arbalete-spectrale" pour ne pas casser les armes déjà lootées : c'est la Faux des Âmes)
   arbalete-spectrale:
     chance: 0.1
-    # le tir devient 5 crânes d'âmes qui poursuivent chacun un ennemi devant toi
-    skulls: 5
-    damage: 16
-    range: 36
-    wither-seconds: 5
-    glow-seconds: 10
-    cooldown-seconds: 2.5
-
+    # faux : 18 de dégâts au corps à corps · en main : Vitesse I
+    attack-damage: 18
+    attack-speed: 1.2
+    # clic droit : LANCE D'ÂMES — traverse 3 cibles et les MARQUE (+50 % de dégâts reçus de partout)
+    damage: 14
+    range: 40
+    cooldown-seconds: 2
+    mark-seconds: 6
+    mark-bonus: 1.5
+    # toucher une cible marquée (lance ou coup de faux) : ÂME BRISÉE, explosion autour + soin
+    burst-damage: 16
+    burst-heal: 8
+    # accroupi + clic droit : PLUIE D'ÂMES pendant 3 s là où tu vises
+    rain-range: 40
+    rain-radius: 5
+    rain-damage: 4
+    rain-cooldown-seconds: 15
 # ---------------------------------------------------------------- Reliques
 # health = cœurs en plus · speed = % de vitesse · regen = demi-cœurs toutes les 4 s hors combat (8 s sans dégâts)
 # trail = particules sous les pieds · backpack = le sac (27 cases)
@@ -623,37 +636,32 @@ messages:
     brise-terre:
       name: "Brise-Terre"
       lore:
-        - "<yellow>Clic droit :</yellow> <gray>tu bondis puis tu t'écrases"
-        - "<gray>au sol : la terre se <gold>fissure</gold>, une <gold>onde de choc</gold>"
-        - "<gray>projette, enflamme, ralentit et affaiblit"
-        - "<gray>tout ce qui est autour."
-        - "<gray>Toi : <red>Force II</red> + <white>Résistance</white> pendant 5 s."
-        - "<gray>Pas de dégâts de chute pendant le saut."
-        - ""
-        - "<white>⚔ 22</white> <gray>au corps à corps"
-        - "<white>💥 <damage> ❤</white> <gray>· rayon <white><radius></white> · <white>⏳ <cooldown> s"
-        - "<dark_gray>Ne tombe pas à la mort."
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<#ff8a1e>✦ <b>FAILLE</b> <gray>(clic droit)"
+        - "<gray>La terre s'ouvre devant toi : des pics de"
+        - "<gray>pierre jaillissent et <white>projettent</white> tout en l'air,"
+        - "<gray>puis la faille <white>explose</white> une 2e fois."
+        - "<#ff8a1e>✦ <b>SÉISME</b> <gray>(passif)"
+        - "<gray>Le <white>3e coup</white> en 4 s fait trembler le sol."
+        - "<#ff8a1e>✦ <b>PEAU DE PIERRE</b> <gray>— Résistance en main"
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<white>⚔ 22</white>   <dark_gray>|</dark_gray>   <white>💥 <damage> ❤</white>   <dark_gray>|</dark_gray>   <white>⏳ <cooldown> s"
+        - "<dark_gray>✧ Ne tombe pas à la mort · incassable"
     arbalete-spectrale:
-      name: "Arbalète Spectrale"
+      name: "Faux des Âmes"
       lore:
-        - "<gray>Le tir devient <aqua>5 crânes d'âmes</aqua>"
-        - "<gray>qui <white>poursuivent</white> chacun un ennemi."
-        - "<gray>Wither III, lenteur, aveuglement, et la cible"
-        - "<gray><white>brille</white> 10 s (impossible de se cacher)."
-        - "<gray>En main : <aqua>Vitesse</aqua>."
-        - ""
-        - "<white>☠ <damage> ❤</white> <gray>par crâne · <white>⏳ <cooldown> s"
-        - "<dark_gray>Ne tombe pas à la mort."
-    tranche-mace:
-      name: "Tranche Mace"
-      lore:
-        - "<yellow>Clic droit :</yellow> <gray>une longue lame verticale"
-        - "<gray>file droit devant toi."
-        - "<gray>Ceux qu'elle touche <aqua>lévitent</aqua> :"
-        - "<gray>fini les coups de masse en piqué."
-        - ""
-        - "<white>⚔ <damage> ❤</white> <gray>· <white>⏳ <cooldown> s"
-        - "<dark_gray>Ne tombe pas à la mort."
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<#46ebdc>✦ <b>LANCE D'ÂMES</b> <gray>(clic droit)"
+        - "<gray>Traverse <white>3 cibles</white> et les <white>MARQUE</white> 6 s :"
+        - "<gray>elles prennent <white>+50 %</white> de dégâts de partout."
+        - "<#46ebdc>✦ <b>ÂME BRISÉE</b>"
+        - "<gray>Frappe une cible marquée : elle <white>explose</white>"
+        - "<gray>et tu te <white>soignes</white>."
+        - "<#46ebdc>✦ <b>PLUIE D'ÂMES</b> <gray>(accroupi + clic droit)"
+        - "<gray>3 s de flèches d'âmes là où tu vises."
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<white>⚔ 18</white>   <dark_gray>|</dark_gray>   <white>☠ <damage> ❤</white>   <dark_gray>|</dark_gray>   <white>⏳ <cooldown> s"
+        - "<dark_gray>✧ Ne tombe pas à la mort · incassable"
   board:
     title: "<gradient:#ff7a00:#ffd36b><b>♛ Roi Citrouille ♛"
     hp: "<red>❤ <white><hp></white><gray> / <max>"

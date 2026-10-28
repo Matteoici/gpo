@@ -244,6 +244,20 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 22);
             saveConfig();
         }
+        if (getConfig().getInt("config-version", 1) < 23) {
+            // armes prestige refaites : Brise-Terre (faille) et Faux des Âmes (ex-arbalète)
+            harder("weapons.brise-terre.damage", 20, 16);
+            harder("weapons.brise-terre.cooldown-seconds", 6, 7);
+            harder("weapons.arbalete-spectrale.damage", 16, 14);
+            harder("weapons.arbalete-spectrale.cooldown-seconds", 2.5, 2);
+            harder("weapons.arbalete-spectrale.range", 36, 40);
+            for (String k : new String[]{"brise-terre.radius", "arbalete-spectrale.skulls", "arbalete-spectrale.wither-seconds", "arbalete-spectrale.glow-seconds"})
+                getConfig().set("weapons." + k, null);
+            getConfig().set("messages.weapons.brise-terre", null);
+            getConfig().set("messages.weapons.arbalete-spectrale", null);
+            getConfig().set("config-version", 23);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);
@@ -587,7 +601,7 @@ public final class SmpBoss extends JavaPlugin {
                         case "sonicbow", "sonic_bow", "arc" -> weapons.create(Weapons.SONIC);
                         case "tranchemace", "tranche_mace", "epee", "épée" -> weapons.create(Weapons.TRANCHE);
                         case "briseterre", "brise_terre", "hache" -> weapons.create(Weapons.BRISE);
-                        case "arbalete", "arbalète", "arbalete_spectrale" -> weapons.create(Weapons.SPECTRAL);
+                        case "faux", "fauxdesames", "arbalete", "arbalète", "arbalete_spectrale" -> weapons.create(Weapons.SPECTRAL);
                         default -> null;
                     };
                 }
@@ -666,7 +680,7 @@ public final class SmpBoss extends JavaPlugin {
             if (t != null) out.addAll(store.of(t.getUniqueId()).relics);
         }
         else if (a.length == 3 && a[0].equalsIgnoreCase("give")) {
-            out.addAll(List.of("graine", "citrouille", "faucille", "sonicbow", "tranchemace", "briseterre", "arbalete"));
+            out.addAll(List.of("graine", "citrouille", "faucille", "sonicbow", "tranchemace", "briseterre", "faux"));
             for (String id : relics.all().keySet()) out.add("relique:" + id);
         }
         String last = a.length == 0 ? "" : a[a.length - 1].toLowerCase(Locale.ROOT);
