@@ -435,45 +435,62 @@ final class Ultimates {
                 double d = Math.sqrt(x * x + z * z) / radius;
                 if (d > 1) continue;
                 int dd = (int) Math.round(depth * Math.sqrt(1 - d * d));
-                for (int y = cy + 6; y > cy - dd; y--) blocks.add(w.getBlockAt(cx + x, y, cz + z));
-                if (dd > 0) floor.add(w.getBlockAt(cx + x, cy - dd, cz + z));
+                for (int y = cy + 6; y > cy - dd; y--) {
+                    Block b = w.getBlockAt(cx + x, y, cz + z);
+                    if (breakable(b)) blocks.add(b);
+                }
+                Block f = w.getBlockAt(cx + x, cy - dd, cz + z);
+                if (dd > 0 && breakable(f) && f.getType().isSolid()) floor.add(f);
             }
         }
-        blocks.sort((a, b) -> Double.compare(a.getLocation().distanceSquared(center), b.getLocation().distanceSquared(center)));
+        // les protections (spawn, zones, terrains de guilde, arène du boss, arènes de duel...) retirent leurs blocs,
+        // comme pour une explosion : personne ne les contourne, même un admin
+        blocks = allowedByProtections(caster, center, blocks);
+        floor = allowedByProtections(caster, center, floor);
+        if (blocks.isEmpty() && floor.isEmpty()) return;
+        List<Block> todo = blocks, base = floor;
+        todo.sort((a, b) -> Double.compare(a.getLocation().distanceSquared(center), b.getLocation().distanceSquared(center)));
         ThreadLocalRandom rnd = ThreadLocalRandom.current();
         int[] i = {0};
         BukkitTask[] task = new BukkitTask[1];
         task[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
             int done = 0;
-            while (i[0] < blocks.size() && done < 500) {
-                Block b = blocks.get(i[0]++);
-                Material m = b.getType();
-                if (m.isAir() || m.getHardness() < 0 || m == Material.SPAWNER || b.getState(false) instanceof org.bukkit.block.Container) continue;
-                if (!caster.isOnline()) continue;
-                org.bukkit.event.block.BlockBreakEvent ev = new org.bukkit.event.block.BlockBreakEvent(b, caster);
-                ev.setDropItems(false);
-                ev.setExpToDrop(0);
-                Bukkit.getPluginManager().callEvent(ev);
-                if (ev.isCancelled()) continue;
+            while (i[0] < todo.size() && done < 500) {
+                Block b = todo.get(i[0]++);
+                if (!breakable(b)) continue;
                 if (rnd.nextInt(14) == 0) w.spawnParticle(Particle.BLOCK, b.getLocation().add(0.5, 0.5, 0.5), 6, 0.4, 0.4, 0.4, 0, b.getBlockData(), true);
                 b.setType(Material.AIR, false);
                 done++;
             }
-            if (i[0] >= blocks.size()) {
+            if (i[0] >= todo.size()) {
                 task[0].cancel();
                 // le fond du cratère
-                for (Block f : floor) {
-                    if (f.getType().isAir() || !f.getType().isSolid() || f.getType().getHardness() < 0 || f.getState(false) instanceof org.bukkit.block.Container) continue;
-                    if (rnd.nextInt(4) != 0) continue;
-                    org.bukkit.event.block.BlockBreakEvent ev = new org.bukkit.event.block.BlockBreakEvent(f, caster);
-                    ev.setDropItems(false);
-                    Bukkit.getPluginManager().callEvent(ev);
-                    if (ev.isCancelled()) continue;
+                for (Block f : base) {
+                    if (!breakable(f) || !f.getType().isSolid() || rnd.nextInt(4) != 0) continue;
                     f.setType(lining[rnd.nextInt(lining.length)], false);
                     if (fire && rnd.nextInt(3) == 0 && f.getRelative(0, 1, 0).getType().isAir()) f.getRelative(0, 1, 0).setType(Material.FIRE, false);
                 }
             }
         }, 2L, 1L);
+    }
+
+    private static boolean breakable(Block b) {
+        Material m = b.getType();
+        return !m.isAir() && m.getHardness() >= 0 && m != Material.SPAWNER && m != Material.END_PORTAL_FRAME
+                && !(b.getState(false) instanceof org.bukkit.block.Container) && !(b.getState(false) instanceof org.bukkit.block.Sign);
+    }
+
+    /** Fait passer les blocs par la vérification "explosion" de tous les plugins de protection. */
+    private List<Block> allowedByProtections(Player caster, Location center, List<Block> blocks) {
+        if (blocks.isEmpty()) return blocks;
+        // sécurité en plus : jamais dans l'arène du Roi Citrouille
+        Arena arena = plugin.arena();
+        if (arena != null) blocks.removeIf(arena::contains);
+        org.bukkit.event.entity.EntityExplodeEvent ev = new org.bukkit.event.entity.EntityExplodeEvent(caster, center, new ArrayList<>(blocks), 0f,
+                org.bukkit.ExplosionResult.DESTROY);
+        Bukkit.getPluginManager().callEvent(ev);
+        if (ev.isCancelled()) return new ArrayList<>();
+        return new ArrayList<>(ev.blockList());
     }
 
     /** Onde au sol qui s'étend (anneau), visible de loin. */

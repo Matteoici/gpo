@@ -957,7 +957,7 @@ public final class SmpDuel extends JavaPlugin implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onExplode(EntityExplodeEvent e) {
-        if (arenaAt(e.getLocation()) == null) return;
+        if (arenas.isEmpty()) return;
         e.blockList().removeIf(b -> {
             DuelArena a = arenaAt(b.getLocation());
             return a != null && a.structure(b);
