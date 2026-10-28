@@ -7,8 +7,8 @@
 # Après une modif : /sb reload
 
 # nom du serveur : utilisé par le titre du scoreboard et {server} (en jeu : /sb nom <nom>  ·  /sb ip <ip>)
-server-name: "Mon Serveur"
-server-ip: "play.ton-serveur.fr"
+server-name: "Limitless"
+server-ip: "limitless.mineon.fr"
 timezone: "Europe/Paris"
 date-format: "dd/MM/yyyy"
 time-format: "HH:mm"

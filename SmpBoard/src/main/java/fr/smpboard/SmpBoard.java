@@ -105,6 +105,7 @@ public final class SmpBoard extends JavaPlugin implements Listener {
 
     private void load() {
         reloadConfig();
+        migrate();
         titleFrames = buildTitle();
         zone = ZoneId.of(getConfig().getString("timezone", "Europe/Paris"));
         dateFmt = DateTimeFormatter.ofPattern(getConfig().getString("date-format", "dd/MM/yyyy"), Locale.FRANCE);
@@ -112,6 +113,32 @@ public final class SmpBoard extends JavaPlugin implements Listener {
         for (Board b : boards.values()) b.lastTitle = null;
         lastTab.clear();
         lastName.clear();
+    }
+
+    /** Anciens réglages par défaut (1.0.0) → Limitless / limitless.mineon.fr. */
+    private void migrate() {
+        var c = getConfig();
+        boolean changed = false;
+        if (!c.isSet("server-name") || "Mon Serveur".equals(c.getString("server-name"))) {
+            c.set("server-name", "Limitless");
+            changed = true;
+        }
+        if ("play.ton-serveur.fr".equals(c.getString("server-ip"))) {
+            c.set("server-ip", "limitless.mineon.fr");
+            changed = true;
+        }
+        if ("GPO SMP".equals(c.getString("title.text"))) {
+            c.set("title.text", "");
+            changed = true;
+        }
+        List<String> header = c.getStringList("tab.header");
+        List<String> fixed = new ArrayList<>();
+        for (String l : header) fixed.add(l.replace("GPO SMP", "{server}"));
+        if (!fixed.equals(header)) {
+            c.set("tab.header", fixed);
+            changed = true;
+        }
+        if (changed) saveConfig();
     }
 
     /** Titre animé : soit une liste d'images, soit un reflet qui passe sur le texte. */
