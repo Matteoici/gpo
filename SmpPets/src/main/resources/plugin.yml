@@ -7,7 +7,7 @@ description: "Familiers qui te suivent (effets, boosts) obtenus dans des œufs R
 commands:
   pets:
     description: Tes familiers
-    usage: /pets [oeufs|cacher|donner|pet|retirer|liste|reload]
+    usage: /pets [oeufs|cacher|station|editer|creer|supprimer|donner|pet|retirer|liste|reload]
     aliases: [pet, familier, familiers]
   loky:
     description: Compétence de ton familier (Loky chie à la gueule du joueur visé)

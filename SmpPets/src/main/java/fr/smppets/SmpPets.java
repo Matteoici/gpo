@@ -241,12 +241,15 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
             refresh(p);
         }
         Bukkit.getScheduler().runTaskTimer(this, this::tickAll, 1L, 1L);
+        loadStations();
+        Bukkit.getScheduler().runTaskTimer(this, this::stationAmbience, 20L, 2L);
     }
 
     @Override
     public void onDisable() {
         for (List<Follower> fs : active.values()) for (Follower f : fs) despawn(f);
         active.clear();
+        for (String k : new ArrayList<>(shows.keySet())) removeShow(k);
         for (Player p : Bukkit.getOnlinePlayers()) {
             clearAttributes(p);
             saveData(p.getUniqueId());
@@ -990,6 +993,7 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
         Inventory inv;
         int page;
         Egg egg;
+        String editId;
         Runnable finish;
         final Map<Integer, String> slots = new HashMap<>();
 
@@ -1096,11 +1100,60 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
         for (int k = 45; k < 54; k++) m.inv.setItem(k, pane);
         m.inv.setItem(45, named(Material.ARROW, "<yellow>← Les œufs", List.of()));
         m.slots.put(45, "#eggs");
-        if (g.price > 0 && vault) {
-            m.inv.setItem(49, named(Material.GOLD_INGOT, "<gold><b>Acheter", List.of("<gray>Prix : <gold>" + Money.format(g.price), "", "<yellow>Clic pour acheter")));
-            m.slots.put(49, "#buy");
+        int have = countEggs(p, g);
+        boolean sale = g.price > 0 && vault;
+        List<String> openLore = new ArrayList<>();
+        if (have > 0) openLore.addAll(List.of("<gray>Tu as <white>" + have + "</white> œuf(s) comme ça.", "", "<yellow>Clic pour en ouvrir un"));
+        else if (sale) openLore.addAll(List.of("<gray>Tu n'en as pas : il sera payé", "<gold>" + Money.format(g.price) + "<gray> puis ouvert tout de suite.", "", "<yellow>Clic pour payer et ouvrir"));
+        else openLore.addAll(List.of("<gray>Il te faut cet œuf pour l'ouvrir.", "<dark_gray>(caisses, events...)"));
+        m.inv.setItem(48, named(have > 0 || sale ? Material.LIME_DYE : Material.GRAY_DYE, "<green><b>Ouvrir", openLore));
+        m.slots.put(48, "#open");
+        if (sale) {
+            m.inv.setItem(50, named(Material.GOLD_INGOT, "<gold><b>Acheter l'œuf", List.of("<gray>Prix : <gold>" + Money.format(g.price), "<gray>(tu le gardes pour plus tard)", "", "<yellow>Clic pour acheter")));
+            m.slots.put(50, "#buy");
+        }
+        if (p.hasPermission("smppets.admin")) {
+            m.inv.setItem(53, named(Material.WRITABLE_BOOK, "<red><b>Modifier cet œuf", List.of("<gray>Admin : nom, prix, apparence, chances...", "", "<yellow>Clic")));
+            m.slots.put(53, "#edit");
         }
         p.openInventory(m.inv);
+    }
+
+    int countEggs(Player p, Egg g) {
+        int n = 0;
+        for (ItemStack it : p.getInventory().getContents()) if (eggOf(it) == g) n += it.getAmount();
+        return n;
+    }
+
+    /** Ouvre un œuf depuis le menu : prend un œuf de l'inventaire, sinon paie le prix. */
+    void openFromMenu(Player p, Egg g) {
+        if (opening.contains(p.getUniqueId())) {
+            send(p, msg("already-opening"));
+            return;
+        }
+        ItemStack[] inv = p.getInventory().getContents();
+        for (int i = 0; i < inv.length; i++) {
+            if (eggOf(inv[i]) != g) continue;
+            ItemStack it = inv[i];
+            if (it.getAmount() <= 1) p.getInventory().setItem(i, null);
+            else {
+                it.setAmount(it.getAmount() - 1);
+                p.getInventory().setItem(i, it);
+            }
+            open(p, g);
+            return;
+        }
+        if (g.price <= 0 || !vault || !Money.ready()) {
+            send(p, msg("need-egg").replace("<egg>", g.name + "<reset>"));
+            p.closeInventory();
+            return;
+        }
+        if (!Money.take(p, g.price)) {
+            send(p, msg("no-money").replace("<price>", Money.format(g.price)).replace("<balance>", Money.format(Money.balance(p))));
+            p.playSound(p.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+            return;
+        }
+        open(p, g);
     }
 
     void buy(Player p, Egg g) {
@@ -1244,6 +1297,7 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
         if (e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
         Egg g = eggOf(e.getItem());
         if (g == null || e.getHand() == null) return;
+        if (e.getClickedBlock() != null && stations.containsKey(key(e.getClickedBlock()))) return; // la station s'en occupe
         e.setCancelled(true);
         e.setUseItemInHand(Event.Result.DENY);
         e.setUseInteractedBlock(Event.Result.DENY);
@@ -1326,7 +1380,10 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
             case "egg" -> {
                 if (k.equals("#eggs")) openEggs(p);
                 else if (k.equals("#buy") && m.egg != null) buy(p, m.egg);
+                else if (k.equals("#open") && m.egg != null) openFromMenu(p, m.egg);
+                else if (k.equals("#edit") && m.egg != null && p.hasPermission("smppets.admin")) openEditor(p, m.egg.id);
             }
+            case "edit", "editch", "editpets" -> editClick(p, m, k, e.isShiftClick() && e.isRightClick());
             default -> {
             }
         }
@@ -1495,6 +1552,448 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
         for (ItemStack drop : b.getDrops(tool, p)) b.getWorld().dropItemNaturally(at, drop);
         b.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, at, 8, 0.3, 0.3, 0.3, 0);
         p.playSound(at, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.6f, 1.6f);
+    }
+
+    // ================================================================= stations d'œufs (posées dans le monde)
+
+    final Map<String, String> stations = new LinkedHashMap<>();
+    final Map<String, List<Entity>> shows = new HashMap<>();
+    private final NamespacedKey stationKey = new NamespacedKey("smppets", "station");
+    long clock;
+
+    static String key(Block b) {
+        return b.getWorld().getName() + ";" + b.getX() + ";" + b.getY() + ";" + b.getZ();
+    }
+
+    static Location loc(String k) {
+        String[] p = k.split(";");
+        World w = p.length == 4 ? Bukkit.getWorld(p[0]) : null;
+        if (w == null) return null;
+        return new Location(w, parseInt(p[1], 0), parseInt(p[2], 0), parseInt(p[3], 0));
+    }
+
+    void loadStations() {
+        stations.clear();
+        YamlConfiguration y = YamlConfiguration.loadConfiguration(new File(getDataFolder(), "stations.yml"));
+        ConfigurationSection s = y.getConfigurationSection("stations");
+        if (s != null) for (String k : s.getKeys(false)) stations.put(k.replace('|', '.'), s.getString(k));
+    }
+
+    void saveStations() {
+        YamlConfiguration y = new YamlConfiguration();
+        for (Map.Entry<String, String> e : stations.entrySet()) y.set("stations." + e.getKey().replace('.', '|'), e.getValue());
+        try {
+            y.save(new File(getDataFolder(), "stations.yml"));
+        } catch (IOException ex) {
+            getLogger().warning("stations.yml : " + ex.getMessage());
+        }
+    }
+
+    private void stationAmbience() {
+        clock++;
+        for (Map.Entry<String, String> e : stations.entrySet()) {
+            Egg g = eggs.get(e.getValue());
+            Location b = loc(e.getKey());
+            if (g == null || b == null || !b.getWorld().isChunkLoaded(b.getBlockX() >> 4, b.getBlockZ() >> 4)) {
+                removeShow(e.getKey());
+                continue;
+            }
+            boolean near = false;
+            for (Player p : b.getWorld().getPlayers()) if (p.getLocation().distanceSquared(b) < 48 * 48) near = true;
+            if (!near) continue;
+            Rarity r = rarities.getOrDefault(g.rarity, rarities.values().iterator().next());
+            ensureShow(e.getKey(), g, r, b);
+            World w = b.getWorld();
+            Location mid = b.clone().add(0.5, 0, 0.5);
+            Particle.DustOptions dust = new Particle.DustOptions(r.color(), 1.1f);
+            for (int k = 0; k < 3; k++) {
+                double a = clock * 0.15 + Math.PI * 2 * k / 3;
+                w.spawnParticle(Particle.DUST, mid.clone().add(Math.cos(a) * 0.85, 1.05 + (Math.sin(clock * 0.1 + k) + 1) * 0.35, Math.sin(a) * 0.85), 1, 0, 0, 0, 0, dust);
+            }
+            if (clock % 4 == 0) w.spawnParticle(Particle.END_ROD, mid.clone().add(0, 1.5, 0), 1, 0.3, 0.25, 0.3, 0.01);
+            if (r.order() >= 2 && clock % 3 == 0) w.spawnParticle(Particle.WAX_OFF, mid.clone().add(0, 1.7, 0), 1, 0.4, 0.3, 0.4, 0);
+            if (r.order() >= 3 && clock % 2 == 0) w.spawnParticle(Particle.SOUL_FIRE_FLAME, mid.clone().add(Math.cos(clock * 0.2) * 0.6, 1.1, Math.sin(clock * 0.2) * 0.6), 1, 0, 0.02, 0, 0.005);
+        }
+    }
+
+    private void ensureShow(String k, Egg g, Rarity r, Location b) {
+        List<Entity> l = shows.get(k);
+        if (l != null && l.stream().allMatch(Entity::isValid)) {
+            if (l.get(1) instanceof ItemDisplay d) {
+                d.setInterpolationDelay(0);
+                d.setInterpolationDuration(4);
+                float s = 0.75f;
+                d.setTransformation(new Transformation(new Vector3f(0, (float) Math.sin(clock * 0.08) * 0.08f, 0),
+                        new Quaternionf().rotateY(clock * 0.09f), new Vector3f(s, s, s), new Quaternionf()));
+            }
+            return;
+        }
+        if (l != null) for (Entity e : l) e.remove();
+        World w = b.getWorld();
+        String price = g.price > 0 && vault ? "<gray>Prix : <gold>" + Money.format(g.price) : "<gray>Avec un œuf seulement";
+        TextDisplay text = w.spawn(b.clone().add(0.5, 2.35, 0.5), TextDisplay.class, t -> {
+            t.setPersistent(false);
+            t.getPersistentDataContainer().set(stationKey, PersistentDataType.STRING, k);
+            t.setBillboard(Display.Billboard.CENTER);
+            t.setShadowed(true);
+            t.setBackgroundColor(Color.fromARGB(110, 8, 6, 14));
+            t.text(parse(g.name + "\n" + price + "\n<dark_gray>Clic : voir les familiers et ouvrir"));
+        });
+        ItemDisplay item = w.spawn(b.clone().add(0.5, 1.55, 0.5), ItemDisplay.class, d -> {
+            d.setPersistent(false);
+            d.getPersistentDataContainer().set(stationKey, PersistentDataType.STRING, k);
+            d.setItemStack(new ItemStack(g.material));
+            d.setBrightness(new Display.Brightness(15, 15));
+            d.setGlowing(true);
+            d.setGlowColorOverride(r.color());
+            d.setTeleportDuration(2);
+        });
+        org.bukkit.entity.Interaction click = w.spawn(b.clone().add(0.5, 1.0, 0.5), org.bukkit.entity.Interaction.class, i -> {
+            i.setPersistent(false);
+            i.getPersistentDataContainer().set(stationKey, PersistentDataType.STRING, k);
+            i.setInteractionWidth(1.3f);
+            i.setInteractionHeight(2.2f);
+            i.setResponsive(true);
+        });
+        shows.put(k, new ArrayList<>(List.of(text, item, click)));
+    }
+
+    void removeShow(String k) {
+        List<Entity> l = shows.remove(k);
+        if (l != null) for (Entity e : l) e.remove();
+    }
+
+    private void stationClick(Player p, String k) {
+        Egg g = eggs.get(stations.get(k));
+        if (g == null) return;
+        // avec cet œuf en main : on l'ouvre direct
+        EquipmentSlot hand = EquipmentSlot.HAND;
+        ItemStack inHand = p.getInventory().getItemInMainHand();
+        if (eggOf(inHand) == g && !p.isSneaking()) {
+            if (opening.contains(p.getUniqueId())) {
+                send(p, msg("already-opening"));
+                return;
+            }
+            if (inHand.getAmount() <= 1) p.getInventory().setItem(hand, null);
+            else {
+                inHand.setAmount(inHand.getAmount() - 1);
+                p.getInventory().setItem(hand, inHand);
+            }
+            open(p, g);
+            return;
+        }
+        openEgg(p, g);
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onStationBlock(PlayerInteractEvent e) {
+        Block b = e.getClickedBlock();
+        if (b == null || (e.getAction() != Action.RIGHT_CLICK_BLOCK && e.getAction() != Action.LEFT_CLICK_BLOCK)) return;
+        String k = key(b);
+        if (!stations.containsKey(k)) return;
+        e.setCancelled(true);
+        e.setUseItemInHand(Event.Result.DENY);
+        if (e.getHand() != EquipmentSlot.HAND) return;
+        stationClick(e.getPlayer(), k);
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onStationHolo(PlayerInteractEntityEvent e) {
+        String k = e.getRightClicked().getPersistentDataContainer().get(stationKey, PersistentDataType.STRING);
+        if (k == null) return;
+        e.setCancelled(true);
+        if (e.getHand() != EquipmentSlot.HAND) return;
+        if (stations.containsKey(k)) stationClick(e.getPlayer(), k);
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onStationHit(EntityDamageByEntityEvent e) {
+        String k = e.getEntity().getPersistentDataContainer().get(stationKey, PersistentDataType.STRING);
+        if (k == null) return;
+        e.setCancelled(true);
+        if (e.getDamager() instanceof Player p && stations.containsKey(k)) stationClick(p, k);
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onStationBreak(BlockBreakEvent e) {
+        if (!stations.containsKey(key(e.getBlock()))) return;
+        e.setCancelled(true);
+        if (e.getPlayer().hasPermission("smppets.admin")) send(e.getPlayer(), "<gray>C'est une station d'œuf : <white>/pets station retirer</white> en la regardant.");
+    }
+
+    // ================================================================= éditeur en jeu (admins)
+
+    private final Map<UUID, java.util.function.Consumer<String>> asking = new HashMap<>();
+
+    void ask(Player p, String question, java.util.function.Consumer<String> then) {
+        p.closeInventory();
+        asking.put(p.getUniqueId(), then);
+        send(p, question + " <dark_gray>(tape <white>annuler</white> pour arrêter)");
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onChatAnswer(io.papermc.paper.event.player.AsyncChatEvent e) {
+        java.util.function.Consumer<String> then = asking.remove(e.getPlayer().getUniqueId());
+        if (then == null) return;
+        e.setCancelled(true);
+        String text = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(e.message()).trim();
+        Bukkit.getScheduler().runTask(this, () -> {
+            if (text.equalsIgnoreCase("annuler") || text.equalsIgnoreCase("cancel")) {
+                send(e.getPlayer(), "<gray>Annulé.");
+                return;
+            }
+            then.accept(text);
+        });
+    }
+
+    void saveAndReload() {
+        saveConfig();
+        for (String k : new ArrayList<>(shows.keySet())) removeShow(k);
+        for (List<Follower> fs : active.values()) for (Follower f : fs) despawn(f);
+        active.clear();
+        load();
+        for (Player pl : Bukkit.getOnlinePlayers()) refresh(pl);
+    }
+
+    static double money(String t) {
+        String s = t.trim().toLowerCase(Locale.ROOT).replace(" ", "").replace(",", ".");
+        double mult = 1;
+        if (s.endsWith("k")) {
+            mult = 1_000;
+            s = s.substring(0, s.length() - 1);
+        } else if (s.endsWith("m")) {
+            mult = 1_000_000;
+            s = s.substring(0, s.length() - 1);
+        }
+        try {
+            return Double.parseDouble(s) * mult;
+        } catch (NumberFormatException ex) {
+            return -1;
+        }
+    }
+
+    void openEditor(Player p, String id) {
+        String base = "oeufs." + id + ".";
+        PetMenu m = new PetMenu("edit");
+        m.editId = id;
+        m.inv = Bukkit.createInventory(m, 27, parse("<dark_gray>✎ Œuf : " + id));
+        ItemStack pane = named(Material.BLACK_STAINED_GLASS_PANE, " ", List.of());
+        for (int i = 0; i < 27; i++) m.inv.setItem(i, pane);
+        String name = getConfig().getString(base + "nom", id);
+        double price = getConfig().getDouble(base + "prix", 0);
+        Material mat = mat(getConfig().getString(base + "materiau"), Material.EGG);
+        String rar = getConfig().getString(base + "rarete", "rare");
+        Rarity r = rarities.get(rar);
+        m.inv.setItem(10, named(Material.NAME_TAG, "<white><b>Nom", List.of("<gray>Actuel : " + name, "", "<yellow>Clic : écrire le nouveau nom",
+                "<dark_gray>couleurs : <red>, <#ff7a00>, <gradient:#fff:#888>, <b>")));
+        m.slots.put(10, "name");
+        m.inv.setItem(11, named(Material.GOLD_INGOT, "<white><b>Prix", List.of("<gray>Actuel : <gold>" + (price > 0 ? (vault ? Money.format(price) : num(price)) : "pas en vente"),
+                "", "<yellow>Clic : écrire le prix (ex. 250000 ou 250k)", "<dark_gray>0 = pas en vente (seulement caisses / events)")));
+        m.slots.put(11, "price");
+        m.inv.setItem(12, named(mat, "<white><b>Apparence", List.of("<gray>Actuelle : <white>" + mat.name().toLowerCase(Locale.ROOT), "",
+                "<yellow>Clic avec un objet en main", "<yellow>pour qu'il devienne l'œuf")));
+        m.slots.put(12, "look");
+        List<String> lore = new ArrayList<>(List.of("<gray>Actuelle :"));
+        for (String l : getConfig().getStringList(base + "lore")) lore.add("  " + l);
+        lore.addAll(List.of("", "<yellow>Clic : écrire la description", "<dark_gray>sépare les lignes avec |"));
+        m.inv.setItem(13, named(Material.WRITABLE_BOOK, "<white><b>Description", lore));
+        m.slots.put(13, "lore");
+        m.inv.setItem(14, named(r == null ? Material.WHITE_STAINED_GLASS_PANE : r.pane(), "<white><b>Couleur de la roulette",
+                List.of("<gray>Actuelle : " + (r == null ? rar : r.name()), "", "<yellow>Clic pour changer")));
+        m.slots.put(14, "rarity");
+        Egg g = eggs.get(id);
+        List<String> ch = new ArrayList<>();
+        if (g != null) for (Map.Entry<String, Double> e : g.rarityChances.entrySet()) ch.add(rarities.get(e.getKey()).name() + "<reset> <white>" + pct(e.getValue()));
+        ch.addAll(List.of("", "<yellow>Clic pour changer les chances"));
+        m.inv.setItem(16, named(Material.CHEST, "<white><b>Chances", ch));
+        m.slots.put(16, "chances");
+        m.inv.setItem(22, named(Material.SPAWNER, "<white><b>Familiers", List.of("<gray>Changer le poids de chaque familier", "<gray>(plus rare ou plus fréquent dans sa rareté)", "", "<yellow>Clic")));
+        m.slots.put(22, "pets");
+        m.inv.setItem(18, named(Material.ARROW, "<yellow>← Les œufs", List.of()));
+        m.slots.put(18, "back");
+        m.inv.setItem(26, named(Material.EGG, "<green><b>Me donner cet œuf", List.of("<gray>Pour le tester.", "", "<yellow>Clic")));
+        m.slots.put(26, "give");
+        p.openInventory(m.inv);
+    }
+
+    void openChances(Player p, String id) {
+        String base = "oeufs." + id + ".";
+        PetMenu m = new PetMenu("editch");
+        m.editId = id;
+        m.inv = Bukkit.createInventory(m, 27, parse("<dark_gray>✎ Chances : " + id));
+        ItemStack pane = named(Material.BLACK_STAINED_GLASS_PANE, " ", List.of());
+        for (int i = 0; i < 27; i++) m.inv.setItem(i, pane);
+        double total = 0;
+        for (String r : rarities.keySet()) total += Math.max(0, getConfig().getDouble(base + "raretes." + r, 0));
+        int slot = 10;
+        for (Rarity r : rarities.values()) {
+            if (slot > 16) break;
+            double w = Math.max(0, getConfig().getDouble(base + "raretes." + r.id(), 0));
+            long count = pets.values().stream().filter(d -> d.rarity.equals(r.id()) && d.weight > 0).count();
+            List<String> lore = new ArrayList<>();
+            lore.add("<gray>Poids : <white>" + num(w));
+            lore.add("<gray>Chance : <white>" + (total > 0 ? pct(w * 100 / total) : "0 %"));
+            lore.add("<gray>Familiers de cette rareté : <white>" + count);
+            lore.add("");
+            lore.add("<yellow>Clic : écrire le poids <dark_gray>(0 = jamais)");
+            m.inv.setItem(slot, named(r.pane(), r.name(), lore));
+            m.slots.put(slot, r.id());
+            slot++;
+        }
+        if (getConfig().isConfigurationSection(base + "pets")) {
+            m.inv.setItem(4, named(Material.BARRIER, "<red>Liste précise de familiers active", List.of("<gray>Cet œuf utilise \"pets\" dans config.yml.", "<gray>Changer un poids ici l'enlève et", "<gray>repasse aux chances par rareté.")));
+        }
+        m.inv.setItem(18, named(Material.ARROW, "<yellow>← Retour", List.of()));
+        m.slots.put(18, "back");
+        p.openInventory(m.inv);
+    }
+
+    void openPetsEditor(Player p, int page) {
+        List<PetDef> list = new ArrayList<>(pets.values());
+        list.sort(Comparator.<PetDef>comparingInt(x -> rarities.get(x.rarity).order()).thenComparing(x -> x.name));
+        int pages = Math.max(1, (list.size() + 44) / 45);
+        page = Math.max(0, Math.min(page, pages - 1));
+        PetMenu m = new PetMenu("editpets");
+        m.page = page;
+        m.inv = Bukkit.createInventory(m, 54, parse("<dark_gray>✎ Familiers (poids)"));
+        for (int i = 0; i < 45 && page * 45 + i < list.size(); i++) {
+            PetDef d = list.get(page * 45 + i);
+            List<String> extra = new ArrayList<>(List.of("", "<gray>Poids : <white>" + num(d.weight) + (d.weight <= 0 ? " <red>(dans aucun œuf)" : ""),
+                    "<dark_gray>2 = deux fois plus souvent que les autres de sa rareté", "", "<yellow>Clic : écrire le poids"));
+            m.inv.setItem(i, petIcon(d, 1, false, extra));
+            m.slots.put(i, d.id);
+        }
+        ItemStack pane = named(Material.GRAY_STAINED_GLASS_PANE, " ", List.of());
+        for (int i = 45; i < 54; i++) m.inv.setItem(i, pane);
+        if (page > 0) {
+            m.inv.setItem(45, named(Material.ARROW, "<yellow>← Page précédente", List.of()));
+            m.slots.put(45, "#prev");
+        }
+        if (page < pages - 1) {
+            m.inv.setItem(53, named(Material.ARROW, "<yellow>Page suivante →", List.of()));
+            m.slots.put(53, "#next");
+        }
+        m.inv.setItem(49, named(Material.BOOK, "<white>Le reste (effets, boosts, apparence)", List.of("<gray>se règle dans <white>pets.yml</white>", "<gray>puis <white>/pets reload")));
+        p.openInventory(m.inv);
+    }
+
+    void editClick(Player p, PetMenu m, String k, boolean shiftRight) {
+        if (!p.hasPermission("smppets.admin")) return;
+        String id = m.editId;
+        String base = "oeufs." + id + ".";
+        switch (m.type) {
+            case "edit" -> {
+                switch (k) {
+                    case "name" -> ask(p, "<gray>Nouveau nom de l'œuf :", t -> {
+                        getConfig().set(base + "nom", t);
+                        saveAndReload();
+                        send(p, "<green>Nom : " + t);
+                        openEditor(p, id);
+                    });
+                    case "price" -> ask(p, "<gray>Nouveau prix (ex. <white>250000</white> ou <white>250k</white>, 0 = pas en vente) :", t -> {
+                        double v = money(t);
+                        if (v < 0) {
+                            send(p, "<red>Prix invalide.");
+                            return;
+                        }
+                        getConfig().set(base + "prix", v);
+                        saveAndReload();
+                        send(p, "<green>Prix : <gold>" + (v > 0 ? num(v) : "pas en vente"));
+                        openEditor(p, id);
+                    });
+                    case "look" -> {
+                        ItemStack hand = p.getInventory().getItemInMainHand();
+                        if (hand.getType().isAir()) {
+                            send(p, "<red>Prends en main l'objet qui doit devenir l'œuf, puis clique.");
+                            return;
+                        }
+                        getConfig().set(base + "materiau", hand.getType().name());
+                        saveAndReload();
+                        send(p, "<green>Apparence : <white>" + hand.getType().name().toLowerCase(Locale.ROOT));
+                        openEditor(p, id);
+                    }
+                    case "lore" -> ask(p, "<gray>Description (sépare les lignes avec <white>|</white>) :", t -> {
+                        List<String> lines = new ArrayList<>();
+                        for (String l : t.split("\\|")) if (!l.isBlank()) lines.add(l.trim().startsWith("<") ? l.trim() : "<gray>" + l.trim());
+                        getConfig().set(base + "lore", lines);
+                        saveAndReload();
+                        send(p, "<green>Description changée.");
+                        openEditor(p, id);
+                    });
+                    case "rarity" -> {
+                        List<String> ids = new ArrayList<>(rarities.keySet());
+                        if (ids.isEmpty()) return;
+                        int i = ids.indexOf(getConfig().getString(base + "rarete", ids.get(0)));
+                        getConfig().set(base + "rarete", ids.get((i + 1) % ids.size()));
+                        saveAndReload();
+                        openEditor(p, id);
+                    }
+                    case "chances" -> openChances(p, id);
+                    case "pets" -> openPetsEditor(p, 0);
+                    case "back" -> openEggs(p);
+                    case "give" -> {
+                        Egg g = eggs.get(id);
+                        if (g != null) giveEggs(p, g, 1);
+                    }
+                    default -> {
+                    }
+                }
+            }
+            case "editch" -> {
+                if (k.equals("back")) {
+                    openEditor(p, id);
+                    return;
+                }
+                Rarity r = rarities.get(k);
+                if (r == null) return;
+                ask(p, "<gray>Poids de " + r.name() + "<reset> <gray>dans cet œuf (ex. <white>85</white>, <white>1.5</white>, <white>0</white> = jamais) :", t -> {
+                    double v = parseDouble(t, -1);
+                    if (v < 0) {
+                        send(p, "<red>Il faut un nombre (0 ou plus).");
+                        return;
+                    }
+                    getConfig().set(base + "pets", null);
+                    getConfig().set(base + "raretes." + r.id(), v);
+                    saveAndReload();
+                    send(p, "<green>Poids de " + r.name() + "<reset> <green>: " + num(v));
+                    openChances(p, id);
+                });
+            }
+            case "editpets" -> {
+                if (k.equals("#prev")) {
+                    openPetsEditor(p, m.page - 1);
+                    return;
+                }
+                if (k.equals("#next")) {
+                    openPetsEditor(p, m.page + 1);
+                    return;
+                }
+                PetDef d = pets.get(k);
+                if (d == null) return;
+                int page = m.page;
+                ask(p, "<gray>Poids de " + rarities.get(d.rarity).style() + d.name + "<reset> <gray>(1 = normal, 2 = deux fois plus, 0.5 = deux fois moins, 0 = dans aucun œuf) :", t -> {
+                    double v = parseDouble(t, -1);
+                    if (v < 0) {
+                        send(p, "<red>Il faut un nombre (0 ou plus).");
+                        return;
+                    }
+                    File pf = new File(getDataFolder(), "pets.yml");
+                    YamlConfiguration pc = YamlConfiguration.loadConfiguration(pf);
+                    pc.set("pets." + d.id + ".poids", v);
+                    try {
+                        pc.save(pf);
+                    } catch (IOException ex) {
+                        send(p, "<red>Impossible d'écrire pets.yml : " + ex.getMessage());
+                        return;
+                    }
+                    saveAndReload();
+                    send(p, "<green>Poids de " + d.name + " : " + num(v));
+                    openPetsEditor(p, page);
+                });
+            }
+            default -> {
+            }
+        }
     }
 
     // ================================================================= familiers réservés + compétences
@@ -1765,8 +2264,84 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
                 }
                 sendRaw(s, "<gray>Œufs : <white>" + String.join(", ", eggs.keySet()));
             }
+            case "station" -> {
+                if (!admin(s) || p == null) return true;
+                Block b = p.getTargetBlockExact(6);
+                if (a.length >= 2 && (a[1].equalsIgnoreCase("retirer") || a[1].equalsIgnoreCase("remove"))) {
+                    if (b == null || stations.remove(key(b)) == null) {
+                        send(p, "<red>Regarde une station d'œuf (à moins de 6 blocs).");
+                        return true;
+                    }
+                    removeShow(key(b));
+                    saveStations();
+                    send(p, "<yellow>Station retirée.");
+                    return true;
+                }
+                Egg g = a.length >= 2 ? eggs.get(a[1].toLowerCase(Locale.ROOT)) : null;
+                if (g == null) {
+                    send(p, "<red>/pets station <oeuf> <gray>(en regardant un bloc) <dark_gray>· <red>/pets station retirer <gray>· œufs : <white>" + String.join(", ", eggs.keySet()));
+                    return true;
+                }
+                if (b == null) {
+                    send(p, "<red>Regarde un bloc (à moins de 6 blocs) : il devient la station de l'œuf.");
+                    return true;
+                }
+                removeShow(key(b));
+                stations.put(key(b), g.id);
+                saveStations();
+                send(p, "<green>Station de " + g.name + "<reset> <green>posée ! <gray>Clic droit dessus = voir, ouvrir, acheter. <white>/pets station retirer</white> <gray>pour l'enlever.");
+            }
+            case "editer", "edit", "modifier" -> {
+                if (!admin(s) || p == null) return true;
+                if (a.length < 2) {
+                    openEggs(p);
+                    send(p, "<gray>Choisis un œuf (bouton <red>Modifier</red> dans son contenu), ou <white>/pets editer <oeuf></white>. <gray>Familiers : <white>/pets editer familiers");
+                    return true;
+                }
+                if (a[1].equalsIgnoreCase("familiers") || a[1].equalsIgnoreCase("pets")) {
+                    openPetsEditor(p, 0);
+                    return true;
+                }
+                if (!eggs.containsKey(a[1].toLowerCase(Locale.ROOT)) && !getConfig().isConfigurationSection("oeufs." + a[1].toLowerCase(Locale.ROOT))) {
+                    send(p, msg("unknown-egg").replace("<list>", String.join(", ", eggs.keySet())));
+                    return true;
+                }
+                openEditor(p, a[1].toLowerCase(Locale.ROOT));
+            }
+            case "creer", "créer", "create" -> {
+                if (!admin(s) || p == null) return true;
+                String id = a.length >= 2 ? a[1].toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9_-]", "") : "";
+                if (id.isEmpty() || getConfig().isConfigurationSection("oeufs." + id)) {
+                    send(p, "<red>/pets creer <id> <gray>(un id qui n'existe pas encore, ex : premium)");
+                    return true;
+                }
+                String base = "oeufs." + id + ".";
+                getConfig().set(base + "nom", "<white><b>Œuf " + id);
+                getConfig().set(base + "materiau", "EGG");
+                getConfig().set(base + "rarete", rarities.isEmpty() ? "rare" : rarities.keySet().iterator().next());
+                getConfig().set(base + "prix", 0);
+                getConfig().set(base + "lore", List.of("<gray>Un œuf tout neuf."));
+                for (String r : rarities.keySet()) if (!r.equals("modo")) getConfig().set(base + "raretes." + r, 1);
+                saveAndReload();
+                send(p, "<green>Œuf <white>" + id + "</white> créé. Règle-le dans le menu !");
+                openEditor(p, id);
+            }
+            case "supprimer", "delete" -> {
+                if (!admin(s)) return true;
+                String id = a.length >= 2 ? a[1].toLowerCase(Locale.ROOT) : "";
+                if (!getConfig().isConfigurationSection("oeufs." + id)) {
+                    sendRaw(s, msg("unknown-egg").replace("<list>", String.join(", ", eggs.keySet())));
+                    return true;
+                }
+                getConfig().set("oeufs." + id, null);
+                stations.values().removeIf(id::equals);
+                saveStations();
+                saveAndReload();
+                sendRaw(s, "<yellow>Œuf " + id + " supprimé (les œufs déjà donnés ne marchent plus).");
+            }
             case "reload" -> {
                 if (!admin(s)) return true;
+                for (String k : new ArrayList<>(shows.keySet())) removeShow(k);
                 for (List<Follower> fs : active.values()) for (Follower f : fs) despawn(f);
                 active.clear();
                 load();
@@ -1800,17 +2375,28 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
         boolean admin = s.hasPermission("smppets.admin");
         if (a.length == 1) {
             out.addAll(List.of("oeufs", "cacher", "competence"));
-            if (admin) out.addAll(List.of("donner", "pet", "retirer", "liste", "reload"));
+            if (admin) out.addAll(List.of("donner", "pet", "retirer", "liste", "station", "editer", "creer", "supprimer", "reload"));
         } else if (a.length == 2 && admin && List.of("donner", "pet", "retirer").contains(a[0].toLowerCase(Locale.ROOT))) {
             for (Player p : Bukkit.getOnlinePlayers()) out.add(p.getName());
         } else if (a.length == 3 && admin) {
             String sub = a[0].toLowerCase(Locale.ROOT);
             if (sub.equals("donner")) out.addAll(eggs.keySet());
+            else if (sub.equals("station")) {
+                out.addAll(eggs.keySet());
+                out.add("retirer");
+            } else if (sub.equals("editer") || sub.equals("supprimer")) {
+                out.addAll(eggs.keySet());
+                if (sub.equals("editer")) out.add("familiers");
+            }
             else if (sub.equals("pet")) out.addAll(pets.keySet());
             else if (sub.equals("retirer")) {
                 Player t = Bukkit.getPlayerExact(a[1]);
                 if (t != null) out.addAll(data(t.getUniqueId()).owned.keySet());
             }
+        } else if (a.length == 2 && admin && List.of("station", "editer", "supprimer").contains(a[0].toLowerCase(Locale.ROOT))) {
+            out.addAll(eggs.keySet());
+            if (a[0].equalsIgnoreCase("station")) out.add("retirer");
+            if (a[0].equalsIgnoreCase("editer")) out.add("familiers");
         } else if (a.length == 2 && a[0].equalsIgnoreCase("competence")) {
             for (Player p : Bukkit.getOnlinePlayers()) if (!p.equals(s)) out.add(p.getName());
         } else if (a.length == 4 && admin && a[0].equalsIgnoreCase("donner")) {

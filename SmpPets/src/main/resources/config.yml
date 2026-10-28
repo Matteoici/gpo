@@ -12,6 +12,12 @@ config-version: 2
 #        command: "pets donner %player% rare 1")
 #   /pets pet <joueur> <familier>           -> donne directement un familier
 #   /pets retirer <joueur> <familier>       -> lui enlève un familier
+#   /pets station <oeuf>   -> en regardant un bloc : il devient une station (hologramme + œuf qui tourne).
+#                            Clic dessus = voir les familiers, ouvrir (avec un œuf ou en payant), acheter.
+#   /pets station retirer  -> en regardant une station
+#   /pets editer <oeuf>    -> menu pour tout régler en jeu : nom, prix, apparence, description, couleur, chances
+#   /pets editer familiers -> le poids de chaque familier (plus rare / plus fréquent)
+#   /pets creer <id> · /pets supprimer <id>
 #   /pets liste · /pets reload
 #  Les familiers eux-mêmes (apparence, effets, boosts) sont dans pets.yml.
 #  Doublon : un familier que tu as déjà gagne une étoile ★ (jusqu'à etoiles.max) et ses boosts augmentent.
@@ -142,6 +148,7 @@ messages:
   pet-given-admin: "<green><pet> <green>donné à <white><player></white>."
   pet-removed-admin: "<yellow><pet> <yellow>retiré à <white><player></white>."
   reloaded: "<green>SmpPets rechargé (<pets> familiers, <eggs> œufs)."
+  need-egg: "<red>Il te faut un <egg> <red>pour l'ouvrir."
   no-ability: "<red>Aucun de tes familiers équipés n'a de compétence."
   ability-no-target: "<red>Vise un joueur (ou donne son nom) à moins de <range> blocs."
   ability-self: "<red>Pas sur toi-même quand même..."
