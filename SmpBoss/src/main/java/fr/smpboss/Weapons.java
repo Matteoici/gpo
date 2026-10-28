@@ -148,7 +148,7 @@ final class Weapons implements Listener {
             lore.add(parse(l.replace("<damage>", fmt(cfg(path(id) + ".damage", defDamage(id)) / 2))
                     .replace("<cooldown>", fmt(cfg(path(id) + ".cooldown-seconds", defCooldown(id))))
                     .replace("<radius>", fmt(cfg(path(id) + ".radius", 10)))
-                    .replace("<minutes>", fmt(cfg(path(id) + ".cooldown-minutes", 30)))));
+                    .replace("<minutes>", fmt(cfg(path(id) + ".cooldown-minutes", 15)))));
         }
         m.lore(lore);
         if (BRISE.equals(id)) {

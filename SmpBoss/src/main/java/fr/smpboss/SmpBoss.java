@@ -300,6 +300,15 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 28);
             saveConfig();
         }
+        if (getConfig().getInt("config-version", 1) < 29) {
+            // Violet Imaginaire et Fûga : 15 min de recharge
+            getConfig().set("weapons.hollow-purple.cooldown-minutes", 15);
+            getConfig().set("weapons.fuga.cooldown-minutes", 15);
+            getConfig().set("messages.weapons.hollow-purple.lore", null);
+            getConfig().set("messages.weapons.fuga.lore", null);
+            getConfig().set("config-version", 29);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);

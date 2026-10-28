@@ -107,7 +107,7 @@ final class Ultimates {
             p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.7f, 0.5f);
             return;
         }
-        p.getPersistentDataContainer().set(cd, PersistentDataType.LONG, now + (long) (cfg(path + ".cooldown-minutes", 30) * 60_000));
+        p.getPersistentDataContainer().set(cd, PersistentDataType.LONG, now + (long) (cfg(path + ".cooldown-minutes", 15) * 60_000));
         if (Weapons.HOLLOW.equals(id)) hollow(p);
         else fuga(p);
     }
@@ -306,40 +306,26 @@ final class Ultimates {
         return new Vector(-Math.sin(y) * Math.cos(pt), -Math.sin(pt), Math.cos(y) * Math.cos(pt));
     }
 
-    private final Map<UUID, float[]> shakeOff = new HashMap<>();
-
     /**
-     * Tremblement d'écran (seulement aux impacts, jamais pendant l'incantation) : petits à-coups de la vue qui
-     * s'estompent + secousse "coup reçu". Plus fort près du centre.
+     * Tremblement d'écran (comme SmpGojo) : de petites secousses "coup reçu" (l'écran s'incline un instant),
+     * sans jamais toucher à la vue du joueur : pas d'effet de lag, la souris reste libre.
+     * pulses = nombre de secousses, every = ticks entre deux.
      */
-    private void shake(Location c, double radius, int ticks, double power) {
+    private void shake(Location c, double radius, int pulses, int every) {
         World w = c.getWorld();
         ThreadLocalRandom rnd = ThreadLocalRandom.current();
-        int[] t = {0};
+        int[] n = {0};
         BukkitTask[] task = new BukkitTask[1];
         task[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
-            int k = t[0]++;
-            boolean last = k >= ticks;
-            double fade = Math.pow(1 - (double) k / ticks, 1.6);
+            if (n[0]++ >= pulses) {
+                task[0].cancel();
+                return;
+            }
             for (Player o : w.getPlayers()) {
                 if (o.getLocation().distanceSquared(c) > radius * radius) continue;
-                double d = o.getLocation().distance(c);
-                float[] off = shakeOff.get(o.getUniqueId());
-                double amp = last ? 0 : power * fade * (1 - 0.65 * d / radius);
-                if (off == null && amp < 0.2) continue;
-                float by = o.getYaw() - (off == null ? 0 : off[0]), bp = o.getPitch() - (off == null ? 0 : off[1]);
-                float oy = amp < 0.2 ? 0 : (float) rnd.nextDouble(-amp, amp), op = amp < 0.2 ? 0 : (float) rnd.nextDouble(-amp * 0.75, amp * 0.75);
-                float np = Math.max(-89, Math.min(89, bp + op));
-                double ry = Math.toRadians(by + oy), rp = Math.toRadians(np);
-                Location eye = o.getEyeLocation();
-                o.lookAt(eye.getX() - Math.sin(ry) * Math.cos(rp) * 8, eye.getY() - Math.sin(rp) * 8, eye.getZ() + Math.cos(ry) * Math.cos(rp) * 8,
-                        io.papermc.paper.entity.LookAnchor.EYES);
-                if (amp < 0.2) shakeOff.remove(o.getUniqueId());
-                else shakeOff.put(o.getUniqueId(), new float[]{oy, np - bp});
-                if (amp > 1.6 && k % 4 == 0) o.playHurtAnimation((float) rnd.nextDouble(360));
+                o.playHurtAnimation((float) rnd.nextDouble(360));
             }
-            if (last) task[0].cancel();
-        }, 0L, 1L);
+        }, 0L, Math.max(1, every));
     }
 
     /** Onde au sol qui s'étend (anneau), visible de loin. */
@@ -542,6 +528,7 @@ final class Ultimates {
                 white = new Particle.DustOptions(Color.WHITE, 1.8f);
         ThreadLocalRandom rnd = ThreadLocalRandom.current();
         List<Location> trail = new ArrayList<>();
+        List<Location> groundTrail = new ArrayList<>();
         Location[] last = new Location[1];
         int[] t = {0};
         BukkitTask[] task = new BukkitTask[1];
@@ -593,8 +580,31 @@ final class Ultimates {
                     boom(base, 96, Sound.ENTITY_WARDEN_SONIC_CHARGE, 1f, 1.8f);
                 }
             }
+            // ---- aura du lanceur : double spirale bleu / rouge autour du corps (jamais devant les yeux)
+            if (k >= 10 && k < merge) {
+                for (int h = 0; h < 2; h++) {
+                    double a0 = k * 0.28 + Math.PI * h;
+                    for (double y = 0; y < 1.4; y += 0.28) {
+                        double a = a0 + y * 2.6;
+                        w.spawnParticle(Particle.DUST, feet.clone().add(Math.cos(a) * 0.95, y, Math.sin(a) * 0.95), 1, 0, 0, 0, 0, h == 0 ? blue : (k < 40 ? glowP : red));
+                    }
+                }
+                if (k % 3 == 0) w.spawnParticle(Particle.ENCHANT, feet.clone().add(0, 0.8, 0), 6, 1.4, 0.6, 1.4, 0.6);
+            }
             // ---- 2. le Bleu fait le tour au ras du sol : traînée bleue + traits noirs
             if (k >= 22 && k < merge) {
+                // halo qui tourne autour de la comète + crépitements bleus
+                ring(w, bluePos, 1.05, 22, new Vector(Math.cos(k * 0.2), 0.4, Math.sin(k * 0.2)).normalize(), new Vector(0, 1, 0), deep, k * 0.4, true);
+                if (k % 2 == 0) w.spawnParticle(Particle.ELECTRIC_SPARK, bluePos, 4, 0.7, 0.7, 0.7, 0.15, null, true);
+                // sillage lumineux qui reste au sol
+                if (k < 84) {
+                    Location gg = ground(bluePos);
+                    if (gg != null && bluePos.getY() - gg.getY() < 3) groundTrail.add(gg.clone().add(0, 0.05, 0));
+                }
+                if (k % 2 == 0) for (int i = Math.max(0, groundTrail.size() - 70); i < groundTrail.size(); i++) {
+                    Location g2 = groundTrail.get(i);
+                    w.spawnParticle(Particle.DUST, g2, 1, 0.35, 0, 0.35, 0, i % 3 == 0 ? glowP : deep, true);
+                }
                 double rb = k < 84 ? 0.6 : 0.75;
                 orb(w, bluePos, rb, 30, blue, k * 0.6, true);
                 orb(w, bluePos, rb * 0.45, 8, white, -k * 0.6, true);
@@ -627,6 +637,16 @@ final class Ultimates {
                 boom(base, 160, Sound.BLOCK_RESPAWN_ANCHOR_CHARGE, 2f, 0.6f);
                 boom(base, 160, Sound.ITEM_TRIDENT_THUNDER, 1.4f, 1.4f);
             }
+            if (k == 38) groundWave(feet, 9, 10, Particle.END_ROD, red);
+            if (k >= 38 && k < 64) {
+                // étincelles qui montent en spirale autour du faisceau
+                for (int h = 0; h < 2; h++) {
+                    double a = (k - 38) * 0.45 + Math.PI * h;
+                    double y = ((k - 38) * 0.9) % 14;
+                    w.spawnParticle(Particle.DUST, feet.clone().add(Math.cos(a) * 1.5, y, Math.sin(a) * 1.5), 2, 0.05, 0.2, 0.05, 0, redHot, true);
+                    w.spawnParticle(Particle.END_ROD, feet.clone().add(Math.cos(a) * 1.5, y + 0.4, Math.sin(a) * 1.5), 1, 0, 0, 0, 0.01, null, true);
+                }
+            }
             if (k >= 38 && k < 62 && k % 2 == 0) {
                 for (int n = 0; n < 6; n++) {
                     Vector v = new Vector(rnd.nextDouble(-1, 1), rnd.nextDouble(0, 1.5), rnd.nextDouble(-1, 1)).normalize();
@@ -645,6 +665,16 @@ final class Ultimates {
                 p.setVelocity(new Vector(0, 1.05, 0));
                 p.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, 120, 0, false, false, false));
                 boom(base, 96, Sound.ENTITY_BREEZE_JUMP, 1.6f, 0.7f);
+            }
+            if (k >= 84 && k < merge) {
+                // la gravité se tord : tout est aspiré vers le point entre le Bleu et le Rouge
+                Location mid = bluePos.clone().add(redPos.toVector().subtract(bluePos.toVector()).multiply(0.5));
+                for (int n = 0; n < 8; n++) {
+                    Vector v = new Vector(rnd.nextDouble(-1, 1), rnd.nextDouble(-0.6, 1), rnd.nextDouble(-1, 1)).normalize().multiply(rnd.nextDouble(3, 6));
+                    w.spawnParticle(n % 2 == 0 ? Particle.REVERSE_PORTAL : Particle.END_ROD, mid.clone().add(v), 0, -v.getX(), -v.getY(), -v.getZ(), n % 2 == 0 ? 0.25 : 0.12, null, true);
+                }
+                ring(w, bluePos, 1.0, 18, rt, new Vector(0, 1, 0), blue, k * 0.35, true);
+                ring(w, redPos, 1.0, 18, rt, new Vector(0, 1, 0), red, -k * 0.35, true);
             }
             if (k >= 92 && k < merge && k % 2 == 0) {
                 // crépitements entre les deux
@@ -685,12 +715,14 @@ final class Ultimates {
                 w.spawnParticle(Particle.END_ROD, m, 40, 0.3, 0.3, 0.3, 0.5 + e * 0.1, null, true);
                 w.spawnParticle(Particle.ELECTRIC_SPARK, m, 30, 2 + e, 2 + e, 2 + e, 0.3, null, true);
                 if (e == 0) {
+                    pillar(feet, new Material[]{Material.WHITE_STAINED_GLASS, Material.MAGENTA_STAINED_GLASS}, new float[]{1.2f, 0.6f}, 80, 2, 8, 6);
+                    groundWave(feet, 16, 10, Particle.END_ROD, new Particle.DustOptions(MAGENTA, 2.6f));
                     boom(base, 260, Sound.ENTITY_WARDEN_SONIC_BOOM, 3f, 0.6f);
                     boom(base, 260, Sound.BLOCK_END_PORTAL_SPAWN, 2f, 1.2f);
                     boom(base, 260, Sound.ITEM_TRIDENT_THUNDER, 2f, 0.7f);
                     boom(base, 260, Sound.BLOCK_BEACON_POWER_SELECT, 2f, 0.5f);
                     chat(base, p, plugin.msg("weapons.hollow-purple.final"));
-                    shake(m, 60, 12, 3.5);
+                    shake(m, 60, 3, 2);
                 }
                 if (e >= 6) {
                     task[0].cancel();
@@ -709,7 +741,6 @@ final class Ultimates {
         Map<UUID, Double> dist = new HashMap<>();
         for (LivingEntity le : list) {
             dist.put(le.getUniqueId(), le.getLocation().distance(c));
-            freeze(le, 120, true);
         }
         Set<UUID> done = new HashSet<>();
         ThreadLocalRandom rnd = ThreadLocalRandom.current();
@@ -724,7 +755,7 @@ final class Ultimates {
         Color haze = Color.fromRGB(250, 228, 252), pink = Color.fromRGB(230, 170, 245), lav = Color.fromRGB(200, 180, 255);
         Particle.DustOptions purpleD = new Particle.DustOptions(PURPLE, 3.2f), lilacD = new Particle.DustOptions(LILAC, 2.4f),
                 inkD = new Particle.DustOptions(Color.fromRGB(12, 0, 28), 2.4f);
-        shake(c, R + 30, 70, 8.5);
+        shake(c, R + 30, 8, 3);
         groundWave(ground(c) == null ? c : ground(c), 60, 22, Particle.END_ROD, new Particle.DustOptions(MAGENTA, 3f));
         int[] t = {0};
         BukkitTask[] task = new BukkitTask[1];
@@ -737,7 +768,7 @@ final class Ultimates {
                 boom(c, R + 60, k % 2 == 0 ? Sound.ENTITY_GENERIC_EXPLODE : Sound.ENTITY_DRAGON_FIREBALL_EXPLODE, 3f, 0.45f + k * 0.004f);
                 boom(c, R + 60, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 2.5f, 0.5f + k * 0.005f);
                 if (k == 9) boom(c, R + 60, Sound.ENTITY_ENDER_DRAGON_GROWL, 2f, 0.6f);
-                if (k == 26) shake(c, R, 30, 4.5);
+                if (k == 26) shake(c, R, 2, 3);
             }
             for (Player o : w.getPlayers()) {
                 double d = o.getLocation().distance(c);
@@ -746,11 +777,20 @@ final class Ultimates {
                     // écran blanc, éclairs violets et noirs, volutes roses / violettes sur les bords
                     int n = k < 12 ? 90 : k < white - 25 ? 65 : Math.max(4, 65 - (k - (white - 25)) * 2);
                     screen(o, Color.WHITE, k % 3 == 0 ? pink : (k % 3 == 1 ? haze : lav), n, 4f);
-                    if (k < 40 && k % 2 == 0) streak(o, rnd.nextInt(3) == 0 ? Color.fromRGB(10, 0, 25) : PURPLE, 1.8f);
-                    if (k < 40 && k % 3 == 1) streak(o, MAGENTA, 1.4f);
+                    if (k < 46) {
+                        streak(o, rnd.nextInt(3) == 0 ? Color.fromRGB(10, 0, 25) : PURPLE, 2.0f);
+                        if (k % 2 == 0) streak(o, MAGENTA, 1.5f);
+                        if (k < 14) streak(o, Color.fromRGB(10, 0, 25), 2.4f);
+                    }
                     if (k > 6 && k < white - 10) edges(o, k % 2 == 0 ? PURPLE : Color.fromRGB(230, 120, 245), pink, k);
                     if (k == 0 || (k < 6 && d <= r)) o.playSound(o.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 1f, 0.6f);
-                } else if (k >= white && k < white + 60 && k % 3 == 0) {
+                } else if (k >= white && k < white + 90 && k % 4 == 0) {
+                    // aurore violette dans le ciel au-dessus de chacun
+                    Particle.DustOptions sky = new Particle.DustOptions(k % 8 == 0 ? PURPLE : MAGENTA, 4f);
+                    new ParticleBuilder(Particle.DUST).receivers(o).location(o.getLocation().add(0, 22, 0)).count(30).offset(24, 3, 24).extra(0).data(sky).force(true).spawn();
+                    new ParticleBuilder(Particle.END_ROD).receivers(o).location(o.getLocation().add(0, 18, 0)).count(6).offset(20, 4, 20).extra(0.005).force(true).spawn();
+                }
+                if (k >= white && k < white + 60 && k % 3 == 0) {
                     // l'écran revient : brume et éclats violets qui retombent autour de chacun
                     new ParticleBuilder(Particle.REVERSE_PORTAL).receivers(o).location(o.getLocation().add(0, 2, 0)).count(30).offset(8, 3, 8).extra(0.04).spawn();
                     new ParticleBuilder(Particle.DUST).receivers(o).location(o.getLocation().add(0, 3, 0)).count(12).offset(8, 3, 8).extra(0).data(lilacD).spawn();
@@ -765,6 +805,12 @@ final class Ultimates {
                 w.spawnParticle(Particle.DUST, gc.clone().add(0, 1.5, 0), 25, 10, 1.5, 10, 0, inkD, true);
                 w.spawnParticle(Particle.ELECTRIC_SPARK, gc.clone().add(0, 1, 0), 15, 12, 1, 12, 0.2, null, true);
                 w.spawnParticle(Particle.REVERSE_PORTAL, gc.clone().add(0, 1, 0), 30, 14, 2, 14, 0.05, null, true);
+                // runes qui flottent au-dessus du cratère et lumière qui monte
+                for (int n = 0; n < 12; n++) {
+                    double a = Math.PI * 2 * n / 12 + k * 0.03;
+                    w.spawnParticle(Particle.ENCHANT, gc.clone().add(Math.cos(a) * 9, 1.6, Math.sin(a) * 9), 4, 0.2, 0.3, 0.2, 0.4, null, true);
+                }
+                w.spawnParticle(Particle.END_ROD, gc.clone().add(0, 0.5, 0), 6, 5, 0.2, 5, 0.06, null, true);
             }
             // l'onde frappe chacun quand elle l'atteint
             if (k <= 46) {
@@ -849,6 +895,17 @@ final class Ultimates {
             }
             if (k % 2 == 0) w.spawnParticle(Particle.WAX_ON, feet.clone().add(0, 1.2, 0), 4, 2.2 * grow, 1.2, 2.2 * grow, 0.5);
             if (k % 2 == 0) w.spawnParticle(Particle.LAVA, feet, 1, 2 * grow, 0.05, 2 * grow, 0);
+            // spirales de feu qui montent du cercle (comme des pétales) autour du lanceur
+            for (int arm = 0; arm < 3; arm++) {
+                double a0 = k * 0.22 + Math.PI * 2 * arm / 3;
+                for (double y = 0; y < 2.6; y += 0.32) {
+                    double rr = (4.3 - y * 1.1) * grow, a = a0 + y * 1.4;
+                    if (rr < 1.1) continue;
+                    w.spawnParticle(y < 1.2 ? Particle.FLAME : Particle.SMALL_FLAME, feet.clone().add(Math.cos(a) * rr, y + 0.1, Math.sin(a) * rr), 1, 0, 0, 0, 0);
+                }
+            }
+            if (k == 20 || k == 45 || k == 70) groundWave(feet, 7, 8, Particle.FLAME, ember);
+            if (k % 3 == 0) w.spawnParticle(Particle.WHITE_SMOKE, feet.clone().add(0, 0.4, 0), 3, 2.8 * grow, 0.3, 2.8 * grow, 0.02);
             // ---- les mains en feu (plus fort sur la main droite à la fin)
             double yaw = Math.toRadians(feet.getYaw());
             for (int side = -1; side <= 1; side += 2) {
@@ -879,7 +936,7 @@ final class Ultimates {
                 boom(base, 260, Sound.ENTITY_GHAST_SHOOT, 2f, 0.6f);
                 boom(base, 260, Sound.ITEM_TRIDENT_RIPTIDE_3, 2f, 0.6f);
                 boom(base, 260, Sound.ENTITY_GENERIC_EXPLODE, 1.5f, 1.3f);
-                shake(base, 45, 12, 3);
+                shake(base, 45, 2, 3);
                 groundWave(feet, 14, 10, Particle.FLAME, fire);
                 Vector dir = eye.getDirection().normalize();
                 fugaFly(p, eye.clone().add(dir.clone().multiply(3.5)), dir);
@@ -896,6 +953,7 @@ final class Ultimates {
         Vector rt = right(dir), up = rt.clone().crossProduct(dir).normalize();
         Location pos = start.clone();
         List<Location> tail = new ArrayList<>();
+        List<Location> scorch = new ArrayList<>();
         int[] t = {0};
         double[] dist = {0};
         BukkitTask[] task = new BukkitTask[1];
@@ -909,11 +967,11 @@ final class Ultimates {
             for (double s = 0; s <= step; s += 0.35) {
                 Location at = from.clone().add(dir.clone().multiply(s));
                 double d = dist[0] + s;
-                for (int j = 0; j < 3; j++) {
-                    double ph = d * 0.32 + j * 2.1;
-                    double amp = 0.6 + Math.min(1.2, d * 0.05);
+                for (int j = 0; j < 5; j++) {
+                    double ph = d * 0.32 + j * 1.26;
+                    double amp = (j < 3 ? 0.6 : 0.35) + Math.min(1.2, d * 0.05);
                     Vector o = rt.clone().multiply(Math.sin(ph) * amp).add(up.clone().multiply(Math.cos(ph * 0.8) * amp * 0.6));
-                    w.spawnParticle(Particle.DUST, at.clone().add(o), 1, 0.06, 0.06, 0.06, 0, j == 0 ? yellow : j == 1 ? fire : gold, true);
+                    w.spawnParticle(Particle.DUST, at.clone().add(o), 1, 0.06, 0.06, 0.06, 0, j == 0 ? yellow : j == 1 ? fire : j == 2 ? gold : j == 3 ? hot : ember, true);
                 }
                 w.spawnParticle(Particle.DUST, at, 1, 0.1, 0.1, 0.1, 0, hot, true);
                 if (hitAt == null && !targets(p, at, 1.8).isEmpty()) hitAt = at;
@@ -929,13 +987,26 @@ final class Ultimates {
                 stop = true;
             } else pos.add(dir.clone().multiply(step));
             dist[0] += step;
+            // anneaux de feu laissés derrière, étincelles qui tombent
+            if (k % 3 == 0) ring(w, from, 2.1, 30, rt, up, k % 6 == 0 ? fire : gold, 0, true);
+            w.spawnParticle(Particle.FALLING_LAVA, from, 4, 0.8, 0.5, 0.8, 0, null, true);
+            w.spawnParticle(Particle.LAVA, pos, 2, 0.3, 0.3, 0.3, 0, null, true);
+            if (k % 2 == 0) w.spawnParticle(Particle.CAMPFIRE_COSY_SMOKE, from, 3, 0.5, 0.5, 0.5, 0.01, null, true);
+            Location sg = ground(pos.clone().add(0, -1, 0));
+            if (sg != null && pos.getY() - sg.getY() < 8) {
+                scorch.add(sg.clone().add(0, 0.1, 0));
+                w.spawnParticle(Particle.FLAME, sg, 4, 0.6, 0.05, 0.6, 0.02, null, true);
+            }
+            if (k % 2 == 0) for (int i = Math.max(0, scorch.size() - 40); i < scorch.size(); i++)
+                w.spawnParticle(Particle.DUST, scorch.get(i), 1, 0.5, 0, 0.5, 0, i % 2 == 0 ? ember : fire, true);
             // la tête de feu et son anneau
             orb(w, pos, 0.7, 20, gold, k * 0.4, true);
+            ring(w, pos, 1.6, 26, up, dir, yellow, -k * 0.6, true);
             ring(w, pos, 1.3, 24, rt, up, fire, k * 0.5, true);
             w.spawnParticle(Particle.FLAME, pos, 12, 0.35, 0.35, 0.35, 0.04, null, true);
             if (k % 3 == 0) flare(w, pos, rt, 3, flareD, hot);
             if (k % 3 == 0) w.playSound(pos, Sound.ENTITY_BLAZE_SHOOT, 3f, 0.6f);
-            if (k % 4 == 0) shake(pos, 14, 6, 1.6);
+            if (k % 8 == 0) shake(pos, 10, 1, 1);
             if (dist[0] >= range) stop = true;
             if (stop) {
                 task[0].cancel();
@@ -953,7 +1024,6 @@ final class Ultimates {
         Map<UUID, Double> dist = new HashMap<>();
         for (LivingEntity le : list) {
             dist.put(le.getUniqueId(), le.getLocation().distance(c));
-            freeze(le, 90, false);
         }
         Location g0 = ground(c.clone().add(0, 1, 0));
         Location gc = g0 == null ? c.clone() : g0;
@@ -971,7 +1041,7 @@ final class Ultimates {
         w.spawnParticle(Particle.FLAME, c, 1200, 0.5, 0.5, 0.5, 1.1, null, true);
         w.spawnParticle(Particle.LAVA, c, 200, 5, 2, 5, 0, null, true);
         shards(gc, 40, 20, 170);
-        shake(c, R + 30, 80, 9);
+        shake(c, R + 30, 9, 3);
         groundWave(gc, 55, 20, Particle.FLAME, new Particle.DustOptions(FIRE, 3.2f));
         w.spawnParticle(Particle.LAVA, gc, 250, 8, 2, 8, 0, null, true);
         w.spawnParticle(Particle.LARGE_SMOKE, gc, 250, 3, 2, 3, 0.6, null, true);
@@ -993,11 +1063,35 @@ final class Ultimates {
                 boom(c, R + 60, k % 4 == 0 ? Sound.ENTITY_GENERIC_EXPLODE : Sound.ENTITY_DRAGON_FIREBALL_EXPLODE, 3f, 0.45f + k * 0.005f);
                 w.spawnParticle(Particle.EXPLOSION_EMITTER, gc.clone().add(rnd.nextDouble(-12, 12), rnd.nextDouble(0, 6), rnd.nextDouble(-12, 12)), 3, 4, 2, 4, 0, null, true);
             }
-            if (k >= 20 && k < 150 && k % 20 == 0) {
-                shake(gc, 70, 12, 1.4);
+            if (k >= 30 && k < 150 && k % 30 == 0) {
+                shake(gc, 50, 1, 1);
                 boom(gc, R + 40, Sound.BLOCK_FIRE_AMBIENT, 3f, 0.5f);
                 boom(gc, R + 40, Sound.ENTITY_BLAZE_BURN, 2f, 0.5f);
             }
+            // tornade de feu à la base de la colonne + braises qui montent partout + éruptions de lave
+            if (k >= 14 && k < 160) {
+                for (int arm = 0; arm < 4; arm++) {
+                    double a0 = k * 0.3 + Math.PI * arm / 2;
+                    for (double y = 0; y < 34; y += 2.2) {
+                        double rr = 11 - y * 0.2, a = a0 + y * 0.18;
+                        w.spawnParticle(Particle.FLAME, gc.getX() + Math.cos(a) * rr, gc.getY() + y, gc.getZ() + Math.sin(a) * rr, 1, 0.2, 0.2, 0.2, 0.01, null, true);
+                    }
+                }
+                if (k % 2 == 0) for (int n = 0; n < 8; n++) {
+                    double a = rnd.nextDouble(Math.PI * 2), d0 = rnd.nextDouble(4, 28);
+                    w.spawnParticle(Particle.FLAME, gc.clone().add(Math.cos(a) * d0, 0.3, Math.sin(a) * d0), 0, 0, 1, 0, rnd.nextDouble(0.15, 0.4), null, true);
+                }
+                if (k % 10 == 0) {
+                    double a = rnd.nextDouble(Math.PI * 2), d0 = rnd.nextDouble(6, 22);
+                    Location er = ground(gc.clone().add(Math.cos(a) * d0, 3, Math.sin(a) * d0));
+                    if (er != null) {
+                        w.spawnParticle(Particle.LAVA, er, 30, 0.6, 0.3, 0.6, 0, null, true);
+                        w.spawnParticle(Particle.FLAME, er.clone().add(0, 2, 0), 40, 0.4, 2, 0.4, 0.05, null, true);
+                        w.playSound(er, Sound.BLOCK_LAVA_POP, 2f, 0.6f);
+                    }
+                }
+            }
+            if (k == 14) flare(w, gc.clone().add(0, 20, 0), new Vector(1, 0, 0.2), 45, flareD, flareC);
             // geysers de feu autour de l'impact
             if (k < 60 && k % 2 == 0) {
                 for (int n = 0; n < 3; n++) {

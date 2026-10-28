@@ -1,4 +1,4 @@
-config-version: 28
+config-version: 29
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -326,7 +326,7 @@ weapons:
     core-radius: 30
     path-damage: 30
     range: 120
-    cooldown-minutes: 30
+    cooldown-minutes: 15
   fuga:
     chance: 0.01
     radius: 200
@@ -334,7 +334,7 @@ weapons:
     core-radius: 30
     burn-seconds: 10
     range: 140
-    cooldown-minutes: 30
+    cooldown-minutes: 15
 # ---------------------------------------------------------------- Reliques
 # health = cœurs en plus · speed = % de vitesse · regen = demi-cœurs toutes les 4 s hors combat (8 s sans dégâts)
 # trail = particules sous les pieds · backpack = le sac (27 cases)
@@ -768,11 +768,10 @@ messages:
       lore:
         - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
         - "<#9b5cff>✦ <b>VIOLET IMAGINAIRE — 200 %</b> <gray>(clic droit)"
-        - "<gray>Incantation, puis <#3c82ff>Bleu</#3c82ff> et <#ff2330>Rouge</#ff2330> fusionnent."
-        - "<gray>La sphère part droit devant et explose"
-        - "<gray>sur <white><radius> blocs</white> : le temps s'arrête,"
-        - "<gray>tout le monde est <white>figé</white> jusqu'au passage"
-        - "<gray>du mur violet. Aucun bloc détruit."
+        - "<gray>Le <#3c82ff>Bleu</#3c82ff> tourne autour de toi, le <#ff2330>Rouge</#ff2330>"
+        - "<gray>jaillit au-dessus, ils fusionnent et tout"
+        - "<gray>explose autour de toi sur <white><radius> blocs</white> :"
+        - "<gray>écran blanc pour tous. Aucun bloc détruit."
         - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
         - "<white>☄ <damage> ❤</white> <gray>au cœur   <dark_gray>|</dark_gray>   <white>⏳ <minutes> min"
         - "<dark_gray>✧ Ne tombe pas à la mort"
@@ -790,11 +789,10 @@ messages:
       lore:
         - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
         - "<#ff7a1e>✦ <b>FÛGA — FLÈCHE DE FEU</b> <gray>(clic droit)"
-        - "<gray>Un arc de flammes se forme, la corde se"
-        - "<gray>tend et la flèche part. À l'impact, un dôme"
-        - "<gray>de feu s'étend sur <white><radius> blocs</white> : tout le"
-        - "<gray>monde est <white>figé</white> puis brûlé quand le feu"
-        - "<gray>l'atteint. Aucun bloc détruit."
+        - "<gray>Un cercle de feu s'ouvre, tes mains"
+        - "<gray>s'embrasent, la flèche de feu part. À l'impact,"
+        - "<gray>une immense colonne de feu jaillit et l'onde"
+        - "<gray>brûle tout sur <white><radius> blocs</white>. Aucun bloc détruit."
         - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
         - "<white>🔥 <damage> ❤</white> <gray>au cœur   <dark_gray>|</dark_gray>   <white>⏳ <minutes> min"
         - "<dark_gray>✧ Ne tombe pas à la mort"
