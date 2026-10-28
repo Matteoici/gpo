@@ -54,6 +54,8 @@ public final class SmpTitles extends JavaPlugin implements Listener, TabExecutor
         /** titres donnés à la main avec un texte libre (ex. titres secrets du boss) */
         final Map<String, String> custom = new LinkedHashMap<>();
         String active;
+        /** ce que le joueur veut au-dessus de sa tête (null = réglage par défaut de la config) */
+        Boolean tagTitle, tagGuild, tagMoney;
     }
 
     private final Map<String, Title> titles = new LinkedHashMap<>();
@@ -67,7 +69,7 @@ public final class SmpTitles extends JavaPlugin implements Listener, TabExecutor
         loadTitles();
         loadData();
         getServer().getPluginManager().registerEvents(this, this);
-        for (String c : List.of("titres", "titre")) {
+        for (String c : List.of("titres", "titre", "nametag")) {
             var cmd = getCommand(c);
             if (cmd != null) {
                 cmd.setExecutor(this);
@@ -75,6 +77,10 @@ public final class SmpTitles extends JavaPlugin implements Listener, TabExecutor
             }
         }
         for (Player p : Bukkit.getOnlinePlayers()) apply(p);
+        // l'argent et la guilde changent : on met le name tag à jour régulièrement
+        Bukkit.getScheduler().runTaskTimer(this, () -> {
+            for (Player p : Bukkit.getOnlinePlayers()) refreshTag(p, titleOf(p));
+        }, 100L, 100L);
     }
 
     @Override
@@ -121,6 +127,9 @@ public final class SmpTitles extends JavaPlugin implements Listener, TabExecutor
             ConfigurationSection cu = s.getConfigurationSection("custom");
             if (cu != null) for (String n : cu.getKeys(false)) d.custom.put(n, cu.getString(n));
             d.active = s.getString("active");
+            if (s.isSet("nametag.titre")) d.tagTitle = s.getBoolean("nametag.titre");
+            if (s.isSet("nametag.guilde")) d.tagGuild = s.getBoolean("nametag.guilde");
+            if (s.isSet("nametag.argent")) d.tagMoney = s.getBoolean("nametag.argent");
             try {
                 data.put(UUID.fromString(k), d);
             } catch (IllegalArgumentException ignored) {
@@ -137,6 +146,9 @@ public final class SmpTitles extends JavaPlugin implements Listener, TabExecutor
             y.set(k + ".unlocked", new ArrayList<>(d.unlocked));
             for (var c : d.custom.entrySet()) y.set(k + ".custom." + c.getKey(), c.getValue());
             y.set(k + ".active", d.active);
+            y.set(k + ".nametag.titre", d.tagTitle);
+            y.set(k + ".nametag.guilde", d.tagGuild);
+            y.set(k + ".nametag.argent", d.tagMoney);
         }
         try {
             y.save(file);
@@ -173,7 +185,171 @@ public final class SmpTitles extends JavaPlugin implements Listener, TabExecutor
         if (title != null && getConfig().getBoolean("show-in-chat", true)) chatPrefix.put(p.getUniqueId(), title);
         else chatPrefix.remove(p.getUniqueId());
         if (getConfig().getBoolean("show-in-tab", true)) tab(p, title);
-        nameTag(p, getConfig().getBoolean("show-above-head", true) ? title : null);
+        refreshTag(p, title);
+    }
+
+    // ================================================================= name tag personnalisable (/nametag)
+
+    private boolean tagTitle(Data d) {
+        return d != null && d.tagTitle != null ? d.tagTitle : getConfig().getBoolean("nametag.defaut.titre", true);
+    }
+
+    private boolean tagGuild(Data d) {
+        return d != null && d.tagGuild != null ? d.tagGuild : getConfig().getBoolean("nametag.defaut.guilde", true);
+    }
+
+    private boolean tagMoney(Data d) {
+        return d != null && d.tagMoney != null ? d.tagMoney : getConfig().getBoolean("nametag.defaut.argent", false);
+    }
+
+    private Component titleOf(Player p) {
+        Data d = data.get(p.getUniqueId());
+        String disp = d == null || d.active == null ? null : display(d, d.active);
+        return disp == null ? null : mm(getConfig().getString("format", "<title> ").replace("<title>", disp));
+    }
+
+    /** Au-dessus de la tête : [guilde] titre Pseudo argent, selon les choix du joueur. */
+    private void refreshTag(Player p, Component title) {
+        if (!getConfig().getBoolean("show-above-head", true)) {
+            nameTag(p, null, null);
+            return;
+        }
+        Data d = data.get(p.getUniqueId());
+        Component prefix = Component.empty();
+        boolean any = false;
+        if (tagGuild(d)) {
+            Component g = guildTag(p);
+            if (g != null) {
+                prefix = prefix.append(g).append(Component.text(" "));
+                any = true;
+            }
+        }
+        if (tagTitle(d) && title != null) {
+            prefix = prefix.append(title);
+            any = true;
+        }
+        Component suffix = null;
+        if (tagMoney(d)) {
+            Double bal = balance(p);
+            if (bal != null) {
+                suffix = mm(getConfig().getString("nametag.format-argent", " <gold><money> ⛁").replace("<money>", compact(bal)));
+                any = true;
+            }
+        }
+        nameTag(p, any ? prefix : null, suffix);
+    }
+
+    /** Tag de guilde [TAG] (SmpGuilds), ou null. */
+    private Component guildTag(Player p) {
+        try {
+            var pl = Bukkit.getPluginManager().getPlugin("SmpGuilds");
+            if (pl == null || !pl.isEnabled()) return null;
+            Object gm = pl.getClass().getMethod("guilds").invoke(pl);
+            Object g = gm.getClass().getMethod("of", UUID.class).invoke(gm, p.getUniqueId());
+            if (g == null) return null;
+            return (Component) g.getClass().getMethod("tagComponent").invoke(g);
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError ex) {
+            return null;
+        }
+    }
+
+    /** Argent du joueur (Vault), ou null. */
+    private Double balance(Player p) {
+        try {
+            for (Class<?> c : Bukkit.getServicesManager().getKnownServices()) {
+                if (!c.getName().equals("net.milkbowl.vault.economy.Economy")) continue;
+                var reg = Bukkit.getServicesManager().getRegistration(c);
+                if (reg == null) return null;
+                Object eco = reg.getProvider();
+                return (Double) c.getMethod("getBalance", OfflinePlayer.class).invoke(eco, p);
+            }
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError ignored) {
+        }
+        return null;
+    }
+
+    static String compact(double v) {
+        double a = Math.abs(v);
+        if (a < 1000) return String.valueOf((long) v);
+        String[] u = {"k", "M", "Md", "B"};
+        int i = -1;
+        while (a >= 1000 && i < u.length - 1) {
+            a /= 1000;
+            v /= 1000;
+            i++;
+        }
+        String n = String.format(Locale.ROOT, a >= 100 ? "%.0f" : "%.1f", v);
+        if (n.endsWith(".0")) n = n.substring(0, n.length() - 2);
+        return n + u[i];
+    }
+
+    private final class TagMenu implements InventoryHolder {
+        final Inventory inv;
+        final Player viewer;
+
+        TagMenu(Player viewer) {
+            this.viewer = viewer;
+            this.inv = Bukkit.createInventory(this, 27, mm("<dark_gray>Au-dessus de ta tête"));
+            draw();
+        }
+
+        @Override
+        public Inventory getInventory() {
+            return inv;
+        }
+
+        void draw() {
+            Data d = of(viewer.getUniqueId());
+            ItemStack pane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+            ItemMeta pm = pane.getItemMeta();
+            pm.setHideTooltip(true);
+            pane.setItemMeta(pm);
+            for (int i = 0; i < 27; i++) inv.setItem(i, pane);
+            // aperçu
+            Component g = guildTag(viewer), t = titleOf(viewer);
+            Double bal = balance(viewer);
+            Component preview = Component.empty();
+            if (tagGuild(d) && g != null) preview = preview.append(g).append(Component.text(" "));
+            if (tagTitle(d) && t != null) preview = preview.append(t);
+            preview = preview.append(Component.text(viewer.getName(), net.kyori.adventure.text.format.NamedTextColor.WHITE));
+            if (tagMoney(d) && bal != null) preview = preview.append(mm(getConfig().getString("nametag.format-argent", " <gold><money> ⛁").replace("<money>", compact(bal))));
+            ItemStack head = new ItemStack(Material.PLAYER_HEAD);
+            ItemMeta hm = head.getItemMeta();
+            if (hm instanceof org.bukkit.inventory.meta.SkullMeta sm) sm.setOwningPlayer(viewer);
+            hm.displayName(preview.decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE));
+            hm.lore(List.of(mm("<gray>Voilà ce que les autres voient"), mm("<gray>au-dessus de ta tête.")));
+            head.setItemMeta(hm);
+            inv.setItem(4, head);
+            inv.setItem(11, toggle(Material.NAME_TAG, "Titre", tagTitle(d), t == null ? "<dark_gray>(tu n'as pas de titre équipé : /titres)" : "<gray>Actuel : " + MM.serialize(t)));
+            inv.setItem(13, toggle(Material.WHITE_BANNER, "Guilde", tagGuild(d), g == null ? "<dark_gray>(tu n'es dans aucune guilde)" : "<gray>Tag : " + MM.serialize(g)));
+            inv.setItem(15, toggle(Material.GOLD_INGOT, "Argent", tagMoney(d), bal == null ? "<dark_gray>(pas d'économie)" : "<gray>Actuel : <gold>" + compact(bal) + " ⛁"));
+            inv.setItem(22, item(Material.BARRIER, "<red>Fermer", List.of(), false));
+        }
+
+        private ItemStack toggle(Material m, String name, boolean on, String info) {
+            return item(m, (on ? "<green>✔ " : "<red>✘ ") + "<white><b>" + name, List.of(mm(info), Component.empty(),
+                    mm(on ? "<green>Affiché <gray>- clic pour le cacher" : "<red>Caché <gray>- clic pour l'afficher")), on);
+        }
+
+        void click(int slot) {
+            Data d = of(viewer.getUniqueId());
+            switch (slot) {
+                case 11 -> d.tagTitle = !tagTitle(d);
+                case 13 -> d.tagGuild = !tagGuild(d);
+                case 15 -> d.tagMoney = !tagMoney(d);
+                case 22 -> {
+                    viewer.closeInventory();
+                    return;
+                }
+                default -> {
+                    return;
+                }
+            }
+            viewer.playSound(viewer.getLocation(), Sound.UI_BUTTON_CLICK, 0.7f, 1.3f);
+            refreshTag(viewer, titleOf(viewer));
+            saveData();
+            draw();
+        }
     }
 
     /** TAB : on garde ce qu'un autre plugin a mis (grade) et on glisse le titre juste devant le pseudo. */
@@ -199,10 +375,14 @@ public final class SmpTitles extends JavaPlugin implements Listener, TabExecutor
     }
 
     private void nameTag(Player p, Component prefix) {
+        nameTag(p, prefix, null);
+    }
+
+    private void nameTag(Player p, Component prefix, Component suffix) {
         org.bukkit.scoreboard.Scoreboard sb = Bukkit.getScoreboardManager().getMainScoreboard();
         String name = teamName(p.getUniqueId());
         org.bukkit.scoreboard.Team team = sb.getTeam(name);
-        if (prefix == null) {
+        if (prefix == null && suffix == null) {
             if (team != null) team.unregister();
             return;
         }
@@ -213,7 +393,9 @@ public final class SmpTitles extends JavaPlugin implements Listener, TabExecutor
             return;
         }
         if (team == null) team = sb.registerNewTeam(name);
-        team.prefix(prefix);
+        Component pre = prefix == null ? Component.empty() : prefix, suf = suffix == null ? Component.empty() : suffix;
+        if (!team.prefix().equals(pre)) team.prefix(pre);
+        if (!team.suffix().equals(suf)) team.suffix(suf);
         if (!team.hasEntry(p.getName())) team.addEntry(p.getName());
     }
 
@@ -387,20 +569,31 @@ public final class SmpTitles extends JavaPlugin implements Listener, TabExecutor
 
     @EventHandler
     public void onClick(InventoryClickEvent e) {
-        if (!(e.getView().getTopInventory().getHolder(false) instanceof Menu m)) return;
+        Object h = e.getView().getTopInventory().getHolder(false);
+        if (h instanceof TagMenu tm) {
+            e.setCancelled(true);
+            if (e.getClickedInventory() == e.getView().getTopInventory()) tm.click(e.getSlot());
+            return;
+        }
+        if (!(h instanceof Menu m)) return;
         e.setCancelled(true);
         if (e.getClickedInventory() == e.getView().getTopInventory()) m.click(e.getSlot());
     }
 
     @EventHandler
     public void onDrag(InventoryDragEvent e) {
-        if (e.getView().getTopInventory().getHolder(false) instanceof Menu) e.setCancelled(true);
+        Object h = e.getView().getTopInventory().getHolder(false);
+        if (h instanceof Menu || h instanceof TagMenu) e.setCancelled(true);
     }
 
     // ================================================================= commandes
 
     @Override
     public boolean onCommand(CommandSender s, Command cmd, String label, String[] a) {
+        if (cmd.getName().equalsIgnoreCase("nametag")) {
+            if (s instanceof Player p) p.openInventory(new TagMenu(p).getInventory());
+            return true;
+        }
         if (cmd.getName().equalsIgnoreCase("titres")) {
             if (s instanceof Player p) p.openInventory(new Menu(p).getInventory());
             return true;

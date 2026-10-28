@@ -12,6 +12,10 @@ commands:
     description: Gérer les titres (staff)
     usage: /titre give|take|win|list <joueur> ...
     permission: smptitles.admin
+  nametag:
+    description: Choisir ce qui s'affiche au-dessus de ta tête (titre, guilde, argent)
+    aliases: [tag, nomtete]
+    permission: smptitles.use
 permissions:
   smptitles.use:
     description: /titres (choisir son titre)

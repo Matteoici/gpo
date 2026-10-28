@@ -16,6 +16,14 @@ show-in-tab: true      # dans la liste TAB
 show-above-head: true  # au-dessus de la tête
 format: "<title> <dark_gray>|</dark_gray> "
 
+# au-dessus de la tête, chaque joueur choisit avec /nametag : titre, tag de guilde, argent
+nametag:
+  defaut:          # ce qui est affiché tant que le joueur n'a rien changé
+    titre: true
+    guilde: true
+    argent: false
+  format-argent: " <gold><money> ⛁"
+
 # nom des compteurs (affiché dans le menu)
 counters:
   koth: "KOTH gagnés"
