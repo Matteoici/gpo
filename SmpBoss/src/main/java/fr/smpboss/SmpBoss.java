@@ -321,6 +321,11 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 30);
             saveConfig();
         }
+        if (getConfig().getInt("config-version", 1) < 31) {
+            getConfig().set("messages.weapons.ult-forbidden", null);
+            getConfig().set("config-version", 31);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);

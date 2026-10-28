@@ -94,19 +94,18 @@ final class Ultimates {
 
     // ================================================================= lancement
 
-    /** Dans l'arène du boss, dans une arène de duel ou en plein duel : interdit (trop fort). */
+    /** En duel ou dans une arène de duel : interdit (trop fort). Dans l'arène du boss : autorisé (sans rien casser). */
     private boolean forbiddenAt(Player p) {
-        Arena arena = plugin.arena();
-        if (arena != null && arena.contains(p.getLocation())) return true;
         return duelCall("inDuel", java.util.UUID.class, p.getUniqueId()) || duelCall("isArena", Location.class, p.getLocation());
     }
 
-    /** Une cible protégée : le Roi, ce qui est dans son arène, les joueurs en duel ou dans une arène de duel. */
+    /**
+     * Une cible protégée : les joueurs en duel ou dans une arène de duel, et les joueurs dans l'arène du boss
+     * (on y tape le Roi et ses monstres, pas ses coéquipiers).
+     */
     private boolean shielded(Entity en) {
-        PumpkinKing k = plugin.king();
-        if (k != null && (k.isBoss(en) || k.isMinion(en))) return true;
         Arena arena = plugin.arena();
-        if (arena != null && arena.contains(en.getLocation())) return true;
+        if (en instanceof Player && arena != null && arena.contains(en.getLocation())) return true;
         if (en instanceof Player pl && duelCall("inDuel", java.util.UUID.class, pl.getUniqueId())) return true;
         return duelCall("isArena", Location.class, en.getLocation());
     }
