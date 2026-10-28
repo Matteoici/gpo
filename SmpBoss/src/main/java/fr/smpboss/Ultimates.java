@@ -415,6 +415,67 @@ final class Ultimates {
         d.teleport(l);
     }
 
+    /**
+     * Cratère : un bol creusé au centre de l'impact (10 blocs de profondeur max), qui s'ouvre du centre vers le bord.
+     * Les zones protégées (spawn, terrains de guilde, arènes...) sont respectées : chaque bloc passe par la
+     * vérification "casser un bloc" des autres plugins. Pas de coffres / spawners / blocs incassables, pas de drops.
+     * Le fond est tapissé de quelques blocs brûlés (Fûga) ou d'améthyste / obsidienne pleureuse (Violet).
+     */
+    private void crater(Player caster, Location center, String path, Material[] lining, boolean fire) {
+        if (!plugin.getConfig().getBoolean("weapons." + path + ".crater", true)) return;
+        double radius = cfg(path + ".crater-radius", 20);
+        int depth = (int) Math.min(10, cfg(path + ".crater-depth", 10));
+        World w = center.getWorld();
+        int cx = center.getBlockX(), cy = center.getBlockY() - 1, cz = center.getBlockZ();
+        List<Block> blocks = new ArrayList<>();
+        List<Block> floor = new ArrayList<>();
+        int r = (int) Math.ceil(radius);
+        for (int x = -r; x <= r; x++) {
+            for (int z = -r; z <= r; z++) {
+                double d = Math.sqrt(x * x + z * z) / radius;
+                if (d > 1) continue;
+                int dd = (int) Math.round(depth * Math.sqrt(1 - d * d));
+                for (int y = cy + 6; y > cy - dd; y--) blocks.add(w.getBlockAt(cx + x, y, cz + z));
+                if (dd > 0) floor.add(w.getBlockAt(cx + x, cy - dd, cz + z));
+            }
+        }
+        blocks.sort((a, b) -> Double.compare(a.getLocation().distanceSquared(center), b.getLocation().distanceSquared(center)));
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        int[] i = {0};
+        BukkitTask[] task = new BukkitTask[1];
+        task[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            int done = 0;
+            while (i[0] < blocks.size() && done < 500) {
+                Block b = blocks.get(i[0]++);
+                Material m = b.getType();
+                if (m.isAir() || m.getHardness() < 0 || m == Material.SPAWNER || b.getState(false) instanceof org.bukkit.block.Container) continue;
+                if (!caster.isOnline()) continue;
+                org.bukkit.event.block.BlockBreakEvent ev = new org.bukkit.event.block.BlockBreakEvent(b, caster);
+                ev.setDropItems(false);
+                ev.setExpToDrop(0);
+                Bukkit.getPluginManager().callEvent(ev);
+                if (ev.isCancelled()) continue;
+                if (rnd.nextInt(14) == 0) w.spawnParticle(Particle.BLOCK, b.getLocation().add(0.5, 0.5, 0.5), 6, 0.4, 0.4, 0.4, 0, b.getBlockData(), true);
+                b.setType(Material.AIR, false);
+                done++;
+            }
+            if (i[0] >= blocks.size()) {
+                task[0].cancel();
+                // le fond du cratère
+                for (Block f : floor) {
+                    if (f.getType().isAir() || !f.getType().isSolid() || f.getType().getHardness() < 0 || f.getState(false) instanceof org.bukkit.block.Container) continue;
+                    if (rnd.nextInt(4) != 0) continue;
+                    org.bukkit.event.block.BlockBreakEvent ev = new org.bukkit.event.block.BlockBreakEvent(f, caster);
+                    ev.setDropItems(false);
+                    Bukkit.getPluginManager().callEvent(ev);
+                    if (ev.isCancelled()) continue;
+                    f.setType(lining[rnd.nextInt(lining.length)], false);
+                    if (fire && rnd.nextInt(3) == 0 && f.getRelative(0, 1, 0).getType().isAir()) f.getRelative(0, 1, 0).setType(Material.FIRE, false);
+                }
+            }
+        }, 2L, 1L);
+    }
+
     /** Onde au sol qui s'étend (anneau), visible de loin. */
     private void groundWave(Location c, double maxR, int ticks, Particle p, Particle.DustOptions d) {
         World w = c.getWorld();
@@ -863,13 +924,52 @@ final class Ultimates {
         Particle.DustOptions purpleD = new Particle.DustOptions(PURPLE, 3.2f), lilacD = new Particle.DustOptions(LILAC, 2.4f),
                 inkD = new Particle.DustOptions(Color.fromRGB(12, 0, 28), 2.4f);
         shake(c, R + 30, 8, 3);
-        groundWave(ground(c) == null ? c : ground(c), 60, 22, Particle.END_ROD, new Particle.DustOptions(MAGENTA, 3f));
+        Location gc0 = ground(c) == null ? c.clone() : ground(c);
+        groundWave(gc0, 60, 22, Particle.END_ROD, new Particle.DustOptions(MAGENTA, 3f));
+        // ---- la GRANDE EXPLOSION (visible après le flash blanc et de loin)
+        pillar(gc0, new Material[]{Material.PURPLE_STAINED_GLASS, Material.MAGENTA_STAINED_GLASS, Material.WHITE_STAINED_GLASS},
+                new float[]{12, 8, 3}, 200, 6, 120, 25);
+        shards(gc0, 44, 26, 180);
+        crater(p, gc0, "hollow-purple", new Material[]{Material.CRYING_OBSIDIAN, Material.AMETHYST_BLOCK, Material.OBSIDIAN}, false);
+        w.spawnParticle(Particle.EXPLOSION_EMITTER, c, 14, 7, 4, 7, 0, null, true);
+        w.spawnParticle(Particle.REVERSE_PORTAL, c, 600, 4, 4, 4, 4, null, true);
+        w.spawnParticle(Particle.DUST, c, 300, 14, 10, 14, 0, new Particle.DustOptions(Color.fromRGB(12, 0, 28), 4f), true);
         int[] t = {0};
         BukkitTask[] task = new BukkitTask[1];
         task[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
             int k = t[0]++;
             double u = Math.min(1, k / 40.0), r = R * (1 - Math.pow(1 - u, 3));
-            int white = 120;
+            int white = 50;
+            // dôme de l'explosion qui gonfle (anneaux à plusieurs hauteurs), rayons de lumière, explosions en chaîne
+            if (k >= 4 && k <= 70 && k % 2 == 0) {
+                double ud = Math.min(1, (k - 4) / 50.0), dr = 70 * (1 - Math.pow(1 - ud, 3));
+                double[] lats = {0.05, 0.3, 0.6, 0.9, 1.2, 1.45};
+                for (int li = 0; li < lats.length; li++) {
+                    double rr = dr * Math.cos(lats[li]), y = dr * Math.sin(lats[li]);
+                    int n = (int) Math.min(260, 20 + rr * 3.2);
+                    for (int q = 0; q < n; q++) {
+                        double a = Math.PI * 2 * q / n + k * 0.01 * (li % 2 == 0 ? 1 : -1);
+                        w.spawnParticle(Particle.DUST, gc0.getX() + Math.cos(a) * rr, gc0.getY() + y, gc0.getZ() + Math.sin(a) * rr, 1, 0.3, 0.3, 0.3, 0,
+                                q % 3 == 0 ? lilacD : q % 3 == 1 ? purpleD : new Particle.DustOptions(MAGENTA, 3.4f), true);
+                    }
+                }
+                if (k % 4 == 0) w.spawnParticle(Particle.END_ROD, gc0.clone().add(0, dr * 0.3, 0), 60, dr * 0.6, dr * 0.3, dr * 0.6, 0.05, null, true);
+            }
+            if (k < 36 && k % 2 == 0) {
+                for (int ray = 0; ray < 26; ray++) {
+                    double a = ray * 2.39996, b = Math.acos(Math.max(-0.2, 1 - 2 * ((ray + 0.5) / 26)));
+                    Vector v = new Vector(Math.sin(b) * Math.cos(a), Math.abs(Math.cos(b)), Math.sin(b) * Math.sin(a));
+                    double len = Math.min(60, 6 + k * 2.2);
+                    for (double q = len * 0.4; q < len; q += 1.4) w.spawnParticle(Particle.DUST, c.clone().add(v.clone().multiply(q)), 1, 0.1, 0.1, 0.1, 0,
+                            q > len * 0.8 ? purpleD : new Particle.DustOptions(Color.WHITE, 2.6f), true);
+                }
+            }
+            if (k > 2 && k < 44 && k % 5 == 0) {
+                Location ex = gc0.clone().add(rnd.nextDouble(-30, 30), rnd.nextDouble(0, 14), rnd.nextDouble(-30, 30));
+                w.spawnParticle(Particle.EXPLOSION_EMITTER, ex, 3, 3, 2, 3, 0, null, true);
+                w.spawnParticle(Particle.DUST, ex, 60, 4, 3, 4, 0, purpleD, true);
+                w.spawnParticle(Particle.ELECTRIC_SPARK, ex, 40, 4, 3, 4, 0.4, null, true);
+            }
             // grondements en cascade
             if (k == 3 || k == 9 || k == 16 || k == 26 || k == 40) {
                 boom(c, R + 60, k % 2 == 0 ? Sound.ENTITY_GENERIC_EXPLODE : Sound.ENTITY_DRAGON_FIREBALL_EXPLODE, 3f, 0.45f + k * 0.004f);
@@ -882,16 +982,16 @@ final class Ultimates {
                 if (d > R) continue;
                 if (k < white && d <= r + 12) {
                     // écran blanc, éclairs violets et noirs, volutes roses / violettes sur les bords
-                    int n = k < 12 ? 90 : k < white - 25 ? 65 : Math.max(4, 65 - (k - (white - 25)) * 2);
+                    int n = k < 12 ? 90 : k < white - 20 ? 65 : Math.max(4, 65 - (k - (white - 20)) * 3);
                     screen(o, Color.WHITE, k % 3 == 0 ? pink : (k % 3 == 1 ? haze : lav), n, 4f);
                     if (k < 46) {
                         streak(o, rnd.nextInt(3) == 0 ? Color.fromRGB(10, 0, 25) : PURPLE, 2.0f);
                         if (k % 2 == 0) streak(o, MAGENTA, 1.5f);
                         if (k < 14) streak(o, Color.fromRGB(10, 0, 25), 2.4f);
                     }
-                    if (k > 6 && k < white - 10) edges(o, k % 2 == 0 ? PURPLE : Color.fromRGB(230, 120, 245), pink, k);
+                    if (k > 6 && k < white - 8) edges(o, k % 2 == 0 ? PURPLE : Color.fromRGB(230, 120, 245), pink, k);
                     if (k == 0 || (k < 6 && d <= r)) o.playSound(o.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 1f, 0.6f);
-                } else if (k >= white && k < white + 90 && k % 4 == 0) {
+                } else if (k >= white && k < white + 110 && k % 4 == 0) {
                     // aurore violette dans le ciel au-dessus de chacun
                     Particle.DustOptions sky = new Particle.DustOptions(k % 8 == 0 ? PURPLE : MAGENTA, 4f);
                     new ParticleBuilder(Particle.DUST).receivers(o).location(o.getLocation().add(0, 22, 0)).count(30).offset(24, 3, 24).extra(0).data(sky).force(true).spawn();
@@ -905,7 +1005,7 @@ final class Ultimates {
                 }
             }
             // cratère violet au centre, une fois le blanc parti
-            if (k >= white - 20 && k < white + 70 && k % 2 == 0) {
+            if (k >= white - 20 && k < white + 110 && k % 2 == 0) {
                 Location g = ground(c);
                 Location gc = g == null ? c : g;
                 for (int i = 0; i < 3; i++) ring(w, gc.clone().add(0, 0.15, 0), 6 + i * 6, 40 + i * 20, new Vector(1, 0, 0), new Vector(0, 0, 1), i == 1 ? lilacD : purpleD, k * 0.02 * (i % 2 == 0 ? 1 : -1), true);
@@ -1151,6 +1251,7 @@ final class Ultimates {
         w.spawnParticle(Particle.FLAME, c, 1200, 0.5, 0.5, 0.5, 1.1, null, true);
         w.spawnParticle(Particle.LAVA, c, 200, 5, 2, 5, 0, null, true);
         shards(gc, 40, 20, 170);
+        crater(p, gc, "fuga", new Material[]{Material.MAGMA_BLOCK, Material.BLACKSTONE, Material.NETHERRACK}, true);
         shake(c, R + 30, 9, 3);
         groundWave(gc, 55, 20, Particle.FLAME, new Particle.DustOptions(FIRE, 3.2f));
         w.spawnParticle(Particle.LAVA, gc, 250, 8, 2, 8, 0, null, true);

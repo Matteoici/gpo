@@ -316,11 +316,15 @@ weapons:
     chain-falloff: 0.8
     cooldown-seconds: 8
   # ❂ PRESTIGE — attaques finales (clic droit). Rien à l'écran : l'incantation passe dans le chat des joueurs autour.
-  # Seuls les joueurs et les monstres sont touchés (pas les animaux / villageois / familiers). Aucun bloc cassé.
+  # Seuls les joueurs et les monstres sont touchés (pas les animaux / villageois / familiers).
   ultimate-chat-radius: 250
   hollow-purple:
     chance: 0.01
     radius: 200
+    # cratère au centre de l'impact (les zones protégées, terrains de guilde, arènes sont respectés)
+    crater: true
+    crater-radius: 20
+    crater-depth: 10
     # 500 cœurs (1000), donnés en plusieurs coups mortels : chaque totem en main saute l'un après l'autre
     damage: 1000
     hits: 10
@@ -332,6 +336,10 @@ weapons:
   fuga:
     chance: 0.01
     radius: 200
+    # cratère au centre de l'impact (les zones protégées, terrains de guilde, arènes sont respectés)
+    crater: true
+    crater-radius: 20
+    crater-depth: 10
     damage: 1000
     hits: 10
     hit-interval-ticks: 4
@@ -775,7 +783,7 @@ messages:
         - "<gray>Le <#3c82ff>Bleu</#3c82ff> tourne autour de toi, le <#ff2330>Rouge</#ff2330>"
         - "<gray>jaillit au-dessus, ils fusionnent et tout"
         - "<gray>explose autour de toi sur <white><radius> blocs</white> :"
-        - "<gray>écran blanc pour tous. Aucun bloc détruit."
+        - "<gray>écran blanc et cratère de 10 blocs."
         - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
         - "<white>☄ <damage> ❤</white> <gray>en 10 coups   <dark_gray>|</dark_gray>   <white>⏳ <minutes> min"
         - "<dark_gray>✧ Ne tombe pas à la mort"
@@ -796,7 +804,7 @@ messages:
         - "<gray>Un cercle de feu s'ouvre, tes mains"
         - "<gray>s'embrasent, la flèche de feu part. À l'impact,"
         - "<gray>une immense colonne de feu jaillit et l'onde"
-        - "<gray>brûle tout sur <white><radius> blocs</white>. Aucun bloc détruit."
+        - "<gray>brûle tout sur <white><radius> blocs</white>. Cratère de 10 blocs."
         - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
         - "<white>🔥 <damage> ❤</white> <gray>en 10 coups   <dark_gray>|</dark_gray>   <white>⏳ <minutes> min"
         - "<dark_gray>✧ Ne tombe pas à la mort"
