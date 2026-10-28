@@ -1328,8 +1328,9 @@ final class Ultimates {
             // ---- l'immense colonne de feu
             if (k == 14) kanji(gc.clone().add(0, 40, 0), "<gradient:#ffd23c:#ff5a00:#ff1a00><b>竈", 16f, 100);
             if (k == 14) {
-                pillar(gc, new Material[]{Material.ORANGE_STAINED_GLASS, Material.MAGMA_BLOCK, Material.RED_STAINED_GLASS},
-                        new float[]{11, 6.5f, 8.5f}, 220, 8, 130, 24);
+                // la colonne part de sous le sol (elle s'enfonce dans le cratère)
+                pillar(gc.clone().add(0, -7, 0), new Material[]{Material.ORANGE_STAINED_GLASS, Material.MAGMA_BLOCK, Material.RED_STAINED_GLASS},
+                        new float[]{11, 6.5f, 8.5f}, 227, 8, 130, 24);
                 boom(c, R + 60, Sound.ENTITY_BLAZE_SHOOT, 4f, 0.4f);
                 boom(c, R + 60, Sound.ITEM_TRIDENT_THUNDER, 3f, 0.5f);
                 boom(c, R + 60, Sound.ENTITY_GENERIC_EXPLODE, 3f, 0.6f);
