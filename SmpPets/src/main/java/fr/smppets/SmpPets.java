@@ -1564,6 +1564,29 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
         if (isPet(e.getEntity())) e.setCancelled(true);
     }
 
+    /**
+     * Les familiers ne bloquent pas les coups : taper un familier tape ce qu'il y a derrière lui
+     * (le joueur qu'il suit, un monstre...), comme s'il n'était pas là.
+     */
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onAttackPet(io.papermc.paper.event.player.PrePlayerAttackEntityEvent e) {
+        if (!isPet(e.getAttacked())) return;
+        e.setCancelled(true);
+        Player p = e.getPlayer();
+        Attribute range = reg(RegistryKey.ATTRIBUTE, "entity_interaction_range");
+        AttributeInstance ri = range == null ? null : p.getAttribute(range);
+        double reach = ri == null ? 3 : ri.getValue();
+        if (p.getGameMode() == GameMode.CREATIVE) reach += 2;
+        Location eye = p.getEyeLocation();
+        Vector dir = eye.getDirection();
+        var hit = p.getWorld().rayTraceEntities(eye, dir, reach, 0.1, en -> !en.equals(p) && !isPet(en) && en instanceof LivingEntity
+                && !(en instanceof org.bukkit.entity.ArmorStand as && as.isMarker()));
+        if (hit == null || hit.getHitEntity() == null) return;
+        var block = p.getWorld().rayTraceBlocks(eye, dir, reach, org.bukkit.FluidCollisionMode.NEVER, true);
+        if (block != null && block.getHitPosition().distanceSquared(eye.toVector()) < hit.getHitPosition().distanceSquared(eye.toVector())) return;
+        p.attack(hit.getHitEntity());
+    }
+
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPetInteract(PlayerInteractEntityEvent e) {
         if (isPet(e.getRightClicked())) e.setCancelled(true);
