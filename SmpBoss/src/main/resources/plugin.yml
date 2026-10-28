@@ -22,6 +22,10 @@ commands:
     description: Classement des guildes contre le boss
     usage: /topguildes
     aliases: [topguilde, guildtop, topguild, classementguildes]
+  drops:
+    description: Chances de drop du Roi Citrouille
+    usage: /drops
+    aliases: [chances, loottable]
   sac:
     description: Ouvrir ton sac (relique)
     usage: /sac

@@ -277,6 +277,7 @@ public final class SmpBoss extends JavaPlugin {
         loadAltar();
         registerRecipe();
         getServer().getPluginManager().registerEvents(new BossListener(this), this);
+        getServer().getPluginManager().registerEvents(new DropsMenu.Listen(this), this);
         guildTop = new GuildTop(this);
         hologram = new AltarHologram(this);
         Bukkit.getScheduler().runTaskTimer(this, () -> {
@@ -488,6 +489,22 @@ public final class SmpBoss extends JavaPlugin {
         return msg("altar.status-ready");
     }
 
+    /** Statut court du boss (MiniMessage) pour le scoreboard (SmpBoard le lit). */
+    public String scoreboardStatus() {
+        if (king != null && king.active()) return msg("scoreboard.fight").replace("<phase>", String.valueOf(king.phase()));
+        if (altar == null || altar.getWorld() == null) return msg("scoreboard.closed");
+        long left = lastEnd + getConfig().getLong("boss.cooldown-minutes", 15) * 60_000L - System.currentTimeMillis();
+        if (left > 0) {
+            long s = left / 1000;
+            return msg("scoreboard.cooldown").replace("<time>", String.format("%d:%02d", s / 60, s % 60));
+        }
+        if (getConfig().getBoolean("boss.night-only", false)) {
+            long tm = altar.getWorld().getTime();
+            if (tm < 13000 || tm > 23000) return msg("scoreboard.day");
+        }
+        return msg("scoreboard.ready");
+    }
+
     /** Statut du boss pour l'hologramme du portail : en combat, disponible, ou dans combien de temps. */
     String bossStatus() {
         if (king != null && king.active()) {
@@ -555,6 +572,10 @@ public final class SmpBoss extends JavaPlugin {
             guildTop.show(sender);
             return true;
         }
+        if (name.equals("drops")) {
+            if (sender instanceof Player p) DropsMenu.open(this, p, 0);
+            return true;
+        }
         if (name.equals("arene")) {
             if (sender instanceof Player p) arena.join(p);
             return true;
@@ -595,6 +616,10 @@ public final class SmpBoss extends JavaPlugin {
                     guildTop.reset();
                     sender.sendMessage(parse("<green>Classement des guildes remis à zéro."));
                 } else guildTop.show(sender);
+            }
+            case "panneau", "sign" -> {
+                if (!(sender instanceof Player sp)) return true;
+                DropsMenu.signCommand(this, sp, a.length >= 2 && (a[1].equalsIgnoreCase("retirer") || a[1].equalsIgnoreCase("remove")));
             }
             case "ult", "ulti" -> {
                 Player t = a.length >= 3 ? Bukkit.getPlayerExact(a[2]) : sender instanceof Player sp ? sp : null;
@@ -709,7 +734,7 @@ public final class SmpBoss extends JavaPlugin {
     public List<String> onTabComplete(CommandSender sender, Command cmd, String label, String[] a) {
         List<String> out = new ArrayList<>();
         if (!cmd.getName().equalsIgnoreCase("boss")) return out;
-        if (a.length == 1) out.addAll(List.of("autel", "invoquer", "stop", "give", "retirer", "reload", "arene", "topguildes", "ult"));
+        if (a.length == 1) out.addAll(List.of("autel", "invoquer", "stop", "give", "retirer", "reload", "arene", "topguildes", "ult", "panneau"));
         else if (a.length == 2 && a[0].toLowerCase(Locale.ROOT).startsWith("ar"))
             out.addAll(List.of("construire", "annuler", "tp", "setspawn", "portail", "sortie", "recuperer", "definir", "supprimer"));
         else if (a.length == 3 && a[0].toLowerCase(Locale.ROOT).startsWith("ar") && (a[1].equalsIgnoreCase("portail") || a[1].equalsIgnoreCase("sortie")))

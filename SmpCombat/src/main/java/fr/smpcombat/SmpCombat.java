@@ -232,6 +232,10 @@ public final class SmpCombat extends JavaPlugin implements Listener, TabExecutor
         else if (e.getDamager() instanceof TNTPrimed t && t.getSource() instanceof Player p) attacker = p;
         if (e.getEntity() instanceof Player victim) {
             if (attacker != null && attacker != victim) {
+                // duel (SmpDuel) : les deux adversaires ne passent pas "en danger"
+                NamespacedKey duel = new NamespacedKey("smpduel", "duel");
+                if (victim.getPersistentDataContainer().has(duel, PersistentDataType.STRING)
+                        && attacker.getPersistentDataContainer().has(duel, PersistentDataType.STRING)) return;
                 tag(victim, attacker);
                 tag(attacker, victim);
             } else if (attacker == null && e.getDamager() instanceof Monster && getConfig().getBoolean("mobs-trigger", false)) {

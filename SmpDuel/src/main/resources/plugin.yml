@@ -1,0 +1,15 @@
+name: SmpDuel
+version: '${version}'
+main: fr.smpduel.SmpDuel
+api-version: '26.2'
+softdepend: [SmpCombat]
+description: "Duels 1v1 : recherche d'adversaire, duel amical / à mort / pari, arènes, ELO"
+commands:
+  duel:
+    description: "Duels 1v1 (menu, recherche, défi)"
+    usage: "/duel [amical|mort|pari|<joueur> [mode]|quitter|accepter|refuser|top|stats]"
+    aliases: [duels, 1v1, pvp1v1]
+permissions:
+  smpduel.admin:
+    description: Construire / gérer les arènes de duel
+    default: op

@@ -1,0 +1,15 @@
+name: SmpBoard
+version: '${version}'
+main: fr.smpboard.SmpBoard
+api-version: '26.2'
+softdepend: [Vault, PlaceholderAPI, SmpBoss, SmpDuel, SmpTitles, LuckPerms]
+description: "Scoreboard animé + TAB (en-tête, pied, grades)"
+commands:
+  sb:
+    description: "Afficher / cacher le scoreboard (staff : /sb reload)"
+    usage: /sb [reload]
+    aliases: [board, togglesb]
+permissions:
+  smpboard.admin:
+    description: /sb reload
+    default: op

@@ -1,0 +1,120 @@
+# ==================================================================== SmpDuel
+# Arènes : /duel arene construire <nom> [rayon 10-24] [ici|ciel|Y]  (plusieurs arènes = plusieurs duels en même temps)
+# Joueurs : /duel (menu) · /duel amical|mort|pari (recherche) · /duel <joueur> [amical|mort|pari] (défi)
+
+# durée max d'un duel (minutes) : ensuite égalité
+max-minutes: 5
+# duel à mort : temps laissé au gagnant pour ramasser le stuff (secondes)
+loot-seconds: 20
+# points ELO en jeu (classique : 32)
+elo-k: 32
+# annoncer les résultats à tout le serveur
+broadcast-results: true
+# commandes autorisées pendant un duel (tout le reste est bloqué : pas de /spawn, /home...)
+allowed-commands: [duel, duels, 1v1, msg, r, tell, w, m, reply]
+
+messages:
+  prefix: "<dark_gray>[<gradient:#ff3b3b:#ffb347><b>DUEL</b></gradient>]</dark_gray> "
+  mode-amical: "<green>Duel amical</green>"
+  mode-mort: "<dark_red>Duel à mort</dark_red>"
+  mode-pari: "<gold>Duel pari</gold>"
+
+  # menu
+  menu-title: "<dark_gray>⚔ Duels 1v1"
+  menu-amical-name: "<green><b>⚔ DUEL AMICAL"
+  menu-amical-lore:
+    - "<gray>Combat 1v1 dans l'arène."
+    - "<gray>Tu <white>gardes tout ton stuff</white> (keepInventory)."
+    - "<gray>Tous les objets sont permis, <red>pas d'élytres</red>."
+  menu-pari-name: "<gold><b>💰 DUEL PARI"
+  menu-pari-lore:
+    - "<gray>Chacun <white>mise des objets</white> dans une fenêtre"
+    - "<gray>commune (tu vois la mise de l'autre)."
+    - "<gray>Le gagnant repart avec <gold>les deux mises</gold>."
+    - "<gray>Le reste de ton stuff est gardé."
+  menu-mort-name: "<dark_red><b>☠ DUEL À MORT"
+  menu-mort-lore:
+    - "<gray>Le perdant <red>perd tout son stuff</red> :"
+    - "<gray>il tombe dans l'arène, le gagnant a"
+    - "<white>20 s</white> <gray>pour le ramasser."
+    - "<dark_red>⚠ Aucun retour possible."
+  menu-queue: "<dark_gray>En recherche : <white><n></white> joueur(s)"
+  menu-click-join: "<yellow>▶ Clic : chercher un adversaire"
+  menu-click-leave: "<red>■ Clic : arrêter la recherche"
+  menu-stats-name: "<white><b><player>"
+  menu-stats-lore:
+    - "<gray>ELO : <gold><b><elo></b></gold> <dark_gray>(#<rank>)"
+    - "<gray>Série : <white><streak></white> <dark_gray>(record <best>)"
+    - ""
+    - "<green>Amical <gray>: <white><aw></white> V · <white><al></white> D"
+    - "<gold>Pari <gray>: <white><pw></white> V · <white><pl></white> D"
+    - "<dark_red>À mort <gray>: <white><mw></white> V · <white><ml></white> D"
+  menu-top-name: "<gold><b>🏆 Top 10 ELO"
+  top-header: "<gold><b>🏆 Classement des duels"
+  top-line: "<gray>#<n> <white><player></white> <dark_gray>·</dark_gray> <gold><elo></gold> <dark_gray>(<w>V/<l>D)"
+  stats: "<white><player></white> <gray>: ELO <gold><elo></gold> (#<rank>) · <green><w>V</green> <red><l>D</red> · série <white><streak></white> (record <best>)"
+
+  # file d'attente
+  queue-join: "<green>Recherche d'un adversaire en <mode><green>… <gray>(/duel quitter pour arrêter)"
+  queue-leave: "<yellow>Recherche arrêtée."
+  not-queued: "<gray>Tu ne cherches pas de duel."
+  queue-bar: "<yellow>🔍 Recherche <mode> <dark_gray>·</dark_gray> <white><time></white> <dark_gray>·</dark_gray> <gray><n> en recherche <dark_gray>· /duel quitter"
+  queue-bar-wait: "<yellow>⏳ Adversaire trouvé, <gray>en attente d'une arène libre… <white><time>"
+  match-found: "<green>Adversaire trouvé : <white><enemy></white> <dark_gray>(<mode><dark_gray>)"
+
+  # défis
+  challenge-sent: "<gray>Défi envoyé à <white><player></white> <dark_gray>(<mode><dark_gray>)."
+  challenge-received: "<white><player></white> <gray>te défie en <mode><gray> !"
+  challenge-buttons: "  <click:run_command:'/duel accepter <player>'><hover:show_text:'<green>Accepter'><green><b>[ACCEPTER]</b></green></hover></click>  <click:run_command:'/duel refuser'><hover:show_text:'<red>Refuser'><red><b>[REFUSER]</b></red></hover></click>  <dark_gray>(60 s)"
+  challenge-denied: "<white><player></white> <red>a refusé ton défi."
+  challenge-denied-you: "<gray>Défi refusé."
+  no-challenge: "<red>Aucun défi en attente."
+  challenger-busy: "<red>Celui qui t'a défié n'est plus disponible."
+  target-busy: "<white><player></white> <red>n'est pas disponible (déjà en duel, en danger, mort...)."
+  unknown-player: "<red>Joueur introuvable. <gray>/duel, /duel amical|mort|pari, /duel <joueur> [mode]"
+
+  # erreurs
+  offline: "<red>Joueur hors ligne."
+  dead: "<red>Tu es mort."
+  already-dueling: "<red>Tu es déjà en duel."
+  already-betting: "<red>Tu prépares déjà un pari."
+  gamemode: "<red>Pas en créatif / spectateur."
+  in-danger: "<red>Tu es en combat : attends d'être en sécurité."
+  no-arena: "<red>Aucune arène de duel n'est construite."
+  no-free-arena: "<red>Toutes les arènes sont prises, réessaie dans un instant."
+  no-perm: "<red>Tu n'as pas la permission."
+  blocked-command: "<red>Pas de commandes pendant un duel."
+  no-elytra: "<red>Pas d'élytres en duel."
+  out-of-bounds: "<red>Reste dans l'arène !"
+
+  # combat
+  countdown-title: "<gradient:#ff3b3b:#ffb347><b><n>"
+  countdown-sub: "<mode> <gray>contre <white><enemy>"
+  fight-title: "<red><b>⚔ COMBATTEZ ⚔"
+  fight-sub: "<gray>Bonne chance…"
+  fight-bar: "<mode> <dark_gray>·</dark_gray> <gray>contre <white><enemy></white> <red>❤ <hp></red> <dark_gray>·</dark_gray> <gray>⏳ <white><time>"
+  result: "<gold>⚔</gold> <white><winner></white> <gray>a battu</gray> <white><loser></white> <gray>en</gray> <mode> <dark_gray>(+<elo> ELO)"
+  result-quit: "<gold>⚔</gold> <white><loser></white> <gray>a fui son</gray> <mode> <gray>contre</gray> <white><winner></white> <dark_gray>(+<elo> ELO)"
+  win-title: "<gold><b>VICTOIRE"
+  win-sub: "<gray>+<elo> ELO"
+  lose-title: "<red><b>DÉFAITE"
+  lose-sub: "<gray>-<elo> ELO"
+  loot-info: "<gold>Ramasse le stuff ! <gray>Tu as <white><s> s</white> (ou /duel quitter pour partir)."
+  loot-bar: "<gold>💰 Butin : <white><s> s"
+  draw-time: "<yellow>Temps écoulé : égalité, chacun repart avec ses affaires."
+  draw-stop: "<yellow>Duel annulé (arrêt / arène retirée) : chacun repart avec ses affaires."
+  draw-quit: "<yellow><player> s'est déconnecté avant le début : duel annulé."
+
+  # pari
+  bet-title: "<dark_gray>Pari : <a> ⚔ <b>"
+  bet-cancel: "<red><b>✕ Annuler le pari"
+  bet-ready: "<green><b>✔ <player> est prêt"
+  bet-not-ready: "<red><b>✘ <player> n'est pas prêt"
+  bet-ready-lore: "<gray>Clic sur ton bouton quand ta mise est posée."
+  bet-empty: "<red>Mise au moins un objet (clic sur un objet de ton inventaire)."
+  bet-full-inv: "<red>Ton inventaire est plein."
+  bet-side-full: "<red>Ton côté est plein."
+  bet-countdown: "<yellow>Le duel commence dans <white><n></white>…"
+  bet-cancelled: "<yellow>Pari annulé par <white><player></white> : chacun récupère sa mise."
+  bet-aborted: "<red>Le duel n'a pas pu commencer : mises rendues."
+  bet-delivered: "<gold>Des objets de duel t'attendaient : ils sont dans ton inventaire."

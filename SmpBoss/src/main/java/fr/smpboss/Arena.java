@@ -71,6 +71,8 @@ public final class Arena {
     private int[] exitBox;
     private Location exitPos1, exitPos2;
     private org.bukkit.entity.TextDisplay portalHolo, exitHolo;
+    /** zone cliquable sous l'hologramme du portail : ouvre le menu du butin */
+    private org.bukkit.entity.Interaction portalClick;
     /** Protection d'arrivée : intouchable quelques secondes en entrant dans l'arène. */
     private final Map<UUID, Long> shield = new HashMap<>();
 
@@ -706,6 +708,16 @@ public final class Arena {
         portalHolo = holo(portalHolo, on ? portalWorld : null, portal, above,
                 plugin.msg("portal.hologram").replace("<status>", plugin.bossStatus()));
         exitHolo = holo(exitHolo, on ? exitWorld : null, exitBox, above, plugin.msg("portal.exit-hologram"));
+        if (portalHolo == null) {
+            if (portalClick != null) portalClick.remove();
+            portalClick = null;
+        } else {
+            Location at = portalHolo.getLocation().subtract(0, 0.2, 0);
+            if (portalClick == null || !portalClick.isValid() || portalClick.getWorld() != at.getWorld() || portalClick.getLocation().distanceSquared(at) > 0.25) {
+                if (portalClick != null) portalClick.remove();
+                portalClick = DropsMenu.spawnClick(plugin, at, 2.6f, 2.8f);
+            }
+        }
     }
 
     private org.bukkit.entity.TextDisplay holo(org.bukkit.entity.TextDisplay d, String world, int[] box, double above, String text) {
@@ -1027,6 +1039,7 @@ public final class Arena {
     void shutdown() {
         if (portalHolo != null) portalHolo.remove();
         if (exitHolo != null) exitHolo.remove();
+        if (portalClick != null) portalClick.remove();
         for (var en : tints.entrySet()) {
             Player p = Bukkit.getPlayer(en.getKey());
             if (p != null && p.getWorldBorder() == en.getValue()) p.setWorldBorder(null);

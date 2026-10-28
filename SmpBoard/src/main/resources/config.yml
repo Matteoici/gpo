@@ -1,0 +1,69 @@
+# ==================================================================== SmpBoard
+# Variables : {player} {rank} (préfixe du grade, via Vault/LuckPerms) {group} {money} {online} {max} {ping}
+#   {kills} {deaths} {kd} {playtime} {world} {x} {y} {z} {date} {time} {tps} {ip}
+#   {boss} (statut du Roi Citrouille) {duel_elo} {duel_wins} {duel_losses}
+#   + toutes les variables PlaceholderAPI (%...%), ex : %smpguilds_name_formatted%
+# Couleurs : MiniMessage (<red>, <#ff7a00>, <gradient:...>, <b>) ; les codes & et § marchent aussi.
+# Après une modif : /sb reload
+
+server-ip: "play.ton-serveur.fr"
+timezone: "Europe/Paris"
+date-format: "dd/MM/yyyy"
+time-format: "HH:mm"
+# mise à jour des lignes (ticks, 20 = 1 s)
+update-ticks: 20
+# mondes sans scoreboard
+disabled-worlds: []
+no-boss: "<gray>—"
+
+title:
+  text: "GPO SMP"
+  # reflet qui passe sur le texte (sinon : titre fixe)
+  shine: true
+  color: "<gradient:#ff7a00:#ffd36b>"
+  shine-color: "#fff3d6"
+  decoration: "<b>"
+  left: "<#ff7a00>☠ "
+  right: " <#ff7a00>☠"
+  speed-ticks: 3
+  pause-frames: 20
+  # ou bien ta propre animation (une image par ligne), qui remplace tout ce qui est au-dessus :
+  frames: []
+
+# 15 lignes max (une ligne vide = un espace)
+lines:
+  - "<dark_gray>{date} · {time}"
+  - ""
+  - "<#ffb347>👤 <white><b>{player}"
+  - " <gray>Grade : <white>{rank}"
+  - " <gray>Argent : <gold>{money} ⛁"
+  - " <gray>Guilde : <white>%smpguilds_name_formatted%"
+  - ""
+  - "<#ff5a3c>⚔ <white><b>Combat"
+  - " <gray>Kills : <white>{kills} <dark_gray>· <gray>Morts : <white>{deaths}"
+  - " <gray>Duels : <gold>{duel_elo} ELO"
+  - ""
+  - "<#ff7a00>☠ <white><b>Roi Citrouille"
+  - " {boss}"
+  - ""
+  - "<#ffb347>{ip}"
+
+tab:
+  enabled: true
+  header:
+    - ""
+    - "<#ff7a00>☠ <gradient:#ff7a00:#ffd36b><b>GPO SMP</b></gradient> <#ff7a00>☠"
+    - "<gray>Bienvenue <white>{player}</white> !"
+    - ""
+  footer:
+    - ""
+    - "<gray>En ligne : <green>{online}</green><dark_gray>/{max}</dark_gray>  <dark_gray>·</dark_gray>  <gray>Ping : <white>{ping} ms</white>  <dark_gray>·</dark_gray>  <gray>TPS : <white>{tps}"
+    - "<gray>☠ Roi Citrouille : {boss}"
+    - "<#ffb347>{ip}"
+    - ""
+  # nom dans le TAB ("" = ne pas y toucher). SmpTitles ajoute son titre devant tout seul.
+  name-format: "{rank}<white>{player}"
+
+messages:
+  shown: "<green>Scoreboard affiché."
+  hidden: "<gray>Scoreboard caché. <white>/sb</white> pour le remettre."
