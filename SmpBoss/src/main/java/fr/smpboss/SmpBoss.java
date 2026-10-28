@@ -264,6 +264,12 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 24);
             saveConfig();
         }
+        if (getConfig().getInt("config-version", 1) < 25) {
+            // toutes les raretés PRESTIGE à 0,01 % (1 chance sur 10 000)
+            for (String w : new String[]{"sonic-bow", "brise-terre", "hollow-purple", "fuga"}) harder("weapons." + w + ".chance", 0.1, 0.01);
+            getConfig().set("config-version", 25);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);

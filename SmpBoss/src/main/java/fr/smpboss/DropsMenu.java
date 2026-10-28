@@ -86,7 +86,7 @@ final class DropsMenu implements InventoryHolder {
         // armes : tirage à part, chacune sa chance
         Weapons w = plugin.weapons();
         for (String id : Weapons.ALL) {
-            double ch = c.getDouble("weapons." + Weapons.path(id) + ".chance", 0.1);
+            double ch = c.getDouble("weapons." + Weapons.path(id) + ".chance", Weapons.rarity(id) == Rarity.PRESTIGE ? 0.01 : 0.1);
             if (ch <= 0) continue;
             ItemStack it = w.create(id);
             out.add(new Entry(withChance(it, ch, null), Weapons.rarity(id), ch));

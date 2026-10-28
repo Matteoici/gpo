@@ -1080,7 +1080,7 @@ final class Weapons implements Listener {
     /** Tirage des armes après une victoire (chacune a sa chance). */
     void roll(Player p) {
         for (String id : ALL) {
-            double chance = cfg(path(id) + ".chance", 0.1);
+            double chance = cfg(path(id) + ".chance", rarity(id) == Rarity.PRESTIGE ? 0.01 : 0.1);
             if (ThreadLocalRandom.current().nextDouble() * 100 >= chance) continue;
             ItemStack it = create(id);
             boolean inv = plugin.loot().give(p, it.clone());
@@ -1088,8 +1088,7 @@ final class Weapons implements Listener {
             String name = rar.name(plugin.msg("weapons." + path(id) + ".name"), 0);
             Reveal.show(plugin, p, it, rar, name, plugin.msg(inv ? "loot.where-inventory" : "loot.where-stash"));
             if (rar == Rarity.PRESTIGE) {
-                Bukkit.broadcast(parse(plugin.msg("loot.broadcast-prestige").replace("<player>", SmpBoss.MM.escapeTags(p.getName())).replace("<item>", name)
-                        .replace("1 chance sur 10 000", "1 chance sur 1 000")));
+                Bukkit.broadcast(parse(plugin.msg("loot.broadcast-prestige").replace("<player>", SmpBoss.MM.escapeTags(p.getName())).replace("<item>", name)));
                 for (Player o : Bukkit.getOnlinePlayers()) {
                     o.showTitle(net.kyori.adventure.title.Title.title(parse(rar.tag), parse(plugin.msg("loot.prestige-subtitle")
                             .replace("<player>", SmpBoss.MM.escapeTags(p.getName())).replace("<item>", name))));

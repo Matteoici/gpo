@@ -1,4 +1,4 @@
-config-version: 24
+config-version: 25
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -239,8 +239,8 @@ loot:
 # ---------------------------------------------------------------- Armes du Roi (butin rare, gardées à la mort)
 weapons:
   sonic-bow:
-    # chance (%) de la gagner à chaque victoire (0.1 = 1 chance sur 1 000)
-    chance: 0.1
+    # chance (%) de la gagner à chaque victoire (0.1 = 1 chance sur 1 000 · PRESTIGE : 0.01 = 1 chance sur 10 000)
+    chance: 0.01
     # dégâts du rayon (2 = 1 cœur ; traverse l'armure comme le Warden)
     damage: 10
     # recharge plus longue, mais l'onde va 3 fois plus loin
@@ -262,7 +262,7 @@ weapons:
     levitation-level: 1
   # ❂ PRESTIGE
   brise-terre:
-    chance: 0.1
+    chance: 0.01
     # hache : 22 de dégâts au corps à corps (netherite = 10) · en main : Résistance I
     attack-damage: 22
     attack-speed: 1.1
@@ -318,7 +318,7 @@ weapons:
   # Seuls les joueurs et les monstres sont touchés (pas les animaux / villageois / familiers). Aucun bloc cassé.
   ultimate-chat-radius: 250
   hollow-purple:
-    chance: 0.1
+    chance: 0.01
     radius: 200
     # pleins dégâts dans le cœur, puis ça baisse jusqu'à 30 % au bord des 200 blocs
     damage: 60
@@ -327,7 +327,7 @@ weapons:
     range: 120
     cooldown-minutes: 30
   fuga:
-    chance: 0.1
+    chance: 0.01
     radius: 200
     damage: 50
     core-radius: 30
