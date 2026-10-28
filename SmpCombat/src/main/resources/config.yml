@@ -1,3 +1,4 @@
+config-version: 2
 # =====================================================================
 #  SmpCombat - combat façon Deepwoken
 #
@@ -67,7 +68,7 @@ blocked-commands:
 # coffre de l'End (bloc) interdit en danger
 block-ender-chest: true
 # élytres interdites en danger (fuite)
-block-elytra: false
+block-elytra: true
 
 # effets
 screen-tint: true            # bords de l'écran en rouge

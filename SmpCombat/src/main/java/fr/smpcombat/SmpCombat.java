@@ -71,6 +71,12 @@ public final class SmpCombat extends JavaPlugin implements Listener, TabExecutor
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        if (getConfig().getInt("config-version", 1) < 2) {
+            // en danger : plus d'élytres
+            getConfig().set("block-elytra", true);
+            getConfig().set("config-version", 2);
+            saveConfig();
+        }
         allowKey = new NamespacedKey("smpcombat", "allow_tp_until");
         getServer().getPluginManager().registerEvents(this, this);
         var cmd = getCommand("combat");
@@ -131,6 +137,11 @@ public final class SmpCombat extends JavaPlugin implements Listener, TabExecutor
             danger.put(p.getUniqueId(), d);
         }
         d.until = now + getConfig().getLong("danger-seconds", 20) * 1000;
+        // en plein vol quand le combat commence : on retombe
+        if (p.isGliding() && getConfig().getBoolean("block-elytra", true)) {
+            p.setGliding(false);
+            p.sendActionBar(mm(msg("blocked-elytra")));
+        }
         if (enemy != null) {
             d.lastEnemy = enemy.getUniqueId();
             d.enemies.put(enemy.getUniqueId(), now);
@@ -325,7 +336,7 @@ public final class SmpCombat extends JavaPlugin implements Listener, TabExecutor
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onGlide(EntityToggleGlideEvent e) {
-        if (!e.isGliding() || !(e.getEntity() instanceof Player p) || !getConfig().getBoolean("block-elytra", false)) return;
+        if (!e.isGliding() || !(e.getEntity() instanceof Player p) || !getConfig().getBoolean("block-elytra", true)) return;
         if (!inDanger(p)) return;
         e.setCancelled(true);
         p.sendActionBar(mm(msg("blocked-elytra")));
