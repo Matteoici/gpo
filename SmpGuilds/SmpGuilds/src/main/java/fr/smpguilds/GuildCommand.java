@@ -56,7 +56,7 @@ public final class GuildCommand implements TabExecutor {
             "settings", "chat", "admin");
 
     private static final List<String> ADMIN_SUBS = List.of("reload", "bypass", "spy", "disband", "addxp", "setxp",
-            "setbank", "unclaim", "info", "save");
+            "setbank", "unclaim", "info", "save", "setleader");
 
     private final SmpGuilds plugin;
 
@@ -387,6 +387,37 @@ public final class GuildCommand implements TabExecutor {
                 gm.log(g, "Admin " + sender.getName() + " : " + args[1] + " " + args[3]);
                 m().send(sender, "admin.updated", guild(g), ph("xp", g.xp), ph("level", gm.level(g).level()),
                         ph("bank", money(g.bank)));
+            }
+            case "setleader", "chef", "leader" -> {
+                // le chef est déconnecté / parti : un admin donne la direction à un autre membre (même hors ligne)
+                if (args.length < 4) {
+                    usage(sender, "/guild admin setleader <guilde> <membre>");
+                    return;
+                }
+                Guild g = gm.find(args[2]);
+                if (g == null) {
+                    m().send(sender, "error.guild-not-found");
+                    return;
+                }
+                UUID t = null;
+                for (UUID u : g.members.keySet()) if (g.nameOf(u).equalsIgnoreCase(args[3])) t = u;
+                if (t == null) {
+                    m().send(sender, "error.not-member");
+                    return;
+                }
+                if (t.equals(g.leader)) {
+                    sender.sendMessage(m().prefix().append(net.kyori.adventure.text.Component.text(g.nameOf(t) + " est déjà le chef.")));
+                    return;
+                }
+                UUID old = g.leader;
+                if (old != null && g.isMember(old)) g.members.put(old, Role.OFFICER);
+                g.members.put(t, Role.LEADER);
+                g.leader = t;
+                gm.markDirty(g);
+                gm.log(g, "Admin " + sender.getName() + " a donné la direction à " + g.nameOf(t));
+                g.broadcast(m().prefix().append(m().get("members.new-leader", ph("player", g.nameOf(t)))));
+                sender.sendMessage(m().prefix().append(net.kyori.adventure.text.Component.text("Nouveau chef de " + g.name + " : " + g.nameOf(t)
+                        + (old != null ? " (l'ancien chef " + g.nameOf(old) + " passe officier)" : ""))));
             }
             case "unclaim" -> {
                 if (!(sender instanceof Player p)) {

@@ -279,6 +279,7 @@ help:
     - "<yellow>/guild admin info <guilde>"
     - "<yellow>/guild admin disband <guilde>"
     - "<yellow>/guild admin addxp | setxp | setbank <guilde> <valeur>"
+    - "<yellow>/guild admin setleader <guilde> <membre>  <gray>- donne la direction (même si le chef est déconnecté)"
     - "<yellow>/guild admin unclaim</yellow> <gray>libérer le chunk où tu es"
     - "<yellow>/guild admin save"
 
