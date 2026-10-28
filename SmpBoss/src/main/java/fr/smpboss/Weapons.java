@@ -95,8 +95,7 @@ final class Weapons implements Listener {
             case TRANCHE -> 12;
             case BRISE -> 16;
             case GIVRE, TEMPETE -> 10;
-            case HOLLOW -> 60;
-            case FUGA -> 50;
+            case HOLLOW, FUGA -> 1000;
             default -> 14;
         };
     }

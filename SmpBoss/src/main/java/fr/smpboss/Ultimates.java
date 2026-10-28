@@ -328,6 +328,26 @@ final class Ultimates {
         }, 0L, Math.max(1, every));
     }
 
+    /**
+     * Les dégâts arrivent en plusieurs coups (par défaut 10 coups toutes les 4 ticks) : chaque coup est mortel,
+     * donc chaque totem en main saute l'un après l'autre.
+     */
+    private void multiHit(Player caster, LivingEntity le, double total, DamageType type, String path, int fireTicks) {
+        int hits = Math.max(1, (int) cfg(path + ".hits", 10)), every = Math.max(1, (int) cfg(path + ".hit-interval-ticks", 4));
+        double each = total / hits;
+        int[] n = {0};
+        BukkitTask[] task = new BukkitTask[1];
+        task[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            if (n[0]++ >= hits || !le.isValid() || le.isDead()) {
+                task[0].cancel();
+                return;
+            }
+            le.setNoDamageTicks(0);
+            le.damage(each, DamageSource.builder(type).withCausingEntity(caster).withDirectEntity(caster).build());
+            if (fireTicks > 0) le.setFireTicks(Math.max(le.getFireTicks(), fireTicks));
+        }, 0L, every);
+    }
+
     /** Onde au sol qui s'étend (anneau), visible de loin. */
     private void groundWave(Location c, double maxR, int ticks, Particle p, Particle.DustOptions d) {
         World w = c.getWorld();
@@ -736,7 +756,7 @@ final class Ultimates {
     /** 6. L'explosion part du lanceur : tout devient blanc, l'onde balaie 200 blocs. */
     private void hollowBurst(Player p, Location c) {
         World w = c.getWorld();
-        double R = cfg("hollow-purple.radius", 200), dmg = cfg("hollow-purple.damage", 60), core = cfg("hollow-purple.core-radius", 30);
+        double R = cfg("hollow-purple.radius", 200), dmg = cfg("hollow-purple.damage", 1000), core = cfg("hollow-purple.core-radius", 30);
         List<LivingEntity> list = targets(p, c, R);
         Map<UUID, Double> dist = new HashMap<>();
         for (LivingEntity le : list) {
@@ -817,9 +837,7 @@ final class Ultimates {
                 for (LivingEntity le : list) {
                     Double d = dist.get(le.getUniqueId());
                     if (d == null || d > r || !done.add(le.getUniqueId()) || !le.isValid() || le.isDead()) continue;
-                    double amount = d <= core ? dmg : dmg * (1 - 0.7 * (d - core) / Math.max(1, R - core));
-                    le.setNoDamageTicks(0);
-                    le.damage(amount, DamageSource.builder(DamageType.SONIC_BOOM).withCausingEntity(p).withDirectEntity(p).build());
+                    multiHit(p, le, dmg, DamageType.SONIC_BOOM, "hollow-purple", 0);
                     le.getWorld().playSound(le.getLocation(), Sound.BLOCK_AMETHYST_CLUSTER_BREAK, 1.5f, 0.6f);
                 }
             }
@@ -1018,7 +1036,7 @@ final class Ultimates {
 
     private void fugaBurst(Player p, Location c) {
         World w = c.getWorld();
-        double R = cfg("fuga.radius", 200), dmg = cfg("fuga.damage", 50), core = cfg("fuga.core-radius", 30);
+        double R = cfg("fuga.radius", 200), dmg = cfg("fuga.damage", 1000), core = cfg("fuga.core-radius", 30);
         int burn = (int) (cfg("fuga.burn-seconds", 10) * 20);
         List<LivingEntity> list = targets(p, c, R);
         Map<UUID, Double> dist = new HashMap<>();
@@ -1120,10 +1138,7 @@ final class Ultimates {
                 for (LivingEntity le : list) {
                     Double d = dist.get(le.getUniqueId());
                     if (d == null || d > r || !done.add(le.getUniqueId()) || !le.isValid() || le.isDead()) continue;
-                    double amount = d <= core ? dmg : dmg * (1 - 0.7 * (d - core) / Math.max(1, R - core));
-                    le.setNoDamageTicks(0);
-                    le.damage(amount, DamageSource.builder(DamageType.MAGIC).withCausingEntity(p).withDirectEntity(p).build());
-                    le.setFireTicks(burn);
+                    multiHit(p, le, dmg, DamageType.MAGIC, "fuga", burn);
                     Location at = le.getLocation().add(0, 1, 0);
                     w.spawnParticle(Particle.FLAME, at, 50, 0.4, 0.7, 0.4, 0.15);
                     w.playSound(at, Sound.ENTITY_GENERIC_BURN, 1.5f, 0.6f);

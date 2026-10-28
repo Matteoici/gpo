@@ -1,4 +1,4 @@
-config-version: 29
+config-version: 30
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -321,8 +321,10 @@ weapons:
   hollow-purple:
     chance: 0.01
     radius: 200
-    # pleins dégâts dans le cœur, puis ça baisse jusqu'à 30 % au bord des 200 blocs
-    damage: 60
+    # 500 cœurs (1000), donnés en plusieurs coups mortels : chaque totem en main saute l'un après l'autre
+    damage: 1000
+    hits: 10
+    hit-interval-ticks: 4
     core-radius: 30
     path-damage: 30
     range: 120
@@ -330,7 +332,9 @@ weapons:
   fuga:
     chance: 0.01
     radius: 200
-    damage: 50
+    damage: 1000
+    hits: 10
+    hit-interval-ticks: 4
     core-radius: 30
     burn-seconds: 10
     range: 140
@@ -773,7 +777,7 @@ messages:
         - "<gray>explose autour de toi sur <white><radius> blocs</white> :"
         - "<gray>écran blanc pour tous. Aucun bloc détruit."
         - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
-        - "<white>☄ <damage> ❤</white> <gray>au cœur   <dark_gray>|</dark_gray>   <white>⏳ <minutes> min"
+        - "<white>☄ <damage> ❤</white> <gray>en 10 coups   <dark_gray>|</dark_gray>   <white>⏳ <minutes> min"
         - "<dark_gray>✧ Ne tombe pas à la mort"
       chant:
         - "<dark_gray>[<#9b5cff>❂</#9b5cff>]</dark_gray> <white><player></white> <dark_gray>»</dark_gray> <i><#c9b6ff>Phase…"
@@ -794,7 +798,7 @@ messages:
         - "<gray>une immense colonne de feu jaillit et l'onde"
         - "<gray>brûle tout sur <white><radius> blocs</white>. Aucun bloc détruit."
         - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
-        - "<white>🔥 <damage> ❤</white> <gray>au cœur   <dark_gray>|</dark_gray>   <white>⏳ <minutes> min"
+        - "<white>🔥 <damage> ❤</white> <gray>en 10 coups   <dark_gray>|</dark_gray>   <white>⏳ <minutes> min"
         - "<dark_gray>✧ Ne tombe pas à la mort"
       chant:
         - "<dark_gray>[<#ff7a1e>❂</#ff7a1e>]</dark_gray> <white><player></white> <dark_gray>»</dark_gray> <i><#ffc58a>Voyons voir… qui a le feu le plus puissant."

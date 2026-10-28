@@ -309,6 +309,18 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 29);
             saveConfig();
         }
+        if (getConfig().getInt("config-version", 1) < 30) {
+            // 500 cœurs en 10 coups (casse les totems)
+            for (String u : new String[]{"hollow-purple", "fuga"}) {
+                getConfig().set("weapons." + u + ".damage", 1000);
+                getConfig().set("weapons." + u + ".hits", 10);
+                getConfig().set("weapons." + u + ".hit-interval-ticks", 4);
+            }
+            getConfig().set("messages.weapons.hollow-purple.lore", null);
+            getConfig().set("messages.weapons.fuga.lore", null);
+            getConfig().set("config-version", 30);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);
