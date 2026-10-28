@@ -287,6 +287,15 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
             getConfig().set("config-version", 2);
             saveConfig();
         }
+        if (getConfig().getInt("config-version", 1) < 3) {
+            // l'œuf mythique devient achetable
+            if (getConfig().isConfigurationSection("oeufs.mythique") && getConfig().getDouble("oeufs.mythique.prix", 0) <= 0) {
+                getConfig().set("oeufs.mythique.prix", 750000);
+            }
+            if (!getConfig().isSet("echange.active")) getConfig().set("echange.active", true);
+            getConfig().set("config-version", 3);
+            saveConfig();
+        }
     }
 
     void load() {
@@ -1023,6 +1032,7 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
             List<String> extra = new ArrayList<>();
             extra.add("");
             extra.add(on ? "<green>✔ Équipé <gray>- clic pour le retirer" : "<yellow>Clic pour l'équiper");
+            if (tradeable(def)) extra.add("<gold>Shift + clic <gray>: le transformer en objet pour l'échanger");
             m.inv.setItem(i, petIcon(def, d.owned.get(def.id), on, extra));
             m.slots.put(i, def.id);
         }
@@ -1321,6 +1331,126 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
         open(p, g);
     }
 
+    // ================================================================= échange : familier <-> objet
+
+    NamespacedKey tokenKey() {
+        return new NamespacedKey(this, "token");
+    }
+
+    boolean tradeable(PetDef def) {
+        return getConfig().getBoolean("echange.active", true) && (def.permission == null || def.permission.isBlank());
+    }
+
+    /** Objet "familier" : id;étoiles (+ un identifiant unique pour qu'ils ne s'empilent pas). */
+    ItemStack token(PetDef def, int stars) {
+        Rarity r = rarities.get(def.rarity);
+        List<String> lore = new ArrayList<>();
+        lore.add(r.name() + " <gold>" + "★".repeat(stars) + "<dark_gray>" + "★".repeat(Math.max(0, maxStars() - stars)));
+        lore.addAll(def.desc);
+        List<String> b = bonusLines(def, starMult(stars));
+        if (!b.isEmpty()) {
+            lore.add("");
+            lore.addAll(b);
+        }
+        lore.add("");
+        lore.add("<gold>Familier en objet <gray>: échange-le, vends-le...");
+        lore.add("<yellow>Clic droit <gray>pour l'ajouter à tes familiers");
+        ItemStack it = named(Material.PAPER, r.style() + def.name + " <gold>" + "★".repeat(stars), lore);
+        ItemMeta m = it.getItemMeta();
+        try {
+            m.setItemModel(def.type == null ? def.item.getKey() : def.icon.getKey());
+        } catch (Throwable ignored) {
+        }
+        m.setEnchantmentGlintOverride(true);
+        m.setMaxStackSize(1);
+        m.getPersistentDataContainer().set(tokenKey(), PersistentDataType.STRING, def.id + ";" + stars + ";" + UUID.randomUUID());
+        it.setItemMeta(m);
+        return it;
+    }
+
+    /** {familier, étoiles} ou null */
+    Object[] tokenOf(ItemStack it) {
+        if (it == null || it.getType().isAir() || !it.hasItemMeta()) return null;
+        String v = it.getItemMeta().getPersistentDataContainer().get(tokenKey(), PersistentDataType.STRING);
+        if (v == null) return null;
+        String[] p = v.split(";");
+        PetDef def = pets.get(p[0]);
+        if (def == null) return null;
+        return new Object[]{def, Math.max(1, p.length > 1 ? parseInt(p[1], 1) : 1)};
+    }
+
+    void extract(Player p, PetDef def) {
+        PData d = data(p.getUniqueId());
+        if (!tradeable(def)) {
+            send(p, msg("not-tradeable"));
+            return;
+        }
+        Integer stars = d.owned.get(def.id);
+        if (stars == null) return;
+        if (p.getInventory().firstEmpty() < 0) {
+            send(p, msg("inventory-full"));
+            return;
+        }
+        d.owned.remove(def.id);
+        d.equipped.remove(def.id);
+        saveData(p.getUniqueId());
+        refresh(p);
+        p.getInventory().addItem(token(def, stars));
+        send(p, msg("extracted").replace("<pet>", rarities.get(def.rarity).style() + def.name + "<reset>"));
+        p.playSound(p.getLocation(), Sound.ITEM_BOOK_PAGE_TURN, 1f, 1f);
+        openMain(p, 0);
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onUseToken(PlayerInteractEvent e) {
+        if (e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        Object[] t = tokenOf(e.getItem());
+        if (t == null || e.getHand() == null) return;
+        e.setCancelled(true);
+        e.setUseItemInHand(Event.Result.DENY);
+        Player p = e.getPlayer();
+        PetDef def = (PetDef) t[0];
+        int stars = (int) t[1];
+        EquipmentSlot hand = e.getHand();
+        ItemStack inHand = p.getInventory().getItem(hand);
+        if (tokenOf(inHand) == null) return;
+        PData d = data(p.getUniqueId());
+        int cur = d.owned.getOrDefault(def.id, 0);
+        if (cur >= maxStars()) {
+            send(p, msg("token-max").replace("<pet>", rarities.get(def.rarity).style() + def.name + "<reset>"));
+            return;
+        }
+        p.getInventory().setItem(hand, null);
+        int now = Math.min(maxStars(), cur + stars);
+        d.owned.put(def.id, now);
+        if (cur == 0 && getConfig().getBoolean("equiper-auto", true) && d.equipped.size() < slots(p)) d.equipped.add(def.id);
+        saveData(p.getUniqueId());
+        refresh(p);
+        String n = rarities.get(def.rarity).style() + def.name + "<reset>";
+        if (cur == 0) send(p, msg("new-pet").replace("<pet>", n));
+        else send(p, msg("star-up").replace("<pet>", n).replace("<stars>", "★".repeat(now)));
+        p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.4f);
+        p.getWorld().spawnParticle(Particle.DUST, p.getLocation().add(0, 1, 0), 40, 0.5, 0.7, 0.5, 0,
+                new Particle.DustOptions(rarities.get(def.rarity).color(), 1.5f));
+    }
+
+    /** Un familier en objet ne sert pas d'ingrédient (papier) ni d'objet à poser/lancer. */
+    @EventHandler
+    public void onCraftToken(org.bukkit.event.inventory.PrepareItemCraftEvent e) {
+        for (ItemStack it : e.getInventory().getMatrix()) if (tokenOf(it) != null) {
+            e.getInventory().setResult(null);
+            return;
+        }
+    }
+
+    @EventHandler
+    public void onPrepareToken(com.destroystokyo.paper.event.inventory.PrepareResultEvent e) {
+        for (ItemStack it : e.getInventory().getContents()) if (tokenOf(it) != null) {
+            e.setResult(null);
+            return;
+        }
+    }
+
     @EventHandler(ignoreCancelled = true)
     public void onPlace(BlockPlaceEvent e) {
         if (eggOf(e.getItemInHand()) != null) e.setCancelled(true);
@@ -1362,7 +1492,8 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
                     default -> {
                         PetDef def = pets.get(k);
                         if (def == null) return;
-                        toggle(p, def);
+                        if (e.isShiftClick()) extract(p, def);
+                        else toggle(p, def);
                         openMain(p, m.page);
                     }
                 }

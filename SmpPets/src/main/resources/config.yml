@@ -1,10 +1,11 @@
-config-version: 2
+config-version: 3
 # =====================================================================
 #  SmpPets - familiers qui te suivent, obtenus dans des œufs
 #  Joueurs :
 #   /pets            -> tes familiers (clic = équiper / retirer)
 #   /pets oeufs      -> les œufs, leurs chances, et les acheter (si un prix est mis)
 #   /pets cacher     -> cacher / montrer tes familiers (les boosts restent)
+#   Shift + clic sur un familier dans /pets -> il devient un objet à échanger (clic droit avec pour le récupérer)
 #   /loky [joueur]   -> compétence du familier équipé (Loky, le chat des modos : il chie à la gueule du joueur visé)
 #   Clic droit avec un œuf en main = l'ouvrir · accroupi + clic droit = voir ce qu'il contient
 #  Admins (smppets.admin) :
@@ -39,6 +40,11 @@ etoiles:
   bonus-par-etoile: 0.25
   # quand le familier est déjà au maximum : commandes lancées par la console (%player%, %pet%) - vide = rien
   doublon-max-commandes: []
+
+# Échange : dans /pets, Shift + clic sur un familier le transforme en objet (échangeable, vendable).
+# Clic droit avec l'objet = le familier revient (s'il est déjà à toi, ses étoiles s'ajoutent).
+echange:
+  active: true
 
 # ---------------------------------------------------------------------
 #  Raretés
@@ -118,7 +124,7 @@ oeufs:
     nom: "<gradient:#ffffff:#4a4a4a><b>Œuf Mythique</gradient>"
     materiau: DRAGON_EGG
     rarete: mythique
-    prix: 0
+    prix: 750000
     lore:
       - "<gray>Personne ne sait d'où il vient."
       - "<dark_gray>Il fait trembler tes mains."
@@ -149,6 +155,10 @@ messages:
   pet-removed-admin: "<yellow><pet> <yellow>retiré à <white><player></white>."
   reloaded: "<green>SmpPets rechargé (<pets> familiers, <eggs> œufs)."
   need-egg: "<red>Il te faut un <egg> <red>pour l'ouvrir."
+  extracted: "<gold><pet> <gold>est maintenant un objet dans ton inventaire. <gray>Échange-le, ou clic droit pour le récupérer."
+  not-tradeable: "<red>Ce familier ne peut pas être échangé."
+  inventory-full: "<red>Ton inventaire est plein."
+  token-max: "<red>Tu as déjà <pet> <red>au maximum d'étoiles."
   no-ability: "<red>Aucun de tes familiers équipés n'a de compétence."
   ability-no-target: "<red>Vise un joueur (ou donne son nom) à moins de <range> blocs."
   ability-self: "<red>Pas sur toi-même quand même..."
