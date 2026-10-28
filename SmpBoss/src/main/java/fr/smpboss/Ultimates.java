@@ -94,9 +94,48 @@ final class Ultimates {
 
     // ================================================================= lancement
 
+    /** Dans l'arène du boss, dans une arène de duel ou en plein duel : interdit (trop fort). */
+    private boolean forbiddenAt(Player p) {
+        Arena arena = plugin.arena();
+        if (arena != null && arena.contains(p.getLocation())) return true;
+        return duelCall("inDuel", java.util.UUID.class, p.getUniqueId()) || duelCall("isArena", Location.class, p.getLocation());
+    }
+
+    /** Une cible protégée : le Roi, ce qui est dans son arène, les joueurs en duel ou dans une arène de duel. */
+    private boolean shielded(Entity en) {
+        PumpkinKing k = plugin.king();
+        if (k != null && (k.isBoss(en) || k.isMinion(en))) return true;
+        Arena arena = plugin.arena();
+        if (arena != null && arena.contains(en.getLocation())) return true;
+        if (en instanceof Player pl && duelCall("inDuel", java.util.UUID.class, pl.getUniqueId())) return true;
+        return duelCall("isArena", Location.class, en.getLocation());
+    }
+
+    private final Map<String, java.lang.reflect.Method> duelMethods = new HashMap<>();
+
+    private boolean duelCall(String method, Class<?> type, Object arg) {
+        org.bukkit.plugin.Plugin d = Bukkit.getPluginManager().getPlugin("SmpDuel");
+        if (d == null || !d.isEnabled()) return false;
+        try {
+            java.lang.reflect.Method m = duelMethods.get(method);
+            if (m == null || m.getDeclaringClass() != d.getClass()) {
+                m = d.getClass().getMethod(method, type);
+                duelMethods.put(method, m);
+            }
+            return (boolean) m.invoke(null, arg);
+        } catch (ReflectiveOperationException | ClassCastException e) {
+            return false;
+        }
+    }
+
     void cast(Player p, String id) {
-        if (!casting.add(p.getUniqueId())) return;
         String path = Weapons.path(id);
+        if (forbiddenAt(p)) {
+            p.sendMessage(parse(plugin.msg("weapons.ult-forbidden").replace("<item>", plugin.msg("weapons." + path + ".name"))));
+            p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.7f, 0.5f);
+            return;
+        }
+        if (!casting.add(p.getUniqueId())) return;
         NamespacedKey cd = new NamespacedKey(plugin, "ult_" + id);
         long now = System.currentTimeMillis();
         Long until = p.getPersistentDataContainer().get(cd, PersistentDataType.LONG);
@@ -154,6 +193,7 @@ final class Ultimates {
         for (Entity en : c.getWorld().getNearbyEntities(c, r, r, r)) {
             if (!(en instanceof LivingEntity le) || en.equals(caster) || le.isDead()) continue;
             if (en.getLocation().distanceSquared(c) > r * r) continue;
+            if (shielded(en)) continue;
             if (en instanceof Player t) {
                 if (t.getGameMode() == org.bukkit.GameMode.SPECTATOR || t.getGameMode() == org.bukkit.GameMode.CREATIVE || vanished(t)) continue;
             } else if (!(en instanceof Enemy) && (k == null || !k.isBoss(en))) continue;

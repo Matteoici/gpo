@@ -107,6 +107,11 @@ public final class SmpDuel extends JavaPlugin implements Listener {
         return e == null ? 0 : e.losses();
     }
 
+    /** Ce point est-il dans une arène de duel ? (pour les autres plugins) */
+    public static boolean isArena(Location l) {
+        return instance != null && l != null && instance.arenaAt(l) != null;
+    }
+
     public static boolean inDuel(UUID id) {
         return instance != null && instance.matches.containsKey(id);
     }
@@ -514,14 +519,14 @@ public final class SmpDuel extends JavaPlugin implements Listener {
         switch (what) {
             case "construire", "build" -> {
                 if (p == null || name == null) {
-                    sendRaw(s, "<red>/duel arene construire <nom> [rayon 10-24] [ici|ciel|Y]");
+                    sendRaw(s, "<red>/duel arene construire <nom> [rayon 14-40, défaut 20 comme le boss] [ici|ciel|Y]");
                     return;
                 }
                 if (arenas.containsKey(name)) {
                     sendRaw(s, "<red>Une arène s'appelle déjà comme ça.");
                     return;
                 }
-                int r = a.length >= 4 ? clamp(parse(a[3], 14), 10, 24) : 14;
+                int r = a.length >= 4 ? clamp(parse(a[3], 20), 14, 40) : 20;
                 Location c = p.getLocation();
                 int y = c.getBlockY() - 1;
                 if (a.length >= 5) {
@@ -543,7 +548,7 @@ public final class SmpDuel extends JavaPlugin implements Listener {
                     sendRaw(s, "<red>/duel arene definir <nom> <rayon> <gray>(au centre d'une arène déjà construite, debout sur le sol)");
                     return;
                 }
-                int r = a.length >= 4 ? clamp(parse(a[3], 14), 5, 40) : 14;
+                int r = a.length >= 4 ? clamp(parse(a[3], 20), 5, 40) : 20;
                 Location c = p.getLocation();
                 DuelArena arena = new DuelArena(name, c.getWorld().getName(), c.getBlockX(), c.getBlockY() - 1, c.getBlockZ(), r);
                 arena.defaultSpawns();

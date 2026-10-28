@@ -699,6 +699,7 @@ messages:
   weapons:
     cooldown: "<gray>⏳ Encore <white><seconds> s"
     kept: "<aqua>✦ Tes armes du Roi sont restées avec toi."
+    ult-forbidden: "<dark_gray>[<#6d8cff>❂</#6d8cff>]</dark_gray> <red>Impossible d'utiliser <item> <red>ici : pas dans l'arène du boss ni en duel."
     ult-cooldown: "<dark_gray>[<#6d8cff>❂</#6d8cff>]</dark_gray> <gray><item> <gray>se recharge encore <white><time></white>."
     broadcast: "<gradient:#ffffff:#4a4a4a:#ffffff><b>✧ ARME DU ROI ✧</b></gradient> <white><player></white> <gray>a obtenu</gray> <item> <gray>!!!"
     sonic-bow:
