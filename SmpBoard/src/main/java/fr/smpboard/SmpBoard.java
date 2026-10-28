@@ -276,9 +276,8 @@ public final class SmpBoard extends JavaPlugin implements Listener {
             if (!mt.prefix().equals(t.prefix())) t.prefix(mt.prefix());
             if (!mt.suffix().equals(t.suffix())) t.suffix(mt.suffix());
             if (!mt.displayName().equals(t.displayName())) t.displayName(mt.displayName());
-            NamedTextColor c = mt.hasColor() ? mt.color() : null;
-            NamedTextColor tc = t.hasColor() ? t.color() : null;
-            if (c != tc) t.color(c);
+            Object c = mt.hasColor() ? mt.color() : null, tc = t.hasColor() ? t.color() : null;
+            if (!java.util.Objects.equals(c, tc)) t.color(c instanceof NamedTextColor nc ? nc : null);
             if (mt.allowFriendlyFire() != t.allowFriendlyFire()) t.setAllowFriendlyFire(mt.allowFriendlyFire());
             if (mt.canSeeFriendlyInvisibles() != t.canSeeFriendlyInvisibles()) t.setCanSeeFriendlyInvisibles(mt.canSeeFriendlyInvisibles());
             for (Team.Option o : Team.Option.values()) {
