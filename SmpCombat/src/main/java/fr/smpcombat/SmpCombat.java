@@ -92,6 +92,25 @@ public final class SmpCombat extends JavaPlugin implements Listener, TabExecutor
             cmd.setExecutor(this);
             cmd.setTabCompleter(this);
         }
+        var mb = getCommand("mb");
+        if (mb != null) {
+            mb.setExecutor((s, c, l, a) -> {
+                if (s instanceof Player p) myBad(p, a.length == 0 ? "all" : a[0]);
+                return true;
+            });
+            mb.setTabCompleter((s, c, l, a) -> {
+                List<String> out = new ArrayList<>();
+                if (a.length != 1 || !(s instanceof Player p)) return out;
+                out.add("all");
+                Danger d = danger.get(p.getUniqueId());
+                if (d != null) for (UUID id : d.enemies.keySet()) {
+                    Player t = Bukkit.getPlayer(id);
+                    if (t != null && ally(p.getUniqueId(), id)) out.add(t.getName());
+                }
+                out.removeIf(x -> !x.toLowerCase(java.util.Locale.ROOT).startsWith(a[0].toLowerCase(java.util.Locale.ROOT)));
+                return out;
+            });
+        }
         Bukkit.getScheduler().runTaskTimer(this, this::safeTick, 1L, 1L);
     }
 
@@ -407,6 +426,91 @@ public final class SmpCombat extends JavaPlugin implements Listener, TabExecutor
         if (!inDanger(p)) return;
         e.setCancelled(true);
         p.sendActionBar(mm(msg("blocked-elytra")));
+    }
+
+    // ================================================================= /mb all : "my bad", on a tapé un allié
+
+    /**
+     * Enlève le combat causé par des coups entre alliés (amis, même guilde, guildes alliées).
+     * Le combat contre les autres joueurs reste : impossible de s'en servir pour fuir un vrai combat.
+     */
+    private void myBad(Player p, String who) {
+        Danger d = danger.get(p.getUniqueId());
+        if (d == null || !inDanger(p)) {
+            send(p, "mb-not-in-combat");
+            return;
+        }
+        List<UUID> targets = new ArrayList<>();
+        if (who.equalsIgnoreCase("all") || who.equalsIgnoreCase("tous")) targets.addAll(d.enemies.keySet());
+        else {
+            Player t = Bukkit.getPlayerExact(who);
+            if (t == null || !d.enemies.containsKey(t.getUniqueId())) {
+                send(p, "mb-not-enemy", "player", who);
+                return;
+            }
+            targets.add(t.getUniqueId());
+        }
+        List<String> forgiven = new ArrayList<>();
+        int notAlly = 0;
+        for (UUID id : targets) {
+            if (!ally(p.getUniqueId(), id)) {
+                notAlly++;
+                continue;
+            }
+            d.enemies.remove(id);
+            Player t = Bukkit.getPlayer(id);
+            forgiven.add(t == null ? "?" : t.getName());
+            // de son côté aussi
+            Danger od = danger.get(id);
+            if (od != null) {
+                od.enemies.remove(p.getUniqueId());
+                if (p.getUniqueId().equals(od.lastEnemy)) od.lastEnemy = od.enemies.isEmpty() ? null : od.enemies.keySet().iterator().next();
+                if (od.enemies.isEmpty() && t != null) {
+                    clear(t, false);
+                    send(t, "mb-cleared-other", "player", p.getName());
+                    sound(t, "block.beacon.deactivate", 0.6f, 1.6f);
+                }
+            }
+        }
+        if (d.lastEnemy != null && !d.enemies.containsKey(d.lastEnemy)) d.lastEnemy = d.enemies.isEmpty() ? null : d.enemies.keySet().iterator().next();
+        if (forgiven.isEmpty()) {
+            send(p, notAlly > 0 ? "mb-no-ally" : "mb-nothing");
+            return;
+        }
+        if (d.enemies.isEmpty()) {
+            clear(p, false);
+            send(p, "mb-cleared", "players", String.join(", ", forgiven));
+            sound(p, "block.beacon.deactivate", 0.6f, 1.6f);
+        } else {
+            send(p, "mb-partial", "players", String.join(", ", forgiven), "n", String.valueOf(d.enemies.size()));
+        }
+    }
+
+    /** Amis (SmpFriends), même guilde ou guildes alliées (SmpGuilds). */
+    private boolean ally(UUID a, UUID b) {
+        if (getConfig().getBoolean("mb.amis", true)) {
+            try {
+                var pl = Bukkit.getPluginManager().getPlugin("SmpFriends");
+                if (pl != null && pl.isEnabled()) {
+                    Object f = pl.getClass().getMethod("friends").invoke(pl);
+                    if (Boolean.TRUE.equals(f.getClass().getMethod("areFriends", UUID.class, UUID.class).invoke(f, a, b))) return true;
+                }
+            } catch (ReflectiveOperationException | RuntimeException | LinkageError ignored) {
+            }
+        }
+        try {
+            var pl = Bukkit.getPluginManager().getPlugin("SmpGuilds");
+            if (pl == null || !pl.isEnabled()) return false;
+            Object gm = pl.getClass().getMethod("guilds").invoke(pl);
+            var of = gm.getClass().getMethod("of", UUID.class);
+            Object ga = of.invoke(gm, a), gb = of.invoke(gm, b);
+            if (ga == null || gb == null) return false;
+            Object ida = ga.getClass().getField("id").get(ga), idb = gb.getClass().getField("id").get(gb);
+            if (getConfig().getBoolean("mb.guilde", true) && ida.equals(idb)) return true;
+            if (getConfig().getBoolean("mb.allies", true) && ga.getClass().getField("allies").get(ga) instanceof java.util.Collection<?> al && al.contains(idb)) return true;
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError ignored) {
+        }
+        return false;
     }
 
     // ================================================================= commande

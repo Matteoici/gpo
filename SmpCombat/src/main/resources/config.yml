@@ -85,7 +85,20 @@ bossbar: true
 flavor: true                 # phrase d'ambiance en bas de l'écran
 heartbeat: true              # battements de cœur quand la vie est basse
 
+# /mb all : enlève le combat causé en tapant un allié (le combat contre les autres reste)
+mb:
+  amis: true      # amis (SmpFriends)
+  guilde: true    # même guilde
+  allies: true    # guildes alliées
+
 messages:
+  mb-not-in-combat: "<gray>Tu n'es pas en combat."
+  mb-not-enemy: "<red><player> n'est pas dans ton combat."
+  mb-no-ally: "<red>Ton combat n'est pas contre un ami, ta guilde ou un allié : il reste."
+  mb-nothing: "<gray>Rien à enlever."
+  mb-cleared: "<green>My bad accepté : plus en combat avec <white><players></white>."
+  mb-partial: "<yellow>Plus en combat avec <white><players></white>, mais tu restes en danger contre <white><n></white> autre(s) joueur(s)."
+  mb-cleared-other: "<green><white><player></white> s'est excusé (/mb) : tu n'es plus en combat."
   prefix: "<dark_red>[<red>☠</red>]</dark_red> "
   enter: "<red><b>EN DANGER</b> <gray>— pas de téléportation, pas de boutique. <dark_gray>Se déconnecter = mourir."
   leave: "<gray>Tu n'es plus en danger."
