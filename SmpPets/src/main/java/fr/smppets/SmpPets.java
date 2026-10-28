@@ -123,6 +123,11 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
 
     static final class PetDef {
         String id, name, rarity, variant, particleName;
+        /** familier donné automatiquement à ceux qui ont cette permission (et retiré s'ils la perdent) */
+        String permission;
+        /** compétence active (ex : "caca") et ses réglages */
+        String ability;
+        ConfigurationSection abilityCfg;
         EntityType type; // null = objet qui flotte
         Material item, icon;
         boolean baby, glow;
@@ -173,6 +178,9 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
         Entity ent;
         TextDisplay label;
         Location pos;
+        /** la compétence fait voler le familier ailleurs (au-dessus de la cible) jusqu'à overrideUntil */
+        Entity chase;
+        long overrideUntil;
         long retryAt;
 
         Follower(PetDef def, int stars) {
@@ -205,6 +213,7 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
         petKey = new NamespacedKey(this, "pet");
         saveDefaultConfig();
         if (!new File(getDataFolder(), "pets.yml").exists()) saveResource("pets.yml", false);
+        migrate();
         vault = Bukkit.getPluginManager().getPlugin("Vault") != null;
         load();
         for (World w : Bukkit.getWorlds()) for (Entity e : w.getEntities()) if (e.getScoreboardTags().contains(TAG)) e.remove();
@@ -214,8 +223,21 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
             cmd.setExecutor(this);
             cmd.setTabCompleter(this);
         }
+        var loky = getCommand("loky");
+        if (loky != null) {
+            loky.setExecutor((s, c, l, a) -> {
+                if (s instanceof Player p) useAbility(p, a.length >= 1 ? a[0] : null);
+                return true;
+            });
+            loky.setTabCompleter((s, c, l, a) -> {
+                List<String> out = new ArrayList<>();
+                if (a.length == 1) for (Player p : Bukkit.getOnlinePlayers()) if (!p.equals(s) && p.getName().toLowerCase(Locale.ROOT).startsWith(a[0].toLowerCase(Locale.ROOT))) out.add(p.getName());
+                return out;
+            });
+        }
         for (Player p : Bukkit.getOnlinePlayers()) {
             loadData(p.getUniqueId());
+            syncPermissionPets(p);
             refresh(p);
         }
         Bukkit.getScheduler().runTaskTimer(this, this::tickAll, 1L, 1L);
@@ -228,6 +250,39 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
         for (Player p : Bukkit.getOnlinePlayers()) {
             clearAttributes(p);
             saveData(p.getUniqueId());
+        }
+    }
+
+    /** Ajoute les nouveautés aux fichiers déjà installés sans écraser les réglages. */
+    private void migrate() {
+        int v = getConfig().getInt("config-version", 1);
+        if (v < 2) {
+            if (!getConfig().isConfigurationSection("raretes.modo")) {
+                getConfig().set("raretes.modo.nom", "<#ff3b3b><b>MODO");
+                getConfig().set("raretes.modo.style", "<#ff5c5c>");
+                getConfig().set("raretes.modo.couleur", "#ff3b3b");
+                getConfig().set("raretes.modo.vitre", "RED_STAINED_GLASS_PANE");
+                getConfig().set("raretes.modo.annonce", false);
+            }
+            File pf = new File(getDataFolder(), "pets.yml");
+            YamlConfiguration pc = YamlConfiguration.loadConfiguration(pf);
+            if (!pc.isConfigurationSection("pets.loky")) {
+                var in = getResource("pets.yml");
+                if (in != null) {
+                    YamlConfiguration def = YamlConfiguration.loadConfiguration(new java.io.InputStreamReader(in, java.nio.charset.StandardCharsets.UTF_8));
+                    ConfigurationSection loky = def.getConfigurationSection("pets.loky");
+                    if (loky != null) {
+                        for (String k : loky.getKeys(true)) if (!loky.isConfigurationSection(k)) pc.set("pets.loky." + k, loky.get(k));
+                        try {
+                            pc.save(pf);
+                        } catch (IOException ex) {
+                            getLogger().warning("pets.yml : " + ex.getMessage());
+                        }
+                    }
+                }
+            }
+            getConfig().set("config-version", 2);
+            saveConfig();
         }
     }
 
@@ -320,6 +375,9 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
             }
             ConfigurationSection b = s.getConfigurationSection("bonus");
             if (b != null) for (String k : b.getKeys(false)) d.bonus.put(k.toLowerCase(Locale.ROOT), b.getDouble(k));
+            d.permission = s.getString("permission", "");
+            d.abilityCfg = s.getConfigurationSection("competence");
+            if (d.abilityCfg != null) d.ability = d.abilityCfg.getString("type", "").toLowerCase(Locale.ROOT);
             pets.put(id, d);
         }
         ConfigurationSection es = getConfig().getConfigurationSection("oeufs");
@@ -556,11 +614,14 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
         Vector fw = new Vector(-Math.sin(yaw), 0, Math.cos(yaw)), rt = new Vector(-Math.cos(yaw), 0, -Math.sin(yaw));
         double bob = Math.sin((tick + idx * 17) * 0.09) * 0.14;
         Location target = base.clone().add(rt.multiply(off[0])).add(fw.multiply(-off[1])).add(0, f.def.height + bob, 0);
-        if (f.pos == null || f.pos.getWorld() != target.getWorld() || f.pos.distanceSquared(target) > 144) {
+        boolean chasing = tick < f.overrideUntil && f.chase != null && f.chase.isValid() && f.chase.getWorld() == base.getWorld();
+        if (chasing) target = f.chase.getLocation().add(0, f.chase.getHeight() + 1.1 + bob * 0.5, 0);
+        double snap = chasing ? 60 * 60 : 144;
+        if (f.pos == null || f.pos.getWorld() != target.getWorld() || f.pos.distanceSquared(target) > snap) {
             f.pos = target.clone();
             if (f.ent != null && f.ent.isValid() && f.ent.getWorld() != target.getWorld()) despawn(f);
         } else {
-            f.pos.add(target.toVector().subtract(f.pos.toVector()).multiply(0.28));
+            f.pos.add(target.toVector().subtract(f.pos.toVector()).multiply(chasing ? 0.22 : 0.28));
         }
         float faceYaw = base.getYaw();
         if (f.ent == null || !f.ent.isValid()) {
@@ -1159,7 +1220,9 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
     public void onJoin(PlayerJoinEvent e) {
         loadData(e.getPlayer().getUniqueId());
         Bukkit.getScheduler().runTaskLater(this, () -> {
-            if (e.getPlayer().isOnline()) refresh(e.getPlayer());
+            if (!e.getPlayer().isOnline()) return;
+            syncPermissionPets(e.getPlayer());
+            refresh(e.getPlayer());
         }, 5L);
     }
 
@@ -1434,6 +1497,176 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
         p.playSound(at, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.6f, 1.6f);
     }
 
+    // ================================================================= familiers réservés + compétences
+
+    /** Familiers avec "permission" : donnés à ceux qui l'ont, retirés aux autres. */
+    void syncPermissionPets(Player p) {
+        PData d = data(p.getUniqueId());
+        boolean changed = false;
+        for (PetDef def : pets.values()) {
+            if (def.permission == null || def.permission.isBlank()) continue;
+            boolean has = p.hasPermission(def.permission);
+            if (has && !d.owned.containsKey(def.id)) {
+                d.owned.put(def.id, 1);
+                if (d.equipped.size() < slots(p)) d.equipped.add(def.id);
+                changed = true;
+            } else if (!has && d.owned.containsKey(def.id)) {
+                d.owned.remove(def.id);
+                d.equipped.remove(def.id);
+                changed = true;
+            }
+        }
+        if (changed) saveData(p.getUniqueId());
+    }
+
+    final Map<UUID, Long> abilityCooldown = new HashMap<>();
+
+    /** Lance la compétence du familier équipé (ex : Loky chie à la gueule de quelqu'un). */
+    void useAbility(Player p, String targetName) {
+        PData d = data(p.getUniqueId());
+        PetDef def = null;
+        for (PetDef x : equipped(d)) if (x.ability != null && !x.ability.isBlank()) {
+            def = x;
+            break;
+        }
+        if (def == null) {
+            send(p, msg("no-ability"));
+            return;
+        }
+        if (def.permission != null && !def.permission.isBlank() && !p.hasPermission(def.permission)) {
+            send(p, msg("no-permission"));
+            return;
+        }
+        ConfigurationSection c = def.abilityCfg;
+        double range = c.getDouble("portee", 25);
+        Player t;
+        if (targetName != null) {
+            t = Bukkit.getPlayerExact(targetName);
+            if (t == null || !t.getWorld().equals(p.getWorld()) || t.getLocation().distance(p.getLocation()) > range || vanished(t)) {
+                send(p, msg("ability-no-target").replace("<range>", num(range)));
+                return;
+            }
+        } else {
+            Entity e = p.getTargetEntity((int) Math.ceil(range));
+            t = e instanceof Player tp && !vanished(tp) ? tp : null;
+            if (t == null) {
+                send(p, msg("ability-no-target").replace("<range>", num(range)));
+                return;
+            }
+        }
+        if (t.equals(p)) {
+            send(p, msg("ability-self"));
+            return;
+        }
+        long now = System.currentTimeMillis();
+        long cd = (long) (c.getDouble("recharge", 15) * 1000);
+        Long last = abilityCooldown.get(p.getUniqueId());
+        if (last != null && now - last < cd) {
+            send(p, msg("ability-cooldown").replace("<time>", String.valueOf((cd - (now - last)) / 1000 + 1)));
+            return;
+        }
+        Follower f = null;
+        List<Follower> fs = active.get(p.getUniqueId());
+        if (fs != null) for (Follower x : fs) if (x.def == def && x.ent != null && x.ent.isValid()) f = x;
+        if (f == null) {
+            send(p, msg("ability-hidden"));
+            return;
+        }
+        abilityCooldown.put(p.getUniqueId(), now);
+        if ("caca".equals(def.ability)) poop(p, f, t, c);
+    }
+
+    private void poop(Player owner, Follower f, Player t, ConfigurationSection c) {
+        String petMini = rarities.get(f.def.rarity).style() + f.def.name + "<reset>";
+        f.chase = t;
+        f.overrideUntil = tick + 60;
+        owner.playSound(owner.getLocation(), Sound.ENTITY_CAT_PURREOW, 1f, 1.2f);
+        Particle.DustOptions brown = new Particle.DustOptions(Color.fromRGB(92, 58, 28), 1.6f), dark = new Particle.DustOptions(Color.fromRGB(58, 34, 14), 2.2f);
+        int[] k = {0};
+        boolean[] done = {false};
+        BukkitTask[] task = new BukkitTask[1];
+        task[0] = Bukkit.getScheduler().runTaskTimer(this, () -> {
+            int i = k[0]++;
+            if (!t.isOnline() || f.ent == null || !f.ent.isValid() || i > 60) {
+                task[0].cancel();
+                return;
+            }
+            Location cat = f.ent.getLocation();
+            Location head = t.getEyeLocation().add(0, 0.25, 0);
+            boolean above = cat.getWorld() == head.getWorld() && cat.distanceSquared(head.clone().add(0, 1, 0)) < 2.5;
+            if (!done[0] && (above || i >= 40)) {
+                done[0] = true;
+                f.overrideUntil = tick + 30; // il reste un peu au-dessus, puis revient
+                cat.getWorld().playSound(cat, Sound.ENTITY_CAT_HISS, 1f, 1.4f);
+                // la chute
+                for (int j = 0; j < 6; j++) {
+                    int jj = j;
+                    Bukkit.getScheduler().runTaskLater(this, () -> {
+                        if (!t.isOnline()) return;
+                        Location from = f.ent != null && f.ent.isValid() ? f.ent.getLocation() : t.getEyeLocation().add(0, 1.3, 0);
+                        Location to = t.getEyeLocation().add(0, 0.25, 0);
+                        Vector step = to.toVector().subtract(from.toVector()).multiply(1 / 6.0);
+                        Location at = from.clone().add(step.clone().multiply(jj));
+                        t.getWorld().spawnParticle(Particle.DUST, at, 6, 0.08, 0.08, 0.08, 0, jj % 2 == 0 ? brown : dark);
+                        if (jj == 0) t.getWorld().playSound(at, Sound.ENTITY_SLIME_SQUISH_SMALL, 1.2f, 0.5f);
+                    }, j);
+                }
+                Bukkit.getScheduler().runTaskLater(this, () -> splat(owner, f, t, c, petMini, brown, dark), 6L);
+            }
+        }, 0L, 1L);
+    }
+
+    private void splat(Player owner, Follower f, Player t, ConfigurationSection c, String petMini, Particle.DustOptions brown, Particle.DustOptions dark) {
+        if (!t.isOnline()) return;
+        Location face = t.getEyeLocation();
+        World w = face.getWorld();
+        w.spawnParticle(Particle.DUST, face, 50, 0.35, 0.3, 0.35, 0, brown);
+        w.spawnParticle(Particle.DUST, face, 30, 0.3, 0.25, 0.3, 0, dark);
+        w.spawnParticle(Particle.BLOCK, face, 40, 0.3, 0.3, 0.3, 0, Material.MUD.createBlockData());
+        w.spawnParticle(Particle.FALLING_DUST, face, 25, 0.35, 0.2, 0.35, 0, Material.BROWN_CONCRETE_POWDER.createBlockData());
+        w.playSound(face, Sound.BLOCK_MUD_BREAK, 1.4f, 0.7f);
+        w.playSound(face, Sound.BLOCK_HONEY_BLOCK_SLIDE, 1.2f, 0.6f);
+        w.playSound(face, Sound.ENTITY_SLIME_SQUISH, 1.2f, 0.6f);
+        // l'écran de la victime plein de caca (juste pour elle)
+        Location screen = face.clone().add(face.getDirection().multiply(0.9));
+        t.spawnParticle(Particle.DUST, screen, 60, 0.5, 0.35, 0.5, 0, dark);
+        t.spawnParticle(Particle.DUST, screen, 40, 0.5, 0.35, 0.5, 0, brown);
+        int nausea = (int) (c.getDouble("nausee", 6) * 20), blind = (int) (c.getDouble("aveuglement", 2) * 20);
+        if (nausea > 0) t.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, nausea, 0, false, false, true));
+        if (blind > 0) t.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, blind, 0, false, false, true));
+        t.showTitle(Title.title(parse(msg("poop-title")), parse(msg("poop-subtitle").replace("<pet>", petMini).replace("<owner>", MM.escapeTags(owner.getName()))),
+                Title.Times.times(java.time.Duration.ofMillis(100), java.time.Duration.ofMillis(1600), java.time.Duration.ofMillis(400))));
+        // un petit tas sur la tête pendant quelques secondes
+        int stay = (int) (c.getDouble("sur-la-tete", 5) * 20);
+        if (stay > 0) {
+            ItemDisplay pile = w.spawn(t.getLocation().add(0, t.getHeight() + 0.1, 0), ItemDisplay.class, d -> {
+                d.addScoreboardTag(TAG);
+                d.setPersistent(false);
+                d.setItemStack(new ItemStack(Material.COCOA_BEANS));
+                d.setTransformation(new Transformation(new Vector3f(), new Quaternionf(), new Vector3f(0.7f, 0.7f, 0.7f), new Quaternionf()));
+                d.setBillboard(Display.Billboard.VERTICAL);
+                d.setTeleportDuration(1);
+            });
+            int[] k = {0};
+            BukkitTask[] task = new BukkitTask[1];
+            task[0] = Bukkit.getScheduler().runTaskTimer(this, () -> {
+                if (k[0]++ >= stay || !t.isOnline() || !pile.isValid() || pile.getWorld() != t.getWorld()) {
+                    pile.remove();
+                    task[0].cancel();
+                    return;
+                }
+                pile.teleport(t.getLocation().add(0, t.getHeight() + 0.15, 0));
+                if (k[0] % 6 == 0) t.getWorld().spawnParticle(Particle.DUST, t.getLocation().add(0, t.getHeight() + 0.2, 0), 2, 0.15, 0.1, 0.15, 0, brown);
+                if (k[0] % 10 == 0) t.getWorld().spawnParticle(Particle.FALLING_DUST, t.getLocation().add(0, t.getHeight(), 0), 2, 0.2, 0.05, 0.2, 0,
+                        Material.BROWN_CONCRETE_POWDER.createBlockData());
+            }, 1L, 1L);
+        }
+        String line = msg("poop-broadcast").replace("<pet>", petMini).replace("<owner>", MM.escapeTags(owner.getName()))
+                .replace("<target>", MM.escapeTags(t.getName()));
+        double r = c.getDouble("message-rayon", 40);
+        for (Player o : face.getWorld().getPlayers()) if (o.getLocation().distanceSquared(face) <= r * r) send(o, line);
+    }
+
     // ================================================================= commandes
 
     @Override
@@ -1446,6 +1679,9 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
             }
             case "oeufs", "oeuf", "œufs", "œuf", "eggs" -> {
                 if (p != null) openEggs(p);
+            }
+            case "competence", "compétence", "caca", "loky" -> {
+                if (p != null) useAbility(p, a.length >= 2 ? a[1] : null);
             }
             case "cacher", "montrer", "hide" -> {
                 if (p == null) return true;
@@ -1534,7 +1770,10 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
                 for (List<Follower> fs : active.values()) for (Follower f : fs) despawn(f);
                 active.clear();
                 load();
-                for (Player pl : Bukkit.getOnlinePlayers()) refresh(pl);
+                for (Player pl : Bukkit.getOnlinePlayers()) {
+                    syncPermissionPets(pl);
+                    refresh(pl);
+                }
                 sendRaw(s, msg("reloaded").replace("<pets>", String.valueOf(pets.size())).replace("<eggs>", String.valueOf(eggs.size())));
             }
             default -> {
@@ -1560,7 +1799,7 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
         List<String> out = new ArrayList<>();
         boolean admin = s.hasPermission("smppets.admin");
         if (a.length == 1) {
-            out.addAll(List.of("oeufs", "cacher"));
+            out.addAll(List.of("oeufs", "cacher", "competence"));
             if (admin) out.addAll(List.of("donner", "pet", "retirer", "liste", "reload"));
         } else if (a.length == 2 && admin && List.of("donner", "pet", "retirer").contains(a[0].toLowerCase(Locale.ROOT))) {
             for (Player p : Bukkit.getOnlinePlayers()) out.add(p.getName());
@@ -1572,6 +1811,8 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
                 Player t = Bukkit.getPlayerExact(a[1]);
                 if (t != null) out.addAll(data(t.getUniqueId()).owned.keySet());
             }
+        } else if (a.length == 2 && a[0].equalsIgnoreCase("competence")) {
+            for (Player p : Bukkit.getOnlinePlayers()) if (!p.equals(s)) out.add(p.getName());
         } else if (a.length == 4 && admin && a[0].equalsIgnoreCase("donner")) {
             out.addAll(List.of("1", "5", "10"));
         }

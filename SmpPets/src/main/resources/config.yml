@@ -1,10 +1,11 @@
-config-version: 1
+config-version: 2
 # =====================================================================
 #  SmpPets - familiers qui te suivent, obtenus dans des œufs
 #  Joueurs :
 #   /pets            -> tes familiers (clic = équiper / retirer)
 #   /pets oeufs      -> les œufs, leurs chances, et les acheter (si un prix est mis)
 #   /pets cacher     -> cacher / montrer tes familiers (les boosts restent)
+#   /loky [joueur]   -> compétence du familier équipé (Loky, le chat des modos : il chie à la gueule du joueur visé)
 #   Clic droit avec un œuf en main = l'ouvrir · accroupi + clic droit = voir ce qu'il contient
 #  Admins (smppets.admin) :
 #   /pets donner <joueur> <oeuf> [nombre]   -> donne des œufs (marche aussi en lot de caisse :
@@ -64,6 +65,13 @@ raretes:
     couleur: "#ffffff"
     vitre: BLACK_STAINED_GLASS_PANE
     annonce: true
+  # familiers réservés au staff (pas dans les œufs : donnés par permission, voir "permission" dans pets.yml)
+  modo:
+    nom: "<#ff3b3b><b>MODO"
+    style: "<#ff5c5c>"
+    couleur: "#ff3b3b"
+    vitre: RED_STAINED_GLASS_PANE
+    annonce: false
 
 # ---------------------------------------------------------------------
 #  Œufs
@@ -134,3 +142,11 @@ messages:
   pet-given-admin: "<green><pet> <green>donné à <white><player></white>."
   pet-removed-admin: "<yellow><pet> <yellow>retiré à <white><player></white>."
   reloaded: "<green>SmpPets rechargé (<pets> familiers, <eggs> œufs)."
+  no-ability: "<red>Aucun de tes familiers équipés n'a de compétence."
+  ability-no-target: "<red>Vise un joueur (ou donne son nom) à moins de <range> blocs."
+  ability-self: "<red>Pas sur toi-même quand même..."
+  ability-cooldown: "<red>Ton familier se repose encore <white><time> s</white>."
+  ability-hidden: "<red>Ton familier doit être visible (/pets cacher)."
+  poop-title: "<#7a4a1e><b>BEURK !"
+  poop-subtitle: "<pet> <gray>de <white><owner></white> <gray>t'a chié à la gueule"
+  poop-broadcast: "<pet> <gray>de <white><owner></white> <gray>a chié à la gueule de <white><target></white> <#7a4a1e>(beurk)"

@@ -9,7 +9,14 @@ commands:
     description: Tes familiers
     usage: /pets [oeufs|cacher|donner|pet|retirer|liste|reload]
     aliases: [pet, familier, familiers]
+  loky:
+    description: Compétence de ton familier (Loky chie à la gueule du joueur visé)
+    usage: /loky [joueur]
+    aliases: [caca]
 permissions:
+  smppets.loky:
+    description: Avoir Loky, le chat noir des modos
+    default: op
   smppets.admin:
     description: Donner des œufs et des familiers, recharger la config
     default: op

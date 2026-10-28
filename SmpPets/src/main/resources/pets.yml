@@ -10,6 +10,8 @@
 #   icone      : objet dans les menus (par défaut l'œuf d'apparition du mob)
 #   effets     : effets permanents tant qu'il est équipé : "effet:niveau" (speed:1, haste:2, night_vision:1...)
 #   attributs  : "attribut:+valeur" ou "attribut:+valeur%" (max_health:+4 = +2 coeurs, movement_speed:+5%...)
+#   permission : (optionnel) le familier est donné à ceux qui ont cette permission et retiré s'ils la perdent (mets alors poids: 0)
+#   competence : (optionnel) compétence lancée avec /loky [joueur] - type: caca (voir Loky en bas)
 #   bonus      : xp (multiplicateur d'expérience), degats-pve (multiplicateur de dégâts contre les monstres),
 #                protection-pve (dégâts reçus des monstres, 0.8 = -20 %), aimant (rayon en blocs pour attirer les objets),
 #                soin (PV rendus toutes les 2 s, 2 PV = 1 coeur), double-minerai (chance de doubler un minerai, 0.15 = 15 %),
@@ -308,3 +310,24 @@ pets:
     effets: ["speed:1"]
     attributs: ["luck:+3"]
     bonus: {xp: 2.0, aimant: 10}
+
+  # ------------------------------------------------------------ MODOS (pas dans les œufs)
+  loky:
+    nom: "Loky"
+    rarete: modo
+    type: CAT
+    variante: ALL_BLACK
+    hauteur: 1.3
+    poids: 0
+    permission: smppets.loky
+    particules: SMOKE
+    description: ["<gray>Le chat noir des modos.", "<dark_gray>Il chie à la gueule des gens.", "", "<yellow>/loky [joueur]</yellow> <gray>(ou vise quelqu'un)"]
+    effets: ["night_vision:1", "speed:1"]
+    competence:
+      type: caca
+      recharge: 10       # secondes entre deux cacas
+      portee: 30         # distance max de la cible
+      nausee: 6          # secondes de nausée pour la victime (0 = rien)
+      aveuglement: 2     # secondes d'aveuglement (0 = rien)
+      sur-la-tete: 5     # secondes avec le caca posé sur la tête
+      message-rayon: 40  # les joueurs à moins de X blocs voient le message
