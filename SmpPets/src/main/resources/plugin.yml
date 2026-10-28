@@ -1,0 +1,27 @@
+name: SmpPets
+version: '${version}'
+main: fr.smppets.SmpPets
+api-version: '26.2'
+softdepend: [Vault]
+description: "Familiers qui te suivent (effets, boosts) obtenus dans des œufs Rare / Épique / Légendaire / Mythique"
+commands:
+  pets:
+    description: Tes familiers
+    usage: /pets [oeufs|cacher|donner|pet|retirer|liste|reload]
+    aliases: [pet, familier, familiers]
+permissions:
+  smppets.admin:
+    description: Donner des œufs et des familiers, recharger la config
+    default: op
+  smppets.slots.2:
+    description: 2 familiers équipés en même temps
+    default: false
+  smppets.slots.3:
+    description: 3 familiers équipés en même temps
+    default: false
+  smppets.slots.4:
+    description: 4 familiers équipés en même temps
+    default: false
+  smppets.slots.5:
+    description: 5 familiers équipés en même temps
+    default: false

@@ -1,0 +1,136 @@
+config-version: 1
+# =====================================================================
+#  SmpPets - familiers qui te suivent, obtenus dans des œufs
+#  Joueurs :
+#   /pets            -> tes familiers (clic = équiper / retirer)
+#   /pets oeufs      -> les œufs, leurs chances, et les acheter (si un prix est mis)
+#   /pets cacher     -> cacher / montrer tes familiers (les boosts restent)
+#   Clic droit avec un œuf en main = l'ouvrir · accroupi + clic droit = voir ce qu'il contient
+#  Admins (smppets.admin) :
+#   /pets donner <joueur> <oeuf> [nombre]   -> donne des œufs (marche aussi en lot de caisse :
+#        command: "pets donner %player% rare 1")
+#   /pets pet <joueur> <familier>           -> donne directement un familier
+#   /pets retirer <joueur> <familier>       -> lui enlève un familier
+#   /pets liste · /pets reload
+#  Les familiers eux-mêmes (apparence, effets, boosts) sont dans pets.yml.
+#  Doublon : un familier que tu as déjà gagne une étoile ★ (jusqu'à etoiles.max) et ses boosts augmentent.
+#  Plus de familiers équipés en même temps : permissions smppets.slots.2 ... smppets.slots.5
+# =====================================================================
+
+# nombre de familiers équipés en même temps (sans permission)
+emplacements: 1
+# un nouveau familier est équipé tout seul s'il reste une place
+equiper-auto: true
+# afficher le nom du familier au-dessus de lui
+nom-visible: true
+# ouverture d'œuf avec roulette animée (false = résultat direct)
+animation: true
+
+etoiles:
+  max: 5
+  # chaque étoile en plus augmente les boosts (attributs et bonus) de 25 % (les effets de potion ne changent pas)
+  bonus-par-etoile: 0.25
+  # quand le familier est déjà au maximum : commandes lancées par la console (%player%, %pet%) - vide = rien
+  doublon-max-commandes: []
+
+# ---------------------------------------------------------------------
+#  Raretés
+#   style   : couleur / mise en forme du nom des familiers de cette rareté
+#   vitre   : couleur de la vitre dans les menus et la roulette
+#   annonce : tout le serveur est prévenu quand quelqu'un en obtient un
+# ---------------------------------------------------------------------
+raretes:
+  rare:
+    nom: "<#4aa8ff><b>RARE"
+    style: "<#4aa8ff>"
+    couleur: "#4aa8ff"
+    vitre: LIGHT_BLUE_STAINED_GLASS_PANE
+    annonce: false
+  epique:
+    nom: "<#b34aff><b>ÉPIQUE"
+    style: "<#c77dff>"
+    couleur: "#b34aff"
+    vitre: PURPLE_STAINED_GLASS_PANE
+    annonce: false
+  legendaire:
+    nom: "<#ffb300><b>LÉGENDAIRE"
+    style: "<#ffc93c>"
+    couleur: "#ffb300"
+    vitre: ORANGE_STAINED_GLASS_PANE
+    annonce: true
+  mythique:
+    nom: "<gradient:#ffffff:#4a4a4a><b>MYTHIQUE</gradient>"
+    style: "<gradient:#ffffff:#7a7a7a>"
+    couleur: "#ffffff"
+    vitre: BLACK_STAINED_GLASS_PANE
+    annonce: true
+
+# ---------------------------------------------------------------------
+#  Œufs
+#   materiau : l'objet de l'œuf
+#   prix     : prix dans /pets oeufs (argent du jeu, Vault). 0 = pas en vente (caisses, events...)
+#   raretes  : poids de chaque rareté (le poids est partagé entre les familiers de la rareté selon leur "poids" dans pets.yml)
+#   pets     : (optionnel) liste précise {familier: poids} qui remplace "raretes"
+# ---------------------------------------------------------------------
+oeufs:
+  rare:
+    nom: "<#4aa8ff><b>Œuf Rare"
+    materiau: BLUE_EGG
+    rarete: rare
+    prix: 25000
+    lore:
+      - "<gray>Un petit œuf tout bleu."
+      - "<gray>Il bouge un peu..."
+    raretes: {rare: 85, epique: 13, legendaire: 1.9, mythique: 0.1}
+  epique:
+    nom: "<#b34aff><b>Œuf Épique"
+    materiau: TURTLE_EGG
+    rarete: epique
+    prix: 80000
+    lore:
+      - "<gray>Un œuf tacheté de violet."
+      - "<gray>On entend quelque chose dedans."
+    raretes: {rare: 35, epique: 55, legendaire: 9, mythique: 1}
+  legendaire:
+    nom: "<#ffb300><b>Œuf Légendaire"
+    materiau: SNIFFER_EGG
+    rarete: legendaire
+    prix: 250000
+    lore:
+      - "<gray>Un œuf ancien, chaud et lourd."
+      - "<gray>Ça cogne fort à l'intérieur."
+    raretes: {epique: 40, legendaire: 55, mythique: 5}
+  mythique:
+    nom: "<gradient:#ffffff:#4a4a4a><b>Œuf Mythique</gradient>"
+    materiau: DRAGON_EGG
+    rarete: mythique
+    prix: 0
+    lore:
+      - "<gray>Personne ne sait d'où il vient."
+      - "<dark_gray>Il fait trembler tes mains."
+    raretes: {legendaire: 75, mythique: 25}
+
+messages:
+  prefix: "<dark_gray>[<gradient:#ffd23c:#ff7ad9>Familiers</gradient><dark_gray>] "
+  no-permission: "<red>Tu n'as pas la permission."
+  unknown-player: "<red>Joueur introuvable (il doit être connecté)."
+  unknown-egg: "<red>Œuf inconnu. <gray>Œufs : <white><list>"
+  unknown-pet: "<red>Familier inconnu. <gray>/pets liste"
+  egg-given: "<green>Tu as reçu <white><amount>x</white> <egg><green> !"
+  egg-given-admin: "<green><amount>x <egg> <green>donné(s) à <white><player></white>."
+  egg-not-for-sale: "<red>Cet œuf n'est pas en vente."
+  no-money: "<red>Il te faut <gold><price></gold> (tu as <gold><balance></gold>)."
+  bought: "<green>Œuf acheté pour <gold><price></gold> ! <gray>Clic droit avec pour l'ouvrir."
+  already-opening: "<red>Tu ouvres déjà un œuf !"
+  new-pet: "<green>Nouveau familier : <pet> <green>!"
+  star-up: "<yellow>Doublon ! <pet> <yellow>passe à <gold><stars></gold>."
+  max-stars: "<gray>Doublon : <pet> <gray>est déjà au maximum d'étoiles."
+  broadcast: "<white><player></white> <gray>a obtenu <pet> <gray>(<rarity><gray>) dans un <egg><gray> !"
+  equipped: "<green><pet> <green>te suit maintenant."
+  unequipped: "<gray><pet> <gray>ne te suit plus."
+  slots-full: "<red>Tu as déjà <slots> familier(s) équipé(s). <gray>Retires-en un d'abord."
+  hidden: "<gray>Tes familiers sont cachés (les boosts restent actifs)."
+  shown: "<green>Tes familiers sont de nouveau visibles."
+  pet-given-admin: "<green><pet> <green>donné à <white><player></white>."
+  pet-removed-admin: "<yellow><pet> <yellow>retiré à <white><player></white>."
+  reloaded: "<green>SmpPets rechargé (<pets> familiers, <eggs> œufs)."

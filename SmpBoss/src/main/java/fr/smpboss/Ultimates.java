@@ -191,6 +191,7 @@ final class Ultimates {
         PumpkinKing k = plugin.king();
         for (Entity en : c.getWorld().getNearbyEntities(c, r, r, r)) {
             if (!(en instanceof LivingEntity le) || en.equals(caster) || le.isDead()) continue;
+            if (en.getScoreboardTags().contains("smp_pet")) continue; // familiers (SmpPets)
             if (en.getLocation().distanceSquared(c) > r * r) continue;
             if (shielded(en)) continue;
             if (en instanceof Player t) {
