@@ -77,6 +77,14 @@ public final class SmpCombat extends JavaPlugin implements Listener, TabExecutor
             getConfig().set("config-version", 2);
             saveConfig();
         }
+        if (getConfig().getInt("config-version", 1) < 3) {
+            // le fruit de chorus ne téléporte plus en danger
+            List<String> tp = new ArrayList<>(getConfig().getStringList("allowed-teleports"));
+            tp.remove("CHORUS_FRUIT");
+            getConfig().set("allowed-teleports", tp);
+            getConfig().set("config-version", 3);
+            saveConfig();
+        }
         allowKey = new NamespacedKey("smpcombat", "allow_tp_until");
         getServer().getPluginManager().registerEvents(this, this);
         var cmd = getCommand("combat");
@@ -219,7 +227,7 @@ public final class SmpCombat extends JavaPlugin implements Listener, TabExecutor
             int n = Math.max(1, d.enemies.size());
             if (d.bar != null && tick % 2 == 0) {
                 d.bar.progress(Math.max(0f, Math.min(1f, (float) (d.until - now) / secs)));
-                d.bar.name(mm(msg("bossbar").replace("<s>", String.valueOf(s)).replace("<n>", String.valueOf(n))));
+                d.bar.name(mm(msg("bossbar").replace("<s>", String.valueOf(s)).replace("<n>", String.valueOf(n)) + track(p, d)));
             }
             if (getConfig().getBoolean("flavor", true) && d.flavor != null && tick % 2 == 0) {
                 if (++d.flavorTicks > 80) newFlavor(d);
@@ -231,6 +239,65 @@ public final class SmpCombat extends JavaPlugin implements Listener, TabExecutor
                 if (ratio < 0.4) sound(p, "entity.warden.heartbeat", 1f, ratio < 0.2 ? 1.4f : 1f);
             }
         }
+    }
+
+    // ================================================================= flèche vers l'adversaire
+
+    private static final String[] ARROWS = {"↑", "↗", "→", "↘", "↓", "↙", "←", "↖"};
+
+    /** "| ↗ ~30 m" : à peu près où est l'adversaire (le dernier qui t'a tapé / que tu as tapé). */
+    private String track(Player p, Danger d) {
+        if (!getConfig().getBoolean("track-enemy", true) || d.lastEnemy == null) return "";
+        Player e = Bukkit.getPlayer(d.lastEnemy);
+        if (e == null || e.getWorld() != p.getWorld() || e.isDead()) return "";
+        double dist = p.getLocation().distance(e.getLocation());
+        if (dist < getConfig().getDouble("track-min-distance", 8)) return "";
+        double dx = e.getLocation().getX() - p.getLocation().getX(), dz = e.getLocation().getZ() - p.getLocation().getZ();
+        // angle de l'ennemi par rapport à là où on regarde (0 = devant)
+        double target = Math.toDegrees(Math.atan2(-dx, dz));
+        double rel = ((target - p.getLocation().getYaw()) % 360 + 360 + 22.5) % 360;
+        String arrow = ARROWS[(int) (rel / 45) % 8];
+        long approx = dist < 50 ? Math.round(dist / 5) * 5 : Math.round(dist / 10) * 10;
+        return " " + getConfig().getString("messages.track", "<dark_gray>|</dark_gray> <yellow><b><arrow></b> <white>~<dist> m")
+                .replace("<arrow>", arrow).replace("<dist>", String.valueOf(approx));
+    }
+
+    // ================================================================= anti-fuite : perles, vent, trident, chorus
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onLaunch(org.bukkit.event.entity.ProjectileLaunchEvent e) {
+        if (!(e.getEntity().getShooter() instanceof Player p) || !inDanger(p)) return;
+        Material m;
+        int secs;
+        if (e.getEntity() instanceof org.bukkit.entity.EnderPearl) {
+            m = Material.ENDER_PEARL;
+            secs = getConfig().getInt("pearl-cooldown-seconds", 15);
+        } else if (e.getEntity() instanceof org.bukkit.entity.WindCharge) {
+            m = Material.WIND_CHARGE;
+            secs = getConfig().getInt("wind-charge-cooldown-seconds", 5);
+        } else return;
+        if (secs <= 0) return;
+        // la recharge vanilla est posée juste après : on met la nôtre au tick suivant
+        Bukkit.getScheduler().runTask(this, () -> {
+            if (p.isOnline()) p.setCooldown(m, secs * 20);
+        });
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onRiptide(PlayerInteractEvent e) {
+        if (e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        var it = e.getItem();
+        if (it == null || it.getType() != Material.TRIDENT || !it.containsEnchantment(org.bukkit.enchantments.Enchantment.RIPTIDE)) return;
+        if (!getConfig().getBoolean("block-riptide", true) || !inDanger(e.getPlayer())) return;
+        e.setCancelled(true);
+        e.getPlayer().sendActionBar(mm(msg("blocked-riptide")));
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onChorus(org.bukkit.event.player.PlayerItemConsumeEvent e) {
+        if (e.getItem().getType() != Material.CHORUS_FRUIT || !getConfig().getBoolean("block-chorus", true) || !inDanger(e.getPlayer())) return;
+        e.setCancelled(true);
+        e.getPlayer().sendActionBar(mm(msg("blocked-chorus")));
     }
 
     // ================================================================= ce qui met en danger

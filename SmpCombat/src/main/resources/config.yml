@@ -1,4 +1,4 @@
-config-version: 2
+config-version: 3
 # =====================================================================
 #  SmpCombat - combat façon Deepwoken
 #
@@ -21,7 +21,7 @@ combat-log:
   broadcast: true
 
 # téléportations autorisées en danger (le reste est bloqué : commandes, /home, /spawn, /tpa, plugins...)
-allowed-teleports: [ENDER_PEARL, CHORUS_FRUIT, NETHER_PORTAL, END_PORTAL, END_GATEWAY, UNKNOWN, EXIT_BED, DISMOUNT]
+allowed-teleports: [ENDER_PEARL, NETHER_PORTAL, END_PORTAL, END_GATEWAY, UNKNOWN, EXIT_BED, DISMOUNT]
 # petites téléportations faites par un plugin (dash, corrections) : autorisées jusqu'à X blocs
 max-plugin-teleport: 12
 
@@ -69,6 +69,14 @@ blocked-commands:
 block-ender-chest: true
 # élytres interdites en danger (fuite)
 block-elytra: true
+# anti-fuite en danger
+pearl-cooldown-seconds: 15        # une ender pearl toutes les 15 s (au lieu d'1 s)
+wind-charge-cooldown-seconds: 5   # charge de vent
+block-riptide: true               # trident Impulsion interdit
+block-chorus: true                # fruit de chorus interdit
+# flèche dans la barre "EN DANGER" : à peu près où est ton adversaire (s'il est à plus de X blocs)
+track-enemy: true
+track-min-distance: 8
 
 # effets
 screen-tint: true            # bords de l'écran en rouge
@@ -86,6 +94,9 @@ messages:
   blocked-teleport: "<red>Impossible de te téléporter en danger. <gray>(encore <white><s>s</white>)"
   blocked-echest: "<red>Ton coffre de l'End est scellé tant que tu es en danger."
   blocked-elytra: "<red>Tu ne peux pas t'envoler en danger."
+  blocked-riptide: "<red>Pas de trident Impulsion en danger."
+  blocked-chorus: "<red>Pas de fruit de chorus en danger."
+  track: "<dark_gray>|</dark_gray> <yellow><b><arrow></b> <white>~<dist> m"
   logged: "<dark_red>☠ <red><player></red> <gray>a fui le combat... et y a laissé sa vie."
   status-safe: "<green>Tu n'es pas en danger."
   status-danger: "<red>Tu es en danger encore <white><s>s</white> (<white><n></white> adversaire(s))."
