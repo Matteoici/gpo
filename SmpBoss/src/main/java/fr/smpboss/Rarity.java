@@ -2,14 +2,14 @@ package fr.smpboss;
 
 import java.util.Locale;
 
-/** Raretés du butin de boss. Couleurs : blanc, bleu, violet, arc-en-ciel, noir et blanc. */
+/** Raretés du butin de boss. Couleurs : blanc, bleu, violet, arc-en-ciel, noir et blanc (MYTHICAL, ex-"secret"), bleu nuit. */
 public enum Rarity {
     COMMON("<white>", "<gray>Commun", "WHITE"),
     RARE("<#4aa8ff>", "<#4aa8ff><b>RARE", "BLUE"),
     EPIC("<#b45cff>", "<#b45cff><b>ÉPIQUE", "PURPLE"),
     LEGENDARY("<rainbow>", "<rainbow><b>✦ LÉGENDAIRE ✦", "RAINBOW"),
-    SECRET("<gradient:#ffffff:#6b6b6b:#ffffff>", "<gradient:#ffffff:#4a4a4a:#ffffff><b>✧ SECRET ✧", "SECRET"),
-    /** 0,01 % : au-dessus de tout. */
+    SECRET("<gradient:#ffffff:#6b6b6b:#ffffff>", "<gradient:#ffffff:#4a4a4a:#ffffff><b>✧ MYTHICAL ✧", "SECRET"),
+    /** 0,001 % : au-dessus de tout. */
     PRESTIGE("<gradient:#1b2f7a:#6d8cff:#1b2f7a>", "<gradient:#0b1a4a:#4a6cf0:#e3e9ff:#4a6cf0:#0b1a4a><b>❂ PRESTIGE ❂", "PRESTIGE");
 
     /** Couleur MiniMessage à placer devant le nom. */
@@ -30,7 +30,7 @@ public enum Rarity {
             case "rare" -> RARE;
             case "epic", "epique", "épique" -> EPIC;
             case "legendary", "legendaire", "légendaire" -> LEGENDARY;
-            case "secret" -> SECRET;
+            case "secret", "mythical", "mythique" -> SECRET;
             case "prestige" -> PRESTIGE;
             default -> COMMON;
         };

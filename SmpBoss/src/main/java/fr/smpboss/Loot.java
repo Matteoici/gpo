@@ -45,7 +45,7 @@ public final class Loot {
         // ---- tirage de rareté (avec garantie)
         ThreadLocalRandom r = ThreadLocalRandom.current();
         double roll = r.nextDouble() * 100;
-        double prestige = c.getDouble("loot.chances.prestige", 0.01);
+        double prestige = c.getDouble("loot.chances.prestige", 0.001);
         double secret = c.getDouble("loot.chances.secret", 0.5);
         double legendary = c.getDouble("loot.chances.legendary", 1);
         double epic = c.getDouble("loot.chances.epic", 5);

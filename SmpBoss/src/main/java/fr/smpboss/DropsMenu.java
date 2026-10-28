@@ -86,7 +86,7 @@ final class DropsMenu implements InventoryHolder {
         // armes : tirage à part, chacune sa chance
         Weapons w = plugin.weapons();
         for (String id : Weapons.ALL) {
-            double ch = c.getDouble("weapons." + Weapons.path(id) + ".chance", Weapons.rarity(id) == Rarity.PRESTIGE ? 0.01 : 0.1);
+            double ch = c.getDouble("weapons." + Weapons.path(id) + ".chance", Weapons.rarity(id) == Rarity.PRESTIGE ? 0.001 : 0.5);
             if (ch <= 0) continue;
             ItemStack it = w.create(id);
             out.add(new Entry(withChance(it, ch, null), Weapons.rarity(id), ch));
@@ -94,7 +94,7 @@ final class DropsMenu implements InventoryHolder {
         // reliques et objets : d'abord la rareté, puis un objet au hasard dans la liste
         boolean hasPrestige = !c.getMapList("loot.pools.prestige").isEmpty();
         Map<Rarity, Double> rar = Map.of(
-                Rarity.PRESTIGE, hasPrestige ? c.getDouble("loot.chances.prestige", 0.01) : 0,
+                Rarity.PRESTIGE, hasPrestige ? c.getDouble("loot.chances.prestige", 0.001) : 0,
                 Rarity.SECRET, c.getDouble("loot.chances.secret", 0.5),
                 Rarity.LEGENDARY, c.getDouble("loot.chances.legendary", 1),
                 Rarity.EPIC, c.getDouble("loot.chances.epic", 5),
@@ -158,7 +158,7 @@ final class DropsMenu implements InventoryHolder {
         m.displayName(line(plugin.msg("drops.info-name")));
         List<Component> lore = new ArrayList<>();
         for (String l : plugin.getConfig().getStringList("messages.drops.info-lore")) {
-            lore.add(line(l.replace("<prestige>", pct(c.getMapList("loot.pools.prestige").isEmpty() ? 0 : c.getDouble("loot.chances.prestige", 0.01)))
+            lore.add(line(l.replace("<prestige>", pct(c.getMapList("loot.pools.prestige").isEmpty() ? 0 : c.getDouble("loot.chances.prestige", 0.001)))
                     .replace("<secret>", pct(c.getDouble("loot.chances.secret", 0.5)))
                     .replace("<legendary>", pct(c.getDouble("loot.chances.legendary", 1)))
                     .replace("<epic>", pct(c.getDouble("loot.chances.epic", 5)))

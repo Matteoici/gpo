@@ -1,4 +1,4 @@
-config-version: 25
+config-version: 26
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -192,10 +192,10 @@ arena:
 loot:
   # il faut avoir fait au moins X % des dégâts pour être récompensé
   min-damage-percent: 5
-  # chances en %, tirées dans cet ordre (secret, puis légendaire...)
+  # chances en %, tirées dans cet ordre (mythical, puis légendaire...)
   chances:
-    # ❂ PRESTIGE : 0,01 % (1 chance sur 10 000), tiré avant tout le reste, sans garantie
-    prestige: 0.01
+    # ❂ PRESTIGE : 0,001 % (1 chance sur 100 000), tiré avant tout le reste, sans garantie
+    prestige: 0.001
     secret: 0.5
     legendary: 1
     epic: 5
@@ -239,8 +239,8 @@ loot:
 # ---------------------------------------------------------------- Armes du Roi (butin rare, gardées à la mort)
 weapons:
   sonic-bow:
-    # chance (%) de la gagner à chaque victoire (0.1 = 1 chance sur 1 000 · PRESTIGE : 0.01 = 1 chance sur 10 000)
-    chance: 0.01
+    # chance (%) de la gagner à chaque victoire (MYTHICAL : 0.5 = 1 chance sur 200 · PRESTIGE : 0.001 = 1 chance sur 100 000)
+    chance: 0.001
     # dégâts du rayon (2 = 1 cœur ; traverse l'armure comme le Warden)
     damage: 10
     # recharge plus longue, mais l'onde va 3 fois plus loin
@@ -249,7 +249,7 @@ weapons:
     # temps de tension minimum (ms) : l'arc doit être chargé au maximum
     full-charge-ms: 950
   tranche-mace:
-    chance: 0.1
+    chance: 0.5
     # dégâts au corps à corps (épée netherite Tranchant V = 11) ; on peut encore l'enchanter
     attack-damage: 16
     attack-speed: 1.6
@@ -262,7 +262,7 @@ weapons:
     levitation-level: 1
   # ❂ PRESTIGE
   brise-terre:
-    chance: 0.01
+    chance: 0.001
     # hache : 22 de dégâts au corps à corps (netherite = 10) · en main : Résistance I
     attack-damage: 22
     attack-speed: 1.1
@@ -295,9 +295,9 @@ weapons:
     rain-radius: 5
     rain-damage: 4
     rain-cooldown-seconds: 15
-  # ✧ SECRET
+  # ✧ MYTHICAL
   croc-de-givre:
-    chance: 0.1
+    chance: 0.5
     # épée : 15 au corps à corps (comme la Tranche Mace, un peu moins)
     attack-damage: 15
     attack-speed: 1.6
@@ -307,7 +307,7 @@ weapons:
     freeze-seconds: 3
     cooldown-seconds: 8
   arc-tempete:
-    chance: 0.1
+    chance: 0.5
     # tir tendu au maximum : la foudre tombe sur la cible puis saute sur les ennemis proches
     damage: 10
     chain: 4
@@ -318,7 +318,7 @@ weapons:
   # Seuls les joueurs et les monstres sont touchés (pas les animaux / villageois / familiers). Aucun bloc cassé.
   ultimate-chat-radius: 250
   hollow-purple:
-    chance: 0.01
+    chance: 0.001
     radius: 200
     # pleins dégâts dans le cœur, puis ça baisse jusqu'à 30 % au bord des 200 blocs
     damage: 60
@@ -327,7 +327,7 @@ weapons:
     range: 120
     cooldown-minutes: 30
   fuga:
-    chance: 0.01
+    chance: 0.001
     radius: 200
     damage: 50
     core-radius: 30
@@ -455,7 +455,7 @@ relics:
       lore: ["<gray>Taillée dans le ciel de la bulle rouge."]
       speed: 6
       regen: 1
-    # ------- ❂ PRESTIGE (0,01 %) : versions ultimes de la couronne et des ailes
+    # ------- ❂ PRESTIGE (0,001 %) : versions ultimes de la couronne et des ailes
     couronne_roi_eternel:
       name: "Couronne du Roi Éternel"
       rarity: prestige
@@ -671,13 +671,13 @@ messages:
       - "<white>• <gray>une chance pour <white>chaque arme</white> (tirage à part)"
       - "<white>• <gray>un tirage de rareté, puis un objet au hasard :"
       - "  <#6d8cff>❂ Prestige <white><prestige> %"
-      - "  <white>✧ Secret <white><secret> %"
+      - "  <white>✧ Mythical <white><secret> %"
       - "  <gold>★ Légendaire <white><legendary> %"
       - "  <light_purple>◆ Épique <white><epic> %"
       - "  <aqua>◇ Rare <white><rare> %"
       - ""
       - "<gray>Garantie : un <gold>Légendaire</gold> au bout de <white><pity-legendary></white> victoires"
-      - "<gray>sans, un <white>Secret</white> au bout de <white><pity-secret></white>."
+      - "<gray>sans, un <white>Mythical</white> au bout de <white><pity-secret></white>."
   altar:
     hologram: "<gradient:#ff7a00:#ffd36b><b>♛ Autel du Roi Citrouille ♛</b></gradient>\n<gray>Clic droit avec une <gold>Citrouille sacrificielle</gold>\n<gray>pour réveiller le Roi\n<dark_gray>8 Graines maudites + 1 citrouille sculptée\n\n<status>"
     status-ready: "<green><b>✔ Le Roi peut être réveillé"
@@ -822,9 +822,9 @@ messages:
     new-item: "<white>Nouvel objet <dark_gray>‹</dark_gray><item><dark_gray>›"
     new-title: "<white>Nouveau titre débloqué : <dark_gray>‹</dark_gray><title><dark_gray>›"
     broadcast-legendary: "<rainbow><b>✦</b></rainbow> <white><player></white> <gray>a obtenu</gray> <item> <gray>sur le Roi Citrouille !"
-    broadcast-prestige: "<gradient:#0b1a4a:#6d8cff:#e3e9ff:#6d8cff:#0b1a4a><b>❂❂❂ PRESTIGE ❂❂❂</b></gradient> <white><b><player></b></white> <gray>a obtenu</gray> <item> <gray>! <dark_gray>(1 chance sur 10 000)"
+    broadcast-prestige: "<gradient:#0b1a4a:#6d8cff:#e3e9ff:#6d8cff:#0b1a4a><b>❂❂❂ PRESTIGE ❂❂❂</b></gradient> <white><b><player></b></white> <gray>a obtenu</gray> <item> <gray>! <dark_gray>(1 chance sur 100 000)"
     prestige-subtitle: "<white><player></white> <gray>a obtenu</gray> <item>"
-    broadcast-secret: "<gradient:#ffffff:#4a4a4a:#ffffff><b>✧ SECRET ✧</b></gradient> <white><player></white> <gray>a obtenu</gray> <item> <gray>!!!"
+    broadcast-secret: "<gradient:#ffffff:#4a4a4a:#ffffff><b>✧ MYTHICAL ✧</b></gradient> <white><player></white> <gray>a obtenu</gray> <item> <gray>!!!"
   relics:
     claimed: "<green>Relique ajoutée : <relic> <gray>(/reliques)"
     already-owned: "<red>Tu as déjà cette relique. <gray>Tu peux l'échanger ou la vendre."
@@ -863,7 +863,7 @@ messages:
     info-owned: "<gray>Possédées : <white><n>"
     info-kills: "<gray>Rois Citrouille vaincus : <white><n>"
     info-pity-legendary: "<gray>Légendaire garanti dans : <rainbow><n></rainbow> <gray>victoires"
-    info-pity-secret: "<gray>Secret garanti dans : <white><n></white> <gray>victoires"
+    info-pity-secret: "<gray>Mythical garanti dans : <white><n></white> <gray>victoires"
     info-titles: "<gray>Titres :"
     click-equip: "<yellow>▶ Clic : équiper"
     click-unequip: "<yellow>▶ Clic : retirer"

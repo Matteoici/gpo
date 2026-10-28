@@ -1080,7 +1080,7 @@ final class Weapons implements Listener {
     /** Tirage des armes après une victoire (chacune a sa chance). */
     void roll(Player p) {
         for (String id : ALL) {
-            double chance = cfg(path(id) + ".chance", rarity(id) == Rarity.PRESTIGE ? 0.01 : 0.1);
+            double chance = cfg(path(id) + ".chance", rarity(id) == Rarity.PRESTIGE ? 0.001 : 0.5);
             if (ThreadLocalRandom.current().nextDouble() * 100 >= chance) continue;
             ItemStack it = create(id);
             boolean inv = plugin.loot().give(p, it.clone());

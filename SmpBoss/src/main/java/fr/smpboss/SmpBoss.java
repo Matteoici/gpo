@@ -270,6 +270,18 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 25);
             saveConfig();
         }
+        if (getConfig().getInt("config-version", 1) < 26) {
+            // Légendaire 1 %, "Secret" renommé MYTHICAL à 0,5 %, Prestige 0,001 %
+            getConfig().set("loot.chances.legendary", 1);
+            getConfig().set("loot.chances.secret", 0.5);
+            getConfig().set("loot.chances.prestige", 0.001);
+            for (String w : new String[]{"tranche-mace", "croc-de-givre", "arc-tempete"}) getConfig().set("weapons." + w + ".chance", 0.5);
+            for (String w : new String[]{"sonic-bow", "brise-terre", "hollow-purple", "fuga"}) getConfig().set("weapons." + w + ".chance", 0.001);
+            for (String m : new String[]{"messages.loot.broadcast-secret", "messages.loot.broadcast-prestige", "messages.menu.info-pity-secret", "messages.drops.info-lore"})
+                getConfig().set(m, null);
+            getConfig().set("config-version", 26);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);
