@@ -798,8 +798,8 @@ messages:
         - "<white>🔥 <damage> ❤</white> <gray>au cœur   <dark_gray>|</dark_gray>   <white>⏳ <minutes> min"
         - "<dark_gray>✧ Ne tombe pas à la mort"
       chant:
-        - "<dark_gray>[<#ff7a1e>❂</#ff7a1e>]</dark_gray> <white><player></white> <dark_gray>»</dark_gray> <i><#ffc58a>Ouverture…"
-        - "<dark_gray>[<#ff7a1e>❂</#ff7a1e>]</dark_gray> <white><player></white> <dark_gray>»</dark_gray> <i><#ffc58a>■ 竈 ■"
+        - "<dark_gray>[<#ff7a1e>❂</#ff7a1e>]</dark_gray> <white><player></white> <dark_gray>»</dark_gray> <i><#ffc58a>Voyons voir… qui a le feu le plus puissant."
+        - "<dark_gray>[<#ff7a1e>❂</#ff7a1e>]</dark_gray> <white><player></white> <dark_gray>»</dark_gray> <i><#ffc58a>■ 竈 ■ Ouverture."
       final: "<dark_gray>[<#ff7a1e>❂</#ff7a1e>]</dark_gray> <white><player></white> <dark_gray>»</dark_gray> <gradient:#ffd23c:#ff7a1e:#ff2a00><b>🔥 FÛGA 🔥"
       summary: "<dark_gray>[<#ff7a1e>❂</#ff7a1e>]</dark_gray> <gray>Le Fûga de <white><player></white> a tout embrasé… <white><n></white> <gray>cible(s) touchée(s)."
   board:

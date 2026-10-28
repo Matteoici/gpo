@@ -336,7 +336,7 @@ public final class SmpBoard extends JavaPlugin implements Listener {
         if (s.indexOf('{') >= 0) {
             ZonedDateTime now = ZonedDateTime.now(zone);
             s = rep(s, "{player}", p.getName());
-            s = rep(s, "{online}", String.valueOf(Bukkit.getOnlinePlayers().size()));
+            if (s.contains("{online}")) s = rep(s, "{online}", String.valueOf(online(p)));
             s = rep(s, "{max}", String.valueOf(Bukkit.getMaxPlayers()));
             s = rep(s, "{ping}", String.valueOf(p.getPing()));
             s = rep(s, "{world}", p.getWorld().getName());
@@ -375,6 +375,20 @@ public final class SmpBoard extends JavaPlugin implements Listener {
         }
         if (s.indexOf('§') >= 0 || s.indexOf('&') >= 0) s = legacyToMini(s);
         return s;
+    }
+
+    /** Joueurs en ligne que CE joueur peut voir : les staffs en vanish ne sont pas comptés. */
+    private static int online(Player viewer) {
+        int n = 0;
+        for (Player o : Bukkit.getOnlinePlayers()) {
+            if (o.equals(viewer) || (viewer.canSee(o) && !vanished(o))) n++;
+        }
+        return n;
+    }
+
+    static boolean vanished(Player p) {
+        for (org.bukkit.metadata.MetadataValue v : p.getMetadata("vanished")) if (v.asBoolean()) return true;
+        return false;
     }
 
     private static String rep(String s, String k, String v) {
