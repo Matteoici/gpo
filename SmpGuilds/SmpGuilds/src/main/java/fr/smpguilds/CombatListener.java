@@ -31,10 +31,10 @@ public final class CombatListener implements Listener {
         Guild a = plugin.guilds().of(attacker);
         Guild v = plugin.guilds().of(victim);
         if (a == null || v == null) return;
-        if (a == v && !plugin.settings().b("guild.friendly-fire", false)) {
+        if (a == v && !a.friendlyFire) {
             e.setCancelled(true);
             attacker.sendActionBar(plugin.messages().get("protection.friendly-fire"));
-        } else if (plugin.guilds().areAllies(a, v) && !plugin.settings().b("guild.ally-friendly-fire", false)) {
+        } else if (a != v && plugin.guilds().areAllies(a, v) && !(a.allyFire && v.allyFire)) {
             e.setCancelled(true);
             attacker.sendActionBar(plugin.messages().get("protection.ally-fire"));
         }

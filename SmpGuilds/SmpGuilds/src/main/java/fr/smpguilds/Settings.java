@@ -66,6 +66,8 @@ public final class Settings {
                 List<Level.Effect> effects = new ArrayList<>();
                 for (String e : s.getStringList("effects")) {
                     String[] p = e.split(":");
+                    // plus de vision nocturne dans la base (même si un ancien config.yml la contient encore)
+                    if (p[0].trim().equalsIgnoreCase("NIGHT_VISION")) continue;
                     PotionEffectType type;
                     try {
                         type = RegistryAccess.registryAccess().getRegistry(RegistryKey.MOB_EFFECT)

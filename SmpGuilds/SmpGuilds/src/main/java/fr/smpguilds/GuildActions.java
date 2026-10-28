@@ -507,6 +507,42 @@ public final class GuildActions {
         m().send(p, g.open ? "settings.opened" : "settings.closed");
     }
 
+    // ============================================================ tir allié / accès des alliés (officiers et chef)
+
+    private Guild requireOfficer(Player p) {
+        Guild g = require(p);
+        if (g == null) return null;
+        if (g.role(p.getUniqueId()).ordinal() < Role.OFFICER.ordinal()) {
+            m().send(p, "error.officer-only");
+            return null;
+        }
+        return g;
+    }
+
+    public void toggleFriendlyFire(Player p) {
+        Guild g = requireOfficer(p);
+        if (g == null) return;
+        g.friendlyFire = !g.friendlyFire;
+        gm().markDirty(g);
+        g.broadcast(m().get(g.friendlyFire ? "settings.ff-on" : "settings.ff-off", ph("player", p.getName())));
+    }
+
+    public void toggleAllyFire(Player p) {
+        Guild g = requireOfficer(p);
+        if (g == null) return;
+        g.allyFire = !g.allyFire;
+        gm().markDirty(g);
+        g.broadcast(m().get(g.allyFire ? "settings.allyfire-on" : "settings.allyfire-off", ph("player", p.getName())));
+    }
+
+    public void toggleAlliesAccess(Player p) {
+        Guild g = requireOfficer(p);
+        if (g == null) return;
+        g.alliesAccess = !g.alliesAccess;
+        gm().markDirty(g);
+        g.broadcast(m().get(g.alliesAccess ? "settings.access-on" : "settings.access-off", ph("player", p.getName())));
+    }
+
     // ============================================================ home
 
     public void setHome(Player p) {

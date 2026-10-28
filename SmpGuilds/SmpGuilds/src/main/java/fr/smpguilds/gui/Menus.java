@@ -73,7 +73,10 @@ public final class Menus {
                 ph("wars_lost", g.warsLost),
                 ph("allies", g.allies.size()),
                 ph("applications", g.applications.size()),
-                Messages.comp("status", plugin.messages().get(g.open ? "info.open" : "info.closed")));
+                Messages.comp("status", plugin.messages().get(g.open ? "info.open" : "info.closed")),
+                Messages.comp("ff", plugin.messages().get(g.friendlyFire ? "info.on" : "info.off")),
+                Messages.comp("allyfire", plugin.messages().get(g.allyFire ? "info.on" : "info.off")),
+                Messages.comp("access", plugin.messages().get(g.alliesAccess ? "info.allowed" : "info.denied")));
     }
 
     public static Component progressBar(long xp, long from, long to) {

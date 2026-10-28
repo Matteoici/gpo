@@ -122,6 +122,9 @@ public final class GuildManager {
         g.tag = tag;
         g.color = plugin.settings().defaultColor();
         g.open = plugin.settings().b("guild.default-open", false);
+        g.friendlyFire = plugin.settings().b("guild.friendly-fire", false);
+        g.allyFire = plugin.settings().b("guild.ally-friendly-fire", false);
+        g.alliesAccess = plugin.settings().b("claims.allies-can-build", false);
         g.leader = leader.getUniqueId();
         guilds.put(g.id, g);
         byName.put(name.toLowerCase(Locale.ROOT), g.id);
@@ -307,6 +310,9 @@ public final class GuildManager {
         y.set("color", NamedTextColor.NAMES.key(g.color));
         y.set("banner", Items.encode(g.banner));
         y.set("open", g.open);
+        y.set("friendly-fire", g.friendlyFire);
+        y.set("ally-fire", g.allyFire);
+        y.set("allies-access", g.alliesAccess);
         y.set("created", g.created);
         y.set("leader", g.leader.toString());
         g.members.forEach((u, r) -> {
@@ -385,6 +391,9 @@ public final class GuildManager {
         g.color = col != null ? col : NamedTextColor.GOLD;
         g.banner = Items.decode(y.getString("banner", ""));
         g.open = y.getBoolean("open", false);
+        g.friendlyFire = y.getBoolean("friendly-fire", plugin.settings().b("guild.friendly-fire", false));
+        g.allyFire = y.getBoolean("ally-fire", plugin.settings().b("guild.ally-friendly-fire", false));
+        g.alliesAccess = y.getBoolean("allies-access", plugin.settings().b("claims.allies-can-build", false));
         g.created = y.getLong("created", System.currentTimeMillis());
         g.leader = UUID.fromString(y.getString("leader"));
         ConfigurationSection ms = y.getConfigurationSection("members");

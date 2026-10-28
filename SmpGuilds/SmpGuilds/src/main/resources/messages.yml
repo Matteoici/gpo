@@ -17,6 +17,7 @@ role:
 error:
   no-guild: "<red>Tu n'es dans aucune guilde. <gray>Tape <white>/guild</white> pour en créer ou en rejoindre une."
   no-permission: "<red>Ton rang ne te permet pas de faire ça."
+  officer-only: "<red>Seuls les <aqua>officiers</aqua> et le <gold>chef</gold> peuvent changer ça."
   no-home-permission: "<red>Ton grade ne te permet pas de te téléporter au QG de la guilde."
   player-only: "<red>Cette commande doit être utilisée en jeu."
   unknown-command: "<red>Commande inconnue. <gray>Tape <white>/guild help</white>."
@@ -119,6 +120,12 @@ settings:
   banner-set: "<green>Bannière de guilde mise à jour."
   opened: "<green>Recrutement <b>ouvert</b> : tout le monde peut rejoindre."
   closed: "<yellow>Recrutement <b>sur candidature</b>."
+  ff-on: "<red>⚔ Tir allié <b>activé</b> par <white><player></white> : les membres peuvent se taper."
+  ff-off: "<green>🛡 Tir allié <b>désactivé</b> par <white><player></white> : les membres ne peuvent plus se taper."
+  allyfire-on: "<red>⚔ Tir sur les alliances <b>activé</b> par <white><player></white>."
+  allyfire-off: "<green>🛡 Tir sur les alliances <b>désactivé</b> par <white><player></white>."
+  access-on: "<green>🏠 Les alliances peuvent maintenant <b>construire et utiliser</b> nos bases (<white><player></white>)."
+  access-off: "<yellow>🏠 Les alliances <b>ne peuvent plus</b> toucher à nos bases (<white><player></white>)."
 
 home:
   set: "<green>Home de guilde placé ici."
@@ -212,6 +219,10 @@ input:
   application-message: "<gold>Écris un message pour ta candidature <gray>(pourquoi toi ?)"
 
 info:
+  on: "<red><b>ACTIVÉ"
+  off: "<green><b>DÉSACTIVÉ"
+  allowed: "<green><b>AUTORISÉ"
+  denied: "<red><b>INTERDIT"
   open: "<green>Ouverte"
   closed: "<yellow>Sur candidature"
   lines:
@@ -581,6 +592,15 @@ gui:
     open:
       name: "<white><b>Recrutement : <status>"
       lore: ["<gray>Ouverte = tout le monde peut rejoindre.", "<gray>Sinon, sur candidature.", "", "<yellow>▶ Clic pour changer"]
+    friendly-fire:
+      name: "<white><b>Tir allié : <ff>"
+      lore: ["<gray>Les membres de la guilde peuvent-ils", "<gray>se taper entre eux ?", "", "<dark_gray>Officiers et chef seulement", "<yellow>▶ Clic pour changer"]
+    ally-fire:
+      name: "<white><b>Tir sur les alliances : <allyfire>"
+      lore: ["<gray>Peut-on taper les membres des guildes alliées ?", "<gray>(il faut que les deux guildes l'activent)", "", "<dark_gray>Officiers et chef seulement", "<yellow>▶ Clic pour changer"]
+    allies-access:
+      name: "<white><b>Accès des alliances aux bases : <access>"
+      lore: ["<gray>Les guildes alliées peuvent-elles construire,", "<gray>casser, ouvrir les coffres et les portes", "<gray>dans nos terrains ?", "", "<dark_gray>Officiers et chef seulement", "<yellow>▶ Clic pour changer"]
     sethome:
       name: "<white><b>Placer le home ici"
       lore: ["<gray>Doit être dans un terrain de la guilde."]

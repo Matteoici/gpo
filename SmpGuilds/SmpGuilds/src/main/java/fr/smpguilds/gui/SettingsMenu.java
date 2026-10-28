@@ -49,6 +49,18 @@ public final class SettingsMenu extends Menu {
             viewer.closeInventory();
             a.setHome(viewer);
         });
+        button(19, item(g.friendlyFire ? Material.IRON_SWORD : Material.WOODEN_SWORD, "gui.settings.friendly-fire", r), t -> {
+            a.toggleFriendlyFire(viewer);
+            redraw();
+        });
+        button(20, item(g.allyFire ? Material.BOW : Material.STICK, "gui.settings.ally-fire", r), t -> {
+            a.toggleAllyFire(viewer);
+            redraw();
+        });
+        button(24, item(g.alliesAccess ? Material.OAK_DOOR : Material.IRON_DOOR, "gui.settings.allies-access", r), t -> {
+            a.toggleAlliesAccess(viewer);
+            redraw();
+        });
         button(22, item(Material.MAP, "gui.settings.map", r), t -> {
             viewer.closeInventory();
             a.map(viewer);

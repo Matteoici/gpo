@@ -28,6 +28,12 @@ public final class Guild {
     public NamedTextColor color = NamedTextColor.GOLD;
     public ItemStack banner;
     public boolean open;
+    /** tir allié : les membres peuvent se taper entre eux */
+    public boolean friendlyFire;
+    /** les membres peuvent taper les guildes alliées */
+    public boolean allyFire;
+    /** les guildes alliées peuvent construire / ouvrir / utiliser dans nos terrains */
+    public boolean alliesAccess;
     public long created = System.currentTimeMillis();
     public UUID leader;
     public final Map<UUID, Role> members = new LinkedHashMap<>();

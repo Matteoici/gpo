@@ -100,10 +100,10 @@ levels:
   4:  {xp: 3500,  max-members: 12, max-claims: 18, vault-rows: 2, effects: ["SPEED:0"]}
   5:  {xp: 7000,  max-members: 15, max-claims: 25, vault-rows: 3, effects: ["SPEED:0", "HASTE:0"]}
   6:  {xp: 12000, max-members: 18, max-claims: 32, vault-rows: 3, effects: ["SPEED:0", "HASTE:0"]}
-  7:  {xp: 20000, max-members: 22, max-claims: 40, vault-rows: 4, effects: ["SPEED:0", "HASTE:0", "NIGHT_VISION:0"]}
-  8:  {xp: 32000, max-members: 26, max-claims: 50, vault-rows: 4, effects: ["SPEED:0", "HASTE:1", "NIGHT_VISION:0"]}
-  9:  {xp: 50000, max-members: 30, max-claims: 60, vault-rows: 5, effects: ["SPEED:1", "HASTE:1", "NIGHT_VISION:0"]}
-  10: {xp: 80000, max-members: 40, max-claims: 80, vault-rows: 6, effects: ["SPEED:1", "HASTE:1", "NIGHT_VISION:0", "REGENERATION:0"]}
+  7:  {xp: 20000, max-members: 22, max-claims: 40, vault-rows: 4, effects: ["SPEED:0", "HASTE:0"]}
+  8:  {xp: 32000, max-members: 26, max-claims: 50, vault-rows: 4, effects: ["SPEED:0", "HASTE:1"]}
+  9:  {xp: 50000, max-members: 30, max-claims: 60, vault-rows: 5, effects: ["SPEED:1", "HASTE:1"]}
+  10: {xp: 80000, max-members: 40, max-claims: 80, vault-rows: 6, effects: ["SPEED:1", "HASTE:1", "REGENERATION:0"]}
 
 # ---------------------------------------------------------------- Guerres
 war:

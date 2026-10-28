@@ -60,7 +60,8 @@ public final class ProtectionListener implements Listener {
         if (plugin.isBypassing(p)) return true;
         Guild mine = plugin.guilds().of(p);
         if (mine == owner) return plugin.guilds().has(owner, p.getUniqueId(), GuildPerm.BUILD);
-        if (mine != null && owner.allies.contains(mine.id) && plugin.settings().b("claims.allies-can-build", false)) return true;
+        // les alliés : seulement si les officiers / le chef de la guilde l'ont autorisé
+        if (mine != null && owner.allies.contains(mine.id) && owner.alliesAccess) return true;
         return mine != null && plugin.settings().b("war.allow-raiding", false) && plugin.wars().atWar(mine, owner);
     }
 
