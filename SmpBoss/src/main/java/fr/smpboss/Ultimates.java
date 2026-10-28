@@ -24,6 +24,7 @@ import org.bukkit.entity.Enemy;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.TextDisplay;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -348,6 +349,72 @@ final class Ultimates {
         }, 0L, every);
     }
 
+    /**
+     * Idéogrammes géants qui apparaissent dans le monde (comme dans l'anime : 「蒼」, 「赫」, 「茈」, 「開」...) :
+     * ils grossissent d'un coup, flottent, puis s'effacent.
+     */
+    private void kanji(Location at, String mini, float scale, int life) {
+        TextDisplay d = at.getWorld().spawn(at, TextDisplay.class, t -> {
+            t.setPersistent(false);
+            t.text(parse(mini));
+            t.setBillboard(Display.Billboard.CENTER);
+            t.setBackgroundColor(Color.fromARGB(0, 0, 0, 0));
+            t.setShadowed(true);
+            t.setBrightness(new Display.Brightness(15, 15));
+            t.setViewRange(6f);
+            t.setTransformation(new Transformation(new Vector3f(), new Quaternionf(), new Vector3f(0.05f, 0.05f, 0.05f), new Quaternionf()));
+        });
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (!d.isValid()) return;
+            d.setInterpolationDelay(0);
+            d.setInterpolationDuration(5);
+            d.setTransformation(new Transformation(new Vector3f(), new Quaternionf(), new Vector3f(scale * 1.15f, scale * 1.15f, scale * 1.15f), new Quaternionf()));
+        }, 1L);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (!d.isValid()) return;
+            d.setInterpolationDelay(0);
+            d.setInterpolationDuration(4);
+            d.setTransformation(new Transformation(new Vector3f(), new Quaternionf(), new Vector3f(scale, scale, scale), new Quaternionf()));
+        }, 7L);
+        int[] t = {0};
+        BukkitTask[] task = new BukkitTask[1];
+        task[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            t[0] += 2;
+            if (!d.isValid()) {
+                task[0].cancel();
+                return;
+            }
+            int left = life - t[0];
+            if (left < 16) d.setTextOpacity((byte) Math.max(20, 255 * left / 16));
+            if (left <= 0) {
+                d.remove();
+                task[0].cancel();
+            }
+        }, 12L, 2L);
+    }
+
+    /** Petit noyau lumineux net (bloc translucide qui tourne, contour lumineux) qui suit une orbe. */
+    private BlockDisplay core(Location at, Material m, float size, Color glow) {
+        return at.getWorld().spawn(at, BlockDisplay.class, d -> {
+            d.setPersistent(false);
+            d.setBlock(m.createBlockData());
+            d.setTransformation(centered(new Quaternionf(), size, size, size, true));
+            d.setBrightness(new Display.Brightness(15, 15));
+            d.setGlowing(true);
+            d.setGlowColorOverride(glow);
+            d.setTeleportDuration(1);
+            d.setViewRange(4f);
+        });
+    }
+
+    private static void follow(BlockDisplay d, Location at, int k) {
+        if (d == null || !d.isValid()) return;
+        Location l = at.clone();
+        l.setYaw(k * 14f);
+        l.setPitch((float) (Math.sin(k * 0.13) * 70));
+        d.teleport(l);
+    }
+
     /** Onde au sol qui s'étend (anneau), visible de loin. */
     private void groundWave(Location c, double maxR, int ticks, Particle p, Particle.DustOptions d) {
         World w = c.getWorld();
@@ -550,12 +617,14 @@ final class Ultimates {
         List<Location> trail = new ArrayList<>();
         List<Location> groundTrail = new ArrayList<>();
         Location[] last = new Location[1];
+        BlockDisplay[] cores = new BlockDisplay[3]; // bleu, rouge, violet
         int[] t = {0};
         BukkitTask[] task = new BukkitTask[1];
         task[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
             int k = t[0]++;
             if (!p.isOnline() || p.isDead() || p.getWorld() != w) {
                 casting.remove(p.getUniqueId());
+                for (BlockDisplay cd : cores) if (cd != null) cd.remove();
                 task[0].cancel();
                 return;
             }
@@ -584,6 +653,13 @@ final class Ultimates {
                 bluePos = last[0].clone().add(target.toVector().subtract(last[0].toVector()).multiply(s));
             }
             double rSpread = k < 100 ? 1.7 : 1.7 * (1 - Math.min(1, (k - 100) / (double) (merge - 100)));
+            // noyaux nets du Bleu et du Rouge + les idéogrammes 「蒼」 et 「赫」
+            if (k == 2) cores[0] = core(feet, Material.LIGHT_BLUE_STAINED_GLASS, 0.5f, Color.fromRGB(60, 140, 255));
+            if (k == 16) kanji(feet.clone().add(rt.clone().multiply(-3.2)).add(0, 4.2, 0), "<gradient:#2a6bff:#9fd0ff:#2a6bff><b>術式順転「蒼」", 2.6f, 46);
+            if (k == 40) {
+                cores[1] = core(feet.clone().add(0, 3.3, 0), Material.RED_STAINED_GLASS, 0.55f, Color.fromRGB(255, 40, 60));
+                kanji(feet.clone().add(rt.clone().multiply(3.2)).add(0, 4.2, 0), "<gradient:#ff1e3c:#ffb0b8:#ff1e3c><b>術式反転「赫」", 2.6f, 46);
+            }
             Location redPos = k < 84 ? head.clone().add(rt.clone().multiply(0.6)) : head.clone().add(rt.clone().multiply(rSpread));
             // ---- 1. le Bleu dans la main : nuage bleu qui tourbillonne, lueur violette au sol
             if (k < 22) {
@@ -706,10 +782,20 @@ final class Ultimates {
                 }
                 if (k == 100) boom(base, 160, Sound.ENTITY_WARDEN_SONIC_CHARGE, 2f, 0.5f);
             }
+            if (k < merge) {
+                follow(cores[0], bluePos, k);
+                follow(cores[1], redPos, -k);
+            }
             // ---- 5. fusion : cœur magenta, pics blancs, éclats violets et noirs
             if (k >= merge) {
                 Location m = head.clone();
                 int e = k - merge;
+                if (e == 0) {
+                    for (int ci = 0; ci < 2; ci++) if (cores[ci] != null) cores[ci].remove();
+                    cores[2] = core(m, Material.MAGENTA_STAINED_GLASS, 0.8f, Color.fromRGB(200, 60, 255));
+                    kanji(m.clone().add(0, 3.2, 0), "<gradient:#3c82ff:#b25cff:#ff2330><b>虚式「茈」", 5.5f, 60);
+                }
+                follow(cores[2], m, k * 2);
                 orb(w, m, 0.6 + e * 0.25, 40, magenta, k * 0.4, true);
                 orb(w, m, 0.4 + e * 0.1, 14, white, -k * 0.5, true);
                 for (int ray = 0; ray < 14; ray++) {
@@ -747,6 +833,7 @@ final class Ultimates {
                 if (e >= 6) {
                     task[0].cancel();
                     casting.remove(p.getUniqueId());
+                    if (cores[2] != null) cores[2].remove();
                     hollowBurst(p, m);
                 }
             }
@@ -886,6 +973,7 @@ final class Ultimates {
             }
             if (k % 10 == 5) boom(base, 48, Sound.BLOCK_FIRE_AMBIENT, 1.6f, 0.6f);
             if (k == 40 || k == 62) boom(base, 96, Sound.ENTITY_BLAZE_SHOOT, 1.4f, 0.5f);
+            if (k == 36) kanji(base.clone().add(0, 5, 0), "<gradient:#ffd23c:#ff5a00:#ffd23c><b>「開」", 4.5f, 48);
             Location feet = p.getLocation(), eye = p.getEyeLocation();
             Vector fwd = feet.getDirection().setY(0);
             if (fwd.lengthSquared() < 1e-4) fwd = new Vector(0, 0, 1);
@@ -956,6 +1044,7 @@ final class Ultimates {
                 boom(base, 260, Sound.ENTITY_GENERIC_EXPLODE, 1.5f, 1.3f);
                 shake(base, 45, 2, 3);
                 groundWave(feet, 14, 10, Particle.FLAME, fire);
+                kanji(base.clone().add(0, 4.5, 0), "<gradient:#fff2a0:#ff7a1e:#ff2a00><b>竈 ・ フーガ", 3.6f, 44);
                 Vector dir = eye.getDirection().normalize();
                 fugaFly(p, eye.clone().add(dir.clone().multiply(3.5)), dir);
             }
@@ -972,6 +1061,7 @@ final class Ultimates {
         Location pos = start.clone();
         List<Location> tail = new ArrayList<>();
         List<Location> scorch = new ArrayList<>();
+        BlockDisplay head = core(start, Material.ORANGE_STAINED_GLASS, 0.9f, Color.fromRGB(255, 170, 40));
         int[] t = {0};
         double[] dist = {0};
         BukkitTask[] task = new BukkitTask[1];
@@ -1026,8 +1116,10 @@ final class Ultimates {
             if (k % 3 == 0) w.playSound(pos, Sound.ENTITY_BLAZE_SHOOT, 3f, 0.6f);
             if (k % 8 == 0) shake(pos, 10, 1, 1);
             if (dist[0] >= range) stop = true;
+            follow(head, pos, k * 2);
             if (stop) {
                 task[0].cancel();
+                head.remove();
                 Location c = rtb != null && hitAt == null ? pos.clone().subtract(dir.clone().multiply(0.6)) : pos.clone();
                 fugaBurst(p, c);
             }
@@ -1069,6 +1161,7 @@ final class Ultimates {
             int k = t[0]++;
             double u = Math.min(1, k / 40.0), r = R * (1 - Math.pow(1 - u, 3));
             // ---- l'immense colonne de feu
+            if (k == 14) kanji(gc.clone().add(0, 40, 0), "<gradient:#ffd23c:#ff5a00:#ff1a00><b>竈", 16f, 100);
             if (k == 14) {
                 pillar(gc, new Material[]{Material.ORANGE_STAINED_GLASS, Material.MAGMA_BLOCK, Material.RED_STAINED_GLASS},
                         new float[]{11, 6.5f, 8.5f}, 220, 8, 130, 24);
