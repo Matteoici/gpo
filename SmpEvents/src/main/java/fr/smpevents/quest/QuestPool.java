@@ -35,11 +35,49 @@ public final class QuestPool {
         for (String ev : List.of("halloween")) {
             File ef = new File(plugin.getDataFolder(), "quests-" + ev + ".yml");
             if (!ef.exists()) plugin.saveResource("quests-" + ev + ".yml", false);
+            else update(ef, "quests-" + ev + ".yml");
             YamlConfiguration ey = YamlConfiguration.loadConfiguration(ef);
             read(ey.getConfigurationSection("daily"), false, ev);
             read(ey.getConfigurationSection("weekly"), true, ev);
         }
         plugin.getLogger().info(all.size() + " quête(s) chargée(s).");
+    }
+
+    /** Fichier déjà installé : ajoute les nouvelles quêtes du plugin (et leurs bonus) sans toucher aux réglages. */
+    private void update(File f, String resource) {
+        YamlConfiguration y = YamlConfiguration.loadConfiguration(f);
+        var in = plugin.getResource(resource);
+        if (in == null) return;
+        YamlConfiguration def = YamlConfiguration.loadConfiguration(new java.io.InputStreamReader(in, java.nio.charset.StandardCharsets.UTF_8));
+        int have = y.getInt("version", 1), want = def.getInt("version", 1);
+        if (have >= want) return;
+        for (String part : List.of("daily", "weekly")) {
+            ConfigurationSection d = def.getConfigurationSection(part);
+            if (d == null) continue;
+            for (String id : d.getKeys(false)) {
+                String path = part + "." + id;
+                if (!y.isConfigurationSection(path)) {
+                    y.set(path, d.getConfigurationSection(id));
+                } else if (!y.isSet(path + ".commands") && d.isSet(id + ".commands")) {
+                    // récompense en plus (œuf, clé) ajoutée à une quête existante
+                    y.set(path + ".commands", d.getStringList(id + ".commands"));
+                    y.set(path + ".name", d.getString(id + ".name"));
+                }
+            }
+        }
+        y.set("version", want);
+        if (resource.contains("halloween")) {
+            var c = plugin.getConfig();
+            if (c.getInt("quests.events.halloween.daily-slots", 2) == 2) c.set("quests.events.halloween.daily-slots", 3);
+            if (c.getInt("quests.events.halloween.weekly-slots", 1) == 1) c.set("quests.events.halloween.weekly-slots", 2);
+            plugin.saveConfig();
+        }
+        try {
+            y.save(f);
+            plugin.getLogger().info(resource + " mis à jour (nouvelles quêtes ajoutées).");
+        } catch (java.io.IOException e) {
+            plugin.getLogger().warning(resource + " : " + e.getMessage());
+        }
     }
 
     private void read(ConfigurationSection root, boolean weekly, String event) {

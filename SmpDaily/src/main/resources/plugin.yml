@@ -1,0 +1,18 @@
+name: SmpDaily
+version: '${version}'
+main: fr.smpdaily.SmpDaily
+api-version: '26.2'
+softdepend: [Vault]
+description: "Récompense quotidienne : un cadeau par jour de connexion, série de 7 jours, bonus d'événement"
+commands:
+  daily:
+    description: Ta récompense du jour
+    usage: /daily
+    aliases: [recompense, recompenses, quotidien, jour]
+permissions:
+  smpdaily.use:
+    description: Récupérer la récompense du jour
+    default: true
+  smpdaily.admin:
+    description: /daily reset et /daily reload
+    default: op

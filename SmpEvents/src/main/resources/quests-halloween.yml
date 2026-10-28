@@ -4,6 +4,8 @@
 #  Même format que quests.yml. BOSS_DAMAGE / BOSS_WIN = combat contre le Roi Citrouille (SmpBoss).
 #  Après une modification : /smpevents reload
 # =====================================================================
+# (ne pas toucher : sert à ajouter les nouvelles quêtes aux fichiers déjà installés)
+version: 2
 
 daily:
   citrouilles:
@@ -40,7 +42,8 @@ daily:
     amount: 5
     reward: 30000
     icon: CAULDRON
-    name: "<#ff7a00>🧙 Vaincre <amount> sorcières"
+    commands: ["pets donner %player% rare 1"]
+    name: "<#ff7a00>🧙 Vaincre <amount> sorcières <gray>(+ Œuf Rare)"
   morts:
     type: KILL_MOB
     targets: [ZOMBIE, HUSK, DROWNED, ZOMBIE_VILLAGER]
@@ -75,7 +78,50 @@ daily:
     amount: 500
     reward: 40000
     icon: GOLDEN_SWORD
-    name: "<#ff7a00>♛ Infliger <amount> dégâts au Roi Citrouille"
+    commands: ["caisse cle %player% rare 1"]
+    name: "<#ff7a00>♛ Infliger <amount> dégâts au Roi Citrouille <gray>(+ clé Rare)"
+  creepers:
+    type: KILL_MOB
+    targets: [CREEPER]
+    amount: 20
+    reward: 20000
+    icon: CREEPER_HEAD
+    name: "<#ff7a00>💥 Désamorcer <amount> creepers"
+  endermen:
+    type: KILL_MOB
+    targets: [ENDERMAN]
+    amount: 10
+    reward: 25000
+    icon: ENDER_PEARL
+    name: "<#ff7a00>👁 Chasser <amount> endermen"
+  peche-hantee:
+    type: FISH
+    targets: []
+    amount: 20
+    reward: 15000
+    icon: FISHING_ROD
+    name: "<#ff7a00>🎣 Pêche hantée : pêcher <amount> fois"
+  fantome:
+    type: PLAYTIME
+    targets: []
+    amount: 60
+    reward: 15000
+    icon: WHITE_WOOL
+    name: "<#ff7a00>👻 Hanter le serveur : jouer <amount> minutes"
+  marche-nocturne:
+    type: WALK
+    targets: []
+    amount: 3000
+    reward: 15000
+    icon: LEATHER_BOOTS
+    name: "<#ff7a00>🕸 Errer dans la nuit : marcher <amount> blocs"
+  slimes:
+    type: KILL_MOB
+    targets: [SLIME, MAGMA_CUBE]
+    amount: 20
+    reward: 18000
+    icon: SLIME_BALL
+    name: "<#ff7a00>🟢 Dissoudre <amount> slimes"
 
 weekly:
   roi:
@@ -84,19 +130,37 @@ weekly:
     amount: 1
     reward: 250000
     icon: JACK_O_LANTERN
-    commands: ["boss give %player% graine 8"]
-    name: "<gradient:#ff7a00:#ffd36b><b>♛ Vaincre le Roi Citrouille</b></gradient>"
+    commands: ["boss give %player% graine 8", "pets donner %player% legendaire 1"]
+    name: "<gradient:#ff7a00:#ffd36b><b>♛ Vaincre le Roi Citrouille</b></gradient> <gray>(+ Œuf Légendaire)"
   massacre:
     type: KILL_MOB
     targets: [ZOMBIE, HUSK, DROWNED, ZOMBIE_VILLAGER, SKELETON, STRAY, BOGGED, SPIDER, CAVE_SPIDER, WITCH, PHANTOM, CREEPER, ENDERMAN]
     amount: 400
     reward: 200000
     icon: WITHER_SKELETON_SKULL
-    name: "<#ff7a00>☠ Massacre d'Halloween : tuer <amount> monstres"
+    commands: ["caisse cle %player% epique 1"]
+    name: "<#ff7a00>☠ Massacre d'Halloween : tuer <amount> monstres <gray>(+ clé Épique)"
   recolte:
     type: MINE
     targets: [PUMPKIN, CARVED_PUMPKIN, MELON]
     amount: 256
     reward: 150000
     icon: CARVED_PUMPKIN
-    name: "<#ff7a00>🎃 Grande récolte : <amount> citrouilles ou pastèques"
+    commands: ["pets donner %player% epique 1"]
+    name: "<#ff7a00>🎃 Grande récolte : <amount> citrouilles ou pastèques <gray>(+ Œuf Épique)"
+  ames-damnees:
+    type: KILL_MOB
+    targets: [WITHER_SKELETON, BLAZE, GHAST]
+    amount: 60
+    reward: 200000
+    icon: WITHER_ROSE
+    commands: ["caisse cle %player% legendaire 1"]
+    name: "<#ff7a00>🔥 Âmes damnées : <amount> wither squelettes, blazes ou ghasts <gray>(+ clé Légendaire)"
+  esprit-halloween:
+    type: PLAYTIME
+    targets: []
+    amount: 600
+    reward: 150000
+    icon: SOUL_LANTERN
+    commands: ["pets donner %player% rare 2"]
+    name: "<#ff7a00>🕯 Esprit d'Halloween : jouer <amount> minutes <gray>(+ 2 Œufs Rares)"

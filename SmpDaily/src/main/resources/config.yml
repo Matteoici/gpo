@@ -1,0 +1,80 @@
+# =====================================================================
+#  SmpDaily - une récompense par jour (/daily)
+#  - Chaque jour, le joueur récupère le cadeau du jour suivant de sa série (jour 1, 2, 3 ... 7, puis ça recommence).
+#  - S'il rate un jour : la série repart au jour 1 (sauf si serie-perdue-si-rate: false).
+#  - Récompenses : argent (Vault), items ("MATERIAU:quantité"), commandes lancées par la console (%player%).
+#    Exemples de commandes : "caisse cle %player% rare 1"  ·  "pets donner %player% rare 1"
+#  Admins : /daily reset <joueur>  ·  /daily reload
+# =====================================================================
+
+fuseau: "Europe/Paris"
+# heure à laquelle on change de jour (0 = minuit)
+heure-changement: 0
+serie-perdue-si-rate: true
+# message à la connexion si la récompense n'a pas été prise
+rappel-connexion: true
+
+jours:
+  1:
+    nom: "<white>Jour 1"
+    icone: GOLDEN_CARROT
+    argent: 5000
+    items: ["GOLDEN_CARROT:16"]
+  2:
+    nom: "<white>Jour 2"
+    icone: EXPERIENCE_BOTTLE
+    argent: 10000
+    items: ["EXPERIENCE_BOTTLE:16"]
+  3:
+    nom: "<#4aa8ff>Jour 3"
+    icone: TRIPWIRE_HOOK
+    argent: 15000
+    commandes: ["caisse cle %player% rare 1"]
+    description: ["<#4aa8ff>+ 1 clé Rare"]
+  4:
+    nom: "<white>Jour 4"
+    icone: GOLDEN_APPLE
+    argent: 20000
+    items: ["GOLDEN_APPLE:4"]
+  5:
+    nom: "<#4aa8ff>Jour 5"
+    icone: BLUE_EGG
+    argent: 30000
+    commandes: ["pets donner %player% rare 1"]
+    description: ["<#4aa8ff>+ 1 Œuf Rare"]
+  6:
+    nom: "<#b34aff>Jour 6"
+    icone: TRIPWIRE_HOOK
+    argent: 40000
+    commandes: ["caisse cle %player% epique 1"]
+    description: ["<#b34aff>+ 1 clé Épique"]
+  7:
+    nom: "<gradient:#ffd23c:#ff7a00><b>Jour 7 - Gros lot"
+    icone: SNIFFER_EGG
+    argent: 100000
+    items: ["DIAMOND:8"]
+    commandes: ["pets donner %player% epique 1", "caisse cle %player% legendaire 1"]
+    description: ["<#b34aff>+ 1 Œuf Épique", "<#ffb300>+ 1 clé Légendaire"]
+
+# bonus EN PLUS de la récompense du jour, pendant un événement (jusqu'à la date incluse)
+evenements:
+  halloween:
+    actif: true
+    jusqu-au: "2026-11-08"
+    nom: "<#ff7a00><b>🎃 Bonus d'Halloween"
+    icone: JACK_O_LANTERN
+    argent: 10000
+    items: ["PUMPKIN_PIE:8"]
+    commandes: []
+    description: ["<gray>Chaque jour jusqu'au 8 novembre !"]
+
+messages:
+  prefix: "<dark_gray>[<gradient:#ffd23c:#ff7ad9>Récompense</gradient><dark_gray>] "
+  claimed: "<green>Récompense du <white><day></white> récupérée ! <gray>Série : <gold><streak> jour(s)</gold>. Reviens demain !"
+  already: "<gray>Tu as déjà pris ta récompense aujourd'hui. Prochaine dans <white><time></white>."
+  reminder: "<yellow>🎁 Ta récompense du jour t'attend ! <white><click:run_command:/daily><u>Clique ici</u></click></white> <gray>ou /daily"
+  streak-lost: "<red>Tu as raté un jour : ta série repart au jour 1."
+  event-bonus: "<#ff7a00>+ <event>"
+  inventory-full: "<gray>(inventaire plein : le reste est par terre)"
+  reset: "<green>Série de <white><player></white> remise à zéro."
+  reloaded: "<green>SmpDaily rechargé."

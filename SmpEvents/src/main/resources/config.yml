@@ -28,8 +28,8 @@ quests:
   events:
     halloween:
       enabled: true
-      daily-slots: 2
-      weekly-slots: 1
+      daily-slots: 3
+      weekly-slots: 2
       until: "2026-11-08"
   # bonus quand on finit TOUTES les quêtes du jour
   daily-bonus: 50000
