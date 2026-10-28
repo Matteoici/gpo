@@ -1,4 +1,4 @@
-config-version: 19
+config-version: 20
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -263,21 +263,22 @@ weapons:
   brise-terre:
     chance: 0.001
     # hache : 18 de dégâts au corps à corps (netherite = 10)
-    attack-damage: 18
+    attack-damage: 22
     attack-speed: 1.1
-    # clic droit : bond puis onde de choc au sol (dégâts, projette, ralentit, affaiblit)
-    damage: 14
-    radius: 8
-    cooldown-seconds: 8
+    # clic droit : bond puis onde de choc au sol (dégâts, projette, enflamme, ralentit, affaiblit)
+    # et le porteur gagne Force II + Résistance 5 s
+    damage: 20
+    radius: 10
+    cooldown-seconds: 6
   arbalete-spectrale:
     chance: 0.001
-    # le tir devient 3 crânes d'âmes qui poursuivent chacun un ennemi devant toi
-    skulls: 3
-    damage: 14
-    range: 32
-    wither-seconds: 4
-    glow-seconds: 8
-    cooldown-seconds: 3
+    # le tir devient 5 crânes d'âmes qui poursuivent chacun un ennemi devant toi
+    skulls: 5
+    damage: 16
+    range: 36
+    wither-seconds: 5
+    glow-seconds: 10
+    cooldown-seconds: 2.5
 
 # ---------------------------------------------------------------- Reliques
 # health = cœurs en plus · speed = % de vitesse · regen = demi-cœurs toutes les 4 s hors combat (8 s sans dégâts)
@@ -610,20 +611,23 @@ messages:
       name: "Brise-Terre"
       lore:
         - "<yellow>Clic droit :</yellow> <gray>tu bondis puis tu t'écrases"
-        - "<gray>au sol : une <gold>onde de choc</gold> projette"
-        - "<gray>et ralentit tout ce qui est autour."
+        - "<gray>au sol : la terre se <gold>fissure</gold>, une <gold>onde de choc</gold>"
+        - "<gray>projette, enflamme, ralentit et affaiblit"
+        - "<gray>tout ce qui est autour."
+        - "<gray>Toi : <red>Force II</red> + <white>Résistance</white> pendant 5 s."
         - "<gray>Pas de dégâts de chute pendant le saut."
         - ""
-        - "<white>⚔ 18</white> <gray>au corps à corps"
+        - "<white>⚔ 22</white> <gray>au corps à corps"
         - "<white>💥 <damage> ❤</white> <gray>· rayon <white><radius></white> · <white>⏳ <cooldown> s"
         - "<dark_gray>Ne tombe pas à la mort."
     arbalete-spectrale:
       name: "Arbalète Spectrale"
       lore:
-        - "<gray>Le tir devient <aqua>3 crânes d'âmes</aqua>"
+        - "<gray>Le tir devient <aqua>5 crânes d'âmes</aqua>"
         - "<gray>qui <white>poursuivent</white> chacun un ennemi."
-        - "<gray>Il le flétrit et le fait <white>briller</white>"
-        - "<gray>(impossible de se cacher)."
+        - "<gray>Wither III, lenteur, aveuglement, et la cible"
+        - "<gray><white>brille</white> 10 s (impossible de se cacher)."
+        - "<gray>En main : <aqua>Vitesse</aqua>."
         - ""
         - "<white>☠ <damage> ❤</white> <gray>par crâne · <white>⏳ <cooldown> s"
         - "<dark_gray>Ne tombe pas à la mort."

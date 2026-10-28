@@ -205,6 +205,23 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 19);
             saveConfig();
         }
+        // v20 : armes prestige bien plus fortes (et leur description)
+        if (getConfig().getInt("config-version", 1) < 20) {
+            harder("weapons.brise-terre.attack-damage", 18, 22);
+            harder("weapons.brise-terre.damage", 14, 20);
+            harder("weapons.brise-terre.radius", 8, 10);
+            harder("weapons.brise-terre.cooldown-seconds", 8, 6);
+            harder("weapons.arbalete-spectrale.skulls", 3, 5);
+            harder("weapons.arbalete-spectrale.damage", 14, 16);
+            harder("weapons.arbalete-spectrale.range", 32, 36);
+            harder("weapons.arbalete-spectrale.wither-seconds", 4, 5);
+            harder("weapons.arbalete-spectrale.glow-seconds", 8, 10);
+            harder("weapons.arbalete-spectrale.cooldown-seconds", 3, 2.5);
+            getConfig().set("messages.weapons.brise-terre.lore", null);
+            getConfig().set("messages.weapons.arbalete-spectrale.lore", null);
+            getConfig().set("config-version", 20);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);
