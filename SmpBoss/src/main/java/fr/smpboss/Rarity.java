@@ -9,7 +9,7 @@ public enum Rarity {
     EPIC("<#b45cff>", "<#b45cff><b>ÉPIQUE", "PURPLE"),
     LEGENDARY("<rainbow>", "<rainbow><b>✦ LÉGENDAIRE ✦", "RAINBOW"),
     SECRET("<gradient:#ffffff:#6b6b6b:#ffffff>", "<gradient:#ffffff:#4a4a4a:#ffffff><b>✧ MYTHICAL ✧", "SECRET"),
-    /** 0,001 % : au-dessus de tout. */
+    /** 0,01 % (1 chance sur 10 000) : au-dessus de tout. */
     PRESTIGE("<gradient:#1b2f7a:#6d8cff:#1b2f7a>", "<gradient:#0b1a4a:#4a6cf0:#e3e9ff:#4a6cf0:#0b1a4a><b>❂ PRESTIGE ❂", "PRESTIGE");
 
     /** Couleur MiniMessage à placer devant le nom. */
