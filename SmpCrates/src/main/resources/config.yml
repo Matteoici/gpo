@@ -1,3 +1,4 @@
+config-version: 2
 # =====================================================================
 #  SmpCrates - caisses payées avec l'argent du jeu
 #  - /caisse                     -> menu de toutes les caisses (voir les lots, acheter, ouvrir)
@@ -5,6 +6,8 @@
 #  - /caisse retirer             -> en regardant une caisse
 #  - /caisse ajouter <caisse> <poids>  -> ajoute l'objet que tu tiens comme lot (avec ses enchantements, son nom...)
 #  - /caisse cle <joueur> <caisse> [n] -> donne des clés (ouvertures gratuites)
+#  - /caisse editer <caisse>     -> menu pour tout changer en jeu : nom, prix, couleur, apparence, clé seulement, lots et chances
+#  - /caisse creer <id>          -> nouvelle caisse (vide, à remplir avec /caisse editer)   ·   /caisse supprimer <id>
 #  Lots : poids = chance relative (un lot de poids 20 sort 2 fois plus qu'un lot de poids 10).
 #   item: MATERIAU, amount, name, enchants {sharpness: 5}  |  money: 10000  |  command: "..." (%player%) + name + icon
 #   broadcast: true -> tout le serveur est prévenu
@@ -14,7 +17,7 @@
 # ouvrir depuis le menu /caisse n'importe où (sinon : seulement en cliquant sur la caisse posée)
 open-anywhere: true
 # annonce à tout le serveur pour ces caisses (en plus des lots "broadcast: true")
-broadcast-crates: [legendaire, mythique]
+broadcast-crates: [legendaire, mythique, premium]
 
 crates:
   rare:
@@ -87,6 +90,29 @@ crates:
       - {weight: 1, command: "boss give %player% crocdegivre", name: "<white><b>Croc de Givre", icon: DIAMOND_SWORD, broadcast: true}
       - {weight: 1, command: "boss give %player% tranchemace", name: "<white><b>Tranche Mace", icon: NETHERITE_SWORD, broadcast: true}
 
+  # ✦ PREMIUM (blanche) : s'ouvre seulement avec une clé (boutique, récompenses) -> /caisse cle <joueur> premium [n]
+  premium:
+    name: "<gradient:#ffffff:#cfd8e3:#ffffff><b>✦ Caisse Premium ✦"
+    price: 0
+    keys-only: true
+    tier: 3
+    icon: WHITE_SHULKER_BOX
+    pane: WHITE_STAINED_GLASS_PANE
+    color: "#ffffff"
+    rewards:
+      - {weight: 18, item: NETHERITE_INGOT, amount: 10}
+      - {weight: 15, money: 1500000}
+      - {weight: 14, item: ENCHANTED_GOLDEN_APPLE, amount: 10}
+      - {weight: 12, item: TOTEM_OF_UNDYING, amount: 5}
+      - {weight: 10, item: NETHERITE_HELMET, name: "<gradient:#ffffff:#cfd8e3>Casque Premium", enchants: {protection: 4, unbreaking: 3, mending: 1, respiration: 3, aqua_affinity: 1}}
+      - {weight: 10, item: NETHERITE_BOOTS, name: "<gradient:#ffffff:#cfd8e3>Bottes Premium", enchants: {protection: 4, unbreaking: 3, mending: 1, feather_falling: 4, depth_strider: 3}}
+      - {weight: 8, item: ELYTRA, enchants: {unbreaking: 3, mending: 1}}
+      - {weight: 6, item: BEACON, amount: 3}
+      - {weight: 4, command: "caisse cle %player% mythique 2", name: "<gradient:#ff1a1a:#ffd700>2 clés Mythiques", icon: TRIPWIRE_HOOK, broadcast: true}
+      - {weight: 3, money: 5000000, broadcast: true}
+      - {weight: 2, command: "boss give %player% citrouille 5", name: "<#ff7a00>5 Citrouilles sacrificielles", icon: JACK_O_LANTERN, broadcast: true}
+      - {weight: 1, command: "boss give %player% tranchemace", name: "<white><b>Tranche Mace", icon: NETHERITE_SWORD, broadcast: true}
+
 messages:
   prefix: "<dark_gray>[<gold>Caisses</gold>]</dark_gray> "
   no-money: "<red>Il te faut <gold><price></gold> (tu as <gold><balance></gold>)."
@@ -97,3 +123,4 @@ messages:
   busy: "<red>Une caisse est déjà en train de s'ouvrir."
   only-here: "<red>Va sur la caisse pour l'ouvrir."
   no-vault: "<red>L'économie n'est pas disponible (Vault)."
+  keys-only: "<red>Cette caisse s'ouvre seulement avec une clé."

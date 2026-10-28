@@ -22,6 +22,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Interaction;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.TextDisplay;
@@ -33,6 +34,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.EquipmentSlot;
@@ -75,7 +77,7 @@ public final class SmpCrates extends JavaPlugin implements Listener {
     static final MiniMessage MM = MiniMessage.miniMessage();
 
     /** Un lot. */
-    record Reward(int weight, ItemStack item, double money, String command, String name, Material icon, boolean broadcast) {
+    record Reward(int weight, ItemStack item, double money, String command, String name, Material icon, boolean broadcast, int idx) {
     }
 
     /** Une caisse. */
@@ -84,6 +86,10 @@ public final class SmpCrates extends JavaPlugin implements Listener {
         String name, color;
         double price;
         Material icon, pane;
+        /** ouvrable seulement avec une clé (caisse boutique / premium) */
+        boolean keysOnly;
+        /** effets autour de la caisse : 0 rare … 3 mythique, -1 = d'après le prix */
+        int tier = -1;
         final List<Reward> rewards = new ArrayList<>();
         int total;
 
@@ -119,6 +125,19 @@ public final class SmpCrates extends JavaPlugin implements Listener {
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        if (getConfig().getInt("config-version", 1) < 2) {
+            // nouvelle caisse Premium (blanche), copiée depuis le config du plugin si elle manque
+            var def = getConfig().getDefaults();
+            if (def != null && !getConfig().isSet("crates.premium") && def.isConfigurationSection("crates.premium")) {
+                for (String k : def.getConfigurationSection("crates.premium").getKeys(true))
+                    if (!def.isConfigurationSection("crates.premium." + k)) getConfig().set("crates.premium." + k, def.get("crates.premium." + k));
+            }
+            List<String> bc = new ArrayList<>(getConfig().getStringList("broadcast-crates"));
+            if (!bc.contains("premium")) bc.add("premium");
+            getConfig().set("broadcast-crates", bc);
+            getConfig().set("config-version", 2);
+            saveConfig();
+        }
         tag = new NamespacedKey(this, "crate");
         dataFile = new File(getDataFolder(), "data.yml");
         loadCrates();
@@ -198,14 +217,17 @@ public final class SmpCrates extends JavaPlugin implements Listener {
             cr.icon = ic == null ? Material.CHEST : ic;
             Material pane = Material.matchMaterial(c.getString("pane", paneFor(cr.icon)));
             cr.pane = pane == null ? Material.GRAY_STAINED_GLASS_PANE : pane;
+            cr.keysOnly = c.getBoolean("keys-only", false);
+            cr.tier = c.getInt("tier", -1);
+            int idx = 0;
             for (Map<?, ?> m : c.getMapList("rewards")) {
-                Reward r = reward(m);
+                Reward r = reward(m, idx++);
                 if (r != null) {
                     cr.rewards.add(r);
                     cr.total += r.weight();
                 }
             }
-            if (!cr.rewards.isEmpty()) crates.put(cr.id, cr);
+            crates.put(cr.id, cr); // même vide : on peut la remplir avec /caisse editer
         }
     }
 
@@ -215,7 +237,7 @@ public final class SmpCrates extends JavaPlugin implements Listener {
         return i > 0 ? n.substring(0, i) + "_STAINED_GLASS_PANE" : "GRAY_STAINED_GLASS_PANE";
     }
 
-    private Reward reward(Map<?, ?> m) {
+    private Reward reward(Map<?, ?> m, int idx) {
         int weight = m.get("weight") instanceof Number n ? n.intValue() : 1;
         String name = m.get("name") == null ? null : String.valueOf(m.get("name"));
         Material icon = m.get("icon") == null ? null : Material.matchMaterial(String.valueOf(m.get("icon")));
@@ -259,7 +281,7 @@ public final class SmpCrates extends JavaPlugin implements Listener {
         double money = m.get("money") instanceof Number n ? n.doubleValue() : 0;
         String cmd = m.get("command") == null ? null : String.valueOf(m.get("command"));
         if (item == null && money <= 0 && cmd == null) return null;
-        return new Reward(Math.max(1, weight), item, money, cmd, name, icon, bc);
+        return new Reward(Math.max(1, weight), item, money, cmd, name, icon, bc, idx);
     }
 
     private void loadData() {
@@ -350,6 +372,7 @@ public final class SmpCrates extends JavaPlugin implements Listener {
 
     /** 0 = rare, 1 = épique, 2 = légendaire, 3 = mythique (d'après le prix, du moins cher au plus cher). */
     private int tier(Crate c) {
+        if (c.tier >= 0) return Math.min(3, c.tier);
         List<Crate> l = new ArrayList<>(crates.values());
         l.sort(java.util.Comparator.comparingDouble(x -> x.price));
         int i = l.indexOf(c);
@@ -386,7 +409,7 @@ public final class SmpCrates extends JavaPlugin implements Listener {
             t.setBillboard(Display.Billboard.CENTER);
             t.setShadowed(true);
             t.setBackgroundColor(Color.fromARGB(110, 8, 6, 14));
-            t.text(parse(c.name + "\n<gray>Prix : <gold>" + money(c.price) + "\n<dark_gray>Clic : voir les lots et ouvrir"));
+            t.text(parse(c.name + "\n" + (c.keysOnly ? "<gray>🔑 Avec une clé" : "<gray>Prix : <gold>" + money(c.price)) + "\n<dark_gray>Clic : voir les lots et ouvrir"));
         });
         ItemDisplay item = w.spawn(b.clone().add(0.5, 1.45, 0.5), ItemDisplay.class, d -> {
             d.setPersistent(false);
@@ -397,7 +420,15 @@ public final class SmpCrates extends JavaPlugin implements Listener {
             d.setGlowColorOverride(color(c.color));
             d.setTeleportDuration(2);
         });
-        shows.put(k, new ArrayList<>(List.of(text, item)));
+        // zone cliquable : du dessus du bloc jusqu'en haut de l'hologramme
+        Interaction click = w.spawn(b.clone().add(0.5, 1.0, 0.5), Interaction.class, i -> {
+            i.setPersistent(false);
+            i.getPersistentDataContainer().set(tag, PersistentDataType.STRING, k);
+            i.setInteractionWidth(1.3f);
+            i.setInteractionHeight(2.2f);
+            i.setResponsive(true);
+        });
+        shows.put(k, new ArrayList<>(List.of(text, item, click)));
     }
 
     private void removeShow(String k) {
@@ -423,6 +454,31 @@ public final class SmpCrates extends JavaPlugin implements Listener {
             return;
         }
         openPreview(p, c, b.getLocation());
+    }
+
+    /** Clic sur l'hologramme / la caisse qui tourne (zone cliquable au-dessus du bloc). */
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onClickHolo(PlayerInteractEntityEvent e) {
+        if (!(e.getRightClicked() instanceof Interaction i)) return;
+        String k = i.getPersistentDataContainer().get(tag, PersistentDataType.STRING);
+        if (k == null) return;
+        e.setCancelled(true);
+        if (e.getHand() != EquipmentSlot.HAND) return;
+        Crate c = crates.get(placed.get(k));
+        Location at = loc(k);
+        if (c != null && at != null) openPreview(e.getPlayer(), c, at);
+    }
+
+    /** Clic gauche sur la zone cliquable : pareil. */
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onHitHolo(org.bukkit.event.entity.EntityDamageByEntityEvent e) {
+        if (!(e.getEntity() instanceof Interaction i) || !(e.getDamager() instanceof Player p)) return;
+        String k = i.getPersistentDataContainer().get(tag, PersistentDataType.STRING);
+        if (k == null) return;
+        e.setCancelled(true);
+        Crate c = crates.get(placed.get(k));
+        Location at = loc(k);
+        if (c != null && at != null) openPreview(p, c, at);
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -519,12 +575,12 @@ public final class SmpCrates extends JavaPlugin implements Listener {
         m.inv = Bukkit.createInventory(m, 27, parse("<dark_gray>✦ Caisses"));
         ItemStack bg = named(Material.BLACK_STAINED_GLASS_PANE, " ", List.of());
         for (int i = 0; i < 27; i++) m.inv.setItem(i, bg);
-        int[] slots = {10, 12, 14, 16};
+        int[] slots = listSlots();
         int i = 0;
         for (Crate c : crates.values()) {
             if (i >= slots.length) break;
             List<String> lore = new ArrayList<>();
-            lore.add("<gray>Prix : <gold>" + money(c.price));
+            lore.add(c.keysOnly ? "<gray>🔑 Seulement avec une clé" : "<gray>Prix : <gold>" + money(c.price));
             int k = keysOf(p.getUniqueId(), c.id);
             if (k > 0) lore.add("<green>🔑 " + k + " clé(s)");
             lore.add("<gray>" + c.rewards.size() + " lots possibles");
@@ -538,6 +594,13 @@ public final class SmpCrates extends JavaPlugin implements Listener {
         }
         p.openInventory(m.inv);
         p.playSound(p.getLocation(), Sound.BLOCK_ENDER_CHEST_OPEN, 0.6f, 1.2f);
+    }
+
+    private int[] listSlots() {
+        int n = crates.size();
+        if (n <= 4) return new int[]{10, 12, 14, 16};
+        if (n <= 5) return new int[]{9, 11, 13, 15, 17};
+        return new int[]{10, 11, 12, 13, 14, 15, 16};
     }
 
     void openPreview(Player p, Crate c, Location at) {
@@ -554,6 +617,7 @@ public final class SmpCrates extends JavaPlugin implements Listener {
                 "<gray>Chaque ouverture tire un lot au hasard.", "<gray>La chance de chaque lot est écrite", "<gray>sous son nom.")));
         m.inv.setItem(49, named(k > 0 ? Material.TRIPWIRE_HOOK : Material.EMERALD, k > 0 ? "<green><b>🔑 Ouvrir avec une clé" : "<green><b>Ouvrir",
                 k > 0 ? List.of("<gray>Tu as <white>" + k + "</white> clé(s).", "", "<yellow>▶ Clic") :
+                        c.keysOnly ? List.of("<gray>Cette caisse s'ouvre <white>seulement avec une clé</white>.", "<gray>Tu n'en as pas.") :
                         List.of("<gray>Prix : <gold>" + money(c.price), "<gray>Ton argent : <gold>" + money(bal), "", "<yellow>▶ Clic pour payer et ouvrir")));
         m.inv.setItem(53, named(Material.BARRIER, "<red>Fermer", List.of()));
         p.openInventory(m.inv);
@@ -568,7 +632,7 @@ public final class SmpCrates extends JavaPlugin implements Listener {
         int slot = e.getRawSlot();
         switch (m.kind) {
             case "list" -> {
-                int[] slots = {10, 12, 14, 16};
+                int[] slots = listSlots();
                 int i = 0;
                 for (Crate c : crates.values()) {
                     if (i < slots.length && slots[i] == slot) {
@@ -582,6 +646,8 @@ public final class SmpCrates extends JavaPlugin implements Listener {
                 if (slot == 53) p.closeInventory();
                 else if (slot == 49) tryOpen(p, m.crate, m.at);
             }
+            case "edit" -> editClick(p, m.crate, slot, e.isShiftClick());
+            case "lots" -> lotsClick(p, m.crate, slot, e.isShiftClick(), e.isRightClick());
             default -> {
             }
         }
@@ -623,7 +689,16 @@ public final class SmpCrates extends JavaPlugin implements Listener {
             send(p, msg("only-here"));
             return;
         }
+        if (c.rewards.isEmpty()) {
+            send(p, "<red>Cette caisse n'a pas encore de lots.");
+            return;
+        }
         int k = keysOf(p.getUniqueId(), c.id);
+        if (k <= 0 && c.keysOnly) {
+            send(p, msg("keys-only"));
+            p.playSound(p.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+            return;
+        }
         if (k > 0) {
             addKeys(p.getUniqueId(), c.id, -1);
             send(p, msg("key-used").replace("<keys>", String.valueOf(k - 1)));
@@ -762,6 +837,231 @@ public final class SmpCrates extends JavaPlugin implements Listener {
         }
     }
 
+    // ================================================================= éditeur des caisses (admin)
+
+    /** réponses tapées dans le chat (nom, prix, couleur, poids...) */
+    private final Map<UUID, java.util.function.Consumer<String>> asking = new HashMap<>();
+
+    private void ask(Player p, String question, java.util.function.Consumer<String> then) {
+        p.closeInventory();
+        asking.put(p.getUniqueId(), then);
+        send(p, question + " <dark_gray>(tape <white>annuler</white> pour arrêter)");
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onChat(io.papermc.paper.event.player.AsyncChatEvent e) {
+        java.util.function.Consumer<String> then = asking.remove(e.getPlayer().getUniqueId());
+        if (then == null) return;
+        e.setCancelled(true);
+        String text = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(e.message()).trim();
+        Bukkit.getScheduler().runTask(this, () -> {
+            if (text.equalsIgnoreCase("annuler") || text.equalsIgnoreCase("cancel")) {
+                send(e.getPlayer(), "<gray>Annulé.");
+                return;
+            }
+            then.accept(text);
+        });
+    }
+
+    private void reloadCrates() {
+        loadCrates();
+        for (String k : new ArrayList<>(shows.keySet())) removeShow(k);
+    }
+
+    private void set(Crate c, String field, Object v) {
+        getConfig().set("crates." + c.id + "." + field, v);
+        saveConfig();
+        reloadCrates();
+    }
+
+    void openEditor(Player p, Crate c) {
+        Menu m = new Menu("edit", c, null);
+        m.inv = Bukkit.createInventory(m, 27, parse("<dark_gray>✎ Modifier : " + c.id));
+        ItemStack bg = named(Material.BLACK_STAINED_GLASS_PANE, " ", List.of());
+        for (int i = 0; i < 27; i++) m.inv.setItem(i, bg);
+        m.inv.setItem(10, named(Material.NAME_TAG, "<white><b>Nom", List.of("<gray>Actuel : " + c.name, "", "<yellow>▶ Clic : écrire le nouveau nom",
+                "<dark_gray>couleurs : <white><red>, <#ff7a00>, <gradient:#fff:#888>, <b>")));
+        m.inv.setItem(11, named(Material.GOLD_INGOT, "<white><b>Prix", List.of("<gray>Actuel : <gold>" + money(c.price), "", "<yellow>▶ Clic : écrire le prix")));
+        m.inv.setItem(12, named(Material.MAGENTA_DYE, "<white><b>Couleur des effets", List.of("<gray>Actuelle : <color:" + c.color + ">■■■ " + c.color, "",
+                "<yellow>▶ Clic : écrire une couleur (ex. #ffffff)")));
+        m.inv.setItem(13, named(c.icon, "<white><b>Apparence (bloc qui tourne)", List.of("<gray>Actuelle : <white>" + c.icon.name().toLowerCase(Locale.ROOT), "",
+                "<yellow>▶ Clic : prendre l'objet que tu as en main")));
+        m.inv.setItem(14, named(c.keysOnly ? Material.TRIPWIRE_HOOK : Material.EMERALD, "<white><b>Ouverture : " + (c.keysOnly ? "<aqua>clé seulement" : "<green>argent ou clé"),
+                List.of("<gray>Clé seulement = pour une caisse boutique / premium", "<gray>(clés : <white>/caisse cle <joueur> " + c.id + "</white>)", "", "<yellow>▶ Clic pour changer")));
+        String[] tiers = {"Rare", "Épique", "Légendaire", "Mythique"};
+        m.inv.setItem(15, named(Material.BLAZE_POWDER, "<white><b>Effets autour : " + (c.tier < 0 ? "<gray>auto (d'après le prix)" : "<gold>" + tiers[Math.min(3, c.tier)]),
+                List.of("<gray>Plus haut = plus de particules autour", "", "<yellow>▶ Clic pour changer")));
+        m.inv.setItem(16, named(Material.CHEST, "<white><b>Lots <gray>(" + c.rewards.size() + ")", List.of("<gray>Voir, changer les chances,", "<gray>ajouter ou retirer des lots.", "", "<yellow>▶ Clic")));
+        m.inv.setItem(22, named(Material.BARRIER, "<red><b>Supprimer la caisse", List.of("<gray>Shift + clic pour confirmer")));
+        p.openInventory(m.inv);
+    }
+
+    private void editClick(Player p, Crate c, int slot, boolean shift) {
+        switch (slot) {
+            case 10 -> ask(p, "<gray>Nouveau nom de la caisse :", t -> {
+                set(c, "name", t);
+                send(p, "<green>Nom : " + t);
+                openEditor(p, crates.get(c.id));
+            });
+            case 11 -> ask(p, "<gray>Nouveau prix (ex. 250000 ou 250k) :", t -> {
+                double v = parseAmount(t);
+                if (v < 0) {
+                    send(p, "<red>Prix invalide.");
+                    return;
+                }
+                set(c, "price", v);
+                send(p, "<green>Prix : <gold>" + money(v));
+                openEditor(p, crates.get(c.id));
+            });
+            case 12 -> ask(p, "<gray>Nouvelle couleur (ex. <white>#ffffff</white>) :", t -> {
+                String hex = t.startsWith("#") ? t : "#" + t;
+                if (!hex.matches("#[0-9a-fA-F]{6}")) {
+                    send(p, "<red>Couleur invalide (ex. #ff3030).");
+                    return;
+                }
+                set(c, "color", hex.toLowerCase(Locale.ROOT));
+                openEditor(p, crates.get(c.id));
+            });
+            case 13 -> {
+                Material mat = p.getInventory().getItemInMainHand().getType();
+                if (mat.isAir()) {
+                    send(p, "<red>Prends en main l'objet / le bloc voulu (ex. une shulker blanche).");
+                    return;
+                }
+                set(c, "icon", mat.name());
+                getConfig().set("crates." + c.id + ".pane", null);
+                saveConfig();
+                reloadCrates();
+                openEditor(p, crates.get(c.id));
+            }
+            case 14 -> {
+                set(c, "keys-only", !c.keysOnly);
+                openEditor(p, crates.get(c.id));
+            }
+            case 15 -> {
+                int next = c.tier >= 3 ? -1 : c.tier + 1;
+                set(c, "tier", next < 0 ? null : next);
+                openEditor(p, crates.get(c.id));
+            }
+            case 16 -> openLots(p, c);
+            case 22 -> {
+                if (!shift) {
+                    send(p, "<red>Shift + clic pour vraiment supprimer la caisse.");
+                    return;
+                }
+                p.closeInventory();
+                p.performCommand("caisse supprimer " + c.id);
+            }
+            default -> {
+            }
+        }
+    }
+
+    void openLots(Player p, Crate c) {
+        Menu m = new Menu("lots", c, null);
+        m.inv = Bukkit.createInventory(m, 54, parse("<dark_gray>✎ Lots : " + c.id));
+        for (int i = 0; i < Math.min(45, c.rewards.size()); i++) {
+            Reward r = c.rewards.get(i);
+            ItemStack it = display(c, r, true);
+            ItemMeta meta = it.getItemMeta();
+            List<Component> lore = meta.lore() == null ? new ArrayList<>() : new ArrayList<>(meta.lore());
+            lore.add(parse("<gray>Poids : <white>" + r.weight()));
+            lore.add(Component.empty());
+            lore.add(parse("<yellow>▶ Clic : changer le poids (la chance)"));
+            lore.add(parse("<red>▶ Shift + clic droit : retirer ce lot"));
+            meta.lore(lore);
+            it.setItemMeta(meta);
+            m.inv.setItem(i, it);
+        }
+        ItemStack bg = named(c.pane, " ", List.of());
+        for (int i = 45; i < 54; i++) m.inv.setItem(i, bg);
+        m.inv.setItem(49, named(Material.LIME_DYE, "<green><b>+ Ajouter l'objet que j'ai en main", List.of("<gray>Avec son nom, ses enchantements, sa quantité.",
+                "<gray>Ensuite tu écris son poids (ex. 5).", "", "<dark_gray>Poids = chance relative : 20 sort 2 fois plus que 10.")));
+        m.inv.setItem(45, named(Material.ARROW, "<gray>◀ Retour", List.of()));
+        p.openInventory(m.inv);
+    }
+
+    private void lotsClick(Player p, Crate c, int slot, boolean shift, boolean right) {
+        if (slot == 45) {
+            openEditor(p, c);
+            return;
+        }
+        if (slot == 49) {
+            ItemStack hand = p.getInventory().getItemInMainHand().clone();
+            if (hand.getType().isAir()) {
+                send(p, "<red>Prends en main l'objet à ajouter.");
+                return;
+            }
+            ask(p, "<gray>Poids de ce lot (ex. 5) :", t -> {
+                int w;
+                try {
+                    w = Integer.parseInt(t);
+                } catch (NumberFormatException ex) {
+                    w = 0;
+                }
+                if (w <= 0) {
+                    send(p, "<red>Il faut un nombre plus grand que 0.");
+                    return;
+                }
+                List<Map<?, ?>> list = new ArrayList<>(getConfig().getMapList("crates." + c.id + ".rewards"));
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("weight", w);
+                m.put("stack", Base64.getEncoder().encodeToString(hand.serializeAsBytes()));
+                list.add(m);
+                set(c, "rewards", list);
+                send(p, "<green>Lot ajouté.");
+                openLots(p, crates.get(c.id));
+            });
+            return;
+        }
+        if (slot < 0 || slot >= c.rewards.size() || slot >= 45) return;
+        Reward r = c.rewards.get(slot);
+        List<Map<?, ?>> list = new ArrayList<>(getConfig().getMapList("crates." + c.id + ".rewards"));
+        if (r.idx() < 0 || r.idx() >= list.size()) return;
+        if (shift && right) {
+            list.remove(r.idx());
+            set(c, "rewards", list);
+            send(p, "<yellow>Lot retiré.");
+            openLots(p, crates.get(c.id));
+            return;
+        }
+        ask(p, "<gray>Nouveau poids de ce lot (actuel : <white>" + r.weight() + "</white>) :", t -> {
+            int w;
+            try {
+                w = Integer.parseInt(t);
+            } catch (NumberFormatException ex) {
+                w = 0;
+            }
+            if (w <= 0) {
+                send(p, "<red>Il faut un nombre plus grand que 0.");
+                return;
+            }
+            List<Map<?, ?>> l2 = new ArrayList<>(getConfig().getMapList("crates." + c.id + ".rewards"));
+            if (r.idx() >= l2.size()) return;
+            Map<String, Object> m = new LinkedHashMap<>();
+            for (var en : l2.get(r.idx()).entrySet()) m.put(String.valueOf(en.getKey()), en.getValue());
+            m.put("weight", w);
+            l2.set(r.idx(), m);
+            set(c, "rewards", l2);
+            send(p, "<green>Poids changé.");
+            openLots(p, crates.get(c.id));
+        });
+    }
+
+    /** 250000 · 250k · 1.5m */
+    private static double parseAmount(String s) {
+        String t = s.trim().toLowerCase(Locale.ROOT).replace(",", ".").replace(" ", "");
+        double mult = 1;
+        if (t.endsWith("k")) mult = 1_000;
+        else if (t.endsWith("m")) mult = 1_000_000;
+        if (mult > 1) t = t.substring(0, t.length() - 1);
+        try {
+            return Double.parseDouble(t) * mult;
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
+
     // ================================================================= commande
 
     @Override
@@ -839,6 +1139,47 @@ public final class SmpCrates extends JavaPlugin implements Listener {
                 send(s, "<green>" + n + " clé(s) donnée(s) à " + a[1] + ".");
                 if (o.getPlayer() != null) send(o.getPlayer(), "<green>Tu as reçu <white>" + n + "</white> clé(s) de " + crates.get(a[2].toLowerCase(Locale.ROOT)).name + "<green> !");
             }
+            case "editer", "éditer", "edit", "modifier" -> {
+                if (p == null || !admin) return true;
+                Crate c = a.length > 1 ? crates.get(a[1].toLowerCase(Locale.ROOT)) : null;
+                if (c == null) {
+                    send(s, "<red>/caisse editer <" + String.join("|", crates.keySet()) + ">");
+                    return true;
+                }
+                openEditor(p, c);
+            }
+            case "creer", "créer", "create" -> {
+                if (!admin) return true;
+                String id = a.length > 1 ? a[1].toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9_]", "") : "";
+                if (id.isEmpty() || crates.containsKey(id)) {
+                    send(s, "<red>/caisse creer <id> <gray>(lettres / chiffres, pas déjà pris)");
+                    return true;
+                }
+                String base = "crates." + id + ".";
+                getConfig().set(base + "name", "<white><b>Caisse " + id);
+                getConfig().set(base + "price", 10000);
+                getConfig().set(base + "icon", "CHEST");
+                getConfig().set(base + "color", "#ffffff");
+                getConfig().set(base + "rewards", new ArrayList<>());
+                saveConfig();
+                reloadCrates();
+                send(s, "<green>Caisse <white>" + id + "</white> créée. <gray>Règle-la avec <white>/caisse editer " + id + "</white>.");
+                if (p != null) openEditor(p, crates.get(id));
+            }
+            case "supprimer", "delete" -> {
+                if (!admin) return true;
+                String id = a.length > 1 ? a[1].toLowerCase(Locale.ROOT) : "";
+                if (!crates.containsKey(id)) {
+                    send(s, "<red>/caisse supprimer <" + String.join("|", crates.keySet()) + ">");
+                    return true;
+                }
+                getConfig().set("crates." + id, null);
+                saveConfig();
+                placed.values().removeIf(v -> v.equals(id));
+                saveData();
+                reloadCrates();
+                send(s, "<yellow>Caisse <white>" + id + "</white> supprimée (et retirée des blocs où elle était posée).");
+            }
             case "reload" -> {
                 if (!admin) return true;
                 reloadConfig();
@@ -861,8 +1202,8 @@ public final class SmpCrates extends JavaPlugin implements Listener {
         boolean admin = s.hasPermission("smpcrates.admin");
         if (a.length == 1) {
             out.addAll(crates.keySet());
-            if (admin) out.addAll(List.of("placer", "retirer", "ajouter", "cle", "reload"));
-        } else if (a.length == 2 && admin && List.of("placer", "ajouter").contains(a[0].toLowerCase(Locale.ROOT))) {
+            if (admin) out.addAll(List.of("placer", "retirer", "ajouter", "cle", "editer", "creer", "supprimer", "reload"));
+        } else if (a.length == 2 && admin && List.of("placer", "ajouter", "editer", "supprimer").contains(a[0].toLowerCase(Locale.ROOT))) {
             out.addAll(crates.keySet());
         } else if (a.length == 2 && admin && a[0].equalsIgnoreCase("cle")) {
             for (Player p : Bukkit.getOnlinePlayers()) out.add(p.getName());
