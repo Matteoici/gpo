@@ -85,6 +85,12 @@ public final class SmpCombat extends JavaPlugin implements Listener, TabExecutor
             getConfig().set("config-version", 3);
             saveConfig();
         }
+        if (getConfig().getInt("config-version", 1) < 4) {
+            // perles : 30 s de recharge, tout le temps
+            if (getConfig().getInt("pearl-cooldown-seconds", 15) == 15) getConfig().set("pearl-cooldown-seconds", 30);
+            getConfig().set("config-version", 4);
+            saveConfig();
+        }
         allowKey = new NamespacedKey("smpcombat", "allow_tp_until");
         // les perles lancées (en l'air, en stasis...) restent même quand on meurt
         if (getConfig().getBoolean("mort.garder-perles", true)) {
@@ -296,12 +302,15 @@ public final class SmpCombat extends JavaPlugin implements Listener, TabExecutor
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onLaunch(org.bukkit.event.entity.ProjectileLaunchEvent e) {
-        if (!(e.getEntity().getShooter() instanceof Player p) || !inDanger(p)) return;
+        if (!(e.getEntity().getShooter() instanceof Player p)) return;
+        // perles : recharge partout (pas seulement en combat), sauf si pearl-cooldown-partout: false
+        boolean pearl = e.getEntity() instanceof org.bukkit.entity.EnderPearl;
+        if (!inDanger(p) && !(pearl && getConfig().getBoolean("pearl-cooldown-partout", true))) return;
         Material m;
         int secs;
-        if (e.getEntity() instanceof org.bukkit.entity.EnderPearl) {
+        if (pearl) {
             m = Material.ENDER_PEARL;
-            secs = getConfig().getInt("pearl-cooldown-seconds", 15);
+            secs = getConfig().getInt("pearl-cooldown-seconds", 30);
         } else if (e.getEntity() instanceof org.bukkit.entity.WindCharge) {
             m = Material.WIND_CHARGE;
             secs = getConfig().getInt("wind-charge-cooldown-seconds", 5);
@@ -311,6 +320,25 @@ public final class SmpCombat extends JavaPlugin implements Listener, TabExecutor
         Bukkit.getScheduler().runTask(this, () -> {
             if (p.isOnline()) p.setCooldown(m, secs * 20);
         });
+    }
+
+    /** Pas d'auto-pull : tes propres flèches / tridents / boules de neige ne te touchent pas (pas de boost à l'arc). */
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onSelfHit(org.bukkit.event.entity.ProjectileHitEvent e) {
+        if (!getConfig().getBoolean("bloquer-auto-pull", true)) return;
+        if (e.getHitEntity() instanceof Player p && e.getEntity().getShooter() instanceof Player s && s.getUniqueId().equals(p.getUniqueId())
+                && !(e.getEntity() instanceof org.bukkit.entity.EnderPearl)) {
+            e.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void onSelfDamage(EntityDamageByEntityEvent e) {
+        if (!getConfig().getBoolean("bloquer-auto-pull", true)) return;
+        if (e.getEntity() instanceof Player p && e.getDamager() instanceof Projectile pr && !(pr instanceof org.bukkit.entity.WindCharge)
+                && pr.getShooter() instanceof Player s && s.getUniqueId().equals(p.getUniqueId())) {
+            e.setCancelled(true);
+        }
     }
 
     @EventHandler(priority = EventPriority.HIGH)

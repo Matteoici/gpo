@@ -1,4 +1,4 @@
-config-version: 3
+config-version: 4
 # =====================================================================
 #  SmpCombat - combat façon Deepwoken
 #
@@ -70,7 +70,9 @@ block-ender-chest: true
 # élytres interdites en danger (fuite)
 block-elytra: true
 # anti-fuite en danger
-pearl-cooldown-seconds: 15        # une ender pearl toutes les 15 s (au lieu d'1 s)
+pearl-cooldown-seconds: 30        # une ender pearl toutes les 30 s (au lieu d'1 s)
+pearl-cooldown-partout: true      # true = tout le temps, false = seulement en combat
+bloquer-auto-pull: true           # tes propres flèches / tridents ne te touchent pas (pas de boost à l'arc)
 wind-charge-cooldown-seconds: 5   # charge de vent
 block-riptide: true               # trident Impulsion interdit
 block-chorus: true                # fruit de chorus interdit
