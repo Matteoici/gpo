@@ -913,6 +913,12 @@ messages:
     cosmetics-off:
       name: "<red><b>Cosmétiques cachés"
       lore: ["<gray>Tes reliques sont invisibles.", "", "<yellow>▶ Clic : les afficher", "<dark_gray>(les bonus restent actifs)"]
+    effects-on:
+      name: "<green><b>Effets des reliques : affichés"
+      lore: ["<gray>Tu vois les particules des reliques", "<gray>(les tiennes et celles des autres).", "", "<yellow>▶ Clic : ne plus les voir", "<dark_gray>(les bonus restent actifs)"]
+    effects-off:
+      name: "<red><b>Effets des reliques : coupés"
+      lore: ["<gray>Tu ne vois plus aucune particule", "<gray>de relique (moins de lag).", "", "<yellow>▶ Clic : les revoir", "<dark_gray>(les bonus restent actifs)"]
     stash:
       name: "<gold><b>Coffre de butin</b> <white>(<n>)"
       lore: ["<gray>Butin gagné quand ton inventaire était plein.", "", "<yellow>▶ Clic : tout récupérer"]

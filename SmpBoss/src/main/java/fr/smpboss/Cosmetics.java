@@ -126,10 +126,11 @@ final class Cosmetics {
     }
 
     /** Ceux qui voient le joueur (lui compris), à moins de 48 blocs. */
-    private static List<Player> viewers(Player p) {
+    private List<Player> viewers(Player p) {
         List<Player> out = new ArrayList<>();
         for (Player v : p.getWorld().getPlayers()) {
             if (!v.equals(p) && !v.canSee(p)) continue;
+            if (plugin.store().of(v.getUniqueId()).hideEffects) continue; // il a coupé les effets des reliques
             if (v.getLocation().distanceSquared(p.getLocation()) > 48 * 48) continue;
             out.add(v);
         }

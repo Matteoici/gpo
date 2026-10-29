@@ -1,10 +1,11 @@
-config-version: 3
+config-version: 4
 # =====================================================================
 #  SmpPets - familiers qui te suivent, obtenus dans des œufs
 #  Joueurs :
 #   /pets            -> tes familiers (clic = équiper / retirer)
 #   /pets oeufs      -> les œufs, leurs chances, et les acheter (si un prix est mis)
 #   /pets cacher     -> cacher / montrer tes familiers (les boosts restent)
+#   /pets trade <joueur> -> échange de familiers entre deux joueurs (chacun propose, les deux valident)
 #   Shift + clic sur un familier dans /pets -> il devient un objet à échanger (clic droit avec pour le récupérer)
 #   /loky [joueur]   -> compétence du familier équipé (Loky, le chat des modos : il chie à la gueule du joueur visé)
 #   Clic droit avec un œuf en main = l'ouvrir · accroupi + clic droit = voir ce qu'il contient
@@ -31,6 +32,8 @@ emplacements: 1
 equiper-auto: true
 # afficher le nom du familier au-dessus de lui
 nom-visible: true
+# particules autour des familiers : une toutes les X ticks (20 = 1 par seconde, plus grand = moins)
+particules-toutes-les-ticks: 20
 # ouverture d'œuf avec roulette animée (false = résultat direct)
 animation: true
 
@@ -156,6 +159,12 @@ messages:
   reloaded: "<green>SmpPets rechargé (<pets> familiers, <eggs> œufs)."
   need-egg: "<red>Il te faut un <egg> <red>pour l'ouvrir."
   extracted: "<gold><pet> <gold>est maintenant un objet dans ton inventaire. <gray>Échange-le, ou clic droit pour le récupérer."
+  trade-sent: "<gray>Demande d'échange envoyée à <white><player></white>."
+  trade-request: "<yellow><white><player></white> veut échanger des familiers. <white><click:run_command:'/pets trade accepter <player>'><u>Clique ici</u></click></white> <yellow>pour ouvrir l'échange (1 min)."
+  trade-no-request: "<red>Pas de demande d'échange de ce joueur (ou elle a expiré)."
+  trade-busy: "<red>Un de vous deux est déjà en train d'échanger."
+  trade-cancelled: "<red>Échange annulé (<player>)."
+  trade-done: "<green>Échange réussi ! <gray>/pets pour voir tes familiers."
   not-tradeable: "<red>Ce familier ne peut pas être échangé."
   inventory-full: "<red>Ton inventaire est plein."
   token-max: "<red>Tu as déjà <pet> <red>au maximum d'étoiles."

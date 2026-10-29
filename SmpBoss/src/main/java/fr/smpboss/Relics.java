@@ -197,7 +197,11 @@ public final class Relics {
                 }
                 if (part.getDataType() != Void.class) continue;
                 Location l = p.getLocation().add(0, 0.1, 0);
-                p.getWorld().spawnParticle(part, l, 2, 0.2, 0.05, 0.2, 0.01);
+                for (Player v : p.getWorld().getPlayers()) {
+                    if (plugin.store().of(v.getUniqueId()).hideEffects || (!v.equals(p) && !v.canSee(p))) continue;
+                    if (v.getLocation().distanceSquared(l) > 48 * 48) continue;
+                    v.spawnParticle(part, l, 2, 0.2, 0.05, 0.2, 0.01);
+                }
             }
         }
     }

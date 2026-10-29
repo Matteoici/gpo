@@ -33,7 +33,7 @@ import static fr.smpboss.SmpBoss.parse;
  */
 public final class RelicMenu implements InventoryHolder {
 
-    private static final int INFO = 4, BAG = 13, LABEL = 22, PREV = 45, TOGGLE = 47, CLOSE = 49, STASH = 51, NEXT = 53;
+    private static final int INFO = 4, BAG = 13, LABEL = 22, PREV = 45, TOGGLE = 47, EFFECTS = 48, CLOSE = 49, STASH = 51, NEXT = 53;
     private static final int[] COLLECTION = {28, 29, 30, 31, 32, 33, 34, 37, 38, 39, 40, 41, 42, 43};
     private static final Material BAND = Material.ORANGE_STAINED_GLASS_PANE;
     private static final Material[] RAINBOW = {Material.RED_STAINED_GLASS_PANE, Material.ORANGE_STAINED_GLASS_PANE,
@@ -143,6 +143,8 @@ public final class RelicMenu implements InventoryHolder {
             stash.setItemMeta(m);
         }
         inv.setItem(STASH, stash);
+        inv.setItem(EFFECTS, named(d.hideEffects ? Material.GLASS_BOTTLE : Material.BLAZE_POWDER,
+                d.hideEffects ? "menu.effects-off" : "menu.effects-on", null));
     }
 
     /** Toutes les 4 ticks : les cadres animés et le nom arc-en-ciel des légendaires. */
@@ -318,6 +320,13 @@ public final class RelicMenu implements InventoryHolder {
                 d.hideCosmetics = !d.hideCosmetics;
                 plugin.store().dirty();
                 plugin.cosmetics().refresh(viewer);
+                tick();
+                draw();
+                return;
+            }
+            case EFFECTS -> {
+                d.hideEffects = !d.hideEffects;
+                plugin.store().dirty();
                 tick();
                 draw();
                 return;

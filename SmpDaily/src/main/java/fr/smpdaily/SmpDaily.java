@@ -410,7 +410,9 @@ public final class SmpDaily extends JavaPlugin implements Listener, TabExecutor 
     // ================================================================= outils
 
     String msg(String k) {
-        return getConfig().getString("messages." + k, k);
+        // sans valeur par défaut ici : les nouveaux messages du plugin marchent même avec un ancien config.yml
+        String s = getConfig().getString("messages." + k);
+        return s == null ? k : s;
     }
 
     void send(CommandSender s, String mini) {

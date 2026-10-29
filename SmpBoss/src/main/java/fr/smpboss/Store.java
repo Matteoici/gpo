@@ -56,6 +56,7 @@ public final class Store {
             d.pitySecret = s.getInt("pity-secret");
             d.kills = s.getLong("kills");
             d.hideCosmetics = s.getBoolean("hide-cosmetics");
+            d.hideEffects = s.getBoolean("hide-effects");
             List<String> bp = s.getStringList("backpack");
             for (int i = 0; i < Math.min(27, bp.size()); i++) d.backpack[i] = decode(bp.get(i));
             for (String st : s.getStringList("stash")) {
@@ -79,6 +80,7 @@ public final class Store {
             if (d.pitySecret > 0) y.set(k + ".pity-secret", d.pitySecret);
             if (d.kills > 0) y.set(k + ".kills", d.kills);
             if (d.hideCosmetics) y.set(k + ".hide-cosmetics", true);
+            if (d.hideEffects) y.set(k + ".hide-effects", true);
             boolean any = false;
             String[] bp = new String[27];
             for (int i = 0; i < 27; i++) {

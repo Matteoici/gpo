@@ -20,6 +20,8 @@ public final class PlayerData {
     public long kills;
     /** cosmétiques visibles ou non (les bonus restent actifs) */
     public boolean hideCosmetics;
+    /** ne plus voir les particules des reliques (les siennes et celles des autres) */
+    public boolean hideEffects;
     public ItemStack[] backpack = new ItemStack[27];
     /** butin gagné qui n'a pas pu entrer dans l'inventaire (récupérable dans /reliques) */
     public final List<ItemStack> stash = new ArrayList<>();

@@ -296,6 +296,27 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
             getConfig().set("config-version", 3);
             saveConfig();
         }
+        if (getConfig().getInt("config-version", 1) < 4) {
+            File pf = new File(getDataFolder(), "pets.yml");
+            YamlConfiguration pc = YamlConfiguration.loadConfiguration(pf);
+            // les gros familiers plus petits (moins de hitbox)
+            if (pc.isConfigurationSection("pets.bebe-sniffer") && !pc.isSet("pets.bebe-sniffer.taille")) pc.set("pets.bebe-sniffer.taille", 0.55);
+            if (pc.isConfigurationSection("pets.ghastling") && !pc.isSet("pets.ghastling.taille")) pc.set("pets.ghastling.taille", 0.6);
+            if (pc.isConfigurationSection("pets.panda") && !pc.isSet("pets.panda.taille")) pc.set("pets.panda.taille", 0.75);
+            // le creeper chargé : son aura fait trop d'effets
+            if ("CHARGED".equalsIgnoreCase(pc.getString("pets.mini-creeper.variante", ""))) {
+                pc.set("pets.mini-creeper.variante", null);
+                if ("Mini Creeper chargé".equals(pc.getString("pets.mini-creeper.nom"))) pc.set("pets.mini-creeper.nom", "Mini Creeper");
+            }
+            try {
+                pc.save(pf);
+            } catch (IOException ex) {
+                getLogger().warning("pets.yml : " + ex.getMessage());
+            }
+            if (!getConfig().isSet("particules-toutes-les-ticks")) getConfig().set("particules-toutes-les-ticks", 20);
+            getConfig().set("config-version", 4);
+            saveConfig();
+        }
     }
 
     void load() {
@@ -654,7 +675,7 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
             f.ent.teleport(at);
             f.ent.setRotation(faceYaw, 0);
         }
-        if (f.def.particle != null && tick % 5 == 0) {
+        if (f.def.particle != null && tick % Math.max(1, getConfig().getInt("particules-toutes-les-ticks", 20)) == 0) {
             f.ent.getWorld().spawnParticle(f.def.particle, f.pos.clone().add(0, 0.3, 0), 1, 0.2, 0.2, 0.2, 0.01);
         }
     }
@@ -1292,6 +1313,8 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
     @EventHandler
     public void onQuit(PlayerQuitEvent e) {
         UUID id = e.getPlayer().getUniqueId();
+        Trade tr = trades.get(id);
+        if (tr != null) cancelTrade(tr, e.getPlayer().getName());
         List<Follower> fs = active.remove(id);
         if (fs != null) for (Follower f : fs) despawn(f);
         clearAttributes(e.getPlayer());
@@ -1329,6 +1352,266 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
             p.getInventory().setItem(hand, inHand);
         }
         open(p, g);
+    }
+
+    // ================================================================= échange direct entre deux joueurs (/pets trade)
+
+    static final class Trade {
+        final UUID a, b;
+        final List<String> offerA = new ArrayList<>(), offerB = new ArrayList<>();
+        boolean readyA, readyB, done;
+
+        Trade(UUID a, UUID b) {
+            this.a = a;
+            this.b = b;
+        }
+
+        List<String> offer(UUID id) {
+            return id.equals(a) ? offerA : offerB;
+        }
+
+        UUID other(UUID id) {
+            return id.equals(a) ? b : a;
+        }
+    }
+
+    final Map<UUID, Trade> trades = new HashMap<>();
+    /** demandes : cible -> (demandeur -> heure) */
+    final Map<UUID, Map<UUID, Long>> tradeAsks = new HashMap<>();
+    /** joueurs qui changent de menu pendant l'échange (le menu qui se ferme n'annule pas l'échange) */
+    final Set<UUID> tradeSwitch = new HashSet<>();
+
+    void tradeCommand(Player p, String[] a) {
+        if (!getConfig().getBoolean("echange.active", true)) {
+            send(p, msg("not-tradeable"));
+            return;
+        }
+        if (a.length >= 3 && (a[1].equalsIgnoreCase("accepter") || a[1].equalsIgnoreCase("accept"))) {
+            Player from = Bukkit.getPlayerExact(a[2]);
+            Map<UUID, Long> asks = tradeAsks.get(p.getUniqueId());
+            Long t = from == null || asks == null ? null : asks.get(from.getUniqueId());
+            if (t == null || System.currentTimeMillis() - t > 60_000) {
+                send(p, msg("trade-no-request"));
+                return;
+            }
+            asks.remove(from.getUniqueId());
+            if (trades.containsKey(p.getUniqueId()) || trades.containsKey(from.getUniqueId())) {
+                send(p, msg("trade-busy"));
+                return;
+            }
+            Trade tr = new Trade(from.getUniqueId(), p.getUniqueId());
+            trades.put(tr.a, tr);
+            trades.put(tr.b, tr);
+            openTrade(from, tr);
+            openTrade(p, tr);
+            return;
+        }
+        if (a.length < 2) {
+            send(p, "<red>/pets trade <joueur>");
+            return;
+        }
+        Player t = Bukkit.getPlayerExact(a[1]);
+        if (t == null || t.equals(p) || vanished(t)) {
+            send(p, msg("unknown-player"));
+            return;
+        }
+        if (trades.containsKey(p.getUniqueId()) || trades.containsKey(t.getUniqueId())) {
+            send(p, msg("trade-busy"));
+            return;
+        }
+        // il m'avait déjà demandé : on ouvre direct
+        Map<UUID, Long> mine = tradeAsks.get(p.getUniqueId());
+        if (mine != null && mine.containsKey(t.getUniqueId()) && System.currentTimeMillis() - mine.get(t.getUniqueId()) <= 60_000) {
+            tradeCommand(p, new String[]{"trade", "accepter", t.getName()});
+            return;
+        }
+        tradeAsks.computeIfAbsent(t.getUniqueId(), k -> new HashMap<>()).put(p.getUniqueId(), System.currentTimeMillis());
+        send(p, msg("trade-sent").replace("<player>", t.getName()));
+        send(t, msg("trade-request").replace("<player>", p.getName()));
+        t.playSound(t.getLocation(), Sound.BLOCK_NOTE_BLOCK_CHIME, 1f, 1.2f);
+    }
+
+    private static final int[] LEFT = {0, 1, 2, 3, 9, 10, 11, 12, 18, 19, 20, 21, 27, 28, 29, 30};
+    private static final int[] RIGHT = {5, 6, 7, 8, 14, 15, 16, 17, 23, 24, 25, 26, 32, 33, 34, 35};
+
+    void openTrade(Player p, Trade t) {
+        Player o = Bukkit.getPlayer(t.other(p.getUniqueId()));
+        PetMenu m = new PetMenu("trade");
+        m.inv = Bukkit.createInventory(m, 54, parse("<dark_gray>Échange avec " + (o == null ? "?" : o.getName())));
+        drawTrade(p, m, t);
+        tradeSwitch.add(p.getUniqueId());
+        p.openInventory(m.inv);
+        tradeSwitch.remove(p.getUniqueId());
+    }
+
+    void drawTrade(Player p, PetMenu m, Trade t) {
+        m.slots.clear();
+        UUID me = p.getUniqueId(), them = t.other(me);
+        ItemStack sep = named(Material.BLACK_STAINED_GLASS_PANE, " ", List.of());
+        for (int i = 0; i < 54; i++) m.inv.setItem(i, null);
+        for (int r = 0; r < 4; r++) m.inv.setItem(r * 9 + 4, sep);
+        for (int i = 36; i < 45; i++) m.inv.setItem(i, sep);
+        PData mine = data(me), theirs = data(them);
+        List<String> my = t.offer(me), their = t.offer(them);
+        for (int i = 0; i < my.size() && i < LEFT.length; i++) {
+            PetDef d = pets.get(my.get(i));
+            if (d == null) continue;
+            m.inv.setItem(LEFT[i], petIcon(d, mine.owned.getOrDefault(d.id, 1), false, List.of("", "<red>Clic pour le retirer de l'échange")));
+            m.slots.put(LEFT[i], "-" + d.id);
+        }
+        for (int i = 0; i < their.size() && i < RIGHT.length; i++) {
+            PetDef d = pets.get(their.get(i));
+            if (d == null) continue;
+            int have = mine.owned.getOrDefault(d.id, 0);
+            m.inv.setItem(RIGHT[i], petIcon(d, theirs.owned.getOrDefault(d.id, 1), false,
+                    have > 0 ? List.of("", "<yellow>Tu l'as déjà : ses étoiles s'ajouteront aux tiennes") : List.of()));
+        }
+        m.inv.setItem(45, named(Material.LIME_DYE, "<green><b>+ Proposer un familier", List.of("<gray>Choisis un de tes familiers", "<gray>à mettre dans l'échange.")));
+        m.slots.put(45, "#add");
+        boolean myReady = me.equals(t.a) ? t.readyA : t.readyB, theirReady = me.equals(t.a) ? t.readyB : t.readyA;
+        m.inv.setItem(47, named(myReady ? Material.LIME_CONCRETE : Material.RED_CONCRETE, myReady ? "<green><b>✔ Tu es prêt" : "<red><b>Pas prêt",
+                List.of("<gray>Quand les deux sont prêts,", "<gray>l'échange se fait.", "", "<yellow>Clic pour changer")));
+        m.slots.put(47, "#ready");
+        m.inv.setItem(49, named(Material.BARRIER, "<red>Annuler l'échange", List.of()));
+        m.slots.put(49, "#cancel");
+        Player o = Bukkit.getPlayer(them);
+        m.inv.setItem(51, named(theirReady ? Material.LIME_CONCRETE : Material.GRAY_CONCRETE,
+                (theirReady ? "<green>✔ " : "<gray>") + (o == null ? "?" : o.getName()) + (theirReady ? " est prêt" : " n'est pas prêt"), List.of()));
+        m.inv.setItem(53, named(Material.BOOK, "<white>Comment ça marche", List.of("<gray>À gauche : ce que tu donnes.", "<gray>À droite : ce que tu reçois.",
+                "<gray>Un changement remet les deux à \"pas prêt\".", "<gray>Les étoiles partent avec le familier.")));
+    }
+
+    void redrawTrade(Trade t) {
+        for (UUID id : List.of(t.a, t.b)) {
+            Player p = Bukkit.getPlayer(id);
+            if (p == null) continue;
+            if (!(p.getOpenInventory().getTopInventory().getHolder() instanceof PetMenu pm)) openTrade(p, t);
+            else if (pm.type.equals("trade")) drawTrade(p, pm, t);
+            else if (!pm.type.equals("tradepick")) openTrade(p, t);
+        }
+    }
+
+    void openTradePicker(Player p, Trade t) {
+        PetMenu m = new PetMenu("tradepick");
+        m.inv = Bukkit.createInventory(m, 54, parse("<dark_gray>Quel familier proposer ?"));
+        PData d = data(p.getUniqueId());
+        List<String> offered = t.offer(p.getUniqueId());
+        int i = 0;
+        for (Map.Entry<String, Integer> e : d.owned.entrySet()) {
+            PetDef def = pets.get(e.getKey());
+            if (def == null || !tradeable(def) || offered.contains(def.id) || i >= 45) continue;
+            m.inv.setItem(i, petIcon(def, e.getValue(), false, List.of("", "<yellow>Clic pour le proposer")));
+            m.slots.put(i, def.id);
+            i++;
+        }
+        if (i == 0) m.inv.setItem(22, named(Material.BARRIER, "<gray>Aucun familier à proposer", List.of()));
+        m.inv.setItem(49, named(Material.ARROW, "<yellow>← Retour à l'échange", List.of()));
+        m.slots.put(49, "#back");
+        tradeSwitch.add(p.getUniqueId());
+        p.openInventory(m.inv);
+        tradeSwitch.remove(p.getUniqueId());
+    }
+
+    void tradeClick(Player p, PetMenu m, String k) {
+        Trade t = trades.get(p.getUniqueId());
+        if (t == null || t.done) {
+            p.closeInventory();
+            return;
+        }
+        UUID me = p.getUniqueId();
+        if (m.type.equals("tradepick")) {
+            if (!k.equals("#back")) {
+                PetDef def = pets.get(k);
+                if (def != null && data(me).owned.containsKey(k) && tradeable(def) && !t.offer(me).contains(k) && t.offer(me).size() < LEFT.length) {
+                    t.offer(me).add(k);
+                    t.readyA = t.readyB = false;
+                }
+            }
+            openTrade(p, t);
+            Player o = Bukkit.getPlayer(t.other(me));
+            if (o != null && o.getOpenInventory().getTopInventory().getHolder() instanceof PetMenu pm && pm.type.equals("trade")) drawTrade(o, pm, t);
+            return;
+        }
+        switch (k) {
+            case "#add" -> openTradePicker(p, t);
+            case "#cancel" -> cancelTrade(t, p.getName());
+            case "#ready" -> {
+                if (me.equals(t.a)) t.readyA = !t.readyA;
+                else t.readyB = !t.readyB;
+                if (t.readyA && t.readyB) finishTrade(t);
+                else redrawTrade(t);
+            }
+            default -> {
+                if (k.startsWith("-")) {
+                    t.offer(me).remove(k.substring(1));
+                    t.readyA = t.readyB = false;
+                    redrawTrade(t);
+                }
+            }
+        }
+    }
+
+    void cancelTrade(Trade t, String by) {
+        if (t.done) return;
+        t.done = true;
+        trades.remove(t.a);
+        trades.remove(t.b);
+        for (UUID id : List.of(t.a, t.b)) {
+            Player p = Bukkit.getPlayer(id);
+            if (p == null) continue;
+            send(p, msg("trade-cancelled").replace("<player>", by));
+            if (p.getOpenInventory().getTopInventory().getHolder() instanceof PetMenu pm && (pm.type.equals("trade") || pm.type.equals("tradepick"))) {
+                tradeSwitch.add(id);
+                p.closeInventory();
+                tradeSwitch.remove(id);
+            }
+        }
+    }
+
+    void finishTrade(Trade t) {
+        Player pa = Bukkit.getPlayer(t.a), pb = Bukkit.getPlayer(t.b);
+        if (pa == null || pb == null) {
+            cancelTrade(t, "?");
+            return;
+        }
+        PData da = data(t.a), db = data(t.b);
+        // tout est encore là ?
+        for (String id : t.offerA) if (!da.owned.containsKey(id)) {
+            cancelTrade(t, pa.getName());
+            return;
+        }
+        for (String id : t.offerB) if (!db.owned.containsKey(id)) {
+            cancelTrade(t, pb.getName());
+            return;
+        }
+        Map<String, Integer> fromA = new LinkedHashMap<>(), fromB = new LinkedHashMap<>();
+        for (String id : t.offerA) fromA.put(id, da.owned.remove(id));
+        for (String id : t.offerB) fromB.put(id, db.owned.remove(id));
+        da.equipped.removeAll(t.offerA);
+        db.equipped.removeAll(t.offerB);
+        receive(pb, db, fromA);
+        receive(pa, da, fromB);
+        saveData(t.a);
+        saveData(t.b);
+        t.done = true;
+        trades.remove(t.a);
+        trades.remove(t.b);
+        for (Player p : List.of(pa, pb)) {
+            refresh(p);
+            tradeSwitch.add(p.getUniqueId());
+            p.closeInventory();
+            tradeSwitch.remove(p.getUniqueId());
+            send(p, msg("trade-done"));
+            p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.3f);
+        }
+    }
+
+    private void receive(Player p, PData d, Map<String, Integer> got) {
+        for (Map.Entry<String, Integer> e : got.entrySet()) {
+            int cur = d.owned.getOrDefault(e.getKey(), 0);
+            d.owned.put(e.getKey(), Math.min(maxStars(), cur + e.getValue()));
+            if (cur == 0 && getConfig().getBoolean("equiper-auto", true) && d.equipped.size() < slots(p)) d.equipped.add(e.getKey());
+        }
     }
 
     // ================================================================= échange : familier <-> objet
@@ -1515,6 +1798,7 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
                 else if (k.equals("#edit") && m.egg != null && p.hasPermission("smppets.admin")) openEditor(p, m.egg.id);
             }
             case "edit", "editch", "editpets" -> editClick(p, m, k, e.isShiftClick() && e.isRightClick());
+            case "trade", "tradepick" -> tradeClick(p, m, k);
             default -> {
             }
         }
@@ -1545,6 +1829,11 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
 
     @EventHandler
     public void onClose(InventoryCloseEvent e) {
+        if (e.getInventory().getHolder() instanceof PetMenu tm && (tm.type.equals("trade") || tm.type.equals("tradepick"))
+                && !tradeSwitch.contains(e.getPlayer().getUniqueId())) {
+            Trade t = trades.get(e.getPlayer().getUniqueId());
+            if (t != null && !t.done) cancelTrade(t, e.getPlayer().getName());
+        }
         if (e.getInventory().getHolder() instanceof PetMenu m && m.finish != null) {
             Runnable r = m.finish;
             m.finish = null;
@@ -2333,6 +2622,9 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
             case "oeufs", "oeuf", "œufs", "œuf", "eggs" -> {
                 if (p != null) openEggs(p);
             }
+            case "trade", "echanger", "échanger", "echange" -> {
+                if (p != null) tradeCommand(p, a);
+            }
             case "competence", "compétence", "caca", "loky" -> {
                 if (p != null) useAbility(p, a.length >= 2 ? a[1] : null);
             }
@@ -2528,7 +2820,7 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
         List<String> out = new ArrayList<>();
         boolean admin = s.hasPermission("smppets.admin");
         if (a.length == 1) {
-            out.addAll(List.of("oeufs", "cacher", "competence"));
+            out.addAll(List.of("oeufs", "cacher", "trade", "competence"));
             if (admin) out.addAll(List.of("donner", "pet", "retirer", "liste", "station", "editer", "creer", "supprimer", "reload"));
         } else if (a.length == 2 && admin && List.of("donner", "pet", "retirer").contains(a[0].toLowerCase(Locale.ROOT))) {
             for (Player p : Bukkit.getOnlinePlayers()) out.add(p.getName());
@@ -2551,6 +2843,8 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
             out.addAll(eggs.keySet());
             if (a[0].equalsIgnoreCase("station")) out.add("retirer");
             if (a[0].equalsIgnoreCase("editer")) out.add("familiers");
+        } else if (a.length == 2 && a[0].equalsIgnoreCase("trade")) {
+            for (Player p : Bukkit.getOnlinePlayers()) if (!p.equals(s)) out.add(p.getName());
         } else if (a.length == 2 && a[0].equalsIgnoreCase("competence")) {
             for (Player p : Bukkit.getOnlinePlayers()) if (!p.equals(s)) out.add(p.getName());
         } else if (a.length == 4 && admin && a[0].equalsIgnoreCase("donner")) {
@@ -2564,7 +2858,9 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
     // ================================================================= outils
 
     String msg(String k) {
-        return getConfig().getString("messages." + k, k);
+        // sans valeur par défaut ici : les nouveaux messages du plugin marchent même avec un ancien config.yml
+        String s = getConfig().getString("messages." + k);
+        return s == null ? k : s;
     }
 
     void send(CommandSender s, String mini) {

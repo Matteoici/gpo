@@ -127,7 +127,9 @@ public final class SmpCombat extends JavaPlugin implements Listener, TabExecutor
     }
 
     private String msg(String k) {
-        return getConfig().getString("messages." + k, k);
+        // sans valeur par défaut ici : les nouveaux messages du plugin marchent même avec un ancien config.yml
+        String s = getConfig().getString("messages." + k);
+        return s == null ? k : s;
     }
 
     private void send(CommandSender to, String key, String... repl) {

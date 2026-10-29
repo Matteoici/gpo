@@ -135,6 +135,7 @@ pets:
     rarete: epique
     type: PANDA
     bebe: true
+    taille: 0.75
     hauteur: 1.2
     description: ["<gray>Gros et solide."]
     attributs: ["max_health:+4", "knockback_resistance:+0.1"]
@@ -192,6 +193,7 @@ pets:
     rarete: legendaire
     type: HAPPY_GHAST
     bebe: true
+    taille: 0.6
     hauteur: 1.7
     particules: CLOUD
     description: ["<gray>Léger comme un nuage."]
@@ -219,11 +221,10 @@ pets:
     effets: ["speed:1"]
     attributs: ["jump_strength:+0.12", "fall_damage_multiplier:-50%"]
   mini-creeper:
-    nom: "Mini Creeper chargé"
+    nom: "Mini Creeper"
     rarete: legendaire
     type: CREEPER
     taille: 0.4
-    variante: CHARGED
     hauteur: 1.2
     description: ["<gray>Il creuse à ta place."]
     effets: ["haste:2"]
@@ -233,6 +234,7 @@ pets:
     rarete: legendaire
     type: SNIFFER
     bebe: true
+    taille: 0.55
     hauteur: 1.1
     description: ["<gray>Il sent les minerais."]
     attributs: ["luck:+2", "block_break_speed:+10%"]
