@@ -594,7 +594,29 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
 
     boolean visible(Player p) {
         PData d = data(p.getUniqueId());
-        return !d.hidden && p.isValid() && !p.isDead() && p.getGameMode() != GameMode.SPECTATOR && !vanished(p);
+        return !d.hidden && p.isValid() && !p.isDead() && p.getGameMode() != GameMode.SPECTATOR && !vanished(p) && !inDuel(p);
+    }
+
+    private java.lang.reflect.Method duelIn, duelArena;
+    private boolean duelLooked;
+
+    /** En duel (SmpDuel) ou dans une arène de duel : les familiers disparaissent (les boosts restent). */
+    boolean inDuel(Player p) {
+        if (!getConfig().getBoolean("cacher-en-duel", true)) return false;
+        try {
+            if (!duelLooked) {
+                duelLooked = true;
+                var pl = Bukkit.getPluginManager().getPlugin("SmpDuel");
+                if (pl != null) {
+                    duelIn = pl.getClass().getMethod("inDuel", UUID.class);
+                    duelArena = pl.getClass().getMethod("isArena", Location.class);
+                }
+            }
+            if (duelIn == null) return false;
+            return Boolean.TRUE.equals(duelIn.invoke(null, p.getUniqueId())) || Boolean.TRUE.equals(duelArena.invoke(null, p.getLocation()));
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError ex) {
+            return false;
+        }
     }
 
     static boolean vanished(Player p) {

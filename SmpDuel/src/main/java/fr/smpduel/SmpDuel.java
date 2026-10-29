@@ -133,7 +133,7 @@ public final class SmpDuel extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(this, this);
         Bukkit.getScheduler().runTaskTimer(this, this::matchmaking, 40L, 20L);
         Bukkit.getScheduler().runTaskTimer(this, () -> stats.save(false), 6000L, 6000L);
-        Bukkit.getScheduler().runTaskTimer(this, this::clearMobs, 100L, 100L);
+        Bukkit.getScheduler().runTaskTimer(this, this::clearMobs, 20L, 20L);
         for (Player p : Bukkit.getOnlinePlayers()) rejoin(p);
     }
 
@@ -205,12 +205,21 @@ public final class SmpDuel extends JavaPlugin implements Listener {
     // ================================================================= pas de monstres dans les arènes
 
     /** Aucun mob n'apparaît dans une arène (sauf ceux des plugins, ex. familiers, et /summon). */
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onMobSpawn(org.bukkit.event.entity.CreatureSpawnEvent e) {
-        var r = e.getSpawnReason();
-        if (r == org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CUSTOM || r == org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.COMMAND) return;
-        if (e.getEntity() instanceof Player) return;
+        if (e.getSpawnReason() == org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.COMMAND) return;
+        if (e.getEntity() instanceof Player || e.getEntity().getScoreboardTags().contains("smp_pet")) return;
         if (arenaAt(e.getLocation()) != null) e.setCancelled(true);
+    }
+
+    /** Avant même que le monstre soit créé (apparition naturelle, spawners). */
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onPreMobSpawn(com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent e) {
+        if (e.getReason() == org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.COMMAND) return;
+        if (arenaAt(e.getSpawnLocation()) != null) {
+            e.setCancelled(true);
+            e.setShouldAbortSpawn(true);
+        }
     }
 
     /** Les monstres déjà là (ou arrivés quand même) sont retirés toutes les 5 s. */
@@ -221,7 +230,7 @@ public final class SmpDuel extends JavaPlugin implements Listener {
             Location c = new Location(w, a.cx + 0.5, a.cy, a.cz + 0.5);
             double h = Math.max(a.dome(), a.islandDepth()) + 8;
             for (Entity e : w.getNearbyEntities(c, a.r + 12, h, a.r + 12)) {
-                if (!(e instanceof org.bukkit.entity.Enemy) && !(e instanceof org.bukkit.entity.Bat)) continue;
+                if (!(e instanceof org.bukkit.entity.Enemy) && !(e instanceof org.bukkit.entity.Bat) && !(e instanceof org.bukkit.entity.Monster)) continue;
                 if (e.getScoreboardTags().contains("smp_pet") || e.customName() != null) continue;
                 if (a.region(e.getLocation())) e.remove();
             }

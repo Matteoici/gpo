@@ -32,6 +32,8 @@ emplacements: 1
 equiper-auto: true
 # afficher le nom du familier au-dessus de lui
 nom-visible: true
+# les familiers disparaissent pendant les duels et dans les arènes de duel (les boosts restent)
+cacher-en-duel: true
 # particules autour des familiers : une toutes les X ticks (20 = 1 par seconde, plus grand = moins)
 particules-toutes-les-ticks: 20
 # ouverture d'œuf avec roulette animée (false = résultat direct)
