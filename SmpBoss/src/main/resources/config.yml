@@ -191,6 +191,8 @@ arena:
 
 # ---------------------------------------------------------------- Butin
 loot:
+  # familiers porte-bonheur (SmpPets) : chance en plus au butin, au maximum +15 % (tous familiers et étoiles compris)
+  pets-luck-max: 0.15
   # il faut avoir fait au moins X % des dégâts pour être récompensé
   min-damage-percent: 5
   # chances en %, tirées dans cet ordre (mythical, puis légendaire...)

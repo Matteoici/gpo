@@ -130,7 +130,7 @@ pets:
     hauteur: 1.2
     description: ["<gray>Porte bonheur (si si)."]
     attributs: ["luck:+2"]
-    bonus: {xp: 1.1, chance-boss: 0.03}
+    bonus: {xp: 1.1, chance-boss: 0.02}
   panda:
     nom: "Bébé Panda"
     rarete: epique
@@ -177,7 +177,7 @@ pets:
     particules: ELECTRIC_SPARK
     description: ["<gray>Il t'apporte tout ce qui traîne."]
     attributs: ["luck:+1"]
-    bonus: {aimant: 8, xp: 1.2, chance-boss: 0.05}
+    bonus: {aimant: 8, xp: 1.2, chance-boss: 0.03}
   mini-golem:
     nom: "Mini Golem"
     rarete: legendaire
@@ -236,7 +236,7 @@ pets:
     hauteur: 1.1
     description: ["<gray>Il sent les minerais... et les trésors."]
     attributs: ["luck:+2", "block_break_speed:+10%"]
-    bonus: {double-minerai: 0.15, chance-boss: 0.05}
+    bonus: {double-minerai: 0.15, chance-boss: 0.03}
   mini-enderman:
     nom: "Mini Enderman"
     rarete: legendaire
@@ -258,7 +258,7 @@ pets:
     brille: true
     particules: SOUL
     description: ["<gray>Le fléau des monstres et des boss.", "<dark_gray>Se nourrit de leur vie."]
-    bonus: {degats-pve: 1.3, vol-de-vie: 0.08, chance-boss: 0.1}
+    bonus: {degats-pve: 1.3, vol-de-vie: 0.08, chance-boss: 0.05}
   mini-warden:
     nom: "Mini Warden"
     rarete: mythique
@@ -269,7 +269,7 @@ pets:
     particules: SCULK_SOUL
     description: ["<gray>Rien ne lui fait peur.", "<dark_gray>Il entend tout."]
     effets: ["night_vision:1"]
-    bonus: {protection-pve: 0.7, degats-pve: 1.1, chance-boss: 0.06}
+    bonus: {protection-pve: 0.7, degats-pve: 1.1, chance-boss: 0.04}
   mini-gardien:
     nom: "Mini Grand Gardien"
     rarete: mythique
@@ -293,7 +293,7 @@ pets:
     description: ["<gray>Le plus rare de tous les axolotls."]
     effets: ["water_breathing:1"]
     attributs: ["luck:+3"]
-    bonus: {soin: 1, chance-boss: 0.1, xp: 1.15}
+    bonus: {soin: 1, chance-boss: 0.05, xp: 1.15}
   etoile:
     nom: "Étoile du Nether"
     rarete: mythique
@@ -305,7 +305,7 @@ pets:
     particules: END_ROD
     description: ["<gray>Une étoile tombée du ciel.", "<dark_gray>Tout ce qui brille vient à toi."]
     attributs: ["luck:+3"]
-    bonus: {xp: 1.5, aimant: 10, chance-boss: 0.12}
+    bonus: {xp: 1.5, aimant: 10, chance-boss: 0.06}
 
   # ------------------------------------------------------------ MODOS (pas dans les œufs)
   loky:

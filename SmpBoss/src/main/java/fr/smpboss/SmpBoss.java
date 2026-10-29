@@ -479,7 +479,8 @@ public final class SmpBoss extends JavaPlugin {
             }
             if (petBonus == null) return 1;
             Object v = petBonus.invoke(null, p.getUniqueId(), "chance-boss");
-            return v instanceof Double d ? 1 + Math.max(0, Math.min(1, d)) : 1;
+            double max = getConfig().getDouble("loot.pets-luck-max", 0.15);
+            return v instanceof Double d ? 1 + Math.max(0, Math.min(max, d)) : 1;
         } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
             return 1;
         }

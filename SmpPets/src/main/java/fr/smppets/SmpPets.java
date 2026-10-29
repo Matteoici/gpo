@@ -342,6 +342,20 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
             getConfig().set("config-version", 5);
             saveConfig();
         }
+        if (getConfig().getInt("config-version", 1) < 6) {
+            // chance au butin du boss : un peu moins forte
+            File pf = new File(getDataFolder(), "pets.yml");
+            YamlConfiguration pc = YamlConfiguration.loadConfiguration(pf);
+            Map<String, Double> luck = Map.of("chaton", 0.02, "allay", 0.03, "bebe-sniffer", 0.03, "mini-warden", 0.04, "mini-wither", 0.05, "axolotl-bleu", 0.05, "etoile", 0.06);
+            for (var e : luck.entrySet()) if (pc.isSet("pets." + e.getKey() + ".bonus.chance-boss")) pc.set("pets." + e.getKey() + ".bonus.chance-boss", e.getValue());
+            try {
+                pc.save(pf);
+            } catch (IOException ex) {
+                getLogger().warning("pets.yml : " + ex.getMessage());
+            }
+            getConfig().set("config-version", 6);
+            saveConfig();
+        }
     }
 
     void load() {
