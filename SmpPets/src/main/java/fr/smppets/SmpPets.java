@@ -169,7 +169,7 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
 
     /** Totaux des bonus des familiers équipés. */
     static final class Stats {
-        double xp = 1, pve = 1, prot = 1, magnet, heal, ore, leech;
+        double xp = 1, pve = 1, prot = 1, magnet, heal, ore, leech, bossLuck;
     }
 
     static final class Follower {
@@ -315,6 +315,31 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
             }
             if (!getConfig().isSet("particules-toutes-les-ticks")) getConfig().set("particules-toutes-les-ticks", 20);
             getConfig().set("config-version", 4);
+            saveConfig();
+        }
+        if (getConfig().getInt("config-version", 1) < 5) {
+            // rééquilibrage : les boosts des familiers de base sont remplacés par la nouvelle version (moins d'avantage en combat)
+            File pf = new File(getDataFolder(), "pets.yml");
+            YamlConfiguration pc = YamlConfiguration.loadConfiguration(pf);
+            var in = getResource("pets.yml");
+            if (in != null) {
+                YamlConfiguration def = YamlConfiguration.loadConfiguration(new java.io.InputStreamReader(in, java.nio.charset.StandardCharsets.UTF_8));
+                ConfigurationSection dp = def.getConfigurationSection("pets");
+                if (dp != null) for (String id : dp.getKeys(false)) {
+                    if (id.equals("loky") || !pc.isConfigurationSection("pets." + id)) continue;
+                    for (String k : List.of("description", "effets", "attributs", "bonus")) pc.set("pets." + id + "." + k, null);
+                    for (String k : List.of("description", "effets", "attributs")) if (dp.isSet(id + "." + k)) pc.set("pets." + id + "." + k, dp.getStringList(id + "." + k));
+                    ConfigurationSection b = dp.getConfigurationSection(id + ".bonus");
+                    if (b != null) for (String k : b.getKeys(false)) pc.set("pets." + id + ".bonus." + k, b.getDouble(k));
+                }
+                try {
+                    pc.save(pf);
+                } catch (IOException ex) {
+                    getLogger().warning("pets.yml : " + ex.getMessage());
+                }
+            }
+            if (getConfig().getDouble("etoiles.bonus-par-etoile", 0.25) == 0.25) getConfig().set("etoiles.bonus-par-etoile", 0.15);
+            getConfig().set("config-version", 5);
             saveConfig();
         }
     }
@@ -526,6 +551,62 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
     void refresh(Player p) {
         PData d = data(p.getUniqueId());
         while (d.equipped.size() > slots(p)) d.equipped.remove(d.equipped.size() - 1);
+        applyStats(p);
+        d.version++;
+        applyEffects(p);
+    }
+
+    // ================================================================= équilibrage : rien qui aide en combat
+
+    /** Ce qui est coupé quand le joueur est EN DANGER (SmpCombat) : pas d'avantage pour fuir ou se battre. */
+    boolean combatOnly(String kind, String key) {
+        List<String> l = getConfig().getStringList("coupe-en-combat." + kind);
+        if (l.isEmpty() && !getConfig().isSet("coupe-en-combat." + kind)) l = switch (kind) {
+            case "effets" -> List.of("speed", "dolphins_grace", "jump_boost", "resistance", "fire_resistance", "regeneration", "strength",
+                    "health_boost", "absorption", "slow_falling", "invisibility", "levitation");
+            case "attributs" -> List.of("movement_speed", "max_health", "armor", "armor_toughness", "knockback_resistance", "attack_damage",
+                    "attack_speed", "attack_knockback", "jump_strength", "fall_damage_multiplier", "safe_fall_distance", "entity_interaction_range",
+                    "block_interaction_range", "scale", "movement_efficiency", "water_movement_efficiency", "sneaking_speed", "step_height",
+                    "explosion_knockback_resistance", "burning_time");
+            default -> List.of("soin");
+        };
+        return l.contains(key.toLowerCase(Locale.ROOT));
+    }
+
+    private java.lang.reflect.Method combatDanger;
+    private boolean combatLooked;
+    final Map<UUID, Boolean> combatState = new HashMap<>();
+
+    boolean inCombat(Player p) {
+        try {
+            var pl = Bukkit.getPluginManager().getPlugin("SmpCombat");
+            if (pl == null || !pl.isEnabled()) return false;
+            if (!combatLooked) {
+                combatLooked = true;
+                combatDanger = pl.getClass().getMethod("inDanger", Player.class);
+            }
+            return combatDanger != null && Boolean.TRUE.equals(combatDanger.invoke(pl, p));
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError ex) {
+            return false;
+        }
+    }
+
+    /** Bonus d'un joueur pour les autres plugins (ex. SmpBoss : "chance-boss"). */
+    public static double bonus(UUID id, String key) {
+        SmpPets pl = JavaPlugin.getPlugin(SmpPets.class);
+        Stats s = pl.stats.get(id);
+        if (s == null) return 0;
+        return switch (key) {
+            case "chance-boss" -> s.bossLuck;
+            case "xp" -> s.xp;
+            default -> 0;
+        };
+    }
+
+    void applyStats(Player p) {
+        PData d = data(p.getUniqueId());
+        boolean fight = inCombat(p);
+        combatState.put(p.getUniqueId(), fight);
         Stats s = new Stats();
         clearAttributes(p);
         for (PetDef def : equipped(d)) {
@@ -537,7 +618,10 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
                     case "degats-pve" -> s.pve *= 1 + (v - 1) * m;
                     case "protection-pve" -> s.prot *= Math.max(0.05, 1 - (1 - v) * m);
                     case "aimant" -> s.magnet = Math.max(s.magnet, v * m);
-                    case "soin" -> s.heal += v * m;
+                    case "soin" -> {
+                        if (!fight || !combatOnly("bonus", "soin")) s.heal += v * m;
+                    }
+                    case "chance-boss" -> s.bossLuck += v * m;
                     case "double-minerai" -> s.ore = Math.min(1, s.ore + v * m);
                     case "vol-de-vie" -> s.leech += v * m;
                     default -> {
@@ -547,14 +631,12 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
             int i = 0;
             for (Attr a : def.attrs) {
                 AttributeInstance inst = p.getAttribute(a.attr());
-                if (inst == null) continue;
                 NamespacedKey key = new NamespacedKey(this, def.id + "_" + (i++));
+                if (inst == null || (fight && combatOnly("attributs", a.name()))) continue;
                 inst.addTransientModifier(new AttributeModifier(key, a.amount() * m, a.op(), EquipmentSlotGroup.ANY));
             }
         }
         stats.put(p.getUniqueId(), s);
-        d.version++;
-        applyEffects(p);
     }
 
     void clearAttributes(Player p) {
@@ -576,7 +658,10 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
 
     void applyEffects(Player p) {
         Set<PotionEffectType> now = new HashSet<>();
-        for (PetDef def : equipped(data(p.getUniqueId()))) for (Eff e : def.effects) now.add(e.type());
+        boolean fight = Boolean.TRUE.equals(combatState.get(p.getUniqueId()));
+        for (PetDef def : equipped(data(p.getUniqueId()))) for (Eff e : def.effects) {
+            if (!fight || !combatOnly("effets", e.type().getKey().getKey())) now.add(e.type());
+        }
         Set<PotionEffectType> before = applied.getOrDefault(p.getUniqueId(), Set.of());
         for (PotionEffectType t : before) {
             if (now.contains(t)) continue;
@@ -586,7 +671,7 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
         applied.put(p.getUniqueId(), now);
         if (p.isDead()) return;
         for (PetDef def : equipped(data(p.getUniqueId()))) {
-            for (Eff e : def.effects) p.addPotionEffect(new PotionEffect(e.type(), EFFECT_TICKS, e.amp(), true, false, true));
+            for (Eff e : def.effects) if (now.contains(e.type())) p.addPotionEffect(new PotionEffect(e.type(), EFFECT_TICKS, e.amp(), true, false, true));
         }
     }
 
@@ -649,6 +734,10 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
             if (fs != null) for (int i = 0; i < fs.size(); i++) move(p, fs.get(i), i);
             Stats s = stats(p);
             if (s.magnet > 0 && tick % 3 == 0 && !p.isDead()) magnet(p, s.magnet);
+            if (tick % 10 == 0 && inCombat(p) != Boolean.TRUE.equals(combatState.get(id))) {
+                applyStats(p);
+                applyEffects(p);
+            }
             if (tick % 40 == 0) {
                 applyEffects(p);
                 if (s.heal > 0 && !p.isDead()) heal(p, s.heal);
@@ -1250,11 +1339,12 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
 
     List<String> bonusLines(PetDef def, double m) {
         List<String> out = new ArrayList<>();
-        for (Eff e : def.effects) out.add("<aqua>✦ " + effName(e.type()) + " " + roman(e.amp() + 1));
-        for (Attr a : def.attrs) out.add("<green>✦ " + attrLine(a, a.amount() * m));
+        String off = " <dark_gray>(hors combat)";
+        for (Eff e : def.effects) out.add("<aqua>✦ " + effName(e.type()) + " " + roman(e.amp() + 1) + (combatOnly("effets", e.type().getKey().getKey()) ? off : ""));
+        for (Attr a : def.attrs) out.add("<green>✦ " + attrLine(a, a.amount() * m) + (combatOnly("attributs", a.name()) ? off : ""));
         for (Map.Entry<String, Double> e : def.bonus.entrySet()) {
             String l = bonusLine(e.getKey(), e.getValue(), m);
-            if (l != null) out.add("<light_purple>✦ " + l);
+            if (l != null) out.add("<light_purple>✦ " + l + (combatOnly("bonus", e.getKey()) ? off : ""));
         }
         return out;
     }
@@ -1269,6 +1359,7 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
         if (s.heal > 0) out.add("<light_purple>Soin : +" + num(s.heal) + " PV / 2 s");
         if (s.ore > 0) out.add("<light_purple>Minerais doublés : " + num(s.ore * 100) + " %");
         if (s.leech > 0) out.add("<light_purple>Vol de vie (monstres) : " + num(s.leech * 100) + " %");
+        if (s.bossLuck > 0) out.add("<light_purple>Chance au butin du boss : +" + num(Math.min(1, s.bossLuck) * 100) + " %");
         Set<String> effs = new java.util.LinkedHashSet<>();
         for (PetDef def : equipped(data(p.getUniqueId()))) for (Eff e : def.effects) effs.add(effName(e.type()) + " " + roman(e.amp() + 1));
         for (String e : effs) out.add("<aqua>" + e);
@@ -1285,6 +1376,7 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
             case "soin" -> "Soin +" + num(v * m) + " PV toutes les 2 s";
             case "double-minerai" -> num(Math.min(1, v * m) * 100) + " % de minerais doublés";
             case "vol-de-vie" -> "Vol de vie sur les monstres " + num(v * m * 100) + " %";
+            case "chance-boss" -> "Chance au butin du boss +" + num(v * m * 100) + " %";
             default -> null;
         };
     }
@@ -1344,6 +1436,7 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
         data.remove(id);
         stats.remove(id);
         applied.remove(id);
+        combatState.remove(id);
         opening.remove(id);
     }
 

@@ -15,7 +15,10 @@
 #   bonus      : xp (multiplicateur d'expérience), degats-pve (multiplicateur de dégâts contre les monstres),
 #                protection-pve (dégâts reçus des monstres, 0.8 = -20 %), aimant (rayon en blocs pour attirer les objets),
 #                soin (PV rendus toutes les 2 s, 2 PV = 1 coeur), double-minerai (chance de doubler un minerai, 0.15 = 15 %),
-#                vol-de-vie (part des dégâts faits aux monstres rendue en PV, 0.1 = 10 %)
+#                vol-de-vie (part des dégâts faits aux monstres rendue en PV, 0.1 = 10 %),
+#                chance-boss (chances en plus au butin du Roi Citrouille, 0.1 = +10 %)
+#  Équilibrage : quand le joueur est EN DANGER (combat), tout ce qui aide à se battre ou à fuir est coupé
+#  (vitesse, grâce du dauphin, saut, vie, armure, résistance, soin...) : voir config.yml -> coupe-en-combat.
 #  Les étoiles (doublons) augmentent attributs et bonus (config.yml -> etoiles).
 # =====================================================================
 pets:
@@ -27,9 +30,8 @@ pets:
     bebe: true
     variante: RED
     hauteur: 1.2
-    description: ["<gray>Rapide et malin."]
-    attributs: ["movement_speed:+5%"]
-    bonus: {xp: 1.05}
+    description: ["<gray>Malin, il trouve plus d'expérience."]
+    bonus: {xp: 1.1}
   lapin:
     nom: "Lapinou"
     rarete: rare
@@ -37,16 +39,16 @@ pets:
     bebe: true
     variante: WHITE
     hauteur: 1.3
-    description: ["<gray>Il saute partout."]
-    effets: ["jump_boost:1"]
-    attributs: ["safe_fall_distance:+2"]
+    description: ["<gray>Les chutes ne lui font pas peur."]
+    attributs: ["safe_fall_distance:+3"]
+    bonus: {xp: 1.03}
   poussin:
     nom: "Poussin"
     rarete: rare
     type: CHICKEN
     bebe: true
     hauteur: 1.3
-    description: ["<gray>Les chutes, c'est plus doux avec lui."]
+    description: ["<gray>Tombe tout doucement."]
     attributs: ["fall_damage_multiplier:-30%"]
     bonus: {xp: 1.05}
   abeille:
@@ -72,7 +74,6 @@ pets:
     hauteur: 1.2
     description: ["<gray>Respire sous l'eau."]
     effets: ["water_breathing:1"]
-    attributs: ["water_movement_efficiency:+20%"]
   cochon:
     nom: "Porcelet"
     rarete: rare
@@ -80,7 +81,6 @@ pets:
     bebe: true
     hauteur: 1.2
     description: ["<gray>Bien nourri, en pleine forme."]
-    attributs: ["max_health:+2"]
     bonus: {soin: 0.5}
   grenouille:
     nom: "Grenouille"
@@ -88,8 +88,9 @@ pets:
     type: FROG
     variante: WARM
     hauteur: 1.2
-    description: ["<gray>Saute plus haut."]
-    attributs: ["jump_strength:+0.08", "safe_fall_distance:+3"]
+    description: ["<gray>Porte un peu bonheur."]
+    attributs: ["luck:+1"]
+    bonus: {xp: 1.05}
 
   # ------------------------------------------------------------ ÉPIQUES
   axolotl:
@@ -102,7 +103,7 @@ pets:
     particules: DRIPPING_WATER
     description: ["<gray>Le roi des fonds marins."]
     effets: ["conduit_power:1"]
-    bonus: {soin: 1}
+    bonus: {soin: 0.5}
   perroquet:
     nom: "Perroquet"
     rarete: epique
@@ -118,8 +119,8 @@ pets:
     type: WOLF
     bebe: true
     hauteur: 1.2
-    description: ["<gray>Fidèle au combat."]
-    bonus: {degats-pve: 1.15, protection-pve: 0.9}
+    description: ["<gray>Fidèle contre les monstres."]
+    bonus: {degats-pve: 1.12, protection-pve: 0.92}
   chaton:
     nom: "Chaton noir"
     rarete: epique
@@ -128,8 +129,8 @@ pets:
     variante: ALL_BLACK
     hauteur: 1.2
     description: ["<gray>Porte bonheur (si si)."]
-    attributs: ["luck:+2", "safe_fall_distance:+5"]
-    bonus: {xp: 1.1}
+    attributs: ["luck:+2"]
+    bonus: {xp: 1.1, chance-boss: 0.03}
   panda:
     nom: "Bébé Panda"
     rarete: epique
@@ -137,8 +138,8 @@ pets:
     bebe: true
     taille: 0.75
     hauteur: 1.2
-    description: ["<gray>Gros et solide."]
-    attributs: ["max_health:+4", "knockback_resistance:+0.1"]
+    description: ["<gray>Gros et solide face aux monstres."]
+    bonus: {protection-pve: 0.88, soin: 0.5}
   mini-blaze:
     nom: "Mini Blaze"
     rarete: epique
@@ -146,18 +147,17 @@ pets:
     taille: 0.4
     hauteur: 1.4
     particules: FLAME
-    description: ["<gray>Le feu ne te fait plus peur."]
+    description: ["<gray>Le feu ne lui fait pas peur."]
     effets: ["fire_resistance:1"]
-    attributs: ["burning_time:-50%"]
+    bonus: {degats-pve: 1.05}
   tatou:
     nom: "Tatou"
     rarete: epique
     type: ARMADILLO
     bebe: true
     hauteur: 1.2
-    description: ["<gray>Une carapace en plus."]
-    attributs: ["armor:+2"]
-    bonus: {protection-pve: 0.9}
+    description: ["<gray>Une carapace contre les monstres."]
+    bonus: {protection-pve: 0.85}
   bonhomme:
     nom: "Bonhomme de neige"
     rarete: epique
@@ -165,8 +165,8 @@ pets:
     taille: 0.5
     hauteur: 1.3
     particules: SNOWFLAKE
-    description: ["<gray>Glisse partout."]
-    effets: ["speed:1"]
+    description: ["<gray>Il garde la tête froide."]
+    bonus: {xp: 1.12, aimant: 3}
 
   # ------------------------------------------------------------ LÉGENDAIRES
   allay:
@@ -177,17 +177,15 @@ pets:
     particules: ELECTRIC_SPARK
     description: ["<gray>Il t'apporte tout ce qui traîne."]
     attributs: ["luck:+1"]
-    bonus: {aimant: 8, xp: 1.25}
+    bonus: {aimant: 8, xp: 1.2, chance-boss: 0.05}
   mini-golem:
     nom: "Mini Golem"
     rarete: legendaire
     type: IRON_GOLEM
     taille: 0.3
     hauteur: 1.2
-    description: ["<gray>Un garde du corps de poche."]
-    effets: ["resistance:1"]
-    attributs: ["knockback_resistance:+0.2"]
-    bonus: {protection-pve: 0.85}
+    description: ["<gray>Un garde du corps contre les monstres."]
+    bonus: {protection-pve: 0.8, degats-pve: 1.1}
   ghastling:
     nom: "Ghastling"
     rarete: legendaire
@@ -197,9 +195,8 @@ pets:
     hauteur: 1.7
     particules: CLOUD
     description: ["<gray>Léger comme un nuage."]
-    effets: ["speed:1"]
-    attributs: ["fall_damage_multiplier:-60%"]
-    bonus: {xp: 1.2}
+    attributs: ["fall_damage_multiplier:-50%"]
+    bonus: {xp: 1.2, aimant: 4}
   dauphin:
     nom: "Dauphin"
     rarete: legendaire
@@ -207,9 +204,10 @@ pets:
     taille: 0.5
     hauteur: 1.3
     particules: SPLASH
-    description: ["<gray>Nage avec toi."]
-    effets: ["dolphins_grace:1", "water_breathing:1"]
+    description: ["<gray>Le meilleur ami des plongeurs."]
+    effets: ["water_breathing:1", "conduit_power:1"]
     attributs: ["submerged_mining_speed:+1"]
+    bonus: {xp: 1.1}
   mini-breeze:
     nom: "Mini Breeze"
     rarete: legendaire
@@ -217,9 +215,9 @@ pets:
     taille: 0.6
     hauteur: 1.3
     particules: GUST
-    description: ["<gray>Le vent te porte."]
-    effets: ["speed:1"]
-    attributs: ["jump_strength:+0.12", "fall_damage_multiplier:-50%"]
+    description: ["<gray>Le vent te ramène les objets."]
+    attributs: ["fall_damage_multiplier:-60%"]
+    bonus: {aimant: 6, xp: 1.15}
   mini-creeper:
     nom: "Mini Creeper"
     rarete: legendaire
@@ -228,7 +226,7 @@ pets:
     hauteur: 1.2
     description: ["<gray>Il creuse à ta place."]
     effets: ["haste:2"]
-    bonus: {double-minerai: 0.15}
+    bonus: {double-minerai: 0.12}
   bebe-sniffer:
     nom: "Bébé Sniffer"
     rarete: legendaire
@@ -236,9 +234,9 @@ pets:
     bebe: true
     taille: 0.55
     hauteur: 1.1
-    description: ["<gray>Il sent les minerais."]
+    description: ["<gray>Il sent les minerais... et les trésors."]
     attributs: ["luck:+2", "block_break_speed:+10%"]
-    bonus: {double-minerai: 0.2}
+    bonus: {double-minerai: 0.15, chance-boss: 0.05}
   mini-enderman:
     nom: "Mini Enderman"
     rarete: legendaire
@@ -259,10 +257,8 @@ pets:
     hauteur: 1.3
     brille: true
     particules: SOUL
-    description: ["<gray>Le fléau des monstres.", "<dark_gray>Se nourrit de leur vie."]
-    effets: ["fire_resistance:1"]
-    attributs: ["max_health:+4"]
-    bonus: {degats-pve: 1.4, vol-de-vie: 0.1}
+    description: ["<gray>Le fléau des monstres et des boss.", "<dark_gray>Se nourrit de leur vie."]
+    bonus: {degats-pve: 1.3, vol-de-vie: 0.08, chance-boss: 0.1}
   mini-warden:
     nom: "Mini Warden"
     rarete: mythique
@@ -271,10 +267,9 @@ pets:
     hauteur: 1.2
     brille: true
     particules: SCULK_SOUL
-    description: ["<gray>Rien ne t'arrête.", "<dark_gray>Il entend tout."]
+    description: ["<gray>Rien ne lui fait peur.", "<dark_gray>Il entend tout."]
     effets: ["night_vision:1"]
-    attributs: ["max_health:+6", "knockback_resistance:+0.25"]
-    bonus: {protection-pve: 0.65}
+    bonus: {protection-pve: 0.7, degats-pve: 1.1, chance-boss: 0.06}
   mini-gardien:
     nom: "Mini Grand Gardien"
     rarete: mythique
@@ -284,8 +279,8 @@ pets:
     brille: true
     particules: NAUTILUS
     description: ["<gray>Le maître des océans."]
-    effets: ["conduit_power:1", "dolphins_grace:1", "haste:2"]
-    bonus: {soin: 1}
+    effets: ["conduit_power:1", "haste:2", "water_breathing:1"]
+    bonus: {soin: 1, xp: 1.2}
   axolotl-bleu:
     nom: "Axolotl Bleu"
     rarete: mythique
@@ -296,9 +291,9 @@ pets:
     brille: true
     particules: GLOW
     description: ["<gray>Le plus rare de tous les axolotls."]
-    effets: ["water_breathing:1", "conduit_power:1"]
-    attributs: ["luck:+2"]
-    bonus: {soin: 2}
+    effets: ["water_breathing:1"]
+    attributs: ["luck:+3"]
+    bonus: {soin: 1, chance-boss: 0.1, xp: 1.15}
   etoile:
     nom: "Étoile du Nether"
     rarete: mythique
@@ -309,9 +304,8 @@ pets:
     brille: true
     particules: END_ROD
     description: ["<gray>Une étoile tombée du ciel.", "<dark_gray>Tout ce qui brille vient à toi."]
-    effets: ["speed:1"]
     attributs: ["luck:+3"]
-    bonus: {xp: 2.0, aimant: 10}
+    bonus: {xp: 1.5, aimant: 10, chance-boss: 0.12}
 
   # ------------------------------------------------------------ MODOS (pas dans les œufs)
   loky:

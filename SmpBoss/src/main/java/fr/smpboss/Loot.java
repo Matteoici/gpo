@@ -50,6 +50,13 @@ public final class Loot {
         double legendary = c.getDouble("loot.chances.legendary", 1);
         double epic = c.getDouble("loot.chances.epic", 5);
         double rare = c.getDouble("loot.chances.rare", 20);
+        // familiers porte-bonheur (SmpPets) : toutes les chances un peu plus hautes
+        double luck = plugin.petLuck(p);
+        prestige *= luck;
+        secret *= luck;
+        legendary *= luck;
+        epic *= luck;
+        rare *= luck;
         int pitySecret = c.getInt("loot.pity.secret", 300), pityLegendary = c.getInt("loot.pity.legendary", 150);
         Rarity got;
         boolean hasPrestige = !c.getMapList("loot.pools.prestige").isEmpty();

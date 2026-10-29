@@ -2,7 +2,7 @@ name: SmpPets
 version: '${version}'
 main: fr.smppets.SmpPets
 api-version: '26.2'
-softdepend: [Vault, SmpDuel]
+softdepend: [Vault, SmpDuel, SmpCombat]
 description: "Familiers qui te suivent (effets, boosts) obtenus dans des œufs Rare / Épique / Légendaire / Mythique"
 commands:
   pets:

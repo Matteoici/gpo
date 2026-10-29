@@ -373,8 +373,39 @@ final class Ultimates {
      * Les dégâts arrivent en plusieurs coups (par défaut 10 coups toutes les 4 ticks) : chaque coup est mortel,
      * donc chaque totem en main saute l'un après l'autre.
      */
+    /**
+     * Dégâts selon la distance au point d'explosion (zones de config "weapons.<path>.zones") :
+     * au centre on meurt, plus on est loin moins ça fait mal. Retourne {dégâts, coups}, ou null si hors de portée.
+     */
+    private double[] zone(String path, double d) {
+        List<java.util.Map<?, ?>> zones = plugin.getConfig().getMapList("weapons." + path + ".zones");
+        List<double[]> z = new ArrayList<>();
+        for (java.util.Map<?, ?> m : zones) {
+            try {
+                z.add(new double[]{Double.parseDouble(String.valueOf(m.get("rayon"))), Double.parseDouble(String.valueOf(m.get("degats"))),
+                        m.get("coups") == null ? 1 : Double.parseDouble(String.valueOf(m.get("coups")))});
+            } catch (RuntimeException ignored) {
+            }
+        }
+        if (z.isEmpty()) z = List.of(new double[]{8, 1000, 10}, new double[]{25, 18, 3}, new double[]{60, 12, 2}, new double[]{120, 7, 1}, new double[]{200, 3, 1});
+        z = new ArrayList<>(z);
+        z.sort(java.util.Comparator.comparingDouble(a -> a[0]));
+        for (double[] a : z) if (d <= a[0]) return new double[]{a[1], Math.max(1, a[2])};
+        return null;
+    }
+
+    private void zoneHit(Player caster, LivingEntity le, double d, DamageType type, String path, int fireTicks) {
+        double[] z = zone(path, d);
+        if (z == null) return;
+        multiHit(caster, le, z[0], (int) z[1], type, path, fireTicks);
+    }
+
     private void multiHit(Player caster, LivingEntity le, double total, DamageType type, String path, int fireTicks) {
-        int hits = Math.max(1, (int) cfg(path + ".hits", 10)), every = Math.max(1, (int) cfg(path + ".hit-interval-ticks", 4));
+        multiHit(caster, le, total, Math.max(1, (int) cfg(path + ".hits", 10)), type, path, fireTicks);
+    }
+
+    private void multiHit(Player caster, LivingEntity le, double total, int hitCount, DamageType type, String path, int fireTicks) {
+        int hits = Math.max(1, hitCount), every = Math.max(1, (int) cfg(path + ".hit-interval-ticks", 4));
         double each = total / hits;
         int[] n = {0};
         BukkitTask[] task = new BukkitTask[1];
@@ -1089,7 +1120,7 @@ final class Ultimates {
                 for (LivingEntity le : list) {
                     Double d = dist.get(le.getUniqueId());
                     if (d == null || d > r || !done.add(le.getUniqueId()) || !le.isValid() || le.isDead()) continue;
-                    multiHit(p, le, dmg, DamageType.SONIC_BOOM, "hollow-purple", 0);
+                    zoneHit(p, le, d, DamageType.SONIC_BOOM, "hollow-purple", 0);
                     le.getWorld().playSound(le.getLocation(), Sound.BLOCK_AMETHYST_CLUSTER_BREAK, 1.5f, 0.6f);
                 }
             }
@@ -1398,7 +1429,7 @@ final class Ultimates {
                 for (LivingEntity le : list) {
                     Double d = dist.get(le.getUniqueId());
                     if (d == null || d > r || !done.add(le.getUniqueId()) || !le.isValid() || le.isDead()) continue;
-                    multiHit(p, le, dmg, DamageType.MAGIC, "fuga", burn);
+                    zoneHit(p, le, d, DamageType.MAGIC, "fuga", burn);
                     Location at = le.getLocation().add(0, 1, 0);
                     w.spawnParticle(Particle.FLAME, at, 50, 0.4, 0.7, 0.4, 0.15);
                     w.playSound(at, Sound.ENTITY_GENERIC_BURN, 1.5f, 0.6f);

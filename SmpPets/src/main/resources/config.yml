@@ -1,4 +1,4 @@
-config-version: 4
+config-version: 5
 # =====================================================================
 #  SmpPets - familiers qui te suivent, obtenus dans des œufs
 #  Joueurs :
@@ -32,6 +32,12 @@ emplacements: 1
 equiper-auto: true
 # afficher le nom du familier au-dessus de lui
 nom-visible: true
+# EN DANGER (SmpCombat) : ces effets / attributs / bonus des familiers sont coupés pour ne pas aider à se battre ou à fuir
+coupe-en-combat:
+  effets: [speed, dolphins_grace, jump_boost, resistance, fire_resistance, regeneration, strength, health_boost, absorption, slow_falling, invisibility, levitation]
+  attributs: [movement_speed, max_health, armor, armor_toughness, knockback_resistance, attack_damage, attack_speed, attack_knockback, jump_strength, fall_damage_multiplier, safe_fall_distance, entity_interaction_range, block_interaction_range, scale, movement_efficiency, water_movement_efficiency, sneaking_speed, step_height, explosion_knockback_resistance, burning_time]
+  bonus: [soin]
+
 # les familiers disparaissent pendant les duels et dans les arènes de duel (les boosts restent)
 cacher-en-duel: true
 # particules autour des familiers : une toutes les X ticks (20 = 1 par seconde, plus grand = moins)
@@ -42,7 +48,7 @@ animation: true
 etoiles:
   max: 5
   # chaque étoile en plus augmente les boosts (attributs et bonus) de 25 % (les effets de potion ne changent pas)
-  bonus-par-etoile: 0.25
+  bonus-par-etoile: 0.15
   # quand le familier est déjà au maximum : commandes lancées par la console (%player%, %pet%) - vide = rien
   doublon-max-commandes: []
 

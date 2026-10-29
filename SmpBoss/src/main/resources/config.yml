@@ -1,4 +1,4 @@
-config-version: 31
+config-version: 32
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -325,7 +325,14 @@ weapons:
     crater: true
     crater-radius: 20
     crater-depth: 10
-    # 500 cœurs (1000), donnés en plusieurs coups mortels : chaque totem en main saute l'un après l'autre
+    # dégâts selon la distance au point d'explosion (1 cœur = 2) : au centre on meurt, plus on est loin moins ça fait mal
+    # rayon = jusqu'à combien de blocs, degats = dégâts totaux, coups = en combien de coups (plusieurs coups = plusieurs totems)
+    zones:
+      - {rayon: 8, degats: 1000, coups: 10}
+      - {rayon: 25, degats: 18, coups: 3}
+      - {rayon: 60, degats: 12, coups: 2}
+      - {rayon: 120, degats: 7, coups: 1}
+      - {rayon: 200, degats: 3, coups: 1}
     damage: 1000
     hits: 10
     hit-interval-ticks: 4
@@ -340,6 +347,14 @@ weapons:
     crater: true
     crater-radius: 20
     crater-depth: 10
+    # dégâts selon la distance au point d'explosion (1 cœur = 2) : au centre on meurt, plus on est loin moins ça fait mal
+    # rayon = jusqu'à combien de blocs, degats = dégâts totaux, coups = en combien de coups (plusieurs coups = plusieurs totems)
+    zones:
+      - {rayon: 8, degats: 1000, coups: 10}
+      - {rayon: 25, degats: 18, coups: 3}
+      - {rayon: 60, degats: 12, coups: 2}
+      - {rayon: 120, degats: 7, coups: 1}
+      - {rayon: 200, degats: 3, coups: 1}
     damage: 1000
     hits: 10
     hit-interval-ticks: 4
@@ -786,7 +801,7 @@ messages:
         - "<gray>explose autour de toi sur <white><radius> blocs</white> :"
         - "<gray>écran blanc et cratère de 10 blocs."
         - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
-        - "<white>☄ <damage> ❤</white> <gray>en 10 coups   <dark_gray>|</dark_gray>   <white>⏳ <minutes> min"
+        - "<white>☄ Mort au centre</white> <gray>· moins de dégâts au loin   <dark_gray>|</dark_gray>   <white>⏳ <minutes> min"
         - "<dark_gray>✧ Ne tombe pas à la mort"
       chant:
         - "<dark_gray>[<#9b5cff>❂</#9b5cff>]</dark_gray> <white><player></white> <dark_gray>»</dark_gray> <i><#c9b6ff>Phase…"
@@ -807,7 +822,7 @@ messages:
         - "<gray>une immense colonne de feu jaillit et l'onde"
         - "<gray>brûle tout sur <white><radius> blocs</white>. Cratère de 10 blocs."
         - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
-        - "<white>🔥 <damage> ❤</white> <gray>en 10 coups   <dark_gray>|</dark_gray>   <white>⏳ <minutes> min"
+        - "<white>🔥 Mort à l'impact</white> <gray>· moins de dégâts au loin   <dark_gray>|</dark_gray>   <white>⏳ <minutes> min"
         - "<dark_gray>✧ Ne tombe pas à la mort"
       chant:
         - "<dark_gray>[<#ff7a1e>❂</#ff7a1e>]</dark_gray> <white><player></white> <dark_gray>»</dark_gray> <i><#ffc58a>Voyons voir… qui a le feu le plus puissant."

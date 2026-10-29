@@ -326,6 +326,18 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 31);
             saveConfig();
         }
+        if (getConfig().getInt("config-version", 1) < 32) {
+            // Fûga / Violet : dégâts par zones (mort au centre, moins au loin) au lieu de 1000 partout
+            for (String w : List.of("hollow-purple", "fuga")) {
+                if (!getConfig().isSet("weapons." + w + ".zones")) getConfig().set("weapons." + w + ".zones", List.of(
+                        java.util.Map.of("rayon", 8, "degats", 1000, "coups", 10), java.util.Map.of("rayon", 25, "degats", 18, "coups", 3),
+                        java.util.Map.of("rayon", 60, "degats", 12, "coups", 2), java.util.Map.of("rayon", 120, "degats", 7, "coups", 1),
+                        java.util.Map.of("rayon", 200, "degats", 3, "coups", 1)));
+                getConfig().set("messages.weapons." + w + ".lore", null);
+            }
+            getConfig().set("config-version", 32);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);
@@ -421,6 +433,25 @@ public final class SmpBoss extends JavaPlugin {
 
     private void harder(String path, double old, double now) {
         if (!getConfig().isSet(path) || Math.abs(getConfig().getDouble(path) - old) < 1e-9) getConfig().set(path, now);
+    }
+
+    private java.lang.reflect.Method petBonus;
+    private boolean petLooked;
+
+    /** Chance en plus sur le butin du boss donnée par les familiers (SmpPets, bonus "chance-boss") : 1.1 = +10 %. */
+    public double petLuck(Player p) {
+        try {
+            if (!petLooked) {
+                petLooked = true;
+                var pl = getServer().getPluginManager().getPlugin("SmpPets");
+                if (pl != null) petBonus = pl.getClass().getMethod("bonus", java.util.UUID.class, String.class);
+            }
+            if (petBonus == null) return 1;
+            Object v = petBonus.invoke(null, p.getUniqueId(), "chance-boss");
+            return v instanceof Double d ? 1 + Math.max(0, Math.min(1, d)) : 1;
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
+            return 1;
+        }
     }
 
     public String msg(String key) {
