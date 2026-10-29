@@ -133,6 +133,7 @@ public final class SmpDuel extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(this, this);
         Bukkit.getScheduler().runTaskTimer(this, this::matchmaking, 40L, 20L);
         Bukkit.getScheduler().runTaskTimer(this, () -> stats.save(false), 6000L, 6000L);
+        Bukkit.getScheduler().runTaskTimer(this, this::clearMobs, 100L, 100L);
         for (Player p : Bukkit.getOnlinePlayers()) rejoin(p);
     }
 
@@ -199,6 +200,32 @@ public final class SmpDuel extends JavaPlugin implements Listener {
         List<DuelArena> free = new ArrayList<>();
         for (DuelArena a : arenas.values()) if (a.ready() && a.match == null && !reserved.contains(a)) free.add(a);
         return free.isEmpty() ? null : free.get(java.util.concurrent.ThreadLocalRandom.current().nextInt(free.size()));
+    }
+
+    // ================================================================= pas de monstres dans les arènes
+
+    /** Aucun mob n'apparaît dans une arène (sauf ceux des plugins, ex. familiers, et /summon). */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onMobSpawn(org.bukkit.event.entity.CreatureSpawnEvent e) {
+        var r = e.getSpawnReason();
+        if (r == org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CUSTOM || r == org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.COMMAND) return;
+        if (e.getEntity() instanceof Player) return;
+        if (arenaAt(e.getLocation()) != null) e.setCancelled(true);
+    }
+
+    /** Les monstres déjà là (ou arrivés quand même) sont retirés toutes les 5 s. */
+    private void clearMobs() {
+        for (DuelArena a : arenas.values()) {
+            World w = Bukkit.getWorld(a.world);
+            if (w == null || !w.isChunkLoaded(a.cx >> 4, a.cz >> 4)) continue;
+            Location c = new Location(w, a.cx + 0.5, a.cy, a.cz + 0.5);
+            double h = Math.max(a.dome(), a.islandDepth()) + 8;
+            for (Entity e : w.getNearbyEntities(c, a.r + 12, h, a.r + 12)) {
+                if (!(e instanceof org.bukkit.entity.Enemy) && !(e instanceof org.bukkit.entity.Bat)) continue;
+                if (e.getScoreboardTags().contains("smp_pet") || e.customName() != null) continue;
+                if (a.region(e.getLocation())) e.remove();
+            }
+        }
     }
 
     DuelArena arenaAt(Location l) {
