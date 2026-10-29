@@ -338,6 +338,37 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 32);
             saveConfig();
         }
+        if (getConfig().getInt("config-version", 1) < 33) {
+            // reliques rééquilibrées : chaque rareté au-dessus de la précédente (rare < épique < légendaire < mythique < prestige)
+            var stats = java.util.Map.ofEntries(
+                java.util.Map.entry("trainee_flammes", java.util.Map.of("speed", 3.0, "damage", 2.0)),
+                java.util.Map.entry("braises_ardentes", java.util.Map.of("armor", 2.0)),
+                java.util.Map.entry("crane_maudit", java.util.Map.of("damage", 5.0)),
+                java.util.Map.entry("amulette_recolte", java.util.Map.of("speed", 6.0, "health", 1.5)),
+                java.util.Map.entry("lanterne_mineure", java.util.Map.of("regen", 1.0, "health", 1.0)),
+                java.util.Map.entry("cornes_demon", java.util.Map.of("damage", 10.0, "armor", 1.0)),
+                java.util.Map.entry("orbe_infernal", java.util.Map.of("health", 1.0, "armor", 3.0)),
+                java.util.Map.entry("couronne", java.util.Map.of("health", 3.0, "armor", 2.0, "regen", 0.5)),
+                java.util.Map.entry("lanterne_eternelle", java.util.Map.of("regen", 1.5, "health", 2.0)),
+                java.util.Map.entry("bottes_recolte", java.util.Map.of("speed", 10.0, "armor", 2.0, "health", 1.0)),
+                java.util.Map.entry("ailes_demon", java.util.Map.of("health", 2.0, "speed", 8.0, "damage", 5.0)),
+                java.util.Map.entry("oeil_jugement", java.util.Map.of("damage", 14.0, "regen", 0.5, "health", 1.0)),
+                java.util.Map.entry("sac_recolte", java.util.Map.of("health", 2.0, "speed", 5.0)),
+                java.util.Map.entry("couronne_enfers", java.util.Map.of("health", 3.0, "damage", 12.0, "armor", 3.0)),
+                java.util.Map.entry("cape_nuit", java.util.Map.of("speed", 12.0, "regen", 1.5, "health", 2.0)));
+            for (var e : stats.entrySet()) {
+                String path = "relics.list." + e.getKey() + ".";
+                if (!getConfig().isConfigurationSection("relics.list." + e.getKey())) continue;
+                for (String k : List.of("health", "speed", "regen", "damage", "armor")) getConfig().set(path + k, e.getValue().get(k));
+            }
+            // armes épiques : textes et réglages pris dans le plugin
+            for (String w : List.of("lame-citrouille", "arc-feux-follets", "hache-maudite")) {
+                getConfig().set("messages.weapons." + w, null);
+                getConfig().set("weapons." + w, null);
+            }
+            getConfig().set("config-version", 33);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);
@@ -765,6 +796,9 @@ public final class SmpBoss extends JavaPlugin {
                         case "arctempete", "arc_tempete", "tempete", "tempête" -> weapons.create(Weapons.TEMPETE);
                         case "hollowpurple", "hollow_purple", "violet", "hollow" -> weapons.create(Weapons.HOLLOW);
                         case "fuga", "fûga" -> weapons.create(Weapons.FUGA);
+                        case "lamecitrouille", "lame_citrouille", "lame" -> weapons.create(Weapons.LAME);
+                        case "arcfeuxfollets", "arc_feux_follets", "follets" -> weapons.create(Weapons.FOLLETS);
+                        case "hachemaudite", "hache_maudite" -> weapons.create(Weapons.HACHE);
                         default -> null;
                     };
                 }
@@ -843,7 +877,7 @@ public final class SmpBoss extends JavaPlugin {
             if (t != null) out.addAll(store.of(t.getUniqueId()).relics);
         }
         else if (a.length == 3 && a[0].equalsIgnoreCase("give")) {
-            out.addAll(List.of("graine", "citrouille", "faucille", "sonicbow", "tranchemace", "briseterre", "faux", "crocdegivre", "arctempete", "hollowpurple", "fuga"));
+            out.addAll(List.of("graine", "citrouille", "faucille", "sonicbow", "tranchemace", "briseterre", "faux", "crocdegivre", "arctempete", "hollowpurple", "fuga", "lamecitrouille", "arcfeuxfollets", "hachemaudite"));
             for (String id : relics.all().keySet()) out.add("relique:" + id);
         }
         String last = a.length == 0 ? "" : a[a.length - 1].toLowerCase(Locale.ROOT);

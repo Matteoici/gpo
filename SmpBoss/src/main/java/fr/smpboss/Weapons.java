@@ -54,8 +54,18 @@ import static fr.smpboss.SmpBoss.parse;
 final class Weapons implements Listener {
 
     static final String SONIC = "sonic_bow", TRANCHE = "tranche_mace", BRISE = "brise_terre", SPECTRAL = "arbalete_spectrale",
-            GIVRE = "croc_de_givre", TEMPETE = "arc_tempete", HOLLOW = "hollow_purple", FUGA = "fuga";
-    static final String[] ALL = {SONIC, TRANCHE, BRISE, SPECTRAL, GIVRE, TEMPETE, HOLLOW, FUGA};
+            GIVRE = "croc_de_givre", TEMPETE = "arc_tempete", HOLLOW = "hollow_purple", FUGA = "fuga",
+            LAME = "lame_citrouille", FOLLETS = "arc_feux_follets", HACHE = "hache_maudite";
+    static final String[] ALL = {SONIC, TRANCHE, BRISE, SPECTRAL, GIVRE, TEMPETE, HOLLOW, FUGA, LAME, FOLLETS, HACHE};
+
+    /** Chance par victoire si le config n'en donne pas. */
+    static double defChance(String id) {
+        return switch (rarity(id)) {
+            case PRESTIGE -> 0.01;
+            case EPIC -> 3;
+            default -> 0.5;
+        };
+    }
 
     /** Section du config / des textes de chaque arme. */
     static String path(String id) {
@@ -67,6 +77,9 @@ final class Weapons implements Listener {
             case TEMPETE -> "arc-tempete";
             case HOLLOW -> "hollow-purple";
             case FUGA -> "fuga";
+            case LAME -> "lame-citrouille";
+            case FOLLETS -> "arc-feux-follets";
+            case HACHE -> "hache-maudite";
             default -> "arbalete-spectrale";
         };
     }
@@ -80,12 +93,16 @@ final class Weapons implements Listener {
             case TEMPETE -> Material.BOW;
             case HOLLOW -> Material.AMETHYST_SHARD;
             case FUGA -> Material.BLAZE_ROD;
+            case LAME -> Material.DIAMOND_SWORD;
+            case FOLLETS -> Material.BOW;
+            case HACHE -> Material.DIAMOND_AXE;
             default -> Material.NETHERITE_HOE;
         };
     }
 
     /** PRESTIGE : Sonic Bow, Brise-Terre, Faux des Âmes, Violet Imaginaire, Fûga. SECRET : le reste. */
     static Rarity rarity(String id) {
+        if (LAME.equals(id) || FOLLETS.equals(id) || HACHE.equals(id)) return Rarity.EPIC;
         return TRANCHE.equals(id) || GIVRE.equals(id) || TEMPETE.equals(id) ? Rarity.SECRET : Rarity.PRESTIGE;
     }
 
@@ -96,6 +113,9 @@ final class Weapons implements Listener {
             case BRISE -> 16;
             case GIVRE, TEMPETE -> 10;
             case HOLLOW, FUGA -> 1000;
+            case LAME -> 6;
+            case FOLLETS -> 70;
+            case HACHE -> 5;
             default -> 14;
         };
     }
@@ -106,6 +126,9 @@ final class Weapons implements Listener {
             case TRANCHE -> 8;
             case BRISE -> 7;
             case GIVRE, TEMPETE -> 8;
+            case LAME -> 10;
+            case FOLLETS -> 6;
+            case HACHE -> 12;
             default -> 2;
         };
     }
@@ -135,7 +158,7 @@ final class Weapons implements Listener {
     // ================================================================= objets
 
     ItemStack create(String id) {
-        boolean bow = SONIC.equals(id) || TEMPETE.equals(id);
+        boolean bow = SONIC.equals(id) || TEMPETE.equals(id) || FOLLETS.equals(id);
         ItemStack it = new ItemStack(material(id));
         ItemMeta m = it.getItemMeta();
         String base = "weapons." + path(id) + ".";
@@ -175,6 +198,16 @@ final class Weapons implements Listener {
                     org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND));
             m.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_SPEED, new org.bukkit.attribute.AttributeModifier(
                     new NamespacedKey(plugin, "faux_speed"), cfg("arbalete-spectrale.attack-speed", 1.2) - 4,
+                    org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND));
+        }
+        if (LAME.equals(id) || HACHE.equals(id)) {
+            // armes ÉPIQUES : un peu au-dessus du diamant, sous le netherite enchanté
+            boolean axe = HACHE.equals(id);
+            m.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_DAMAGE, new org.bukkit.attribute.AttributeModifier(
+                    new NamespacedKey(plugin, id + "_damage"), cfg(path(id) + ".attack-damage", axe ? 10 : 8) - 1,
+                    org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND));
+            m.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_SPEED, new org.bukkit.attribute.AttributeModifier(
+                    new NamespacedKey(plugin, id + "_speed"), cfg(path(id) + ".attack-speed", axe ? 1.0 : 1.6) - 4,
                     org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND));
         }
         if (TRANCHE.equals(id)) {
@@ -797,6 +830,115 @@ final class Weapons implements Listener {
         }, 0L, 2L);
     }
 
+    // ================================================================= armes ÉPIQUES
+
+    private boolean hittable(Player p, Entity en) {
+        if (!(en instanceof LivingEntity le) || en.equals(p) || le.isDead()) return false;
+        if (en.getScoreboardTags().contains("smp_pet") || en instanceof org.bukkit.entity.ArmorStand) return false;
+        return !(en instanceof Player t && (t.getGameMode() == org.bukkit.GameMode.SPECTATOR || t.getGameMode() == org.bukkit.GameMode.CREATIVE));
+    }
+
+    /** Lame Citrouille : clic droit = entaille de feu en arc devant toi (5 blocs). */
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onPumpkinSlash(PlayerInteractEvent e) {
+        if (e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        if (e.getHand() != EquipmentSlot.HAND || !LAME.equals(id(e.getItem()))) return;
+        Block b = e.getClickedBlock();
+        if (b != null && b.getType().isInteractable() && !e.getPlayer().isSneaking()) return;
+        Player p = e.getPlayer();
+        if (!ready(p, LAME, cfg("lame-citrouille.cooldown-seconds", 10))) return;
+        World w = p.getWorld();
+        Vector f = p.getEyeLocation().getDirection().setY(0);
+        if (f.lengthSquared() < 1e-4) f = new Vector(0, 0, 1);
+        f.normalize();
+        double reach = cfg("lame-citrouille.reach", 5), dmg = cfg("lame-citrouille.damage", 6);
+        int fire = (int) (cfg("lame-citrouille.fire-seconds", 3) * 20);
+        Particle.DustOptions orange = new Particle.DustOptions(Color.fromRGB(255, 130, 20), 1.4f);
+        for (int i = -6; i <= 6; i++) {
+            Vector d = f.clone().rotateAroundY(Math.toRadians(i * 9));
+            for (double r = 1.5; r <= reach; r += 0.7) {
+                Location at = p.getLocation().add(0, 1.1, 0).add(d.clone().multiply(r));
+                if (r > reach - 1) w.spawnParticle(Particle.FLAME, at, 1, 0.05, 0.05, 0.05, 0);
+                else w.spawnParticle(Particle.DUST, at, 1, 0.05, 0.05, 0.05, 0, orange);
+            }
+        }
+        w.spawnParticle(Particle.SWEEP_ATTACK, p.getLocation().add(f.clone().multiply(2)).add(0, 1.1, 0), 3, 0.8, 0.2, 0.8, 0);
+        w.playSound(p.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.2f, 0.8f);
+        w.playSound(p.getLocation(), org.bukkit.Sound.ITEM_FIRECHARGE_USE, 1f, 1.2f);
+        for (Entity en : w.getNearbyEntities(p.getLocation(), reach, 2.5, reach)) {
+            if (!hittable(p, en)) continue;
+            Vector to = en.getLocation().toVector().subtract(p.getLocation().toVector()).setY(0);
+            if (to.lengthSquared() > reach * reach || to.lengthSquared() < 1e-4 || to.normalize().dot(f) < 0.5) continue;
+            LivingEntity le = (LivingEntity) en;
+            le.setNoDamageTicks(0);
+            le.damage(dmg, p);
+            le.setFireTicks(Math.max(le.getFireTicks(), fire));
+            w.spawnParticle(Particle.FLAME, le.getLocation().add(0, 1, 0), 15, 0.3, 0.5, 0.3, 0.03);
+        }
+    }
+
+    /** Arc des Feux Follets : tir tendu = 2 flèches fantômes en plus, en éventail. */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onWispShoot(EntityShootBowEvent e) {
+        if (!(e.getEntity() instanceof Player p) || !FOLLETS.equals(id(e.getBow())) || e.getForce() < 0.9f) return;
+        if (!(e.getProjectile() instanceof org.bukkit.entity.AbstractArrow main)) return;
+        String k = p.getUniqueId() + ":" + FOLLETS;
+        Long until = cooldown.get(k);
+        long now = System.currentTimeMillis();
+        if (until != null && until > now) return; // la flèche normale part quand même
+        cooldown.put(k, now + (long) (cfg("arc-feux-follets.cooldown-seconds", 6) * 1000));
+        double ratio = cfg("arc-feux-follets.damage", 70) / 100.0;
+        Vector v = main.getVelocity();
+        for (int side = -1; side <= 1; side += 2) {
+            Vector dir = v.clone().rotateAroundY(Math.toRadians(8 * side));
+            org.bukkit.entity.Arrow a = p.getWorld().spawnArrow(main.getLocation(), dir, (float) v.length(), 0f);
+            a.setShooter(p);
+            a.setDamage(main.getDamage() * ratio);
+            a.setPickupStatus(org.bukkit.entity.AbstractArrow.PickupStatus.DISALLOWED);
+            a.setCritical(main.isCritical());
+            a.setGlowing(true);
+            a.setFireTicks(main.getFireTicks());
+        }
+        p.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, p.getEyeLocation().add(p.getLocation().getDirection()), 12, 0.3, 0.3, 0.3, 0.02);
+        p.getWorld().playSound(p.getLocation(), org.bukkit.Sound.PARTICLE_SOUL_ESCAPE, 1.5f, 1.2f);
+    }
+
+    /** Hache Maudite : clic droit = onde de choc autour de toi (4 blocs) qui projette en l'air. */
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onCursedSlam(PlayerInteractEvent e) {
+        if (e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        if (e.getHand() != EquipmentSlot.HAND || !HACHE.equals(id(e.getItem()))) return;
+        Block b = e.getClickedBlock();
+        if (b != null && b.getType().isInteractable() && !e.getPlayer().isSneaking()) return;
+        if (b != null && (b.getType().name().endsWith("_LOG") || b.getType().name().endsWith("_WOOD") || b.getType().name().endsWith("_STEM"))) return;
+        Player p = e.getPlayer();
+        if (!ready(p, HACHE, cfg("hache-maudite.cooldown-seconds", 12))) return;
+        World w = p.getWorld();
+        double r = cfg("hache-maudite.radius", 4), dmg = cfg("hache-maudite.damage", 5), up = cfg("hache-maudite.launch", 0.7);
+        Location c = p.getLocation();
+        org.bukkit.block.data.BlockData ground = c.clone().add(0, -1, 0).getBlock().getBlockData();
+        if (ground.getMaterial().isAir()) ground = Material.DIRT.createBlockData();
+        for (int i = 0; i < 24; i++) {
+            double a = Math.PI * 2 * i / 24;
+            w.spawnParticle(Particle.BLOCK, c.clone().add(Math.cos(a) * r * 0.8, 0.2, Math.sin(a) * r * 0.8), 6, 0.2, 0.1, 0.2, 0, ground);
+        }
+        w.spawnParticle(Particle.SOUL, c.clone().add(0, 0.5, 0), 20, r * 0.4, 0.2, r * 0.4, 0.02);
+        w.playSound(c, org.bukkit.Sound.ENTITY_GENERIC_EXPLODE, 0.8f, 1.4f);
+        w.playSound(c, org.bukkit.Sound.ITEM_MACE_SMASH_GROUND, 1.2f, 0.8f);
+        PumpkinKing k = plugin.king();
+        for (Entity en : w.getNearbyEntities(c, r, 2.5, r)) {
+            if (!hittable(p, en) || en.getLocation().distanceSquared(c) > r * r) continue;
+            LivingEntity le = (LivingEntity) en;
+            le.setNoDamageTicks(0);
+            le.damage(dmg, p);
+            if (k == null || !k.isBoss(en)) {
+                Vector push = en.getLocation().toVector().subtract(c.toVector()).setY(0);
+                if (push.lengthSquared() > 1e-4) push.normalize().multiply(0.4);
+                le.setVelocity(push.setY(up));
+            }
+        }
+    }
+
     // ================================================================= Croc de Givre (épée SECRÈTE) : RUÉE GLACIALE
 
     private final Map<UUID, Long> noFall = new HashMap<>();
@@ -1079,7 +1221,7 @@ final class Weapons implements Listener {
     /** Tirage des armes après une victoire (chacune a sa chance). */
     void roll(Player p) {
         for (String id : ALL) {
-            double chance = cfg(path(id) + ".chance", rarity(id) == Rarity.PRESTIGE ? 0.01 : 0.5);
+            double chance = cfg(path(id) + ".chance", defChance(id));
             chance *= plugin.petLuck(p);
             if (ThreadLocalRandom.current().nextDouble() * 100 >= chance) continue;
             ItemStack it = create(id);
@@ -1095,7 +1237,7 @@ final class Weapons implements Listener {
                     o.playSound(o.getLocation(), org.bukkit.Sound.ENTITY_ENDER_DRAGON_DEATH, 0.6f, 1.1f);
                 }
                 p.getWorld().strikeLightningEffect(p.getLocation());
-            } else {
+            } else if (rar != Rarity.EPIC) {
                 Bukkit.broadcast(parse(plugin.msg("weapons.broadcast").replace("<player>", SmpBoss.MM.escapeTags(p.getName())).replace("<item>", name)));
             }
             for (Player o : Bukkit.getOnlinePlayers()) o.playSound(o.getLocation(), org.bukkit.Sound.ENTITY_WARDEN_SONIC_BOOM, 0.5f, 1.4f);

@@ -430,6 +430,61 @@ public final class SmpCombat extends JavaPlugin implements Listener, TabExecutor
         p.sendActionBar(mm(msg("blocked-elytra")));
     }
 
+    // ================================================================= mort : perles et objet tenu à la souris
+
+    /** À la mort, les perles du joueur encore en l'air disparaissent (pas de téléportation après la mort). */
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onDeathCleanup(PlayerDeathEvent e) {
+        Player p = e.getEntity();
+        if (getConfig().getBoolean("mort.supprimer-perles", true)) removePearls(p);
+        // inventaire gardé : l'objet tenu à la souris et la grille de craft ne doivent pas tomber par terre
+        if (e.getKeepInventory() && getConfig().getBoolean("mort.garder-objet-souris", true)) {
+            List<org.bukkit.inventory.ItemStack> back = new ArrayList<>();
+            org.bukkit.inventory.ItemStack cursor = p.getItemOnCursor();
+            if (cursor != null && !cursor.getType().isAir()) {
+                back.add(cursor.clone());
+                p.setItemOnCursor(null);
+            }
+            var top = p.getOpenInventory().getTopInventory();
+            if (top instanceof org.bukkit.inventory.CraftingInventory craft) {
+                for (org.bukkit.inventory.ItemStack it : craft.getMatrix()) if (it != null && !it.getType().isAir()) back.add(it.clone());
+                craft.setMatrix(new org.bukkit.inventory.ItemStack[craft.getMatrix().length]);
+            }
+            if (!back.isEmpty()) {
+                for (org.bukkit.inventory.ItemStack it : back) {
+                    for (org.bukkit.inventory.ItemStack left : p.getInventory().addItem(it).values()) pendingBack.computeIfAbsent(p.getUniqueId(), k -> new ArrayList<>()).add(left);
+                }
+            }
+        }
+    }
+
+    /** Objets qui n'ont pas trouvé de place à la mort : rendus à la réapparition. */
+    private final Map<UUID, List<org.bukkit.inventory.ItemStack>> pendingBack = new HashMap<>();
+
+    @EventHandler
+    public void onRespawnGiveBack(org.bukkit.event.player.PlayerRespawnEvent e) {
+        List<org.bukkit.inventory.ItemStack> l = pendingBack.remove(e.getPlayer().getUniqueId());
+        if (l == null) return;
+        Player p = e.getPlayer();
+        Bukkit.getScheduler().runTaskLater(this, () -> {
+            for (org.bukkit.inventory.ItemStack it : l)
+                for (org.bukkit.inventory.ItemStack left : p.getInventory().addItem(it).values()) p.getWorld().dropItemNaturally(p.getLocation(), left);
+        }, 2L);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onQuitPearls(PlayerQuitEvent e) {
+        if (getConfig().getBoolean("mort.supprimer-perles", true)) removePearls(e.getPlayer());
+    }
+
+    private void removePearls(Player p) {
+        for (org.bukkit.World w : Bukkit.getWorlds()) {
+            for (org.bukkit.entity.EnderPearl pearl : w.getEntitiesByClass(org.bukkit.entity.EnderPearl.class)) {
+                if (pearl.getShooter() instanceof Player s && s.getUniqueId().equals(p.getUniqueId())) pearl.remove();
+            }
+        }
+    }
+
     // ================================================================= /mb all : "my bad", on a tapé un allié
 
     /**

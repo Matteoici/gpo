@@ -1,4 +1,4 @@
-config-version: 32
+config-version: 33
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -249,6 +249,27 @@ weapons:
     range: 96
     # temps de tension minimum (ms) : l'arc doit être chargé au maximum
     full-charge-ms: 950
+  # ✦ ÉPIQUES : plus faciles à avoir (3 % chacune par victoire), un pouvoir simple
+  lame-citrouille:
+    chance: 3
+    attack-damage: 8      # épée diamant = 7
+    attack-speed: 1.6
+    damage: 6             # entaille de feu (clic droit)
+    reach: 5
+    fire-seconds: 3
+    cooldown-seconds: 10
+  arc-feux-follets:
+    chance: 3
+    damage: 70            # % des dégâts de la flèche pour les 2 flèches fantômes
+    cooldown-seconds: 6
+  hache-maudite:
+    chance: 3
+    attack-damage: 10     # hache diamant = 9
+    attack-speed: 1.0
+    damage: 5             # onde de choc (clic droit)
+    radius: 4
+    launch: 0.7
+    cooldown-seconds: 12
   tranche-mace:
     chance: 0.5
     # dégâts au corps à corps (épée netherite Tranchant V = 11) ; on peut encore l'enchanter
@@ -377,6 +398,8 @@ relics:
       icon: BLAZE_POWDER
       visual: flames
       lore: ["<gray>Tes pas laissent des braises."]
+      speed: 3
+      damage: 2
       trail: FLAME
     amulette_recolte:
       name: "Amulette de la Récolte"
@@ -384,41 +407,50 @@ relics:
       icon: GOLDEN_CARROT
       visual: amulet
       lore: ["<gray>Bénie par les champs."]
-      speed: 2
+      speed: 6
+      health: 1.5
     lanterne_mineure:
       name: "Lanterne Mineure"
       rarity: epic
       icon: LANTERN
       visual: lantern
       lore: ["<gray>Une petite flamme réconfortante."]
-      regen: 0.5
+      regen: 1
+      health: 1
     couronne:
       name: "Couronne du Roi Citrouille"
       rarity: legendary
       icon: GOLDEN_HELMET
       visual: crown
       lore: ["<gray>Arrachée au Roi en personne."]
-      health: 1
+      health: 3
+      armor: 2
+      regen: 0.5
     lanterne_eternelle:
       name: "Lanterne Éternelle"
       rarity: legendary
       icon: SOUL_LANTERN
       visual: wisp
       lore: ["<gray>Sa flamme ne s'éteint jamais."]
-      regen: 1
+      regen: 1.5
+      health: 2
     bottes_recolte:
       name: "Bottes de la Récolte"
       rarity: legendary
       icon: GOLDEN_BOOTS
       visual: boots
       lore: ["<gray>On ne rattrape pas le vent d'automne."]
-      speed: 5
+      speed: 10
+      armor: 2
+      health: 1
     sac_recolte:
       name: "Sac de la Récolte"
       rarity: secret
       icon: BUNDLE
       visual: backpack
       lore: ["<gray>Il a appartenu au Roi... et il est toujours chaud."]
+      health: 2
+      speed: 5
       backpack: true
     # ------- arrivées avec l'arène infernale (damage = % de dégâts en plus, armor = points d'armure)
     braises_ardentes:
@@ -427,21 +459,22 @@ relics:
       icon: MAGMA_CREAM
       visual: embers
       lore: ["<gray>Des braises de l'arène tournent autour de toi."]
-      armor: 1
+      armor: 2
     crane_maudit:
       name: "Crâne Maudit"
       rarity: rare
       icon: WITHER_SKELETON_SKULL
       visual: skull
       lore: ["<gray>Il flotte sur ton épaule et murmure des noms."]
-      damage: 3
+      damage: 5
     cornes_demon:
       name: "Cornes du Démon"
       rarity: epic
       icon: GOAT_HORN
       visual: horns
       lore: ["<gray>Arrachées au crâne de la porte des Enfers."]
-      damage: 6
+      damage: 10
+      armor: 1
     orbe_infernal:
       name: "Orbes Infernaux"
       rarity: epic
@@ -449,40 +482,43 @@ relics:
       visual: orbs
       lore: ["<gray>Trois éclats de magma te protègent."]
       health: 1
-      armor: 2
+      armor: 3
     ailes_demon:
       name: "Ailes du Démon"
       rarity: legendary
       icon: PHANTOM_MEMBRANE
       visual: wings
       lore: ["<gray>Elles ne volent pas... mais quelle allure."]
-      speed: 4
-      health: 1
+      health: 2
+      speed: 8
+      damage: 5
     oeil_jugement:
       name: "Œil du Jugement"
       rarity: legendary
       icon: ENDER_EYE
       visual: halo
       lore: ["<gray>Celui qui a survécu au Jugement Infernal."]
-      damage: 8
+      damage: 14
       regen: 0.5
+      health: 1
     couronne_enfers:
       name: "Couronne des Enfers"
       rarity: secret
       icon: NETHERITE_HELMET
       visual: hellcrown
       lore: ["<gray>Forgée dans la lave de l'arène.", "<gray>Seul un souverain la porte."]
-      health: 2
-      damage: 10
-      armor: 2
+      health: 3
+      damage: 12
+      armor: 3
     cape_nuit:
       name: "Cape de la Nuit Éternelle"
       rarity: secret
       icon: BLACK_BANNER
       visual: cape
       lore: ["<gray>Taillée dans le ciel de la bulle rouge."]
-      speed: 6
-      regen: 1
+      speed: 12
+      regen: 1.5
+      health: 2
     # ------- ❂ PRESTIGE (0,01 %) : versions ultimes de la couronne et des ailes
     couronne_roi_eternel:
       name: "Couronne du Roi Éternel"
@@ -728,6 +764,36 @@ messages:
         - "<gray>l'armure et repousse tout sur sa ligne."
         - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
         - "<white>☄ <damage> ❤</white>   <dark_gray>|</dark_gray>   <white>⏳ <cooldown> s"
+        - "<dark_gray>✧ Ne tombe pas à la mort · incassable"
+    lame-citrouille:
+      name: "Lame Citrouille"
+      lore:
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<#ff8214>✦ <b>ENTAILLE DE FEU</b> <gray>(clic droit)"
+        - "<gray>Un arc de feu devant toi : tout ce"
+        - "<gray>qu'il touche brûle <white>3 s</white>."
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<white>⚔ 8</white> <gray>au corps à corps   <dark_gray>|</dark_gray>   <white>🔥 <damage> ❤</white>   <dark_gray>|</dark_gray>   <white>⏳ <cooldown> s"
+        - "<dark_gray>✧ Ne tombe pas à la mort · incassable"
+    arc-feux-follets:
+      name: "Arc des Feux Follets"
+      lore:
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<#5ad2ff>✦ <b>FEUX FOLLETS</b>"
+        - "<gray>Un tir tendu au max part avec"
+        - "<gray><white>2 flèches fantômes</white> en éventail."
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<white>🏹 70 %</white> <gray>des dégâts par flèche fantôme   <dark_gray>|</dark_gray>   <white>⏳ <cooldown> s"
+        - "<dark_gray>✧ Ne tombe pas à la mort · incassable"
+    hache-maudite:
+      name: "Hache Maudite"
+      lore:
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<#7a5cff>✦ <b>ONDE MAUDITE</b> <gray>(clic droit)"
+        - "<gray>Tu frappes le sol : tout ce qui est"
+        - "<gray>autour de toi est projeté en l'air."
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<white>⚔ 10</white> <gray>au corps à corps   <dark_gray>|</dark_gray>   <white>💥 <damage> ❤</white>   <dark_gray>|</dark_gray>   <white>⏳ <cooldown> s"
         - "<dark_gray>✧ Ne tombe pas à la mort · incassable"
     tranche-mace:
       name: "Tranche Mace"

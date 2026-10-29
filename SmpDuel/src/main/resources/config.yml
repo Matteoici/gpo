@@ -118,3 +118,6 @@ messages:
   bet-cancelled: "<yellow>Pari annulé par <white><player></white> : chacun récupère sa mise."
   bet-aborted: "<red>Le duel n'a pas pu commencer : mises rendues."
   bet-delivered: "<gold>Des objets de duel t'attendaient : ils sont dans ton inventaire."
+
+# pendant un duel, armures et armes ne perdent pas de durabilité
+sans-usure: true

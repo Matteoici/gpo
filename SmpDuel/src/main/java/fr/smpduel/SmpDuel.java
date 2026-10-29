@@ -883,6 +883,14 @@ public final class SmpDuel extends JavaPlugin implements Listener {
         applyDeathRules(e, m);
     }
 
+    /** Pendant un duel, armures et armes ne s'usent pas. */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onWear(org.bukkit.event.player.PlayerItemDamageEvent e) {
+        if (!getConfig().getBoolean("sans-usure", true)) return;
+        Match m = matches.get(e.getPlayer().getUniqueId());
+        if (m != null) e.setCancelled(true);
+    }
+
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onDeath(PlayerDeathEvent e) {
         Player p = e.getEntity();
