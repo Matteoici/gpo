@@ -87,7 +87,7 @@ heartbeat: true              # battements de cœur quand la vie est basse
 
 # à la mort
 mort:
-  supprimer-perles: true       # les perles encore en l'air disparaissent (pas de téléportation après la mort ou la déco)
+  supprimer-perles: true       # à la mort, toutes tes perles lancées avant (en l'air, en stasis...) ne téléportent plus
   garder-objet-souris: true    # inventaire gardé (duel amical, arène...) : l'objet tenu à la souris ne tombe plus
 
 # /mb all : enlève le combat causé en tapant un allié (le combat contre les autres reste)

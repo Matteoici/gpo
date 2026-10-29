@@ -436,7 +436,10 @@ public final class SmpCombat extends JavaPlugin implements Listener, TabExecutor
     @EventHandler(priority = EventPriority.MONITOR)
     public void onDeathCleanup(PlayerDeathEvent e) {
         Player p = e.getEntity();
-        if (getConfig().getBoolean("mort.supprimer-perles", true)) removePearls(p);
+        if (getConfig().getBoolean("mort.supprimer-perles", true)) {
+            p.getPersistentDataContainer().set(deathKey(), org.bukkit.persistence.PersistentDataType.LONG, System.currentTimeMillis());
+            removePearls(p);
+        }
         // inventaire gardé : l'objet tenu à la souris et la grille de craft ne doivent pas tomber par terre
         if (e.getKeepInventory() && getConfig().getBoolean("mort.garder-objet-souris", true)) {
             List<org.bukkit.inventory.ItemStack> back = new ArrayList<>();
@@ -472,9 +475,44 @@ public final class SmpCombat extends JavaPlugin implements Listener, TabExecutor
         }, 2L);
     }
 
-    @EventHandler(priority = EventPriority.MONITOR)
-    public void onQuitPearls(PlayerQuitEvent e) {
-        if (getConfig().getBoolean("mort.supprimer-perles", true)) removePearls(e.getPlayer());
+    private NamespacedKey deathKey() {
+        return new NamespacedKey(this, "last_death");
+    }
+
+    private NamespacedKey pearlKey() {
+        return new NamespacedKey(this, "pearl_time");
+    }
+
+    /** Chaque perle retient quand elle a été lancée. */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onPearlLaunch(org.bukkit.event.entity.ProjectileLaunchEvent e) {
+        if (e.getEntity() instanceof org.bukkit.entity.EnderPearl pearl && pearl.getShooter() instanceof Player)
+            pearl.getPersistentDataContainer().set(pearlKey(), org.bukkit.persistence.PersistentDataType.LONG, System.currentTimeMillis());
+    }
+
+    /** Une perle lancée avant la dernière mort de son lanceur (stasis...) ne téléporte plus : elle disparaît. */
+    private boolean deadPearl(org.bukkit.entity.EnderPearl pearl, Player owner) {
+        if (!getConfig().getBoolean("mort.supprimer-perles", true)) return false;
+        Long died = owner.getPersistentDataContainer().get(deathKey(), org.bukkit.persistence.PersistentDataType.LONG);
+        if (died == null) return false;
+        Long thrown = pearl.getPersistentDataContainer().get(pearlKey(), org.bukkit.persistence.PersistentDataType.LONG);
+        return thrown == null || thrown < died;
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onPearlHit(org.bukkit.event.entity.ProjectileHitEvent e) {
+        if (!(e.getEntity() instanceof org.bukkit.entity.EnderPearl pearl) || !(pearl.getShooter() instanceof Player owner)) return;
+        if (!deadPearl(pearl, owner)) return;
+        e.setCancelled(true);
+        pearl.remove();
+    }
+
+    /** Les perles d'un joueur mort qui étaient dans une zone non chargée disparaissent dès que la zone se charge. */
+    @EventHandler
+    public void onPearlsLoad(org.bukkit.event.world.EntitiesLoadEvent e) {
+        for (org.bukkit.entity.Entity en : e.getEntities()) {
+            if (en instanceof org.bukkit.entity.EnderPearl pearl && pearl.getShooter() instanceof Player owner && deadPearl(pearl, owner)) pearl.remove();
+        }
     }
 
     private void removePearls(Player p) {
