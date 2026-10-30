@@ -70,6 +70,13 @@ final class HollowFx extends PackFx {
         for (Player o : c.getWorld().getPlayers()) if (PackStatus.has(o) && o.getLocation().distanceSquared(c) <= radius * radius) o.showTitle(title);
     }
 
+    /** Image d'impact plein écran (police du pack), très courte. */
+    private void impactFrame(Location c, double radius, char glyph, boolean last) {
+        Component t = Component.text(String.valueOf(glyph)).font(Key.key(NS, "fx")).color(NamedTextColor.WHITE).shadowColor(ShadowColor.shadowColor(0));
+        Title title = Title.title(t, Component.empty(), Title.Times.times(Duration.ZERO, Duration.ofMillis(last ? 50 : 120), Duration.ofMillis(last ? 150 : 0)));
+        for (Player o : c.getWorld().getPlayers()) if (PackStatus.has(o) && o.getLocation().distanceSquared(c) <= radius * radius) o.showTitle(title);
+    }
+
     void cast(Player p) {
         World w = p.getWorld();
         Location base = p.getLocation();
@@ -305,7 +312,40 @@ final class HollowFx extends PackFx {
         ult.shards(gc, 44, 26, 180);
         ult.crater(p, gc, "hollow-purple", new Material[]{Material.CRYING_OBSIDIAN, Material.AMETHYST_BLOCK, Material.OBSIDIAN}, false);
         ult.shake(m, R + 30, 8, 3);
-        ult.quake(m, R + 30, 40, 11f);
+        ult.quake(m, R + 30, 46, 14f);
+        // ---- le choc : énorme dôme violet qui s'étend, souffle qui projette tout le monde, explosions en anneaux
+        ItemDisplay dome = sprite(m, "orb_purple", 3.6f, 3.6f, 3.6f, Display.Billboard.CENTER, null);
+        later(1, () -> tween(dome, new Vector3f(), null, new Vector3f(70, 70, 70), 7));
+        later(9, () -> tween(dome, new Vector3f(), null, new Vector3f(90, 90, 90), 10));
+        later(19, () -> tween(dome, new Vector3f(), null, new Vector3f(0.5f, 0.5f, 0.5f), 6));
+        kill(dome, 26);
+        double blast = ult.cfg("hollow-purple.blast-radius", 70), power = ult.cfg("hollow-purple.blast-power", 3.2);
+        later(2, () -> {
+            for (LivingEntity le : ult.targets(p, m, blast)) {
+                if (le instanceof Player pl && (pl.getGameMode() == org.bukkit.GameMode.CREATIVE || pl.getGameMode() == org.bukkit.GameMode.SPECTATOR)) continue;
+                PumpkinKing king = plugin.king();
+                if (king != null && king.isBoss(le)) continue;
+                Vector push = le.getLocation().toVector().subtract(m.toVector());
+                double d = push.length();
+                if (d < 0.1) push = new Vector(0, 1, 0);
+                double f = power * Math.max(0.15, 1 - d / blast);
+                le.setVelocity(push.normalize().multiply(f).setY(Math.min(1.6, 0.6 + f * 0.35)));
+            }
+        });
+        for (int ring = 1; ring <= 4; ring++) {
+            int rr = ring;
+            later(ring * 2, () -> {
+                double rad = rr * 9;
+                for (int i = 0; i < 6 + rr * 3; i++) {
+                    double a = Math.PI * 2 * i / (6 + rr * 3);
+                    Location at = gc.clone().add(Math.cos(a) * rad, 1, Math.sin(a) * rad);
+                    w.spawnParticle(Particle.EXPLOSION_EMITTER, at, 1, 0, 0, 0, 0, null, true);
+                }
+                w.playSound(m, Sound.ENTITY_GENERIC_EXPLODE, 5f, (float) (0.4 + rr * 0.08));
+            });
+        }
+        w.playSound(m, Sound.ENTITY_DRAGON_FIREBALL_EXPLODE, 6f, 0.5f);
+        sound(m, NS + ":boss.boom", 300);
         Set<UUID> done = new HashSet<>();
         int[] t = {0};
         BukkitTask[] task = new BukkitTask[1];
@@ -322,6 +362,8 @@ final class HollowFx extends PackFx {
             }
             // écran blanc avec éclats violets pour ceux qui sont près (environ 7 s)
             int len = WHITE_END - BOOM;
+            // images d'impact plein écran (noir / blanc / violet, comme dans les animes), juste au moment du choc
+            if (k <= 8 && k % 2 == 0) impactFrame(m, ult.cfg("hollow-purple.whiteout-radius", 120), new char[]{'\ue020', '\ue021', '\ue023', '\ue022', '\ue021'}[k / 2], k == 8);
             // écran blanc (avec éclats violets) pour ceux qui sont dans la zone, après 1 s d'explosion visible
             if (k >= WHITE_START && k < len && k % 2 == 0) whiteout(m, ult.cfg("hollow-purple.whiteout-radius", 120), (k - WHITE_START) / 2, k + 2 >= len);
             // ceux qui sont plus loin voient l'explosion continuer (ondes, lueur, éclats)

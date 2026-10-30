@@ -114,7 +114,9 @@ final class MarketListener implements Listener {
     public void onPlaceContainer(BlockPlaceEvent e) {
         Stall st = plugin.shops().stallAt(e.getBlock());
         if (st == null || !st.isRented() || !st.canBuild(e.getPlayer().getUniqueId())) return;
-        if (!(e.getBlock().getState(false) instanceof org.bukkit.inventory.BlockInventoryHolder)) return;
+        // seulement les vrais coffres / tonneaux / shulkers / fours... : les bibliothèques sculptées, étagères, pots,
+        // pupitres font partie de la déco du stand et restent en place (avec leur contenu)
+        if (!(e.getBlock().getState(false) instanceof org.bukkit.block.Container)) return;
         if (st.containers.add(Auctions.key(e.getBlock()))) plugin.store().markDirty();
     }
 

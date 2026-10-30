@@ -72,3 +72,24 @@ v = np.clip(1 - np.abs(r - 0.8) / 0.12, 0, 1)
 col = np.zeros((n, n, 3)); col[:] = (200, 60, 255); col[v > 0.4] = (255, 140, 250); col[v > 0.75] = (255, 245, 255)
 save('ring_pink', rgba(col, (v > 0.05).astype(float)))
 print('ok')
+
+# ---- images d'impact (plein écran, police) : noir/blanc/violet avec lignes de vitesse, style anime
+FF = os.path.join(OUT, 'assets/limitless/textures/font')
+S = 256
+def impact(bg, line, center, n_lines, seed, hole):
+    rng = np.random.default_rng(seed)
+    img = Image.new('RGBA', (S * 2, S), bg); dr = ImageDraw.Draw(img)
+    c = S / 2; cx0 = S
+    for i in range(n_lines):
+        a = rng.uniform(0, 2 * math.pi); w = rng.uniform(0.012, 0.05)
+        r0 = rng.uniform(hole * 0.9, hole * 1.6); r1 = S * 1.6
+        pts = [(cx0 + math.cos(a) * r0, c + math.sin(a) * r0), (cx0 + math.cos(a + w) * r1, c + math.sin(a + w) * r1),
+               (cx0 + math.cos(a - w) * r1, c + math.sin(a - w) * r1)]
+        dr.polygon(pts, fill=line)
+    if center: dr.ellipse([cx0 - hole, c - hole, cx0 + hole, c + hole], fill=center)
+    img.save(os.path.join(FF, 'impact_%d.png' % seed))
+impact((0, 0, 0, 255), (255, 255, 255, 255), (255, 255, 255, 255), 110, 0, 26)
+impact((255, 255, 255, 255), (0, 0, 0, 255), (20, 0, 40, 255), 110, 1, 34)
+impact((150, 30, 230, 255), (255, 210, 255, 255), (255, 255, 255, 255), 100, 2, 40)
+impact((25, 0, 45, 255), (200, 80, 255, 255), (255, 255, 255, 255), 120, 3, 18)
+print('impact ok')

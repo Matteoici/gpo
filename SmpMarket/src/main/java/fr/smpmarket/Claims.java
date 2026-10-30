@@ -374,6 +374,20 @@ public final class Claims {
                     } catch (RuntimeException ignored) {
                     }
                     out.add("L|" + l[0] + "," + l[1] + "," + l[2] + "|" + data.getAsString());
+                    // contenu des blocs de déco (bibliothèque sculptée, étagère, pot, pupitre, jukebox...) : gardé aussi
+                    if (b.getState(false) instanceof org.bukkit.inventory.BlockInventoryHolder h) {
+                        org.bukkit.inventory.ItemStack[] content = h.getInventory().getContents();
+                        StringBuilder sb = new StringBuilder();
+                        boolean any = false;
+                        for (int i = 0; i < content.length; i++) {
+                            if (i > 0) sb.append(';');
+                            String enc = Items.encode(content[i]);
+                            if (!enc.isEmpty()) any = true;
+                            sb.append(enc.isEmpty() ? "-" : enc);
+                        }
+                        if (any) out.add("I|" + l[0] + "," + l[1] + "," + l[2] + "|" + sb);
+                        h.getInventory().clear();
+                    }
                     b.setType(org.bukkit.Material.AIR, false);
                 }
             }
@@ -390,7 +404,12 @@ public final class Claims {
         Frame fr = frame(st);
         List<int[]> pos = new java.util.ArrayList<>();
         List<String> data = new java.util.ArrayList<>();
+        List<String> contents = new java.util.ArrayList<>();
         for (String s : build) {
+            if (s.startsWith("I|")) {
+                contents.add(s);
+                continue;
+            }
             try {
                 boolean local = s.startsWith("L|");
                 String body = local ? s.substring(2) : s;
@@ -425,6 +444,22 @@ public final class Claims {
             if (!bl.getType().isAir()) continue;
             try {
                 bl.setBlockData(org.bukkit.Bukkit.createBlockData(data.get(k)), false);
+            } catch (RuntimeException ignored) {
+            }
+        }
+        // puis on remet le contenu des blocs de déco
+        for (String s : contents) {
+            try {
+                String body = s.substring(2);
+                int bar = body.indexOf('|');
+                String[] p = body.substring(0, bar).split(",");
+                int[] wp = toWorld(fr, Integer.parseInt(p[0]), Integer.parseInt(p[1]), Integer.parseInt(p[2]));
+                org.bukkit.block.Block bl = w.getBlockAt(wp[0], wp[1], wp[2]);
+                if (!(bl.getState(false) instanceof org.bukkit.inventory.BlockInventoryHolder h)) continue;
+                String[] parts = body.substring(bar + 1).split(";", -1);
+                org.bukkit.inventory.ItemStack[] items = new org.bukkit.inventory.ItemStack[h.getInventory().getSize()];
+                for (int i = 0; i < parts.length && i < items.length; i++) items[i] = "-".equals(parts[i]) ? null : Items.decode(parts[i]);
+                h.getInventory().setContents(items);
             } catch (RuntimeException ignored) {
             }
         }

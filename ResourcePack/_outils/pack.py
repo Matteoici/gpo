@@ -83,6 +83,7 @@ os.makedirs(os.path.join(S,'font'),exist_ok=True)
 prov=[{"type":"bitmap","file":f"{NS}:font/white.png","ascent":140,"height":256,"chars":["\ue001"]},
       {"type":"bitmap","file":f"{NS}:font/orange.png","ascent":140,"height":256,"chars":["\ue002"]}]
 prov+=[{"type":"bitmap","file":f"{NS}:font/whiteout_%d.png"%i,"ascent":140,"height":256,"chars":[chr(0xe010+i)]} for i in range(8)]
+prov+=[{"type":"bitmap","file":f"{NS}:font/impact_%d.png"%i,"ascent":140,"height":256,"chars":[chr(0xe020+i)]} for i in range(4)]
 json.dump({"providers":prov}, open(os.path.join(S,'font','fx.json'),'w'))
 json.dump({"pack":{"description":"Limitless : effets et sons du serveur","pack_format":88,"min_format":88,"max_format":99}},open(os.path.join(OUT,'pack.mcmeta'),'w'),indent=1)
 print(len(models),'modeles')

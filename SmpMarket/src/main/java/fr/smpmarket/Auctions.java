@@ -283,6 +283,7 @@ public final class Auctions {
             if (showcase) continue;
             org.bukkit.block.BlockState state = b.getState(false);
             if (!(state instanceof org.bukkit.inventory.BlockInventoryHolder holder)) continue;
+            if (!(state instanceof org.bukkit.block.Container)) continue; // déco (bibliothèque sculptée, étagère...) : on n'y touche pas
             Material type = b.getType();
             if (state instanceof org.bukkit.block.ShulkerBox box) {
                 // la shulker entière, avec ce qu'il y a dedans et son nom
