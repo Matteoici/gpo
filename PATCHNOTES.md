@@ -1,12 +1,8 @@
 # Patch notes Limitless (textes Discord)
 
-## 31/10/2026 — Interface Givre
+## 31/10/2026 — Musique du spawn
 
-❄️ **INTERFACE GIVRE** ❄️
-
-🧊 **Nouvelle interface pour tout le serveur**
-> Tout passe en **verre dépoli** : inventaire, coffres, fours, enclume, table d'enchantement, alambic, villageois, balise…
-> Nouvelle **barre d'objets**, nouveaux **cœurs**, **faim**, **armure**, **XP**, **boutons**, **infobulles** et **barres de boss**.
+🎵 **MUSIQUE DU SPAWN** 🎵
 
 🎵 **Musique du spawn**
 > Une musique **médiévale** tourne au spawn : vielle à roue, luth, flûte et tambour. Elle s'arrête dès que tu t'éloignes (volume : *Jukebox / blocs musicaux*).
