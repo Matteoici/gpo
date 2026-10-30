@@ -782,17 +782,31 @@ public final class Arena {
             w.spawnParticle(i % 2 == 0 ? Particle.DUST : Particle.REVERSE_PORTAL, l, 1, 0, 0, 0, i % 2 == 0 ? 0 : 0.02, i % 2 == 0 ? dust : null);
         }
         if (cur != null && cur.isValid()) return cur;
+        // zone plate (un bassin au sol) : le tourbillon est posé à plat ; sinon il est debout dans le cadre
+        boolean flat = dy <= 2 && dx >= 2 && dz >= 2;
         boolean alongX = dx >= dz;
-        float sw = (float) (alongX ? dx : dz), sh = (float) dy;
-        org.joml.Quaternionf rot = alongX ? new org.joml.Quaternionf() : new org.joml.Quaternionf().rotateY((float) (Math.PI / 2));
-        return w.spawn(c, org.bukkit.entity.ItemDisplay.class, e -> {
+        float sw, sh;
+        org.joml.Quaternionf rot;
+        Location at = c;
+        if (flat) {
+            sw = dx;
+            sh = dz;
+            rot = new org.joml.Quaternionf().rotateX((float) (-Math.PI / 2));
+            at = new Location(w, x, b[1] + 0.15, z);
+        } else {
+            sw = alongX ? dx : dz;
+            sh = dy;
+            rot = alongX ? new org.joml.Quaternionf() : new org.joml.Quaternionf().rotateY((float) (Math.PI / 2));
+        }
+        float fw = sw, fh = sh;
+        return w.spawn(at, org.bukkit.entity.ItemDisplay.class, e -> {
             e.setPersistent(false);
             e.setItemStack(PackFx.tmodel("w_portal", swirlColor()));
             e.setItemDisplayTransform(org.bukkit.entity.ItemDisplay.ItemDisplayTransform.NONE);
             e.setBrightness(new org.bukkit.entity.Display.Brightness(15, 15));
             e.setViewRange(2f);
             e.setShadowRadius(0);
-            e.setTransformation(new org.bukkit.util.Transformation(new org.joml.Vector3f(), rot, new org.joml.Vector3f(sw, sh, 1), new org.joml.Quaternionf()));
+            e.setTransformation(new org.bukkit.util.Transformation(new org.joml.Vector3f(), rot, new org.joml.Vector3f(fw, fh, 1), new org.joml.Quaternionf()));
         });
     }
 
