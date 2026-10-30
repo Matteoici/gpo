@@ -22,5 +22,21 @@
     "stream": true
    }
   ]
+ },
+ "hollow.charge": {
+  "sounds": [
+   {
+    "name": "limitless:hollow/charge",
+    "stream": true
+   }
+  ]
+ },
+ "hollow.burst": {
+  "sounds": [
+   {
+    "name": "limitless:hollow/burst",
+    "stream": true
+   }
+  ]
  }
 }

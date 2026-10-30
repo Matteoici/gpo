@@ -79,10 +79,12 @@ final class Ultimates {
     final Set<UUID> night = new HashSet<>();
 
     final FugaFx fugaFx;
+    final HollowFx hollowFx;
 
     Ultimates(SmpBoss plugin) {
         this.plugin = plugin;
         this.fugaFx = new FugaFx(plugin, this);
+        this.hollowFx = new HollowFx(plugin, this);
         this.jumpKey = new NamespacedKey(plugin, "ult_freeze_jump");
         this.gravKey = new NamespacedKey(plugin, "ult_freeze_gravity");
     }
@@ -150,7 +152,8 @@ final class Ultimates {
             return;
         }
         p.getPersistentDataContainer().set(cd, PersistentDataType.LONG, now + (long) (cfg(path + ".cooldown-minutes", 15) * 60_000));
-        if (Weapons.HOLLOW.equals(id)) hollow(p);
+        if (Weapons.HOLLOW.equals(id) && plugin.getConfig().getBoolean("weapons.hollow-purple.resource-pack", true)) hollowFx.cast(p);
+        else if (Weapons.HOLLOW.equals(id)) hollow(p);
         else if (plugin.getConfig().getBoolean("weapons.fuga.resource-pack", true)) fugaFx.cast(p);
         else fuga(p);
     }
@@ -291,6 +294,7 @@ final class Ultimates {
     /** Arrêt du serveur : on libère tout le monde. */
     void shutdown() {
         fugaFx.removeAll();
+        hollowFx.removeAll();
         for (Frozen f : frozen.values()) release(f);
         frozen.clear();
         for (UUID id : night) {
