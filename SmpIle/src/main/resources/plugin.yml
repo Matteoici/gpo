@@ -6,7 +6,7 @@ description: "Monte le spawn dans le ciel : île flottante avec dessous en roche
 commands:
   ile:
     description: Monter le spawn sur une île flottante
-    usage: /ile <pos1|pos2|info|monter|annuler|tp|stop>
+    usage: /ile <pos1|pos2|info|monter|annuler|tp|stop|musique>
     aliases: [island, ilespawn]
     permission: smpile.admin
 permissions:

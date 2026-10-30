@@ -243,5 +243,13 @@
     "stream": true
    }
   ]
+ },
+ "spawn.music_village": {
+  "sounds": [
+   {
+    "name": "limitless:spawn/music_village",
+    "stream": true
+   }
+  ]
  }
 }

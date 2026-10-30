@@ -23,3 +23,13 @@ decor:
   islets: 7
   # copier aussi les cadres, tableaux et porte-armures
 copy-entities: true
+
+# ================================================================ 🎵 MUSIQUE DU SPAWN (resource pack)
+# Musique médiévale en boucle pour ceux qui sont au spawn (catégorie « Jukebox / blocs musicaux »).
+# Centre : /ile musique centre (sinon le centre de l'île, sinon le spawn du monde).
+music:
+  enabled: true
+  radius: 90        # rayon autour du centre (blocs)
+  height: 80        # écart de hauteur max avec le centre
+  volume: 0.6
+  seconds: 74.88    # durée de la boucle (ne pas changer sans changer le son)

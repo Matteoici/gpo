@@ -59,12 +59,14 @@ public final class SmpIle extends JavaPlugin {
     private final List<String> undo = new ArrayList<>();
     private Location lastCenter;
     private int[] lastShift = {0, 0, 0};
+    private SpawnMusic music;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
         undoFile = new File(getDataFolder(), "annuler.txt.gz");
         loadUndo();
+        music = new SpawnMusic(this, () -> lastCenter);
     }
 
     @Override
@@ -164,6 +166,53 @@ public final class SmpIle extends JavaPlugin {
                     msg(s, "<yellow>Construction arrêtée. <gray>/ile annuler pour enlever ce qui a été posé.");
                 }
             }
+            case "musique", "music" -> {
+                String what = a.length >= 2 ? a[1].toLowerCase(Locale.ROOT) : "";
+                switch (what) {
+                    case "centre", "center" -> {
+                        if (p == null) return true;
+                        Location l = p.getLocation();
+                        getConfig().set("music.center.world", l.getWorld().getName());
+                        getConfig().set("music.center.x", l.getX());
+                        getConfig().set("music.center.y", l.getY());
+                        getConfig().set("music.center.z", l.getZ());
+                        saveConfig();
+                        msg(s, "<green>Centre de la musique du spawn placé ici.");
+                    }
+                    case "rayon", "radius" -> {
+                        if (a.length < 3) {
+                            msg(s, "<red>/ile musique rayon <blocs>");
+                            return true;
+                        }
+                        getConfig().set("music.radius", Double.parseDouble(a[2].replace(',', '.')));
+                        saveConfig();
+                        msg(s, "<green>Rayon de la musique : <white>" + a[2] + "</white> blocs.");
+                    }
+                    case "volume" -> {
+                        if (a.length < 3) {
+                            msg(s, "<red>/ile musique volume <0.1 à 1>");
+                            return true;
+                        }
+                        getConfig().set("music.volume", Double.parseDouble(a[2].replace(',', '.')));
+                        saveConfig();
+                        for (Player o : Bukkit.getOnlinePlayers()) music.restart(o);
+                        msg(s, "<green>Volume de la musique : <white>" + a[2]);
+                    }
+                    case "on", "off" -> {
+                        getConfig().set("music.enabled", what.equals("on"));
+                        saveConfig();
+                        if (what.equals("off")) for (Player o : Bukkit.getOnlinePlayers()) music.restart(o);
+                        msg(s, what.equals("on") ? "<green>Musique du spawn activée." : "<red>Musique du spawn coupée.");
+                    }
+                    default -> {
+                        Location c = music.center();
+                        msg(s, "<gray>Musique du spawn : " + (getConfig().getBoolean("music.enabled", true) ? "<green>activée" : "<red>coupée")
+                                + "<gray> · rayon <white>" + getConfig().getDouble("music.radius", 90) + "</white> · centre <white>"
+                                + (c == null ? "?" : c.getWorld().getName() + " " + c.getBlockX() + " " + c.getBlockY() + " " + c.getBlockZ()));
+                        msg(s, "<white>/ile musique centre</white> <gray>·</gray> <white>rayon <blocs></white> <gray>·</gray> <white>volume <0.1-1></white> <gray>·</gray> <white>on/off");
+                    }
+                }
+            }
             case "tp" -> {
                 if (p == null) return true;
                 if (lastCenter == null) msg(s, "<red>Pas encore d'île.");
@@ -174,6 +223,7 @@ public final class SmpIle extends JavaPlugin {
                 msg(s, "<white>/ile monter <hauteur></white> <gray>: copie le spawn X blocs plus haut, avec le dessous et le décor");
                 msg(s, "<white>/ile placer</white> <gray>: copie le spawn là où tu es (vole à l'endroit voulu : tes pieds = le sol de l'île)");
                 msg(s, "<white>/ile tp</white> <gray>·</gray> <white>/ile annuler</white> <gray>·</gray> <white>/ile stop");
+                msg(s, "<white>/ile musique</white> <gray>: musique médiévale du spawn (centre, rayon, volume, on/off)");
             }
         }
         return true;
@@ -181,7 +231,8 @@ public final class SmpIle extends JavaPlugin {
 
     @Override
     public List<String> onTabComplete(CommandSender s, Command cmd, String alias, String[] a) {
-        if (a.length == 1) return List.of("pos1", "pos2", "info", "monter", "placer", "tp", "annuler", "stop");
+        if (a.length == 1) return List.of("pos1", "pos2", "info", "monter", "placer", "tp", "annuler", "stop", "musique");
+        if (a.length == 2 && a[0].equalsIgnoreCase("musique")) return List.of("centre", "rayon", "volume", "on", "off");
         if (a.length == 2 && a[0].equalsIgnoreCase("placer")) return List.of("confirmer");
         if (a.length == 2 && a[0].equalsIgnoreCase("monter")) return List.of("80", "100", "120", "150");
         if (a.length == 3 && a[0].equalsIgnoreCase("monter")) return List.of("confirmer");

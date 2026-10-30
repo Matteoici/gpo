@@ -247,7 +247,7 @@ final class HollowFx extends PackFx {
         Location below = groundBelow(m, 40);
         Location gc = below == null ? m.clone() : below;
         // ---- le BOOM (visible pendant 1 s avant l'écran blanc, comme sur la vidéo)
-        pop(m, "glow_white", 34, 34, 34, 1, 2, 6, Display.Billboard.CENTER, null);
+        pop(m, "glow_purple", 34, 34, 34, 1, 2, 6, Display.Billboard.CENTER, null);
         ItemDisplay core = sprite(m, "orb_purple", 3.6f, 3.6f, 3.6f, Display.Billboard.CENTER, null);
         later(1, () -> tween(core, new Vector3f(), null, new Vector3f(11, 11, 11), 3));
         later(6, () -> tween(core, new Vector3f(), null, new Vector3f(7, 7, 7), 6));
@@ -363,9 +363,9 @@ final class HollowFx extends PackFx {
             // écran blanc avec éclats violets pour ceux qui sont près (environ 7 s)
             int len = WHITE_END - BOOM;
             // images d'impact plein écran (noir / blanc / violet, comme dans les animes), juste au moment du choc
-            if (k <= 8 && k % 2 == 0) impactFrame(m, ult.cfg("hollow-purple.whiteout-radius", 120), new char[]{'\ue020', '\ue021', '\ue023', '\ue022', '\ue021'}[k / 2], k == 8);
+            if (k <= 8 && k % 2 == 0) impactFrame(m, ult.cfg("hollow-purple.whiteout-radius", 120), new char[]{'\ue021', '\ue023', '\ue022', '\ue023', '\ue021'}[k / 2], k == 8);
             // écran blanc (avec éclats violets) pour ceux qui sont dans la zone, après 1 s d'explosion visible
-            if (k >= WHITE_START && k < len && k % 2 == 0) whiteout(m, ult.cfg("hollow-purple.whiteout-radius", 120), (k - WHITE_START) / 2, k + 2 >= len);
+            if (plugin.getConfig().getBoolean("weapons.hollow-purple.whiteout", false) && k >= WHITE_START && k < len && k % 2 == 0) whiteout(m, ult.cfg("hollow-purple.whiteout-radius", 120), (k - WHITE_START) / 2, k + 2 >= len);
             // ceux qui sont plus loin voient l'explosion continuer (ondes, lueur, éclats)
             if (k >= WHITE_START && k < 80 && k % 10 == 0) {
                 float g = 40 + (k - WHITE_START) * 0.8f;

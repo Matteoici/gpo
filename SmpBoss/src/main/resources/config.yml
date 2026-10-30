@@ -345,6 +345,8 @@ weapons:
   hollow-purple:
     chance: 0.01
     radius: 200
+    # écran blanc après l'explosion (false = on voit l'explosion violette en entier)
+    whiteout: false
     # cratère au centre de l'impact (les zones protégées, terrains de guilde, arènes sont respectés)
     crater: true
     crater-radius: 20

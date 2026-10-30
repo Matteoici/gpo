@@ -1,6 +1,37 @@
 # Patch notes (la plus récente EN PREMIER). Chaque page = une page du livre (MiniMessage, ~13 lignes max).
 # Couleurs lisibles sur le papier : black, dark_gray, dark_red, dark_blue, dark_green, dark_aqua, dark_purple, gold.
 notes:
+  - id: "2026-10-31-givre"
+    title: "Interface Givre"
+    date: "31/10/2026"
+    pages:
+      - |
+        <dark_aqua><b>   LIMITLESS</b>
+        <dark_gray>     Patch note
+        <black>━━━━━━━━━━
+        <dark_aqua><b>Interface</b>
+        <dark_aqua><b>Givre</b>
+        <dark_gray>31 octobre 2026
+        <black>Au programme :
+        <dark_aqua>❄ Nouvelle interface
+        <dark_green>♫ Musique du spawn
+        <dark_purple>✦ Hollow Purple
+      - |
+        <dark_aqua><b>❄ Interface Givre</b>
+        <black>Tout le jeu passe en <dark_aqua>verre dépoli</dark_aqua> : inventaire, coffres, fours, enclume, enchantement, villageois...
+
+        Nouvelle barre d'objets, cœurs, faim, armure, XP, boutons, infobulles et barres de boss.
+      - |
+        <dark_green><b>♫ Musique du spawn</b>
+        <black>Une petite musique médiévale au spawn : vielle, luth, flûte et tambour.
+
+        Elle s'arrête dès que tu pars.
+        <dark_gray>(volume : Jukebox / blocs musicaux)
+      - |
+        <dark_purple><b>✦ Hollow Purple</b>
+        <black>Fini l'écran blanc : tu vois toute l'explosion violette.
+
+        <dark_aqua>Bon jeu !<black> ❄
   - id: "2026-10-31-capricorne"
     title: "Projet Capricorne"
     date: "31/10/2026"
