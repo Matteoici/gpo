@@ -1,4 +1,4 @@
-config-version: 38
+config-version: 39
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -744,9 +744,9 @@ relics:
       icon: ECHO_SHARD
       visual: capricorne
       lore: ["<gray>Un fragment de l'IA renégate qui vit derrière", "<gray>le Black Wall. Il ne t'obéit pas : il te tolère.",
-             "<#ff1c30>⛧ <white>Accroupi + clic gauche dans le vide", "<gray>Brèche du Black Wall : des murs jaillissent",
-             "<gray>et enferment tout le monde. Tentacules de données,", "<gray>spectres d'IA, puis tout s'effondre. <dark_gray>(2 min 30)",
-             "<#00e5ff>◈ <white>Fantôme du Net <gray>: parfois, un coup ne te", "<gray>touche pas, tu glitches plus loin."]
+             "<#ff1c30>⛧ <white>Accroupi + clic gauche dans le vide", "<gray>Brèche du Black Wall : une cage d'éclairs rouges",
+             "<gray>enferme tout le monde, les éclairs frappent,", "<gray>puis tout s'effondre au centre. <dark_gray>(2 min 30)",
+             "<#ff1c30>⚡ <white>Fantôme du Net <gray>: parfois, un coup ne te", "<gray>touche pas, tu disparais dans un éclair."]
       damage: 20
       health: 6
       armor: 4
@@ -922,13 +922,13 @@ capricorne:
   cooldown-seconds: 150
   in-duels: false          # true = utilisable en duel (contre l'adversaire)
   radius: 7.5              # rayon de la cage
-  walls: 10                # nombre de murs
+  walls: 10                # nombre de colonnes d'éclairs
   wall-height: 11
   cage-ticks: 100          # durée de la cage avant l'effondrement (20 = 1 s)
-  tendril-every: 8         # un tentacule de données toutes les X ticks
+  tendril-every: 8         # un arc part d'une colonne toutes les X ticks
   tendril-percent: 6       # % de la vie max d'un joueur par tentacule
   tendril-damage: 14       # contre un monstre
-  ghost-every: 22          # un spectre d'IA toutes les X ticks
+  ghost-every: 22          # un éclair tombe du ciel toutes les X ticks
   ghost-percent: 8
   ghost-damage: 18
   collapse-percent: 35     # effondrement final : % de la vie max d'un joueur
@@ -1433,7 +1433,7 @@ messages:
       thousandeyes: "<white>✧ Visuel : <#5ac8ff>deux rangées d'yeux qui clignent sur ton front"
       spindle: "<white>✧ Visuel : <#e1ebff>une toile ronde qui tourne dans ton dos"
       webwings: "<white>✧ Visuel : <#e1ebff>deux grandes ailes de toile qui battent"
-      capricorne: "<white>✧ Visuel : <#ff1c30>cornes de capricorne rouges + hélice de données, glitch"
+      capricorne: "<white>✧ Visuel : <#ff1c30>des petits éclairs rouges crépitent autour de toi"
       redeye: "<white>✧ Visuel : <#ff2840>un œil rouge géant au-dessus de toi + pattes d'araignée"
       eternalcrown: "<white>✧ Visuel : <gradient:#ff1a1a:#ffd700:#ff1a1a>grande couronne d'or + cercle de runes au sol"
       eclipse: "<white>✧ Visuel : <gradient:#ff1a1a:#ffd700:#ff1a1a>grandes ailes de feu + éclipse au-dessus de la tête"
@@ -1529,9 +1529,9 @@ messages:
   capricorne:
     cast: "<#ff1c30><b>⛧ BRÈCHE DU BLACK WALL</b> <gray>· le Capricorne s'éveille"
     warn: "<#ff1c30><b>⛧ BLACK WALL</b> <gray>· sors du cercle !"
-    trapped: "<#ff1c30>⛧ <gray>le Black Wall te repousse..."
+    trapped: "<#ff1c30>⚡ <gray>les éclairs du Black Wall te repoussent..."
     collapse: "<#ff1c30><b>⛧ EFFONDREMENT"
-    ghost: "<#00e5ff>◈ <b>Fantôme du Net</b> <gray>· le coup t'a traversé"
+    ghost: "<#ff1c30>⚡ <b>Fantôme du Net</b> <gray>· le coup t'a traversé"
   black-flash:
     stunned: "<#ff1e2d><b>⚡ BLACK FLASH</b> <gray>· tu es figé !"
     combo: "<#ff1e2d><b>⚡ BLACK FLASH CONSÉCUTIFS"

@@ -592,42 +592,25 @@ final class Cosmetics {
                 if (t % 6 == 0) d.dust(true, 0, cy - 0.25 - (t % 18) * 0.03, 0.12, red, 0.4f);
                 draw("spiderlegs", d, w, moving);
             }
-            // ---------------------------------------------------------- ⛧ (prestige) Projet Capricorne : cornes du Black Wall, hélice de données, glitch
+            // ---------------------------------------------------------- ⛧ (prestige) Projet Capricorne : des petits éclairs rouges crépitent autour de toi
             case "capricorne" -> {
-                Color red = Color.fromRGB(255, 28, 48), deep = Color.fromRGB(110, 0, 14), cyan = Color.fromRGB(0, 229, 255);
-                if (t % 2 == 0) {
-                    // deux cornes de capricorne qui s'enroulent vers l'arrière
-                    for (int s = -1; s <= 1; s += 2) {
-                        for (int i = 0; i <= 12; i++) {
-                            double u = i / 12.0, a = u * 2.6;
-                            double x = s * (0.16 + 0.22 * u + 0.12 * Math.sin(a));
-                            double y = 2.0 + 0.55 * Math.sin(a * 0.8) - 0.1 * u;
-                            double z = -0.05 - 0.45 * (1 - Math.cos(a * 0.7));
-                            d.dust(true, x, y, z, u > 0.8 ? Color.fromRGB(255, 170, 180) : (i % 3 == 0 ? deep : red), (float) (0.75 - 0.35 * u));
-                        }
-                    }
-                } else {
-                    // hélice de données noire et rouge qui tourne autour du corps
-                    double spin = t * 0.12;
-                    for (int k = 0; k < 2; k++) {
-                        for (int i = 0; i < 6; i++) {
-                            double y = 0.15 + i * 0.32 + ((t * 0.04) % 0.32);
-                            double a = spin + y * 2.2 + k * Math.PI;
-                            d.dust(false, Math.cos(a) * 0.75, y, Math.sin(a) * 0.75, i % 2 == 0 ? red : BFBLACK, 0.55f);
-                        }
+                Color red = Color.fromRGB(255, 28, 48), core = Color.fromRGB(255, 200, 210);
+                // un arc en zigzag apparaît de temps en temps, quelque part sur le corps
+                if (t % 3 == 0 && r.nextInt(3) != 0) {
+                    double a = r.nextDouble(Math.PI * 2), y = r.nextDouble(0.2, 1.9);
+                    double x = Math.cos(a) * 0.55, z = Math.sin(a) * 0.55;
+                    double dx = r.nextDouble(-0.18, 0.18), dy = r.nextDouble(-0.22, 0.22), dz = r.nextDouble(-0.18, 0.18);
+                    int n = r.nextInt(4, 8);
+                    for (int i = 0; i < n; i++) {
+                        x += dx + r.nextDouble(-0.1, 0.1);
+                        y += dy + r.nextDouble(-0.1, 0.1);
+                        z += dz + r.nextDouble(-0.1, 0.1);
+                        d.dust(false, x, y, z, i == 0 || r.nextInt(4) == 0 ? core : red, 0.45f);
+                        if (r.nextInt(5) == 0) d.dust(false, x + r.nextDouble(-0.15, 0.15), y + r.nextDouble(-0.15, 0.15), z, red, 0.3f);
                     }
                 }
-                // glitch : un double décalé rouge/cyan apparaît par moments
-                if (t % 23 == 0) {
-                    double off = r.nextDouble(0.15, 0.3);
-                    for (int i = 0; i < 8; i++) {
-                        double y = 0.2 + i * 0.22;
-                        d.dust(false, -off, y, -0.1, red, 0.6f);
-                        d.dust(false, off, y, -0.1, cyan, 0.6f);
-                    }
-                }
-                if (t % 9 == 0) d.dust(false, r.nextDouble(-1.0, 1.0), r.nextDouble(0.2, 2.2), r.nextDouble(-0.8, 0.4), deep, 0.9f);
-                if (moving && t % 2 == 0) d.dust(false, r.nextDouble(-0.3, 0.3), 0.15, -0.4, r.nextBoolean() ? red : BFBLACK, 0.8f);
+                if (t % 11 == 0) d.part(Particle.ELECTRIC_SPARK, false, r.nextDouble(-0.5, 0.5), r.nextDouble(0.3, 1.8), r.nextDouble(-0.5, 0.5), 2, 0.1, 0.02);
+                if (moving && t % 3 == 0) d.dust(false, r.nextDouble(-0.3, 0.3), 0.1, -0.35, red, 0.55f);
             }
             case "eclipse" -> {
                 if (t % 2 == 0) {

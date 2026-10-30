@@ -8,12 +8,12 @@
 > Un fragment de l'IA renégate qui vit derrière le **Black Wall**. Elle tombe chez le **Roi Citrouille** ET chez la **Reine Araignée** (titre : *Au-delà du Black Wall*). La relique la plus forte du serveur.
 
 🧱 **Brèche du Black Wall** (accroupi + clic gauche dans le vide, 2 min 30)
-> Un cercle de corruption s'ouvre là où tu vises, **10 murs du Black Wall** jaillissent du sol et enferment tout le monde dedans.
-> Pendant 5 s, des **tentacules de données** et des **spectres d'IA** frappent ceux qui sont piégés…
-> …puis les murs **s'effondrent** sur le centre : implosion rouge et noire, **35 % de la vie** d'un coup.
+> Des éclairs rouges rampent au sol là où tu vises, puis **10 colonnes d'éclairs** s'allument en cercle, reliées par des arcs : une **cage d'éclairs** dont personne ne sort.
+> Pendant 5 s, des **arcs** et des **éclairs qui tombent du ciel** frappent ceux qui sont piégés…
+> …puis tout **s'effondre** sur le centre : énorme explosion d'éclairs rouges, **35 % de la vie** d'un coup.
 
-👻 **Fantôme du Net** (passif)
-> Parfois, un coup ne te touche pas : tu **glitches** quelques blocs plus loin, et celui qui a frappé est corrompu (lenteur + obscurité).
+⚡ **Fantôme du Net** (passif)
+> Parfois, un coup ne te touche pas : tu **disparais dans un éclair** quelques blocs plus loin, et celui qui a frappé est corrompu (lenteur + obscurité).
 
 🛠️ **Corrections**
 > • La caméra ne tremble plus que sur **Fûga** et **Hollow Purple**

@@ -14,8 +14,8 @@ notes:
         <dark_gray>31 octobre 2026
         <black>Au programme :
         <dark_red>⛧ Relique prestige
-        <dark_red>⛧ Le Black Wall
-        <dark_aqua>◈ Fantôme du Net
+        <dark_red>⚡ Le Black Wall
+        <dark_red>⚡ Fantôme du Net
         <dark_green>✔ Corrections
       - |
         <dark_red><b>⛧ Projet Capricorne</b>
@@ -28,20 +28,20 @@ notes:
         <dark_red><b>⛧ Brèche du</b>
         <dark_red><b>Black Wall</b>
         <black>Accroupi + clic gauche dans le vide :
-        un cercle s'ouvre où tu vises, <dark_red>10 murs</dark_red> jaillissent et enferment tout le monde.
+        des éclairs rouges rampent là où tu vises, puis <dark_red>10 colonnes d'éclairs</dark_red> forment une cage.
         <dark_gray>(2 min 30)
       - |
         <dark_red><b>⛧ Dans la cage</b>
-        <black>5 s de tentacules de données et de spectres d'IA...
+        <black>5 s d'arcs et d'éclairs qui tombent du ciel...
 
-        Puis les murs <dark_red>s'effondrent</dark_red> au centre : 35 % de la vie d'un coup.
+        Puis tout <dark_red>s'effondre</dark_red> au centre : 35 % de la vie d'un coup.
 
         <dark_gray>Personne ne sort.
       - |
-        <dark_aqua><b>◈ Fantôme du Net</b>
-        <black>Parfois, un coup ne te touche pas : tu glitches quelques blocs plus loin.
+        <dark_red><b>⚡ Fantôme du Net</b>
+        <black>Parfois, un coup ne te touche pas : tu disparais dans un éclair quelques blocs plus loin.
 
-        Celui qui a frappé est <dark_aqua>corrompu</dark_aqua> (lenteur + obscurité).
+        Celui qui a frappé est <dark_red>corrompu</dark_red> (lenteur + obscurité).
       - |
         <dark_green><b>✔ Corrections</b>
         <black>• La caméra ne tremble plus que sur Fûga et Hollow

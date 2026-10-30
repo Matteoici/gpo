@@ -421,6 +421,16 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 38);
             saveConfig();
         }
+        if (getConfig().getInt("config-version", 1) < 39) {
+            // Capricorne : que des éclairs rouges (lore, visuel, messages)
+            var def = getConfig().getDefaults();
+            if (def != null) {
+                for (String k : new String[]{"relics.list.projet_capricorne.lore", "messages.menu.visual.capricorne", "messages.capricorne.trapped",
+                        "messages.capricorne.ghost"}) getConfig().set(k, def.get(k));
+            }
+            getConfig().set("config-version", 39);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);

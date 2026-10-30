@@ -49,9 +49,10 @@ import static fr.smpboss.SmpBoss.parse;
 /**
  * Relique prestige "Projet Capricorne" (inspirée du Black Wall de Cyberpunk) : un fragment de l'IA renégate derrière le Black Wall.
  * <p>
- * Actif — accroupi + clic gauche dans le vide : "Brèche du Black Wall". À l'endroit visé, un cercle de corruption s'ouvre,
- * des monolithes du Black Wall jaillissent en anneau et enferment tout le monde dedans. Pendant 5 s, des tentacules de données
- * et des spectres d'IA frappent ceux qui sont piégés, puis les murs s'effondrent sur le centre (grosse implosion).
+ * Rien ne "se voit" à part des éclairs rouges, comme dans l'anime.
+ * Actif — accroupi + clic gauche dans le vide : "Brèche du Black Wall". Des éclairs rouges rampent au sol là où tu vises,
+ * puis 10 colonnes d'éclairs s'allument en anneau, reliées entre elles par des arcs : une cage d'éclairs. Pendant 5 s, des arcs
+ * partent des colonnes et des éclairs tombent du ciel sur ceux qui sont piégés, puis tout s'effondre sur le centre.
  * <p>
  * Passif — "Fantôme du Net" : parfois, un coup reçu ne te touche pas : tu glitches quelques blocs plus loin et celui qui a
  * frappé est corrompu (lenteur + obscurité).
@@ -179,16 +180,32 @@ final class Capricorne implements Listener {
     private void glitchAt(Location c, float s) {
         WeaponFx fx = fx();
         ThreadLocalRandom r = ThreadLocalRandom.current();
-        // silhouette glitchée laissée sur place
-        fx.pop(c.clone().add(0, 0.1, 0), "bw_ghost", 1.1f * s, 2.2f * s, 1.1f * s, 1, 3, 3, Display.Billboard.VERTICAL, null);
-        for (int i = 0; i < 6; i++) {
-            fx.pop(c.clone().add(r.nextDouble(-0.8, 0.8), r.nextDouble(-0.9, 0.9), r.nextDouble(-0.8, 0.8)), "bw_glyph", 0.4f * s, 0.4f * s, 0.4f * s,
-                    1, r.nextInt(2, 6), 2, Display.Billboard.CENTER, null);
+        // une gerbe d'éclairs rouges là où tu étais + quelques arcs autour
+        fx.pop(c, "bw_burst", 2.6f * s, 2.6f * s, 2.6f * s, 1, 2, 3, Display.Billboard.CENTER, new Quaternionf().rotateZ((float) r.nextDouble(6.28)));
+        for (int i = 0; i < 4; i++) {
+            Vector d = new Vector(r.nextDouble(-1, 1), r.nextDouble(-1, 1), r.nextDouble(-1, 1));
+            if (d.lengthSquared() < 0.05) d = new Vector(0, 1, 0);
+            arc(c.clone().add(d.clone().normalize().multiply(0.7)), d, r.nextDouble(1.2, 2.4) * s, 0.7f * s, 3);
         }
         World w = c.getWorld();
-        w.spawnParticle(Particle.DUST, c, 30, 0.35, 0.9, 0.35, 0, new Particle.DustOptions(RED, 1.2f), true);
-        w.spawnParticle(Particle.DUST, c, 10, 0.35, 0.9, 0.35, 0, new Particle.DustOptions(CYAN, 0.9f), true);
-        w.spawnParticle(Particle.DUST, c, 14, 0.3, 0.8, 0.3, 0, new Particle.DustOptions(BLACK, 1.3f), true);
+        w.spawnParticle(Particle.DUST, c, 24, 0.35, 0.9, 0.35, 0, new Particle.DustOptions(RED, 1.1f), true);
+        w.spawnParticle(Particle.ELECTRIC_SPARK, c, 14, 0.4, 0.8, 0.4, 0.15, null, true);
+    }
+
+    /** Un arc d'éclair rouge du pack (deux plans croisés), centré sur "mid", orienté selon "dir". */
+    ItemDisplay arc(Location mid, Vector dir, double len, float width, int life) {
+        ThreadLocalRandom r = ThreadLocalRandom.current();
+        Quaternionf q = WeaponFx.alongY(dir).rotateY((float) r.nextDouble(6.28));
+        ItemDisplay d = fx().spriteOf(mid, PackFx.model("bw_arc_" + r.nextInt(4) + "_x"), width, (float) len, width, Display.Billboard.FIXED, q);
+        fx().kill(d, life);
+        return d;
+    }
+
+    /** Arc entre deux points. */
+    ItemDisplay arcBetween(Location a, Location b, float width, int life) {
+        Vector seg = b.toVector().subtract(a.toVector());
+        if (seg.lengthSquared() < 0.01) seg = new Vector(0, 0.1, 0);
+        return arc(a.clone().add(seg.clone().multiply(0.5)), seg, seg.length() * 1.08, width, life);
     }
 
     // ================================================================= actif : Brèche du Black Wall
@@ -262,12 +279,14 @@ final class Capricorne implements Listener {
             PackFx.fallbackSound(c, Sound.BLOCK_END_PORTAL_SPAWN, 1.4f, 0.7f);
             PackFx.fallbackSound(c, Sound.ENTITY_WARDEN_SONIC_CHARGE, 1.6f, 0.5f);
             screen(caster, SCREEN_DARK, 0, 1, 3);
+            // un éclair part de la main du lanceur jusqu'au point visé
+            Location hand = caster.getEyeLocation().add(caster.getEyeLocation().getDirection().multiply(0.8)).add(0, -0.4, 0);
+            chain(hand, c.clone().add(0, 0.3, 0), 0.9f, 5);
+            // les éclairs rampent au sol et s'étendent jusqu'au bord de la cage
             Location g = c.clone().add(0, 0.06, 0);
-            ItemDisplay circle = fx().sprite(g, "bw_circle", 0.5f, 0.5f, 0.5f, Display.Billboard.FIXED, null);
-            fx().later(1, () -> PackFx.tween(circle, new Vector3f(), null, new Vector3f((float) R * 2.3f, 1, (float) R * 2.3f), RISE));
-            fx().kill(circle, IMPLODE + 6);
-            fx().tpop(g.clone().add(0, 0.02, 0), "w_rune_flat", RED, (float) R * 1.7f, 1, (float) R * 1.7f, RISE, CAGE - RISE, 6,
-                    Display.Billboard.FIXED, null);
+            ItemDisplay ground = fx().sprite(g, "bw_ground", 0.5f, 0.5f, 0.5f, Display.Billboard.FIXED, null);
+            fx().later(1, () -> PackFx.tween(ground, new Vector3f(), null, new Vector3f((float) R * 2.15f, 1, (float) R * 2.15f), RISE));
+            fx().kill(ground, IMPLODE + 2);
             for (int i = 0; i < walls; i++) {
                 double a = Math.PI * 2 * i / walls;
                 wallPos.add(c.clone().add(Math.cos(a) * R, 0, Math.sin(a) * R));
@@ -284,24 +303,17 @@ final class Capricorne implements Listener {
             ThreadLocalRandom r = ThreadLocalRandom.current();
             // --- montée : des glyphes de données tournent et s'élèvent du cercle
             if (k < RISE) {
+                // petits arcs qui sautent au ras du sol
                 if (k % 2 == 0) {
-                    for (int i = 0; i < 3; i++) {
-                        double a = r.nextDouble(Math.PI * 2), rr = r.nextDouble(0.5, R);
-                        Location l = c.clone().add(Math.cos(a) * rr, 0.3, Math.sin(a) * rr);
-                        ItemDisplay gl = fx().sprite(l, "bw_glyph", 0.5f, 0.5f, 0.5f, Display.Billboard.CENTER, null);
-                        double up = r.nextDouble(2, 5);
-                        fx().later(1, () -> {
-                            if (!gl.isValid()) return;
-                            gl.setTeleportDuration(14);
-                            gl.teleport(gl.getLocation().add(0, up, 0));
-                            PackFx.tween(gl, new Vector3f(), null, new Vector3f(0.1f, 0.1f, 0.1f), 14);
-                        });
-                        fx().kill(gl, 16);
+                    for (int i = 0; i < 2; i++) {
+                        double a = r.nextDouble(Math.PI * 2), rr = r.nextDouble(0.5, R * Math.min(1, (k + 4) / (double) RISE));
+                        Location l = c.clone().add(Math.cos(a) * rr, 0.35, Math.sin(a) * rr);
+                        Vector d = new Vector(r.nextDouble(-1, 1), r.nextDouble(-0.15, 0.4), r.nextDouble(-1, 1));
+                        arc(l, d, r.nextDouble(1.5, 3.5), 0.8f, 3);
                     }
                 }
-                w.spawnParticle(Particle.DUST, c.clone().add(0, 0.2, 0), 18, R * 0.45, 0.1, R * 0.45, 0, new Particle.DustOptions(RED, 1.1f), true);
-                if (k % 4 == 0) w.spawnParticle(Particle.DUST, c.clone().add(0, 0.2, 0), 10, R * 0.45, 0.1, R * 0.45, 0,
-                        new Particle.DustOptions(BLACK, 1.5f), true);
+                w.spawnParticle(Particle.DUST, c.clone().add(0, 0.2, 0), 14, R * 0.45, 0.1, R * 0.45, 0, new Particle.DustOptions(RED, 1.0f), true);
+                if (k % 3 == 0) w.spawnParticle(Particle.ELECTRIC_SPARK, c.clone().add(0, 0.3, 0), 10, R * 0.4, 0.1, R * 0.4, 0.05, null, true);
                 // ceux qui sont dedans sont prévenus
                 if (k == 2) for (LivingEntity le : inside(R + 1.5)) if (le instanceof Player o) o.sendActionBar(parse(plugin.msg("capricorne.warn")));
             }
@@ -325,10 +337,11 @@ final class Capricorne implements Listener {
             if (k >= RISE && k < IMPLODE) {
                 cage();
                 if (k % 4 == 0) ambient();
+                if (k >= RISE + walls) fence(k);
                 int every = Math.max(4, (int) cfg("tendril-every", 8));
                 if (k >= RISE + walls && (k - RISE) % every == 0) tendril();
                 int ge = Math.max(10, (int) cfg("ghost-every", 22));
-                if (k >= RISE + walls && (k - RISE) % ge == 5) ghost();
+                if (k >= RISE + walls && (k - RISE) % ge == 5) strike();
             }
             if (k == COLLAPSE_SOUND) {
                 fx().snd(c, "capricorn.collapse", 3.5f, 1f);
@@ -351,21 +364,43 @@ final class Capricorne implements Listener {
             Location g = PackFx.groundBelow(base.clone().add(0, 3, 0), 10);
             if (g != null) base.setY(g.getY());
             wallPos.set(i, base);
-            double a = Math.PI * 2 * i / walls;
-            float yaw = (float) (Math.PI / 2 - a);
-            Quaternionf rot = new Quaternionf().rotateY(yaw);
-            float width = (float) (2 * Math.PI * R / walls * 1.05);
-            ItemDisplay d = fx().spriteOf(base, PackFx.model("bw_wall"), width, 0.05f, 1, Display.Billboard.FIXED, rot);
+            ThreadLocalRandom r = ThreadLocalRandom.current();
+            // une colonne d'éclair tombe du ciel et reste allumée
+            Quaternionf rot = new Quaternionf().rotateY((float) r.nextDouble(6.28));
+            ItemDisplay d = fx().spriteOf(base, PackFx.model("bw_arc_" + (i % 4) + "_x"), 2.4f, 0.05f, 2.4f, Display.Billboard.FIXED, rot);
             d.setViewRange(12f);
-            fx().later(1, () -> PackFx.tween(d, new Vector3f(0, (float) H / 2, 0), rot, new Vector3f(width, (float) H, 1), 4));
+            d.setTransformation(new org.bukkit.util.Transformation(new Vector3f(0, (float) H, 0), rot, new Vector3f(2.4f, 0.05f, 2.4f), new Quaternionf()));
+            fx().later(1, () -> PackFx.tween(d, new Vector3f(0, (float) H / 2, 0), rot, new Vector3f(2.4f, (float) H, 2.4f), 2));
             wallDisp.add(d);
-            fx().kill(d, IMPLODE + 6 - (RISE + i));
+            fx().kill(d, IMPLODE + 2 - (RISE + i));
             fx().snd(base, "capricorn.wall", 2f, 0.9f + (i % 3) * 0.08f);
-            fx().tpop(base.clone().add(0, 0.08, 0), "w_crack_flat", RED, 4.5f, 1, 4.5f, 1, 40, 8, Display.Billboard.FIXED,
-                    new Quaternionf().rotateY((float) ThreadLocalRandom.current().nextDouble(6.28)));
-            fx().puff(base.clone().add(0, 0.8, 0), DEEP, 3.2f);
-            w.spawnParticle(Particle.BLOCK, base.clone().add(0, 0.3, 0), 30, 1.2, 0.2, 1.2, 0, base.clone().add(0, -0.5, 0).getBlock().getBlockData(), true);
-            w.spawnParticle(Particle.DUST, base.clone().add(0, H / 2, 0), 40, 0.8, H / 3, 0.8, 0, new Particle.DustOptions(RED, 1.5f), true);
+            fx().pop(base.clone().add(0, 0.6, 0), "bw_burst", 4f, 4f, 4f, 1, 2, 4, Display.Billboard.CENTER, new Quaternionf().rotateZ((float) r.nextDouble(6.28)));
+            fx().tpop(base.clone().add(0, 0.08, 0), "w_crack_flat", RED, 3.5f, 1, 3.5f, 1, 30, 8, Display.Billboard.FIXED,
+                    new Quaternionf().rotateY((float) r.nextDouble(6.28)));
+            w.spawnParticle(Particle.ELECTRIC_SPARK, base.clone().add(0, 0.5, 0), 25, 0.6, 0.3, 0.6, 0.4, null, true);
+            w.spawnParticle(Particle.DUST, base.clone().add(0, H / 2, 0), 30, 0.3, H / 3, 0.3, 0, new Particle.DustOptions(RED, 1.4f), true);
+        }
+
+        /** Les colonnes scintillent et des arcs sautent de l'une à l'autre : la cage. */
+        void fence(int k) {
+            ThreadLocalRandom r = ThreadLocalRandom.current();
+            int n = wallDisp.size();
+            if (n < 2) return;
+            // les colonnes changent d'éclair
+            if (k % 3 == 0) {
+                for (int i = 0; i < n; i++) {
+                    ItemDisplay d = wallDisp.get(i);
+                    if (!d.isValid() || r.nextInt(3) != 0) continue;
+                    d.setItemStack(PackFx.model("bw_arc_" + r.nextInt(4) + "_x"));
+                }
+            }
+            if (k % 2 != 0) return;
+            for (int j = 0; j < 3; j++) {
+                int i = r.nextInt(n);
+                Location a = wallPos.get(i).clone().add(0, r.nextDouble(0.8, H * 0.9), 0);
+                Location b = wallPos.get((i + 1) % n).clone().add(0, r.nextDouble(0.8, H * 0.9), 0);
+                arcBetween(a, b, 1.1f, 3);
+            }
         }
 
         /** Le mur pour ceux qui n'ont pas le pack : une colonne de poussière rouge/noire. */
@@ -429,57 +464,33 @@ final class Capricorne implements Listener {
         }
 
         void bolt(Location from, Location to) {
+            chain(from, to, 1.2f, 4);
             ThreadLocalRandom r = ThreadLocalRandom.current();
-            // tentacule en 3 segments qui ondulent
-            Location prev = from;
-            for (int s = 1; s <= 3; s++) {
-                double u = s / 3.0;
-                Location p2 = from.clone().add(to.clone().subtract(from).toVector().multiply(u));
-                if (s < 3) p2.add(r.nextDouble(-1.2, 1.2), r.nextDouble(-0.6, 1.2), r.nextDouble(-1.2, 1.2));
-                Vector seg = p2.toVector().subtract(prev.toVector());
-                Location mid = prev.clone().add(seg.clone().multiply(0.5));
-                fx().tpop(mid, "w_bolt_" + r.nextInt(4) + "_x", s % 2 == 0 ? RED : PALE, 0.9f, (float) seg.length() * 1.15f, 0.9f, 1, 2, 3,
-                        Display.Billboard.FIXED, WeaponFx.alongY(seg));
-                fx().tpop(mid, "w_beam_x", DEEP, 0.5f, (float) seg.length(), 0.5f, 1, 3, 3, Display.Billboard.FIXED, WeaponFx.alongY(seg));
-                w.spawnParticle(Particle.DUST, mid, 10, seg.length() * 0.25, 0.2, seg.length() * 0.25, 0, new Particle.DustOptions(RED, 1.3f), true);
-                prev = p2;
-            }
-            fx().tpop(to, "w_glow", RED, 2.5f, 2.5f, 2.5f, 1, 1, 4, Display.Billboard.CENTER, null);
-            fx().tpop(to, "w_spark", BLACK, 1.8f, 1.8f, 1.8f, 1, 1, 3, Display.Billboard.CENTER, new Quaternionf().rotateZ((float) r.nextDouble(6.28)));
-            w.spawnParticle(Particle.ELECTRIC_SPARK, to, 12, 0.3, 0.3, 0.3, 0.2, null, true);
+            fx().pop(to, "bw_burst", 2.8f, 2.8f, 2.8f, 1, 1, 3, Display.Billboard.CENTER, new Quaternionf().rotateZ((float) r.nextDouble(6.28)));
+            w.spawnParticle(Particle.ELECTRIC_SPARK, to, 14, 0.3, 0.3, 0.3, 0.25, null, true);
         }
 
-        /** Un spectre d'IA sort d'un mur, fonce sur quelqu'un et le traverse. */
-        void ghost() {
+        /** Un éclair tombe du ciel sur quelqu'un dans la cage. */
+        void strike() {
             List<LivingEntity> in = new ArrayList<>();
             for (LivingEntity le : inside(R)) if (ok(le)) in.add(le);
             if (in.isEmpty()) return;
             ThreadLocalRandom r = ThreadLocalRandom.current();
             LivingEntity t = in.get(r.nextInt(in.size()));
-            Location start = wallPos.get(r.nextInt(wallPos.size())).clone().add(0, 0.2, 0);
-            Location end = t.getLocation().add(0, 0.2, 0);
-            Vector path = end.toVector().subtract(start.toVector());
-            ItemDisplay g = fx().sprite(start, "bw_ghost", 1.6f, 3.2f, 1.6f, Display.Billboard.VERTICAL, null);
-            g.setTransformation(new org.bukkit.util.Transformation(new Vector3f(0, 1.6f, 0), new Quaternionf(), new Vector3f(1.6f, 3.2f, 1.6f), new Quaternionf()));
-            fx().later(1, () -> {
-                if (!g.isValid()) return;
-                g.setTeleportDuration(8);
-                g.teleport(end);
-                PackFx.tween(g, new Vector3f(0, 1.8f, 0), null, new Vector3f(2f, 3.6f, 2f), 8);
-            });
-            fx().later(9, () -> {
-                if (!g.isValid()) return;
-                g.setTeleportDuration(4);
-                g.teleport(end.clone().add(path.clone().normalize().multiply(2)));
-                PackFx.tween(g, new Vector3f(0, 2.2f, 0), null, new Vector3f(0.1f, 4.5f, 0.1f), 4);
-            });
-            fx().kill(g, 14);
-            fx().snd(start, "capricorn.glitch", 1.4f, 0.6f);
-            fx().later(8, () -> {
+            Location foot = t.getLocation();
+            Location sky = foot.clone().add(r.nextDouble(-1.5, 1.5), H + 4, r.nextDouble(-1.5, 1.5));
+            // avertissement : ça crépite sous ses pieds
+            fx().pop(foot.clone().add(0, 0.1, 0), "bw_burst", 1.6f, 1.6f, 1.6f, 1, 3, 2, Display.Billboard.CENTER, null);
+            fx().snd(foot, "capricorn.glitch", 1.2f, 1.3f);
+            fx().later(6, () -> {
                 if (!t.isValid() || t.isDead()) return;
-                Location at = t.getLocation().add(0, 1, 0);
-                glitchAt(at, 1.2f);
-                fx().snd(at, "capricorn.zap", 1.4f, 0.6f);
+                Location at = t.getLocation();
+                chain(sky, at.clone().add(0, 0.2, 0), 2.2f, 5);
+                fx().pop(at.clone().add(0, 1, 0), "bw_burst", 5f, 5f, 5f, 1, 2, 4, Display.Billboard.CENTER, new Quaternionf().rotateZ((float) r.nextDouble(6.28)));
+                fx().snd(at, "capricorn.zap", 2f, 0.6f);
+                PackFx.fallbackSound(at, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 0.8f, 1.6f);
+                w.spawnParticle(Particle.DUST, at.clone().add(0, 1, 0), 40, 0.4, 1.2, 0.4, 0, new Particle.DustOptions(RED, 1.5f), true);
+                w.spawnParticle(Particle.ELECTRIC_SPARK, at.clone().add(0, 0.5, 0), 30, 0.6, 0.4, 0.6, 0.5, null, true);
                 if (isBoss(t)) {
                     Boss b = plugin.king();
                     if (b != null) b.hurt(caster, cfg("boss-ghost-damage", 40));
@@ -487,11 +498,27 @@ final class Capricorne implements Listener {
                 }
                 if (t instanceof Player o) {
                     applyDamage(caster, t, maxHealth(t) * cfg("ghost-percent", 8) / 100.0);
-                    o.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 60, 0, false, false, true));
                     screen(o, SCREEN_DARK, 0, 1, 2);
                 } else applyDamage(caster, t, cfg("ghost-damage", 18));
                 t.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 50, 2, false, true, true));
             });
+        }
+
+        /** Éclair en plusieurs segments qui zigzaguent entre deux points. */
+        void chain(Location from, Location to, float width, int life) {
+            ThreadLocalRandom r = ThreadLocalRandom.current();
+            double len = from.distance(to);
+            int segs = Math.max(2, (int) Math.ceil(len / 5));
+            Location prev = from;
+            for (int s = 1; s <= segs; s++) {
+                double u = s / (double) segs;
+                Location p2 = from.clone().add(to.clone().subtract(from).toVector().multiply(u));
+                if (s < segs) p2.add(r.nextDouble(-1, 1) * Math.min(1.4, len * 0.08), r.nextDouble(-0.8, 0.8), r.nextDouble(-1, 1) * Math.min(1.4, len * 0.08));
+                arcBetween(prev, p2, width, life);
+                w.spawnParticle(Particle.DUST, prev.clone().add(p2.clone().subtract(prev).multiply(0.5)), 6, 0.3, 0.3, 0.3, 0,
+                        new Particle.DustOptions(RED, 1.2f), true);
+                prev = p2;
+            }
         }
 
         /** Les murs basculent vers le centre et rétrécissent. */
@@ -505,6 +532,14 @@ final class Capricorne implements Listener {
                 int delay = i % 3;
                 fx().later(1 + delay, () -> PackFx.tween(d, new Vector3f((float) toC.getX(), (float) H * 0.3f, (float) toC.getZ()), rot,
                         new Vector3f(0.6f, (float) H * 0.4f, 1), 22 - delay));
+            }
+            // des arcs relient chaque colonne au centre
+            Location mid = c.clone().add(0, H * 0.35, 0);
+            for (int i = 0; i < wallPos.size(); i++) {
+                Location top = wallPos.get(i).clone().add(0, H * 0.6, 0);
+                int ii = i;
+                fx().later(1 + i * 2, () -> chain(top, mid, 1.3f, 6));
+                if (ii % 2 == 0) fx().later(12 + ii, () -> chain(wallPos.get(ii).clone().add(0, 1, 0), c.clone().add(0, 0.5, 0), 1f, 5));
             }
             // l'air est aspiré vers le centre
             for (LivingEntity le : inside(R + 3)) {
@@ -522,11 +557,12 @@ final class Capricorne implements Listener {
         void implode() {
             Location m = c.clone().add(0, 1.4, 0);
             WeaponFx fx = fx();
-            fx.boom(m, RED, 13);
-            fx.boom(m.clone().add(0, 0.5, 0), BLACK, 9);
-            fx.puff(m, DEEP, 9);
-            fx.pop(m, "bf_spikes", 14, 14, 14, 1, 2, 4, Display.Billboard.CENTER, new Quaternionf().rotateZ(0.3f));
-            fx.pop(m, "bf_star", 10, 10, 10, 1, 2, 4, Display.Billboard.CENTER, null);
+            fx.pop(m, "bw_burst", 18, 18, 18, 1, 3, 5, Display.Billboard.CENTER, new Quaternionf().rotateZ(0.3f));
+            fx.pop(m.clone().add(0, 0.3, 0), "bw_burst", 11, 11, 11, 1, 2, 4, Display.Billboard.CENTER, new Quaternionf().rotateZ(1.7f));
+            fx.tpop(m, "w_glow", RED, 12, 12, 12, 1, 2, 6, Display.Billboard.CENTER, null);
+            ItemDisplay gnd = fx.sprite(c.clone().add(0, 0.07, 0), "bw_ground", (float) R * 2.2f, 1, (float) R * 2.2f, Display.Billboard.FIXED, null);
+            fx.later(1, () -> PackFx.tween(gnd, new Vector3f(), null, new Vector3f((float) R * 3.2f, 1, (float) R * 3.2f), 10));
+            fx.kill(gnd, 12);
             fx.wave(c.clone().add(0, 0.1, 0), "w_shock_flat", RED, 1, (float) R * 3.4f, 12, null, Display.Billboard.FIXED);
             fx.wave(m, "w_shock", Color.WHITE, 1, (float) R * 2.6f, 9, null, Display.Billboard.CENTER);
             ThreadLocalRandom r = ThreadLocalRandom.current();
@@ -536,12 +572,10 @@ final class Capricorne implements Listener {
                 Vector d = new Vector(r.nextDouble(-1, 1), r.nextDouble(-0.2, 1), r.nextDouble(-1, 1));
                 if (d.lengthSquared() < 0.05) d = new Vector(0, 1, 0);
                 d.normalize();
-                double L = r.nextDouble(4, 10);
-                fx.tpop(m.clone().add(d.clone().multiply(L / 2)), "w_bolt_" + r.nextInt(4) + "_x", i % 3 == 0 ? PALE : RED, 1.4f, (float) L, 1.4f, 1, 2, 4,
-                        Display.Billboard.FIXED, WeaponFx.alongY(d));
+                double L = r.nextDouble(5, 12);
+                arc(m.clone().add(d.clone().multiply(L / 2)), d, L, 1.8f, 6);
             }
             w.spawnParticle(Particle.DUST, m, 160, R * 0.4, 1.5, R * 0.4, 0, new Particle.DustOptions(RED, 2.2f), true);
-            w.spawnParticle(Particle.DUST, m, 80, R * 0.35, 1.2, R * 0.35, 0, new Particle.DustOptions(BLACK, 2f), true);
             w.spawnParticle(Particle.EXPLOSION_EMITTER, m, 2, 1, 0.5, 1, 0, null, true);
             w.spawnParticle(Particle.ELECTRIC_SPARK, m, 80, 2, 1.5, 2, 0.6, null, true);
             PackFx.fallbackSound(m, Sound.ENTITY_GENERIC_EXPLODE, 2f, 0.5f);
