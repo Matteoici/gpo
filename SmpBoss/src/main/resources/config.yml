@@ -365,6 +365,10 @@ weapons:
     cooldown-minutes: 15
   fuga:
     chance: 0.01
+    # true = effets et sons du resource pack du serveur (modèles 3D, son de la vidéo). false = anciens effets en particules
+    resource-pack: true
+    speed: 1.25           # vitesse de la flèche (blocs / tick)
+    column-height: 170    # hauteur de la colonne de feu
     radius: 200
     # cratère au centre de l'impact (les zones protégées, terrains de guilde, arènes sont respectés)
     crater: true

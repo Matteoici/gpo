@@ -1,0 +1,1 @@
+{"providers": [{"type": "bitmap", "file": "limitless:font/white.png", "ascent": 140, "height": 256, "chars": ["\ue001"]}, {"type": "bitmap", "file": "limitless:font/orange.png", "ascent": 140, "height": 256, "chars": ["\ue002"]}]}

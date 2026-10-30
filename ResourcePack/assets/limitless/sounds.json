@@ -1,0 +1,26 @@
+{
+ "fuga.charge": {
+  "sounds": [
+   {
+    "name": "limitless:fuga/charge",
+    "stream": true
+   }
+  ]
+ },
+ "fuga.shot": {
+  "sounds": [
+   {
+    "name": "limitless:fuga/shot",
+    "stream": true
+   }
+  ]
+ },
+ "fuga.impact": {
+  "sounds": [
+   {
+    "name": "limitless:fuga/impact",
+    "stream": true
+   }
+  ]
+ }
+}

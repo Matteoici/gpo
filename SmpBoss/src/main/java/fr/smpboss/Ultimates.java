@@ -67,7 +67,7 @@ final class Ultimates {
             FIRE = Color.fromRGB(255, 120, 0), EMBER = Color.fromRGB(255, 50, 0), GOLD = Color.fromRGB(255, 205, 60);
 
     private final SmpBoss plugin;
-    private final Set<UUID> casting = new HashSet<>();
+    final Set<UUID> casting = new HashSet<>();
     private final NamespacedKey jumpKey, gravKey;
 
     /** entités figées */
@@ -76,15 +76,18 @@ final class Ultimates {
     private BukkitTask freezeTask;
     /** ciel / teinte posés pendant une attaque, à rendre ensuite */
     private final Map<UUID, WorldBorder> borders = new HashMap<>();
-    private final Set<UUID> night = new HashSet<>();
+    final Set<UUID> night = new HashSet<>();
+
+    final FugaFx fugaFx;
 
     Ultimates(SmpBoss plugin) {
         this.plugin = plugin;
+        this.fugaFx = new FugaFx(plugin, this);
         this.jumpKey = new NamespacedKey(plugin, "ult_freeze_jump");
         this.gravKey = new NamespacedKey(plugin, "ult_freeze_gravity");
     }
 
-    private double cfg(String path, double def) {
+    double cfg(String path, double def) {
         return plugin.getConfig().getDouble("weapons." + path, def);
     }
 
@@ -148,6 +151,7 @@ final class Ultimates {
         }
         p.getPersistentDataContainer().set(cd, PersistentDataType.LONG, now + (long) (cfg(path + ".cooldown-minutes", 15) * 60_000));
         if (Weapons.HOLLOW.equals(id)) hollow(p);
+        else if (plugin.getConfig().getBoolean("weapons.fuga.resource-pack", true)) fugaFx.cast(p);
         else fuga(p);
     }
 
@@ -157,7 +161,7 @@ final class Ultimates {
     }
 
     /** Les lignes d'incantation, dans le chat des joueurs autour seulement. */
-    private void chat(Location c, Player caster, String line) {
+    void chat(Location c, Player caster, String line) {
         double r2 = sq(cfg("ultimate-chat-radius", 250));
         var msg = parse(line.replace("<player>", SmpBoss.MM.escapeTags(caster.getName())));
         for (Player o : c.getWorld().getPlayers()) if (o.getLocation().distanceSquared(c) <= r2) o.sendMessage(msg);
@@ -186,7 +190,7 @@ final class Ultimates {
     }
 
     /** Joueurs et monstres dans la zone (une seule recherche). */
-    private List<LivingEntity> targets(Player caster, Location c, double r) {
+    List<LivingEntity> targets(Player caster, Location c, double r) {
         List<LivingEntity> out = new ArrayList<>();
         PumpkinKing k = plugin.king();
         for (Entity en : c.getWorld().getNearbyEntities(c, r, r, r)) {
@@ -286,6 +290,7 @@ final class Ultimates {
 
     /** Arrêt du serveur : on libère tout le monde. */
     void shutdown() {
+        fugaFx.removeAll();
         for (Frozen f : frozen.values()) release(f);
         frozen.clear();
         for (UUID id : night) {
@@ -352,7 +357,7 @@ final class Ultimates {
      * sans jamais toucher à la vue du joueur : pas d'effet de lag, la souris reste libre.
      * pulses = nombre de secousses, every = ticks entre deux.
      */
-    private void shake(Location c, double radius, int pulses, int every) {
+    void shake(Location c, double radius, int pulses, int every) {
         World w = c.getWorld();
         ThreadLocalRandom rnd = ThreadLocalRandom.current();
         int[] n = {0};
@@ -394,7 +399,7 @@ final class Ultimates {
         return null;
     }
 
-    private void zoneHit(Player caster, LivingEntity le, double d, DamageType type, String path, int fireTicks) {
+    void zoneHit(Player caster, LivingEntity le, double d, DamageType type, String path, int fireTicks) {
         double[] z = zone(path, d);
         if (z == null) return;
         multiHit(caster, le, z[0], (int) z[1], type, path, fireTicks);
@@ -492,7 +497,7 @@ final class Ultimates {
      * vérification "casser un bloc" des autres plugins. Pas de coffres / spawners / blocs incassables, pas de drops.
      * Le fond est tapissé de quelques blocs brûlés (Fûga) ou d'améthyste / obsidienne pleureuse (Violet).
      */
-    private void crater(Player caster, Location center, String path, Material[] lining, boolean fire) {
+    void crater(Player caster, Location center, String path, Material[] lining, boolean fire) {
         if (!plugin.getConfig().getBoolean("weapons." + path + ".crater", true)) return;
         double radius = cfg(path + ".crater-radius", 20);
         int depth = (int) Math.min(10, cfg(path + ".crater-depth", 10));
@@ -647,7 +652,7 @@ final class Ultimates {
     }
 
     /** Le sol sous (ou un peu au-dessus de) ce point. */
-    private static Location ground(Location l) {
+    static Location ground(Location l) {
         Location c = l.clone();
         c.setY(Math.floor(c.getY()) + 4);
         for (int i = 0; i < 16; i++) {
@@ -719,7 +724,7 @@ final class Ultimates {
     }
 
     /** Éclats de roche sombres qui sortent du sol autour du cratère (terrain "ravagé", rien n'est cassé). */
-    private void shards(Location c, int n, double radius, int hold) {
+    void shards(Location c, int n, double radius, int hold) {
         ThreadLocalRandom rnd = ThreadLocalRandom.current();
         Material[] mats = {Material.BLACKSTONE, Material.BASALT, Material.COBBLED_DEEPSLATE, Material.POLISHED_BLACKSTONE, Material.MAGMA_BLOCK};
         for (int i = 0; i < n; i++) {
