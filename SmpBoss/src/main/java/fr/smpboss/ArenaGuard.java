@@ -433,6 +433,12 @@ final class ArenaGuard implements Listener {
             stripEffects(e.getPlayer());
             dropSpearFromHand(e.getPlayer());
         }
+        // gouffre du nid de la Reine : les toiles te remontent
+        if (arena.inAbyss(t)) {
+            org.bukkit.Bukkit.getScheduler().runTask(plugin, () -> {
+                if (e.getPlayer().isOnline()) arena.lavaRescue(e.getPlayer());
+            });
+        }
         // lave dans l'arène : direct au spawn de l'arène (même avec résistance au feu ou protection d'arrivée)
         if (on("lava-rescue") && arena.contains(t) && !arena.inPortal(t)
                 && (t.getBlock().getType() == org.bukkit.Material.LAVA || t.clone().add(0, 0.6, 0).getBlock().getType() == org.bukkit.Material.LAVA)) {

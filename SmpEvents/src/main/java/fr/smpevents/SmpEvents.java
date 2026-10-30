@@ -4,6 +4,7 @@ import fr.smpevents.afk.AfkZones;
 import fr.smpevents.board.Boards;
 import fr.smpevents.board.Holograms;
 import fr.smpevents.bounty.Bounties;
+import fr.smpevents.island.LeaderIsland;
 import fr.smpevents.koth.Koth;
 import fr.smpevents.quest.QuestListener;
 import fr.smpevents.quest.QuestPool;
@@ -29,6 +30,7 @@ public final class SmpEvents extends JavaPlugin {
     private Koth koth;
     private Bounties bounties;
     private AfkZones afk;
+    private LeaderIsland island;
     private NamespacedKey key, spawnerKey;
     private boolean dirty;
     private int ticks;
@@ -48,6 +50,7 @@ public final class SmpEvents extends JavaPlugin {
         koth = new Koth(this);
         bounties = new Bounties(this);
         afk = new AfkZones(this);
+        island = new LeaderIsland(this);
         if (getServer().getPluginManager().getPlugin("Vault") != null) {
             economy = new Economy();
         } else {
@@ -59,6 +62,7 @@ public final class SmpEvents extends JavaPlugin {
         koth.load();
         bounties.load();
         afk.load();
+        island.load();
 
         questListener = new QuestListener(this);
         var pm = getServer().getPluginManager();
@@ -66,9 +70,10 @@ public final class SmpEvents extends JavaPlugin {
         pm.registerEvents(questListener, this);
         pm.registerEvents(bounties, this);
         pm.registerEvents(afk, this);
+        pm.registerEvents(island, this);
 
         Commands c = new Commands(this);
-        for (String name : new String[]{"quetes", "classement", "koth", "prime", "zoneafk", "smpevents"}) {
+        for (String name : new String[]{"quetes", "classement", "ileclassements", "koth", "prime", "zoneafk", "smpevents"}) {
             PluginCommand pc = getCommand(name);
             if (pc != null) {
                 pc.setExecutor(c);
@@ -116,6 +121,7 @@ public final class SmpEvents extends JavaPlugin {
     public void onDisable() {
         if (koth != null) koth.stop(false);
         if (afk != null) afk.shutdown();
+        if (island != null) island.shutdown();
         if (holograms != null) holograms.removeAll();
         if (boards != null) boards.updateOnline();
         if (data != null) data.save(false);
@@ -132,6 +138,7 @@ public final class SmpEvents extends JavaPlugin {
         }
         if (ticks % 100 == 5) {
             holograms.ensureAll();
+            island.tick();
             afk.ensureLabel();
         }
         if (ticks % (holograms.rotateSeconds * 20) == 0) holograms.rotate();
@@ -214,6 +221,10 @@ public final class SmpEvents extends JavaPlugin {
 
     public Bounties bounties() {
         return bounties;
+    }
+
+    public LeaderIsland island() {
+        return island;
     }
 
     public AfkZones afk() {

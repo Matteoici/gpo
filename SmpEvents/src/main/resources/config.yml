@@ -166,3 +166,7 @@ anti-abuse:
   # si tu utilises un AUTRE plugin de guildes que SmpGuilds : son placeholder (PlaceholderAPI)
   # qui donne le nom de la guilde du joueur, ex. "%guilds_name%"
   guild-placeholder: ""
+
+# Île des Classements (/classement ile) : commande lancée par la console pour renvoyer un joueur au spawn
+island:
+  spawn-command: "spawn %player%"

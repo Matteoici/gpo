@@ -140,48 +140,6 @@ public final class Arena {
         return spider ? "spider.arena-radius" : "boss.arena-radius";
     }
 
-    /** Palette noir / bleu de l'arène de la Reine : les blocs du plan infernal sont remplacés. */
-    static String spiderBlock(String id) {
-        String base = id, props = "";
-        int i = id.indexOf('[');
-        if (i >= 0) {
-            base = id.substring(0, i);
-            props = id.substring(i);
-        }
-        String out = switch (base) {
-            case "magma_block" -> "sculk";
-            case "lava" -> "water";
-            case "netherrack" -> "deepslate";
-            case "crimson_nylium" -> "warped_nylium";
-            case "crimson_roots" -> "warped_roots";
-            case "crimson_fungus" -> "warped_fungus";
-            case "crimson_hyphae" -> "warped_hyphae";
-            case "nether_wart_block" -> "warped_wart_block";
-            case "weeping_vines", "weeping_vines_plant" -> "cobweb";
-            case "red_nether_bricks" -> "dark_prismarine";
-            case "nether_bricks" -> "deepslate_bricks";
-            case "cracked_nether_bricks" -> "cracked_deepslate_bricks";
-            case "red_wall_banner" -> "blue_wall_banner";
-            case "red_candle" -> "light_blue_candle";
-            case "shroomlight" -> "sea_lantern";
-            case "jack_o_lantern" -> "sea_lantern";
-            case "gilded_blackstone" -> "polished_blackstone";
-            case "lantern" -> "soul_lantern";
-            case "wither_skeleton_skull" -> "skeleton_skull";
-            case "soul_soil" -> "soul_soil";
-            default -> base;
-        };
-        // les propriétés qui n'existent plus sur le nouveau bloc sont retirées
-        if (!out.equals(base)) {
-            if (out.equals("sculk") || out.equals("deepslate") || out.equals("warped_nylium") || out.equals("warped_roots")
-                    || out.equals("warped_fungus") || out.equals("warped_wart_block") || out.equals("cobweb") || out.equals("dark_prismarine")
-                    || out.equals("deepslate_bricks") || out.equals("cracked_deepslate_bricks") || out.equals("sea_lantern")
-                    || out.equals("polished_blackstone")) props = "";
-            if (out.equals("water")) props = "";
-        }
-        return out + props;
-    }
-
     // ================================================================= zone
 
     private void load() {
@@ -324,7 +282,16 @@ public final class Arena {
         Bukkit.getScheduler().runTaskLater(plugin, () -> p.setFireTicks(0), 1L);
         Bukkit.getScheduler().runTaskLater(plugin, () -> p.setFireTicks(0), 5L);
         p.getWorld().playSound(to, org.bukkit.Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 0.6f);
-        p.sendActionBar(parse("<gold>La lave te recrache dans l'arène…"));
+        p.sendActionBar(parse(spider ? "<aqua>Les toiles te remontent du gouffre…" : "<gold>La lave te recrache dans l'arène…"));
+    }
+
+    /** Tombé dans le gouffre du nid (sous le niveau du sol, hors du sol de combat). */
+    public boolean inAbyss(Location l) {
+        if (!spider || !contains(l)) return false;
+        if (l.getY() > cy - 1.5 || l.getY() < cy - 30) return false;
+        double dx = l.getX() - (cx + 0.5), dz = l.getZ() - (cz + 0.5);
+        double d2 = dx * dx + dz * dz;
+        return d2 > (floorRadius + 1.0) * (floorRadius + 1.0) && d2 < (floorRadius + 8.5) * (floorRadius + 8.5);
     }
 
     /** Entrée : sur le sol de l'arène, côté crâne, regard vers l'autel. */
@@ -860,8 +827,7 @@ public final class Arena {
     // ================================================================= construction
 
     private BlockData data(String id0) {
-        String id = spider ? String.join("|", java.util.Arrays.stream(id0.split("\\|")).map(Arena::spiderBlock).toList()) : id0;
-        return dataCache.computeIfAbsent(id, k -> {
+        return dataCache.computeIfAbsent(id0, k -> {
             for (String opt : k.split("\\|")) {
                 try {
                     return Bukkit.createBlockData("minecraft:" + opt);
@@ -896,10 +862,10 @@ public final class Arena {
             confirm.put(p.getUniqueId(), new long[]{System.currentTimeMillis() + 20_000, size * 100_000L + targetY});
             int total = size + 27;
             boolean sky = targetY > p.getLocation().getBlockY() + 5;
-            sender.sendMessage(parse("<gold><b>Construire l'arène infernale " + (sky ? "dans le ciel (Y " + targetY + ")" : "ici") + " ?</b>"));
+            sender.sendMessage(parse("<gold><b>Construire " + (spider ? "le nid de la Reine Araignée " : "l'arène infernale ") + (sky ? "dans le ciel (Y " + targetY + ")" : "ici") + " ?</b>"));
             sender.sendMessage(parse("<gray>Centre = " + (sky ? "au-dessus de toi, à Y <white>" + targetY + "</white> (île de roche flottante)"
                     : "le bloc sous tes pieds") + " : ce sera l'autel. C'est une bulle fermée de rayon ≈ <white>" + total
-                    + "</white> blocs et " + (size + 25) + " de haut, le crâne-portail est au <white>nord</white>. Tout ce qui est dedans est remplacé."));
+                    + "</white> blocs et " + (size + 25) + " de haut, " + (spider ? "la tête d'araignée (sortie)" : "le crâne-portail") + " est au <white>nord</white>. Tout ce qui est dedans est remplacé."));
             sender.sendMessage(parse("<gray>Une sauvegarde est faite : <aqua>/boss arene annuler</aqua> remet tout comme avant."));
             sender.sendMessage(parse("<yellow>Retape <white>" + cmd + "</white> dans les 20 secondes pour confirmer."));
             return;
@@ -914,17 +880,18 @@ public final class Arena {
         at.setY(targetY);
         Block base = at.getBlock();
         World w = base.getWorld();
-        if (base.getY() - 25 < w.getMinHeight() || base.getY() + size + 28 > w.getMaxHeight()) {
-            sender.sendMessage(parse("<red>Trop près du fond ou du plafond du monde. <gray>(Y entre " + (w.getMinHeight() + 25) + " et "
+        int below = spider ? 36 : 25;
+        if (base.getY() - below < w.getMinHeight() || base.getY() + size + 28 > w.getMaxHeight()) {
+            sender.sendMessage(parse("<red>Trop près du fond ou du plafond du monde. <gray>(Y entre " + (w.getMinHeight() + below) + " et "
                     + (w.getMaxHeight() - size - 28) + ")"));
             return;
         }
-        ArenaDesign d = new ArenaDesign(size);
+        ArenaPlan d = spider ? new SpiderDesign(size) : new ArenaDesign(size);
         int ox = base.getX(), oy = base.getY(), oz = base.getZ();
-        long[] keys = new long[d.blocks.size()];
+        long[] keys = new long[d.blocks().size()];
         String[] ids = new String[keys.length];
         int n = 0;
-        for (var e : d.blocks.entrySet()) {
+        for (var e : d.blocks().entrySet()) {
             keys[n] = e.getKey();
             ids[n++] = e.getValue();
         }
@@ -933,7 +900,7 @@ public final class Arena {
         cy = oy;
         cz = oz;
         floorRadius = size;
-        protectRadius = d.protect;
+        protectRadius = d.protect();
         defined = true;
         save();
         sender.sendMessage(parse("<gold>Construction de l'arène… <gray>(" + keys.length + " blocs)"));
@@ -957,7 +924,7 @@ public final class Arena {
                 String id = ids[i];
                 if (id.equals("air")) {
                     if (b.getType().isAir()) continue;
-                } else if (d.soft.contains(k) && !(b.isEmpty() || b.isLiquid() || b.isReplaceable())) {
+                } else if (d.soft().contains(k) && !(b.isEmpty() || b.isLiquid() || b.isReplaceable())) {
                     continue;
                 }
                 BlockData want = data(id);
@@ -981,9 +948,9 @@ public final class Arena {
         }, 1L, 1L);
     }
 
-    private void finishBuild(Player p, ArenaDesign d, int ox, int oy, int oz, World w, List<int[]> pos, List<String> old) {
+    private void finishBuild(Player p, ArenaPlan d, int ox, int oy, int oz, World w, List<int[]> pos, List<String> old) {
         // bannières : fond rouge, crâne noir, bordure et dégradé sombres
-        for (int[] b : d.banners) {
+        for (int[] b : d.banners()) {
             Block blk = w.getBlockAt(ox + b[0], oy + b[1], oz + b[2]);
             if (blk.getState() instanceof Banner banner) {
                 banner.addPattern(new Pattern(DyeColor.BLACK, PatternType.GRADIENT));
@@ -996,7 +963,7 @@ public final class Arena {
         // lien avec le boss : l'autel au centre, le boss reste sur le sol
         if (spider) plugin.setSpiderAltar(new Location(w, ox, oy, oz));
         else plugin.setAltar(new Location(w, ox, oy, oz));
-        plugin.getConfig().set(radiusKey(), Math.max(8, d.r - 1));
+        plugin.getConfig().set(radiusKey(), Math.max(8, d.radius() - 1));
         plugin.saveConfig();
         if (p.isOnline()) {
             Location e = entrance();
@@ -1008,8 +975,8 @@ public final class Arena {
             p.sendMessage(parse("<gray>L'autel est le bloc d'obsidienne pleureuse au centre : clic droit dessus avec "
                     + (spider ? "un <aqua>Cocon sacrificiel</aqua> pour réveiller la Reine Araignée" : "une <gold>Citrouille sacrificielle</gold> pour réveiller le Roi Citrouille")
                     + ". Rayon du boss réglé sur <white>"
-                    + Math.max(8, d.r - 1) + "</white>."));
-            p.sendMessage(parse("<gray>Zone protégée : pas de casse/pose, pas de PvP, aucun monstre à part le boss. <aqua>/arene</aqua> pour y aller, le portail au fond du crâne pour sortir."));
+                    + Math.max(8, d.radius() - 1) + "</white>."));
+            p.sendMessage(parse("<gray>Zone protégée : pas de casse/pose, pas de PvP, aucun monstre à part le boss. <aqua>/arene</aqua> pour y aller, le portail au fond " + (spider ? "de la tête d'araignée" : "du crâne") + " pour sortir."));
         }
     }
 

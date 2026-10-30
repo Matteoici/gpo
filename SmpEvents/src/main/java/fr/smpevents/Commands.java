@@ -47,6 +47,7 @@ final class Commands implements CommandExecutor, TabCompleter {
         switch (cmd.getName().toLowerCase(Locale.ROOT)) {
             case "quetes" -> quests(sender, a);
             case "classement" -> boards(sender, a);
+            case "ileclassements" -> plugin.island().command(sender, a);
             case "koth" -> koth(sender, a);
             case "prime" -> bounty(sender, a);
             case "zoneafk" -> plugin.afk().command(sender, a);
@@ -104,6 +105,10 @@ final class Commands implements CommandExecutor, TabCompleter {
     // ================================================================= classements
 
     private void boards(CommandSender sender, String[] a) {
+        if (a.length > 0 && (a[0].equalsIgnoreCase("ile") || a[0].equalsIgnoreCase("île") || a[0].equalsIgnoreCase("island"))) {
+            plugin.island().command(sender, java.util.Arrays.copyOfRange(a, 1, a.length));
+            return;
+        }
         if (a.length == 0 || !admin(sender)) {
             if (sender instanceof Player p) new BoardMenu(plugin, p).open();
             else t().send(sender, "players-only");
@@ -409,7 +414,11 @@ final class Commands implements CommandExecutor, TabCompleter {
         if (a.length == 1) {
             switch (name) {
                 case "classement" -> {
+                    out.add("ile");
                     if (adm) out.addAll(List.of("placer", "retirer", "liste", "scan", "reset"));
+                }
+                case "ileclassements" -> {
+                    if (adm) out.addAll(List.of("construire", "annuler", "portail", "arrivee", "info"));
                 }
                 case "koth" -> {
                     out.addAll(List.of("info", "suivre", "notif"));
@@ -439,6 +448,7 @@ final class Commands implements CommandExecutor, TabCompleter {
                         out.add("tout");
                     }
                     if (adm && a[0].equalsIgnoreCase("retirer")) for (Holograms.Holo h : plugin.holograms().all()) out.add(h.id);
+                    if (adm && a[0].equalsIgnoreCase("ile")) out.addAll(List.of("construire", "annuler", "portail", "arrivee", "info"));
                 }
                 case "koth" -> {
                     if (adm && List.of("supprimer", "lancer", "tp").contains(a[0].toLowerCase(Locale.ROOT))) {
@@ -455,9 +465,19 @@ final class Commands implements CommandExecutor, TabCompleter {
                 case "zoneafk" -> {
                     if (adm && a[0].equalsIgnoreCase("supprimer")) out.addAll(plugin.afk().zoneNames());
                 }
+                case "ileclassements" -> {
+                    if (adm && a[0].equalsIgnoreCase("construire")) out.addAll(List.of("24", "30", "20"));
+                    if (adm && a[0].equalsIgnoreCase("portail")) out.add("retirer");
+                }
                 default -> {
                 }
             }
+        } else if (a.length == 3 && adm) {
+            if (name.equals("classement") && a[0].equalsIgnoreCase("ile") && a[1].equalsIgnoreCase("construire")) out.addAll(List.of("24", "30", "20"));
+            if (name.equals("classement") && a[0].equalsIgnoreCase("ile") && a[1].equalsIgnoreCase("portail")) out.add("retirer");
+            if (name.equals("ileclassements") && a[0].equalsIgnoreCase("construire")) out.addAll(List.of("ici", "ciel"));
+        } else if (a.length == 4 && adm && name.equals("classement") && a[0].equalsIgnoreCase("ile") && a[1].equalsIgnoreCase("construire")) {
+            out.addAll(List.of("ici", "ciel"));
         }
         String last = a.length == 0 ? "" : a[a.length - 1].toLowerCase(Locale.ROOT);
         out.removeIf(s -> !s.toLowerCase(Locale.ROOT).startsWith(last));

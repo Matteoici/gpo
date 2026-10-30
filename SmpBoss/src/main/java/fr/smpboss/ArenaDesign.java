@@ -17,7 +17,7 @@ import java.util.Set;
  *  - bord rocheux qui remonte en cratère, 3 coulées de lave, obélisques penchés fissurés, arbres morts, bannières
  *  - au nord : un énorme crâne de démon à cornes, ses yeux brûlent ; on entre par sa gueule puis un pont sur la lave
  */
-final class ArenaDesign {
+final class ArenaDesign implements ArenaPlan {
 
     final int r;            // rayon du sol de combat
     final int outer;        // rayon du bord rocheux (jusqu'à la paroi de la bulle)
@@ -29,6 +29,12 @@ final class ArenaDesign {
     final List<int[]> banners = new ArrayList<>(); // x, y, z des bannières à décorer
     int[] portal;                                   // bas du portail de sortie
     private final Map<Long, Integer> rimHeight = new HashMap<>();
+
+    @Override public Map<Long, String> blocks() { return blocks; }
+    @Override public Set<Long> soft() { return soft; }
+    @Override public List<int[]> banners() { return banners; }
+    @Override public int radius() { return r; }
+    @Override public int protect() { return protect; }
 
     ArenaDesign(int r) {
         this.r = r;
@@ -87,13 +93,13 @@ final class ArenaDesign {
         return (h & 0xFFFFFF) / (double) 0x1000000;
     }
 
-    private static double smooth(double x, double z) {
+    static double smooth(double x, double z) {
         return (Math.sin(x * 0.31 + 1.7) * 0.5 + Math.cos(z * 0.27 - 0.6) * 0.5 + Math.sin((x + z) * 0.19) * 0.4
                 + Math.cos((x - z) * 0.41) * 0.3) / 1.7;
     }
 
     /** Choix pondéré : pick(h, "a", 3, "b", 1...) */
-    private static String pick(double h, Object... p) {
+    static String pick(double h, Object... p) {
         double total = 0;
         for (int i = 1; i < p.length; i += 2) total += ((Number) p[i]).doubleValue();
         double t = h * total;
@@ -104,7 +110,7 @@ final class ArenaDesign {
         return (String) p[p.length - 2];
     }
 
-    private static double angDiff(double a, double b) {
+    static double angDiff(double a, double b) {
         double d = (a - b) % (Math.PI * 2);
         if (d > Math.PI) d -= Math.PI * 2;
         if (d < -Math.PI) d += Math.PI * 2;
@@ -653,7 +659,7 @@ final class ArenaDesign {
 
     // ================================================================= murets / barrières reliés
 
-    private static boolean full(String id) {
+    static boolean full(String id) {
         if (id == null || id.equals("air") || id.startsWith("light") || id.equals("lava")) return false;
         return !(id.contains("wall") || id.contains("fence") || id.contains("banner") || id.contains("skull")
                 || id.contains("roots") || id.contains("fungus") || id.contains("candle") || id.contains("chain")
@@ -661,6 +667,11 @@ final class ArenaDesign {
     }
 
     private void connect() {
+        connectWalls(blocks);
+    }
+
+    /** Murets / barrières : relie chaque bloc à ses voisins. */
+    static void connectWalls(Map<Long, String> blocks) {
         List<Long> keys = new ArrayList<>(blocks.keySet());
         for (long k : keys) {
             String id = blocks.get(k);
@@ -671,7 +682,7 @@ final class ArenaDesign {
             int[][] dirs = {{0, -1}, {1, 0}, {0, 1}, {-1, 0}};
             boolean[] c = new boolean[4];
             for (int i = 0; i < 4; i++) {
-                String n = get(x + dirs[i][0], y, z + dirs[i][1]);
+                String n = blocks.get(key(x + dirs[i][0], y, z + dirs[i][1]));
                 c[i] = n != null && (n.startsWith(id) || full(n));
             }
             StringBuilder sb = new StringBuilder(id).append('[');

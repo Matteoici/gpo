@@ -13,6 +13,10 @@ commands:
     description: Classements du serveur
     usage: /classement [placer|retirer|liste|scan|reset]
     aliases: [classements, leaderboard, leaderboards, lb]
+  ileclassements:
+    description: Aller sur l'Île des Classements
+    usage: /ileclassements
+    aliases: [ilelb, iletop, ileclassement]
   koth:
     description: Roi de la colline
     usage: /koth [creer|supprimer|liste|lancer|stop|tp]
