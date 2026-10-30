@@ -375,6 +375,10 @@ public final class SmpBoss extends JavaPlugin {
         loot = new Loot(this);
         weapons = new Weapons(this);
         getServer().getPluginManager().registerEvents(weapons, this);
+        PackStatus packStatus = new PackStatus(this);
+        getServer().getPluginManager().registerEvents(packStatus, this);
+        var packCmd = getCommand("pack");
+        if (packCmd != null) packCmd.setExecutor(packStatus);
         backpacks = new Backpacks(this);
         cosmetics = new Cosmetics(this);
         store.load();

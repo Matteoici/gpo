@@ -593,6 +593,10 @@ models:
 
 # ---------------------------------------------------------------- Textes
 messages:
+  pack:
+    missing: "<gold>⚠ Tu n'as pas le pack du serveur : tu vois les attaques en version simplifiée. <yellow><click:run_command:'/pack'><u>Clique ici</u></click> <gold>(ou /pack) pour réessayer de le télécharger."
+    sent: "<green>Pack renvoyé ! Accepte-le dans la fenêtre qui s'ouvre."
+    none: "<red>Le serveur n'a pas de resource pack configuré."
   items:
     seed:
       name: "<#c0392b><b>Graine maudite"

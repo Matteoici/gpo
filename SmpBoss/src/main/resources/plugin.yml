@@ -5,6 +5,10 @@ api-version: '26.2'
 softdepend: [WorldGuard, SmpShop, Vault, ProtocolLib]
 description: Boss (Roi Citrouille), reliques, sac à dos, faucille
 commands:
+  pack:
+    description: Recharger le resource pack du serveur (si tu ne vois pas les effets)
+    usage: /pack
+    aliases: [resourcepack, texturepack]
   boss:
     description: Administration des boss
     usage: /boss <autel|invoquer|stop|give|arene>

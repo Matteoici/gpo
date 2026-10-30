@@ -88,9 +88,35 @@ final class FugaFx {
             e.setShadowRadius(0);
             e.setTeleportDuration(1);
             e.setTransformation(new Transformation(new Vector3f(), rot == null ? new Quaternionf() : rot, new Vector3f(sx, sy, sz), new Quaternionf()));
+            e.setVisibleByDefault(false);
         });
+        for (Player o : at.getWorld().getPlayers()) if (PackStatus.has(o)) o.showEntity(plugin, d);
         live.add(d);
         return d;
+    }
+
+    /** Particules vanilla vues par tout le monde (avec ou sans pack). */
+    private static void fxParticle(World w, Particle pa, Location at, int n, double ox, double oy, double oz, double speed) {
+        w.spawnParticle(pa, at, n, ox, oy, oz, speed, null, true);
+    }
+
+    /** Joueurs proches qui n'ont PAS le pack : ils ont une version en particules à la place des modèles. */
+    private static List<Player> noPack(Location c, double r) {
+        List<Player> out = new ArrayList<>();
+        for (Player o : c.getWorld().getPlayers()) if (!PackStatus.has(o) && o.getLocation().distanceSquared(c) <= r * r) out.add(o);
+        return out;
+    }
+
+    private static void fallback(Location at, Particle pa, int n, double ox, double oy, double oz, double speed, Object data) {
+        List<Player> to = noPack(at, 160);
+        if (to.isEmpty()) return;
+        var pb = new com.destroystokyo.paper.ParticleBuilder(pa).receivers(to).location(at).count(n).offset(ox, oy, oz).extra(speed).force(true);
+        if (data != null) pb.data(data);
+        pb.spawn();
+    }
+
+    private static void fallbackSound(Location at, org.bukkit.Sound s, float vol, float pitch) {
+        for (Player o : noPack(at, 250)) o.playSound(at, s, vol, pitch);
     }
 
     private static void tween(ItemDisplay d, Vector3f tr, Quaternionf rot, Vector3f scale, int ticks) {
@@ -137,7 +163,7 @@ final class FugaFx {
     private void sound(Location c, String key, double radius) {
         for (Player o : c.getWorld().getPlayers()) {
             double d = o.getLocation().distance(c);
-            if (d > radius) continue;
+            if (d > radius || !PackStatus.has(o)) continue;
             o.playSound(o, key, SoundCategory.PLAYERS, (float) Math.max(0.25, 1 - d / radius), 1f);
         }
     }
@@ -150,7 +176,7 @@ final class FugaFx {
     private void flash(Location c, double radius, char glyph, int in, int stay, int out) {
         Component t = Component.text(String.valueOf(glyph)).font(Key.key(NS, "fx")).color(NamedTextColor.WHITE).shadowColor(ShadowColor.shadowColor(0));
         Title title = Title.title(t, Component.empty(), Title.Times.times(Duration.ofMillis(in * 50L), Duration.ofMillis(stay * 50L), Duration.ofMillis(out * 50L)));
-        for (Player o : c.getWorld().getPlayers()) if (o.getLocation().distanceSquared(c) <= radius * radius) o.showTitle(title);
+        for (Player o : c.getWorld().getPlayers()) if (PackStatus.has(o) && o.getLocation().distanceSquared(c) <= radius * radius) o.showTitle(title);
     }
 
     private void dayAgain(Set<UUID> dark) {
@@ -199,94 +225,44 @@ final class FugaFx {
             dark.add(o.getUniqueId());
         }
         flash(base, 60, WHITE, 0, 1, 8);
-        Location chest = base.clone().add(0, 1.1, 0);
-        pop(chest, "glow_white", 6, 6, 6, 1, 1, 6, Display.Billboard.CENTER, null);
-        ItemDisplay glow = sprite(chest, "glow", 0.5f, 0.5f, 0.5f, Display.Billboard.CENTER, null);
-        ItemDisplay aura = sprite(chest, "aura", 0.5f, 0.5f, 0.5f, Display.Billboard.CENTER, null);
-        later(2, () -> {
-            tween(glow, new Vector3f(), null, new Vector3f(6, 6, 6), 8);
-            tween(aura, new Vector3f(), null, new Vector3f(5, 5, 5), 10);
-        });
-        ItemDisplay[] circle = new ItemDisplay[2];
+        fallbackSound(base, org.bukkit.Sound.ENTITY_BLAZE_AMBIENT, 2f, 0.5f);
         int release = 124;
         int[] t = {0};
         BukkitTask[] task = new BukkitTask[1];
         task[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
             int k = t[0]++;
-            List<ItemDisplay> mine = new ArrayList<>(List.of(glow, aura));
-            for (ItemDisplay c : circle) if (c != null) mine.add(c);
             if (!p.isOnline() || p.isDead() || p.getWorld() != w) {
                 task[0].cancel();
                 ult.casting.remove(p.getUniqueId());
-                for (ItemDisplay d : mine) kill(d, 1);
                 stopSound(base, SND_CHARGE, 260);
                 dayAgain(dark);
                 return;
             }
-            Location feet = p.getLocation(), at = feet.clone().add(0, 1.1, 0);
-            at.setYaw(0);
-            at.setPitch(0);
-            glow.teleport(at);
-            aura.teleport(at);
+            Location feet = p.getLocation();
             if (!lines.isEmpty() && k % 36 == 0 && k / 36 < lines.size()) ult.chat(base, p, lines.get(k / 36));
-            // l'aura tourne, le halo respire
-            if (k > 12 && k % 4 == 0) {
-                float g = (float) (6 * (1 + 0.06 * Math.sin(k * 0.3)));
-                tween(glow, new Vector3f(), null, new Vector3f(g, g, g), 4);
-                tween(aura, new Vector3f(), new Quaternionf().rotateZ(k * 0.09f), new Vector3f(5, 5, 5), 4);
+            // seulement des flammes : elles tournent autour de toi en montant, de plus en plus fort
+            double power = Math.min(1, k / 90.0);
+            int arms = 3;
+            for (int a = 0; a < arms; a++) {
+                double ang = k * 0.32 + Math.PI * 2 * a / arms;
+                double y = (k * 0.09 + a * 0.7) % 2.6;
+                double rr = 1.1 + 0.3 * Math.sin(k * 0.2 + a);
+                Location at = feet.clone().add(Math.cos(ang) * rr, y + 0.1, Math.sin(ang) * rr);
+                fxParticle(w, Particle.FLAME, at, 1 + (int) (power * 2), 0.05, 0.05, 0.05, 0.01);
             }
-            // les mains en feu, des braises qui montent
+            if (k % 2 == 0) fxParticle(w, Particle.SMALL_FLAME, feet.clone().add(0, 1, 0), 2 + (int) (power * 4), 0.6, 0.8, 0.6, 0.02);
+            // les mains en feu
             double yaw = Math.toRadians(feet.getYaw());
             for (int side = -1; side <= 1; side += 2) {
                 Location hand = feet.clone().add(-Math.cos(yaw) * 0.42 * side - Math.sin(yaw) * 0.2, 0.9, -Math.sin(yaw) * 0.42 * side + Math.cos(yaw) * 0.2);
-                w.spawnParticle(Particle.FLAME, hand, 1, 0.06, 0.1, 0.06, 0.01);
+                fxParticle(w, Particle.FLAME, hand, 2, 0.06, 0.1, 0.06, 0.015);
             }
-            if (k % 2 == 0) w.spawnParticle(Particle.SMALL_FLAME, feet.clone().add(0, 0.5, 0), 2, 2.5, 0.3, 2.5, 0.04);
-            // 2,6 s : explosion de feu aux pieds, onde au sol, puis le cercle magique
-            if (k == 52) {
-                flip(feet.clone().add(0, 1.4, 0), "burst_", 16, 1, 3, 9, Display.Billboard.CENTER, 0);
-                pop(feet.clone().add(0, 0.1, 0), "shock", 12, 1, 12, 6, 0, 4, Display.Billboard.FIXED, null);
+            // de petites flammes dessinées qui jaillissent près des mains
+            if (k > 40 && k < release && k % 7 == 0) {
+                double a = rnd.nextDouble(Math.PI * 2);
+                flip(feet.clone().add(Math.cos(a) * 0.7, rnd.nextDouble(0.6, 1.6), Math.sin(a) * 0.7), "burst_", 16, 1, 0.5f, 1.5f, Display.Billboard.CENTER, 0.4f);
             }
-            if (k == 55) {
-                Location g = feet.clone().add(0, 0.06, 0);
-                circle[0] = sprite(g, "circle", 0.2f, 0.2f, 0.2f, Display.Billboard.FIXED, null);
-                circle[1] = sprite(g.clone().add(0, 0.02, 0), "circle2", 0.2f, 0.2f, 0.2f, Display.Billboard.FIXED, null);
-                later(1, () -> {
-                    tween(circle[0], new Vector3f(), null, new Vector3f(10, 1, 10), 6);
-                    tween(circle[1], new Vector3f(), null, new Vector3f(7, 1, 7), 6);
-                });
-            }
-            if (k > 62 && circle[0] != null) {
-                Location g = feet.clone().add(0, 0.06, 0);
-                circle[0].teleport(g);
-                circle[1].teleport(g.clone().add(0, 0.02, 0));
-                if (k % 5 == 0) {
-                    tween(circle[0], new Vector3f(), new Quaternionf().rotateY(k * 0.05f), new Vector3f(10, 1, 10), 5);
-                    tween(circle[1], new Vector3f(), new Quaternionf().rotateY(-k * 0.08f), new Vector3f(7, 1, 7), 5);
-                }
-            }
-            // petites flammes qui éclatent dans le cercle
-            if (k >= 58 && k < release && k % 5 == 3) {
-                double a = rnd.nextDouble(Math.PI * 2), d = rnd.nextDouble(1.2, 3.6);
-                flip(feet.clone().add(Math.cos(a) * d, 0.7, Math.sin(a) * d), "burst_", 16, 1, 0.8f, 2.4f, Display.Billboard.CENTER, 0.3f);
-            }
-            // reflets : étoiles blanches, croix noires, traits de lumière
-            if (k > 56 && k < release && k % 3 == 0) {
-                double a = rnd.nextDouble(Math.PI * 2), d = rnd.nextDouble(0.8, 3.2);
-                Location g = feet.clone().add(Math.cos(a) * d, rnd.nextDouble(0.4, 3.8), Math.sin(a) * d);
-                float s = (float) rnd.nextDouble(0.9, 2.2);
-                pop(g, rnd.nextInt(3) == 0 ? "star_dark" : "star", s, s, s, 2, 1, 4, Display.Billboard.CENTER, null);
-            }
-            if (k > 58 && k < release && k % 8 == 4) {
-                Location g = feet.clone().add(rnd.nextDouble(-1.5, 1.5), rnd.nextDouble(0.6, 3.5), rnd.nextDouble(-1.5, 1.5));
-                pop(g, "flare", (float) rnd.nextDouble(4, 9), 0.35f, 1, 2, 2, 5, Display.Billboard.CENTER, null);
-            }
-            // fumée grise autour du cercle
-            if (k >= 58 && k < release && k % 6 == 4) {
-                double a = rnd.nextDouble(Math.PI * 2), d = rnd.nextDouble(3, 5);
-                flip(feet.clone().add(Math.cos(a) * d, 0.6, Math.sin(a) * d), "dust_", 12, 2, 1.2f, 2.6f, Display.Billboard.CENTER, 0.6f);
-            }
-            // 5,8 s : boule de feu devant toi, l'écran du lanceur devient orange
+            // juste avant le tir : boule de feu devant toi, l'écran du lanceur devient orange
             if (k == 116) {
                 Vector dir = p.getEyeLocation().getDirection();
                 flip(p.getEyeLocation().add(dir.multiply(1.6)), "burst_", 16, 1, 2, 6, Display.Billboard.CENTER, 0);
@@ -295,11 +271,10 @@ final class FugaFx {
             if (k >= release) {
                 task[0].cancel();
                 ult.casting.remove(p.getUniqueId());
-                for (ItemDisplay d : mine) {
-                    tween(d, new Vector3f(), null, new Vector3f(0.02f, 0.02f, 0.02f), 4);
-                    kill(d, 5);
-                }
+                // « Fûga ! » au moment où la flèche part
                 ult.chat(base, p, plugin.msg("weapons.fuga.final"));
+                fallback(p.getEyeLocation(), Particle.FLAME, 80, 0.4, 0.4, 0.4, 0.25, null);
+                fallbackSound(base, org.bukkit.Sound.ENTITY_BLAZE_SHOOT, 3f, 0.5f);
                 Location eye = p.getEyeLocation();
                 Vector dir = eye.getDirection().normalize();
                 fly(p, eye.clone().add(dir.clone().multiply(2)), dir, dark);
@@ -311,7 +286,7 @@ final class FugaFx {
 
     private void fly(Player p, Location start, Vector dir, Set<UUID> dark) {
         World w = start.getWorld();
-        double range = ult.cfg("fuga.range", 140), speed = ult.cfg("fuga.speed", 1.25);
+        double range = ult.cfg("fuga.range", 140), speed = ult.cfg("fuga.speed", 3.0);
         sound(start, SND_SHOT, 250);
         Vector rt = right(dir), up = rt.clone().crossProduct(dir).normalize();
         Location pos = start.clone();
@@ -359,6 +334,8 @@ final class FugaFx {
             if (k % 4 == 0) pop(pos.clone(), "star", 1.4f, 1.4f, 1.4f, 1, 0, 3, Display.Billboard.CENTER, null);
             if (k % 3 == 0) flip(pos.clone().add(rnd(0.3), rnd(0.3), rnd(0.3)), "dust_", 12, 2, 0.8f, 2.2f, Display.Billboard.CENTER, 0.4f);
             w.spawnParticle(Particle.FLAME, pos, 2, 0.3, 0.3, 0.3, 0.03, null, true);
+            fallback(pos, Particle.FLAME, 14, 0.45, 0.45, 0.45, 0.04, null);
+            fallback(pos, Particle.DUST, 10, 0.6, 0.6, 0.6, 0, new Particle.DustOptions(org.bukkit.Color.fromRGB(255, 140, 20), 2.2f));
             if (dist[0] >= range) stop = true;
             if (!p.isOnline() && k > 200) stop = true;
             if (stop) {
@@ -372,6 +349,14 @@ final class FugaFx {
                 impact(p, c, dark);
             }
         }, 1L, 1L);
+    }
+
+    /** Le premier bloc solide sous ce point (jusqu'à "max" blocs), ou null. */
+    private static Location groundBelow(Location c, double max) {
+        RayTraceResult r = c.getWorld().rayTraceBlocks(c, new Vector(0, -1, 0), max, FluidCollisionMode.NEVER, true);
+        if (r == null) return null;
+        Vector h = r.getHitPosition();
+        return new Location(c.getWorld(), h.getX(), h.getY(), h.getZ());
     }
 
     private static double rnd(double r) {
@@ -403,8 +388,9 @@ final class FugaFx {
         List<LivingEntity> list = ult.targets(p, c, R);
         Map<UUID, Double> dist = new HashMap<>();
         for (LivingEntity le : list) dist.put(le.getUniqueId(), le.getLocation().distance(c));
-        Location g0 = Ultimates.ground(c.clone().add(0, 1, 0));
-        Location gc = g0 == null ? c.clone() : g0;
+        // le sol sous l'explosion (même si la flèche a explosé en l'air) : la colonne part toujours du sol
+        Location below = groundBelow(c, ult.cfg("fuga.ground-search", 80));
+        Location gc = below == null ? c.clone() : below;
         // l'explosion en flammes style anime, les éclaboussures au sol, les ondes
         flip(gc.clone().add(0, 6, 0), "boom_", 16, 2, 14, 30, Display.Billboard.CENTER, 0);
         for (int j = 0; j < 3; j++) {
@@ -418,6 +404,10 @@ final class FugaFx {
         later(8, () -> pop(gc.clone().add(0, 0.4, 0), "ring", 30, 1, 30, 10, 0, 6, Display.Billboard.FIXED, null));
         w.spawnParticle(Particle.BLOCK, gc.clone().add(0, 2, 0), 220, 4, 3, 4, 0.6, Material.BLACKSTONE.createBlockData(), true);
         w.spawnParticle(Particle.LAVA, gc, 60, 6, 1, 6, 0, null, true);
+        fallback(gc.clone().add(0, 3, 0), Particle.EXPLOSION_EMITTER, 4, 3, 2, 3, 0, null);
+        fallback(gc.clone().add(0, 3, 0), Particle.FLAME, 400, 4, 3, 4, 0.5, null);
+        fallback(gc, Particle.LAVA, 80, 6, 1, 6, 0, null);
+        fallbackSound(gc, org.bukkit.Sound.ENTITY_GENERIC_EXPLODE, 4f, 0.5f);
         ult.shards(gc, 40, 20, 170);
         ult.crater(p, gc, "fuga", new Material[]{Material.MAGMA_BLOCK, Material.BLACKSTONE, Material.NETHERRACK}, true);
         ult.shake(c, R + 30, 9, 3);
@@ -445,6 +435,11 @@ final class FugaFx {
                 flip(s, "smoke_", 12, 3, big * 0.4f, big, Display.Billboard.CENTER, 6.5f);
             }
             if (k < c0 + 6 && k % 3 == 0) w.spawnParticle(Particle.FLAME, gc, 6, 6, 0.3, 6, 0.02, null, true);
+            if (k >= 6 && k < c0 && k % 4 == 0) fallback(gc.clone().add(0, 4, 0), Particle.LARGE_SMOKE, 40, 6, 3, 6, 0.03, null);
+            if (k > c0 && k < cEnd && k % 2 == 0) {
+                for (double y = 0; y < H; y += 3) fallback(gc.clone().add(0, y, 0), Particle.FLAME, 3, 2.5, 1.2, 2.5, 0.02, null);
+                if (k % 10 == 0) fallbackSound(gc, org.bukkit.Sound.ITEM_FIRECHARGE_USE, 3f, 0.5f);
+            }
             // ---- reflets rouges qui montent du cratère juste avant la colonne
             if (k >= 44 && k < c0 && k % 2 == 0) {
                 double y = (k - 44) * 2.2;
