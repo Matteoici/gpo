@@ -273,6 +273,11 @@ final class Weapons implements Listener {
     }
 
     @EventHandler
+    public void onQuitRooted(org.bukkit.event.player.PlayerQuitEvent e) {
+        ultimates.releaseNow(e.getPlayer());
+    }
+
+    @EventHandler
     public void onJoin(org.bukkit.event.player.PlayerJoinEvent e) {
         Player p = e.getPlayer();
         Bukkit.getScheduler().runTaskLater(plugin, () -> {

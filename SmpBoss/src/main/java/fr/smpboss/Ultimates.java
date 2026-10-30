@@ -223,7 +223,57 @@ final class Ultimates {
     private BukkitTask rootTask;
 
     /** Le lanceur ne peut plus bouger (ni sauter, ni tomber) : il peut juste regarder autour de lui. */
+    private final Map<UUID, Boolean> flightBefore = new HashMap<>();
+    private final Map<UUID, BukkitTask> flightRestore = new HashMap<>();
+
+    /** Pendant l'attaque on a le droit d'être en l'air (sinon le serveur kick : "Flying is not enabled"). */
+    private void allowFlightFor(Player p) {
+        BukkitTask old = flightRestore.remove(p.getUniqueId());
+        if (old != null) old.cancel();
+        flightBefore.putIfAbsent(p.getUniqueId(), p.getAllowFlight());
+        p.setAllowFlight(true);
+        p.setFlying(false);
+    }
+
+    /** Rend l'état de vol d'avant, quelques secondes après (le temps de redescendre). */
+    private void restoreFlightLater(Player p, int ticks) {
+        BukkitTask old = flightRestore.remove(p.getUniqueId());
+        if (old != null) old.cancel();
+        flightRestore.put(p.getUniqueId(), Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            flightRestore.remove(p.getUniqueId());
+            Boolean before = flightBefore.remove(p.getUniqueId());
+            if (before == null || !p.isOnline()) return;
+            var gm = p.getGameMode();
+            if (gm == org.bukkit.GameMode.CREATIVE || gm == org.bukkit.GameMode.SPECTATOR) return;
+            if (!before) {
+                p.setFlying(false);
+                p.setAllowFlight(false);
+            }
+            p.setFallDistance(0);
+        }, Math.max(1, ticks)));
+    }
+
+    /** Déconnexion / arrêt : on rend tout de suite l'état de vol d'avant (sinon il resterait sauvegardé). */
+    void releaseNow(Player p) {
+        rooted.remove(p.getUniqueId());
+        mod(p, Attribute.MOVEMENT_SPEED, new NamespacedKey(plugin, "ult_root_speed"), false);
+        mod(p, Attribute.JUMP_STRENGTH, new NamespacedKey(plugin, "ult_root_jump"), false);
+        mod(p, Attribute.GRAVITY, new NamespacedKey(plugin, "ult_root_gravity"), false);
+        mod(p, Attribute.FLYING_SPEED, new NamespacedKey(plugin, "ult_root_flyspeed"), false);
+        BukkitTask t = flightRestore.remove(p.getUniqueId());
+        if (t != null) t.cancel();
+        Boolean before = flightBefore.remove(p.getUniqueId());
+        var gm = p.getGameMode();
+        if (before != null && !before && gm != org.bukkit.GameMode.CREATIVE && gm != org.bukkit.GameMode.SPECTATOR) {
+            p.setFlying(false);
+            p.setAllowFlight(false);
+        }
+    }
+
     void root(Player p) {
+        allowFlightFor(p);
+        NamespacedKey fs = new NamespacedKey(plugin, "ult_root_flyspeed");
+        mod(p, Attribute.FLYING_SPEED, fs, true);
         rooted.put(p.getUniqueId(), p.getLocation().clone());
         NamespacedKey sp = new NamespacedKey(plugin, "ult_root_speed"), jp = new NamespacedKey(plugin, "ult_root_jump"), gr = new NamespacedKey(plugin, "ult_root_gravity");
         mod(p, Attribute.MOVEMENT_SPEED, sp, true);
@@ -245,7 +295,10 @@ final class Ultimates {
         mod(p, Attribute.MOVEMENT_SPEED, new NamespacedKey(plugin, "ult_root_speed"), false);
         mod(p, Attribute.JUMP_STRENGTH, new NamespacedKey(plugin, "ult_root_jump"), false);
         mod(p, Attribute.GRAVITY, new NamespacedKey(plugin, "ult_root_gravity"), false);
+        mod(p, Attribute.FLYING_SPEED, new NamespacedKey(plugin, "ult_root_flyspeed"), false);
         p.setFallDistance(0);
+        p.setFlying(false);
+        restoreFlightLater(p, slowFall ? 20 * 9 : 20 * 3);
         if (slowFall && p.isOnline() && !p.isDead()) p.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, 20 * 8, 0, false, false, true));
     }
 
@@ -256,6 +309,9 @@ final class Ultimates {
             if (p == null || !p.isOnline() || p.isDead() || p.getWorld() != en.getValue().getWorld()) {
                 it.remove();
                 if (p != null) {
+                    mod(p, Attribute.FLYING_SPEED, new NamespacedKey(plugin, "ult_root_flyspeed"), false);
+                    if (p.isOnline()) restoreFlightLater(p, 20 * 3);
+                    else flightBefore.remove(p.getUniqueId());
                     mod(p, Attribute.MOVEMENT_SPEED, new NamespacedKey(plugin, "ult_root_speed"), false);
                     mod(p, Attribute.JUMP_STRENGTH, new NamespacedKey(plugin, "ult_root_jump"), false);
                     mod(p, Attribute.GRAVITY, new NamespacedKey(plugin, "ult_root_gravity"), false);
@@ -275,6 +331,7 @@ final class Ultimates {
                 p.setVelocity(diff.multiply(0.5));
             }
             p.setFallDistance(0);
+            if (p.isFlying()) p.setFlying(false);
         }
         if (rooted.isEmpty() && rootTask != null) {
             rootTask.cancel();
@@ -372,9 +429,11 @@ final class Ultimates {
         fugaFx.removeAll();
         hollowFx.removeAll();
         weaponFx.removeAll();
-        for (UUID id : new ArrayList<>(rooted.keySet())) {
+        java.util.Set<UUID> all = new HashSet<>(rooted.keySet());
+        all.addAll(flightBefore.keySet());
+        for (UUID id : all) {
             Player p = Bukkit.getPlayer(id);
-            if (p != null) unroot(p, false);
+            if (p != null) releaseNow(p);
         }
         for (Frozen f : frozen.values()) release(f);
         frozen.clear();

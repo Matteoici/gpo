@@ -41,7 +41,7 @@ import java.util.concurrent.ThreadLocalRandom;
 final class HollowFx extends PackFx {
 
     private static final String SND_CHARGE = NS + ":hollow.charge", SND_BURST = NS + ":hollow.burst";
-    private static final int RED_AT = 58, ORBIT_END = 270, MERGE = 322, BOOM = 332, WHITE_END = 432, WHITE_START = 20;
+    private static final int RED_AT = 58, ORBIT_END = 270, MERGE = 322, BOOM = 332, WHITE_END = 460, WHITE_START = 20;
 
     HollowFx(SmpBoss plugin, Ultimates ult) {
         super(plugin, ult);
@@ -322,7 +322,9 @@ final class HollowFx extends PackFx {
             }
             // écran blanc avec éclats violets pour ceux qui sont près (environ 7 s)
             int len = WHITE_END - BOOM;
-            // pas d'écran blanc : l'explosion reste visible et continue de pulser (ondes, lueur, éclats)
+            // écran blanc (avec éclats violets) pour ceux qui sont dans la zone, après 1 s d'explosion visible
+            if (k >= WHITE_START && k < len && k % 2 == 0) whiteout(m, ult.cfg("hollow-purple.whiteout-radius", 120), (k - WHITE_START) / 2, k + 2 >= len);
+            // ceux qui sont plus loin voient l'explosion continuer (ondes, lueur, éclats)
             if (k >= WHITE_START && k < 80 && k % 10 == 0) {
                 float g = 40 + (k - WHITE_START) * 0.8f;
                 pop(m, "glow_purple", g, g, g, 3, 2, 8, Display.Billboard.CENTER, null);
