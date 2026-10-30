@@ -1,6 +1,47 @@
 # Patch notes (la plus récente EN PREMIER). Chaque page = une page du livre (MiniMessage, ~13 lignes max).
 # Couleurs lisibles sur le papier : black, dark_gray, dark_red, dark_blue, dark_green, dark_aqua, dark_purple, gold.
 notes:
+  - id: "2026-10-31-toji"
+    title: "L'arsenal de Toji"
+    date: "31/10/2026"
+    pages:
+      - |
+        <dark_gray><b>   LIMITLESS</b>
+        <dark_gray>     Patch note
+        <black>━━━━━━━━━━
+        <black><b>L'arsenal</b>
+        <black><b>de Toji</b>
+        <dark_gray>31 octobre 2026
+        <black>Sur la Reine :
+        <dark_gray>✦ Lance du Ciel Inversé
+        <dark_red>✦ Tribâton
+        <dark_blue>✦ Tenue de Toji
+        <dark_purple>✦ Arènes sans lévitation
+      - |
+        <black><b>✦ Lance du Ciel</b>
+        <black><b>Inversé</b> <dark_gray>(MYTHICAL)
+        <dark_gray>Restriction Céleste :
+        <black>en main, +10 ❤, +45 % vitesse, +60 % dégâts...
+        <dark_red>mais plus RIEN d'autre<black> : ni totem, ni potion, ni pomme, ni perle, ni relique.
+      - |
+        <black><b>✦ Elle annule</b>
+        <black><b>les techniques</b>
+        Chaque coup bloque les pouvoirs de la cible et traverse le Fantôme du Net.
+
+        <dark_red><b>Percée du Ciel Inversé</b>
+        <black>(accroupi + clic droit) : la lame traverse, 5 entailles, coup final. 70 % de la vie !
+      - |
+        <dark_red><b>✦ Tribâton</b> <gold>(légendaire)
+        <black>Clic droit : 3 tourbillons autour de toi, le dernier envoie tout en l'air.
+
+        <dark_blue><b>✦ Tenue de Toji</b> <gold>(légendaire)
+        <black>3 pièces solides comme du netherite. Complète : Corps Céleste (vitesse, dégâts, pas de chute, ni poison).
+      - |
+        <dark_purple><b>✦ Et aussi</b>
+        <black>• Flèches de lévitation sans effet dans les arènes (boss et duel)
+        • Black Flash Consécutifs : la cible est vraiment figée (ni manger, ni boire, ni fuir)
+
+        <dark_gray>Bonne chasse ✦
   - id: "2026-10-31-foudre"
     title: "Poing & Foudre"
     date: "31/10/2026"

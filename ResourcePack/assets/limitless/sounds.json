@@ -251,5 +251,29 @@
     "stream": true
    }
   ]
+ },
+ "toji.special": {
+  "sounds": [
+   {
+    "name": "limitless:toji/special",
+    "stream": true
+   }
+  ]
+ },
+ "toji.equip": {
+  "sounds": [
+   {
+    "name": "limitless:toji/equip",
+    "stream": false
+   }
+  ]
+ },
+ "toji.slash": {
+  "sounds": [
+   {
+    "name": "limitless:toji/slash",
+    "stream": false
+   }
+  ]
  }
 }

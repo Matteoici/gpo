@@ -24,6 +24,13 @@
      "type": "minecraft:model",
      "model": "limitless:item/items/croc_reine"
     }
+   },
+   {
+    "when": "lance_ciel",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/lance_ciel"
+    }
    }
   ],
   "fallback": {

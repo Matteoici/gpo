@@ -66,7 +66,23 @@ final class BlackFlash implements Listener {
     private final Map<UUID, Boolean> armed = new HashMap<>();
     private final Map<UUID, BukkitTask> armTask = new HashMap<>();
     /** joueurs figés par les Consécutifs : plus rien (manger, boire, taper, tirer, perle...) jusqu'à la fin */
-    private final Map<UUID, Long> stunned = new HashMap<>();
+    private static final Map<UUID, Long> stunned = new HashMap<>();
+    private static BlackFlash instance;
+
+    /** Fige un joueur comme pendant les Consécutifs (plus rien d'utilisable). */
+    static void stun(Player p, int ticks) {
+        stunned.put(p.getUniqueId(), System.currentTimeMillis() + ticks * 50L + 300);
+        p.clearActiveItem();
+        p.closeInventory();
+    }
+
+    /** Coupe un Black Flash chargé (la Lance du Ciel Inversé annule les techniques). */
+    static void disarm(Player p) {
+        if (instance == null || instance.armed.remove(p.getUniqueId()) == null) return;
+        BukkitTask t = instance.armTask.remove(p.getUniqueId());
+        if (t != null) t.cancel();
+        p.sendActionBar(parse(instance.plugin.msg("lance-ciel.nullified")));
+    }
 
     private boolean isStunned(org.bukkit.entity.Entity e) {
         Long u = stunned.get(e.getUniqueId());
@@ -162,6 +178,7 @@ final class BlackFlash implements Listener {
 
     BlackFlash(SmpBoss plugin) {
         this.plugin = plugin;
+        instance = this;
     }
 
     private double cfg(String path, double def) {
@@ -186,6 +203,10 @@ final class BlackFlash implements Listener {
         boolean consec = d.equipped.contains(CONSEC), single = d.equipped.contains(SINGLE);
         if (!consec && !single) return;
         e.setCancelled(true);
+        if (TojiSpear.blocked(p)) {
+            TojiSpear.deny(p);
+            return;
+        }
         arm(p, consec);
     }
 

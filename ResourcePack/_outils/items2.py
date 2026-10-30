@@ -754,6 +754,67 @@ def capricorne():
     save(None, 'relic_projet_capricorne', fr, ft=3)
 capricorne()
 
+def lance_ciel():
+    """Lance du Ciel Inversé : lame d'acier droite avec un crochet brise-lame, garde ronde, manche entouré, anneau et chaîne"""
+    STEEL = [hx('3a4250'), hx('6a7688'), hx('a8b4c4'), hx('d8e0ea'), hx('ffffff')]
+    def thick(p0, p1, w):
+        m = np.zeros((16, 16), bool)
+        y, x = np.mgrid[0:16, 0:16]
+        (x0, y0), (x1, y1) = p0, p1
+        dx, dy = x1 - x0, y1 - y0; L2 = dx * dx + dy * dy
+        t = np.clip(((x + 0.5 - x0) * dx + (y + 0.5 - y0) * dy) / L2, 0, 1)
+        d = np.hypot(x + 0.5 - (x0 + t * dx), y + 0.5 - (y0 + t * dy))
+        return d <= w
+    blade = thick((7.4, 8.6), (14.4, 1.6), 0.78)
+    hook = thick((9.4, 6.6), (8.2, 5.0), 0.5) | thick((8.2, 5.0), (8.9, 4.3), 0.45)
+    guard = disk(7.0, 9.0, 1.15)
+    handle = thick((6.3, 9.7), (3.7, 12.3), 0.7)
+    ring = disk(2.7, 13.3, 1.25) & ~disk(2.7, 13.3, 0.5)
+    chain = np.zeros((16, 16), bool)
+    frames = []
+    for k in range(4):
+        a = np.zeros((16, 16, 4), np.int32)
+        a = over(a, shade(blade | hook, STEEL))
+        # tranchant clair + reflet qui glisse le long de la lame
+        for i in range(7):
+            x, y = 8 + i, 7 - i
+            if 0 <= y < 16 and x < 16 and blade[y, x]: a[y, x] = STEEL[4] if i == (k * 2) % 7 else STEEL[3]
+        a = over(a, shade(guard, [hx('2a2a34'), hx('4a4a58'), hx('7a7a88'), hx('a0a0ae')]))
+        hm = shade(handle, [hx('1a1020'), hx('2e1e38'), hx('4a3058'), hx('6a4a78')])
+        ys, xs = np.nonzero(handle)
+        for xx, yy in zip(xs, ys):
+            if (xx + yy) % 2 == 0: hm[yy, xx] = hx('22162a')
+        a = over(a, hm)
+        a = over(a, shade(ring, [hx('3a3a44'), hx('6a6a78'), hx('9a9aa8')]))
+        a[chain] = hx('7a7a88')
+        frames.append(outline(a, hx('0e0a12')))
+    save(None, 'lance_ciel', frames, ft=4)
+lance_ciel()
+
+def tribaton():
+    """Tribâton (Nuage Joueur) : trois sections laquées rouge, bagues dorées, maillons de chaîne entre elles"""
+    RED = [hx('4a0808'), hx('7a1010'), hx('b01c1c'), hx('e04040')]
+    GOLDR = [hx('6a4a08'), hx('b88a18'), hx('f0c040'), hx('fff0a0')]
+    def thick(p0, p1, w):
+        y, x = np.mgrid[0:16, 0:16]
+        (x0, y0), (x1, y1) = p0, p1
+        dx, dy = x1 - x0, y1 - y0; L2 = dx * dx + dy * dy
+        t = np.clip(((x + 0.5 - x0) * dx + (y + 0.5 - y0) * dy) / L2, 0, 1)
+        return np.hypot(x + 0.5 - (x0 + t * dx), y + 0.5 - (y0 + t * dy)) <= w
+    segs = [((1.8, 14.2), (5.0, 11.0)), ((6.2, 9.8), (9.6, 6.4)), ((10.8, 5.2), (14.2, 1.8))]
+    a = np.zeros((16, 16, 4), np.int32)
+    for p0, p1 in segs:
+        m = thick(p0, p1, 0.85)
+        a = over(a, shade(m, RED))
+        for u in (0.0, 1.0):
+            gx = p0[0] + (p1[0] - p0[0]) * u; gy = p0[1] + (p1[1] - p0[1]) * u
+            g = thick((gx - 0.35, gy + 0.35), (gx + 0.35, gy - 0.35), 0.9)
+            a = over(a, shade(g, GOLDR))
+    for (x, y) in [(5, 10), (6, 10), (10, 5), (10, 6)]:
+        a[y, x] = hx('9a9aa8')
+    save(outline(a, hx('140808')), 'tribaton')
+tribaton()
+
 # --- textures du corps de la Reine (32x32)
 def chitin():
     N2 = 32; yy, xx = np.mgrid[0:N2, 0:N2]

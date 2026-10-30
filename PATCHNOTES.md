@@ -1,5 +1,25 @@
 # Patch notes Limitless (textes Discord)
 
+## 31/10/2026 — L'arsenal de Toji
+
+🗡️ **L'ARSENAL DE TOJI** 🗡️ *(sur la Reine Araignée)*
+
+⚪ **Lance du Ciel Inversé** (MYTHICAL)
+> **Restriction Céleste** : tant que tu la tiens, ton corps est au maximum : **+10 cœurs, +45 % vitesse, +60 % dégâts**, saut, pas de faim…
+> …mais tu n'as **plus droit à rien d'autre** : ni totem, ni potion, ni pomme, ni perle, ni élytres, ni relique.
+> **Elle annule les techniques** : chaque coup coupe les pouvoirs de la cible (Black Flash, Capricorne, Hollow…) et traverse le Fantôme du Net.
+> **Percée du Ciel Inversé** (accroupi + clic droit) : tu te jettes sur ta cible, la lame la traverse, 5 entailles, puis le coup final : **70 % de sa vie**.
+
+🔴 **Tribâton · Nuage Joueur** (légendaire)
+> Clic droit : **3 tourbillons** du bâton à trois sections autour de toi, le dernier envoie tout en l'air. Il repousse fort au corps à corps.
+
+🖤 **Tenue de Toji** (légendaire, les 3 pièces tombent ensemble)
+> Aussi solide que du netherite. Complète : **Corps Céleste** (+15 % vitesse, +15 % dégâts, saut, pas de chute, ni poison, ni faiblesse, ni faim).
+
+🏹 **Et aussi**
+> • Les **flèches de lévitation** ne marchent plus dans les arènes (boss et duel)
+> • **Black Flash Consécutifs** : la cible est vraiment figée (ni manger, ni boire, ni fuir)
+
 ## 31/10/2026 — Poing & Foudre
 
 ⚡ **POING & FOUDRE** ⚡

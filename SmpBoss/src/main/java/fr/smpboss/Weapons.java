@@ -57,13 +57,15 @@ final class Weapons implements Listener {
             GIVRE = "croc_de_givre", TEMPETE = "arc_tempete", HOLLOW = "hollow_purple", FUGA = "fuga",
             LAME = "lame_citrouille", FOLLETS = "arc_feux_follets", HACHE = "hache_maudite",
             DAGUE = "dague_venin", ARC_TOILES = "arc_toiles", CROC_REINE = "croc_reine",
-            FAUX_TISSEUSE = "faux_tisseuse", SCEPTRE = "sceptre_abysse";
+            FAUX_TISSEUSE = "faux_tisseuse", SCEPTRE = "sceptre_abysse", LANCE = "lance_ciel", TRIBATON = "tribaton", TENUE = "tenue_toji";
+    /** les trois pièces de la Tenue de Toji (tombent ensemble) */
+    static final String[] TOJI_PIECES = {"toji_haut", "toji_pantalon", "toji_bottes"};
     /** armes du Roi Citrouille */
     static final String[] PUMPKIN = {SONIC, TRANCHE, BRISE, SPECTRAL, GIVRE, TEMPETE, HOLLOW, FUGA, LAME, FOLLETS, HACHE};
     /** armes de la Reine Araignée */
-    static final String[] SPIDER = {DAGUE, ARC_TOILES, FAUX_TISSEUSE, CROC_REINE, SCEPTRE};
+    static final String[] SPIDER = {DAGUE, ARC_TOILES, FAUX_TISSEUSE, TRIBATON, TENUE, CROC_REINE, LANCE, SCEPTRE};
     static final String[] ALL = {SONIC, TRANCHE, BRISE, SPECTRAL, GIVRE, TEMPETE, HOLLOW, FUGA, LAME, FOLLETS, HACHE, DAGUE, ARC_TOILES, CROC_REINE,
-            FAUX_TISSEUSE, SCEPTRE};
+            FAUX_TISSEUSE, SCEPTRE, LANCE, TRIBATON, TENUE};
 
     /** Chance par victoire si le config n'en donne pas. */
     static double defChance(String id) {
@@ -93,6 +95,9 @@ final class Weapons implements Listener {
             case CROC_REINE -> "croc-reine";
             case FAUX_TISSEUSE -> "faux-tisseuse";
             case SCEPTRE -> "sceptre-abysse";
+            case LANCE -> "lance-ciel";
+            case TRIBATON -> "tribaton";
+            case TENUE, "toji_haut", "toji_pantalon", "toji_bottes" -> "tenue-toji";
             default -> "arbalete-spectrale";
         };
     }
@@ -113,6 +118,8 @@ final class Weapons implements Listener {
             case ARC_TOILES -> Material.BOW;
             case CROC_REINE -> Material.NETHERITE_SWORD;
             case SCEPTRE -> Material.BREEZE_ROD;
+            case LANCE -> Material.NETHERITE_SWORD;
+            case TRIBATON -> Material.NETHERITE_SHOVEL;
             default -> Material.NETHERITE_HOE; // faux spectrale, faux de la tisseuse
         };
     }
@@ -120,7 +127,8 @@ final class Weapons implements Listener {
     /** PRESTIGE : Sonic Bow, Brise-Terre, Faux des Âmes, Violet Imaginaire, Fûga. SECRET : le reste. */
     static Rarity rarity(String id) {
         if (LAME.equals(id) || FOLLETS.equals(id) || HACHE.equals(id) || DAGUE.equals(id) || ARC_TOILES.equals(id)) return Rarity.EPIC;
-        if (CROC_REINE.equals(id)) return Rarity.SECRET;
+        if (CROC_REINE.equals(id) || LANCE.equals(id)) return Rarity.SECRET;
+        if (TRIBATON.equals(id) || TENUE.equals(id) || id.startsWith("toji_")) return Rarity.LEGENDARY;
         if (FAUX_TISSEUSE.equals(id)) return Rarity.LEGENDARY;
         if (SCEPTRE.equals(id)) return Rarity.PRESTIGE;
         return TRANCHE.equals(id) || GIVRE.equals(id) || TEMPETE.equals(id) ? Rarity.SECRET : Rarity.PRESTIGE;
@@ -141,6 +149,8 @@ final class Weapons implements Listener {
             case CROC_REINE -> 12;
             case FAUX_TISSEUSE -> 9;
             case SCEPTRE -> 18;
+            case LANCE -> 160;
+            case TRIBATON -> 7;
             default -> 14;
         };
     }
@@ -159,6 +169,8 @@ final class Weapons implements Listener {
             case CROC_REINE -> 16;
             case FAUX_TISSEUSE -> 12;
             case SCEPTRE -> 25;
+            case LANCE -> 90;
+            case TRIBATON -> 10;
             default -> 2;
         };
     }
@@ -188,6 +200,8 @@ final class Weapons implements Listener {
     // ================================================================= objets
 
     ItemStack create(String id) {
+        if (TENUE.equals(id)) return tojiPiece("toji_haut");
+        if (id.startsWith("toji_")) return tojiPiece(id);
         boolean bow = SONIC.equals(id) || TEMPETE.equals(id) || FOLLETS.equals(id) || ARC_TOILES.equals(id);
         ItemStack it = new ItemStack(material(id));
         ItemMeta m = it.getItemMeta();
@@ -239,6 +253,15 @@ final class Weapons implements Listener {
                     new NamespacedKey(plugin, id + "_speed"), cfg(path(id) + ".attack-speed", faux ? 1.2 : 1.4) - 4,
                     org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND));
         }
+        if (LANCE.equals(id) || TRIBATON.equals(id)) {
+            boolean lance = LANCE.equals(id);
+            m.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_DAMAGE, new org.bukkit.attribute.AttributeModifier(
+                    new NamespacedKey(plugin, id + "_damage"), cfg(path(id) + ".attack-damage", lance ? 16 : 12) - 1,
+                    org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND));
+            m.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_SPEED, new org.bukkit.attribute.AttributeModifier(
+                    new NamespacedKey(plugin, id + "_speed"), cfg(path(id) + ".attack-speed", lance ? 1.8 : 1.5) - 4,
+                    org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND));
+        }
         if (DAGUE.equals(id) || CROC_REINE.equals(id)) {
             boolean croc = CROC_REINE.equals(id);
             m.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_DAMAGE, new org.bukkit.attribute.AttributeModifier(
@@ -275,6 +298,70 @@ final class Weapons implements Listener {
         SmpBoss.modelData(m, id); // modèle du resource pack (sans le pack : l'objet vanilla normal)
         it.setItemMeta(m);
         return it;
+    }
+
+    /** Une pièce de la Tenue de Toji : cuir teint (se voit sans pack), solide comme du netherite, incassable. */
+    ItemStack tojiPiece(String pid) {
+        Material mat;
+        org.bukkit.inventory.EquipmentSlotGroup slot;
+        double armor, tough;
+        org.bukkit.Color col;
+        switch (pid) {
+            case "toji_pantalon" -> {
+                mat = Material.LEATHER_LEGGINGS;
+                slot = org.bukkit.inventory.EquipmentSlotGroup.LEGS;
+                armor = cfg("tenue-toji.armor.pantalon", 6);
+                col = org.bukkit.Color.fromRGB(222, 218, 206);
+            }
+            case "toji_bottes" -> {
+                mat = Material.LEATHER_BOOTS;
+                slot = org.bukkit.inventory.EquipmentSlotGroup.FEET;
+                armor = cfg("tenue-toji.armor.bottes", 3);
+                col = org.bukkit.Color.fromRGB(24, 22, 26);
+            }
+            default -> {
+                pid = "toji_haut";
+                mat = Material.LEATHER_CHESTPLATE;
+                slot = org.bukkit.inventory.EquipmentSlotGroup.CHEST;
+                armor = cfg("tenue-toji.armor.haut", 8);
+                col = org.bukkit.Color.fromRGB(18, 18, 22);
+            }
+        }
+        tough = cfg("tenue-toji.toughness", 3);
+        ItemStack it = new ItemStack(mat);
+        org.bukkit.inventory.meta.LeatherArmorMeta m = (org.bukkit.inventory.meta.LeatherArmorMeta) it.getItemMeta();
+        m.setColor(col);
+        String piece = pid.substring(5);
+        m.displayName(parse(Rarity.LEGENDARY.name(plugin.msg("weapons.tenue-toji.pieces." + piece), 0)));
+        List<Component> lore = new ArrayList<>();
+        lore.add(parse(Rarity.LEGENDARY.tag));
+        lore.add(Component.empty());
+        for (String l : plugin.getConfig().getStringList("messages.weapons.tenue-toji.lore")) lore.add(parse(l));
+        m.lore(lore);
+        String[] attr = {"armor", "tough", "kb", "speed"};
+        double[] val = {armor, tough, cfg("tenue-toji.knockback-resistance", 0.1), cfg("tenue-toji.speed-per-piece", 0.04)};
+        org.bukkit.attribute.Attribute[] at = {org.bukkit.attribute.Attribute.ARMOR, org.bukkit.attribute.Attribute.ARMOR_TOUGHNESS,
+                org.bukkit.attribute.Attribute.KNOCKBACK_RESISTANCE, org.bukkit.attribute.Attribute.MOVEMENT_SPEED};
+        for (int i = 0; i < at.length; i++) {
+            m.addAttributeModifier(at[i], new org.bukkit.attribute.AttributeModifier(new NamespacedKey(plugin, pid + "_" + attr[i]), val[i],
+                    i == 3 ? org.bukkit.attribute.AttributeModifier.Operation.ADD_SCALAR : org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER, slot));
+        }
+        m.setUnbreakable(true);
+        m.setEnchantmentGlintOverride(false);
+        m.addItemFlags(ItemFlag.HIDE_UNBREAKABLE, ItemFlag.HIDE_DYE);
+        m.getPersistentDataContainer().set(key, PersistentDataType.STRING, pid);
+        it.setItemMeta(m);
+        return it;
+    }
+
+    /** Les pièces de la Tenue de Toji portées (0 à 3). */
+    int tojiPieces(Player p) {
+        int n = 0;
+        for (ItemStack a : p.getInventory().getArmorContents()) {
+            String id = id(a);
+            if (id != null && id.startsWith("toji_")) n++;
+        }
+        return n;
     }
 
     private static String fmt(double v) {
@@ -1544,6 +1631,10 @@ final class Weapons implements Listener {
             if (ThreadLocalRandom.current().nextDouble() * 100 >= chance) continue;
             ItemStack it = create(id);
             boolean inv = plugin.loot().give(p, it.clone());
+            if (TENUE.equals(id)) {
+                inv &= plugin.loot().give(p, tojiPiece("toji_pantalon"));
+                inv &= plugin.loot().give(p, tojiPiece("toji_bottes"));
+            }
             Rarity rar = rarity(id);
             String name = rar.name(plugin.msg("weapons." + path(id) + ".name"), 0);
             Reveal.show(plugin, p, it, rar, name, plugin.msg(inv ? "loot.where-inventory" : "loot.where-stash"));

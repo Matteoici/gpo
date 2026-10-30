@@ -137,7 +137,8 @@ public final class Relics {
     /** Remet les bonus (vie, vitesse) selon les reliques équipées. */
     public void apply(Player p) {
         double health = 0, speed = 0, damage = 0, armor = 0;
-        for (String id : plugin.store().of(p.getUniqueId()).equipped) {
+        // Restriction Céleste (Lance du Ciel Inversé) : aucune relique
+        if (!TojiSpear.restricted(p)) for (String id : plugin.store().of(p.getUniqueId()).equipped) {
             Relic r = get(id);
             if (r == null) continue;
             health += r.health() * 2;
@@ -170,6 +171,7 @@ public final class Relics {
         long now = System.currentTimeMillis();
         for (Player p : Bukkit.getOnlinePlayers()) {
             double regen = 0;
+            if (TojiSpear.restricted(p)) continue;
             for (String id : plugin.store().of(p.getUniqueId()).equipped) {
                 Relic r = get(id);
                 if (r != null) regen += r.regen();
@@ -185,7 +187,7 @@ public final class Relics {
 
     public void tickTrails() {
         for (Player p : Bukkit.getOnlinePlayers()) {
-            if (p.isInvisible() || p.getGameMode() == org.bukkit.GameMode.SPECTATOR) continue;
+            if (p.isInvisible() || p.getGameMode() == org.bukkit.GameMode.SPECTATOR || TojiSpear.restricted(p)) continue;
             for (String id : plugin.store().of(p.getUniqueId()).equipped) {
                 Relic r = get(id);
                 if (r == null || r.trail() == null || "flames".equals(r.visual())) continue;

@@ -141,6 +141,10 @@ final class Ultimates {
 
     void cast(Player p, String id) {
         String path = Weapons.path(id);
+        if (TojiSpear.blocked(p)) {
+            TojiSpear.deny(p);
+            return;
+        }
         if (forbiddenAt(p)) {
             p.sendMessage(parse(plugin.msg("weapons.ult-forbidden").replace("<item>", plugin.msg("weapons." + path + ".name"))));
             p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.7f, 0.5f);

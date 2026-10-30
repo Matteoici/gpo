@@ -447,6 +447,20 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 40);
             saveConfig();
         }
+        if (getConfig().getInt("config-version", 1) < 41) {
+            // armes de Toji (Lance du Ciel Inversé, Tribâton, Tenue)
+            var def = getConfig().getDefaults();
+            if (def != null) {
+                for (String k : new String[]{"weapons.lance-ciel", "weapons.tribaton", "weapons.tenue-toji", "messages.weapons.lance-ciel",
+                        "messages.weapons.tribaton", "messages.weapons.tenue-toji", "messages.lance-ciel"}) {
+                    var sec = def.getConfigurationSection(k);
+                    if (sec == null) continue;
+                    for (String sub : sec.getKeys(true)) if (!sec.isConfigurationSection(sub)) getConfig().set(k + "." + sub, sec.get(sub));
+                }
+            }
+            getConfig().set("config-version", 41);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);
@@ -455,6 +469,7 @@ public final class SmpBoss extends JavaPlugin {
         getServer().getPluginManager().registerEvents(weapons, this);
         getServer().getPluginManager().registerEvents(new BlackFlash(this), this);
         getServer().getPluginManager().registerEvents(new Capricorne(this), this);
+        getServer().getPluginManager().registerEvents(new TojiSpear(this), this);
         new BossMusic(this);
         PackStatus packStatus = new PackStatus(this);
         getServer().getPluginManager().registerEvents(packStatus, this);
@@ -986,6 +1001,8 @@ public final class SmpBoss extends JavaPlugin {
                         case "crocreine", "croc_reine", "croc" -> weapons.create(Weapons.CROC_REINE);
                         case "fauxtisseuse", "faux_tisseuse", "tisseuse" -> weapons.create(Weapons.FAUX_TISSEUSE);
                         case "sceptre", "sceptreabysse", "sceptre_abysse" -> weapons.create(Weapons.SCEPTRE);
+                        case "lance", "lanceciel", "lance_ciel", "toji", "ciel" -> weapons.create(Weapons.LANCE);
+                        case "tribaton", "tribâton", "nuage" -> weapons.create(Weapons.TRIBATON);
                         case "sonicbow", "sonic_bow", "arc" -> weapons.create(Weapons.SONIC);
                         case "tranchemace", "tranche_mace", "epee", "épée" -> weapons.create(Weapons.TRANCHE);
                         case "briseterre", "brise_terre", "hache" -> weapons.create(Weapons.BRISE);
@@ -1092,7 +1109,7 @@ public final class SmpBoss extends JavaPlugin {
         }
         else if (a.length == 3 && a[0].equalsIgnoreCase("give")) {
             out.addAll(List.of("graine", "citrouille", "faucille", "sonicbow", "tranchemace", "briseterre", "faux", "crocdegivre", "arctempete", "hollowpurple", "fuga", "lamecitrouille", "arcfeuxfollets", "hachemaudite",
-                    "oeil", "cocon", "dague", "toiles", "fauxtisseuse", "crocreine", "sceptre"));
+                    "oeil", "cocon", "dague", "toiles", "fauxtisseuse", "crocreine", "sceptre", "lance", "tribaton"));
             for (String id : relics.all().keySet()) out.add("relique:" + id);
         }
         String last = a.length == 0 ? "" : a[a.length - 1].toLowerCase(Locale.ROOT);

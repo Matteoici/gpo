@@ -129,6 +129,10 @@ final class Capricorne implements Listener {
     // ================================================================= actif 2 : Foudre du Black Wall
 
     void strike(Player p) {
+        if (TojiSpear.blocked(p)) {
+            TojiSpear.deny(p);
+            return;
+        }
         long now = System.currentTimeMillis();
         Long until = strikeCd.get(p.getUniqueId());
         if (until != null && until > now) {
@@ -267,6 +271,8 @@ final class Capricorne implements Listener {
     public void onHurt(EntityDamageByEntityEvent e) {
         if (!(e.getEntity() instanceof Player p) || !wears(p)) return;
         if (!plugin.getConfig().getBoolean("capricorne.ghost.enabled", true)) return;
+        // la Lance du Ciel Inversé traverse tout ; et sous Restriction Céleste, plus de relique
+        if (TojiSpear.piercing(e.getDamager()) || TojiSpear.blocked(p)) return;
         LivingEntity attacker = null;
         if (e.getDamager() instanceof LivingEntity le) attacker = le;
         else if (e.getDamager() instanceof Projectile pr && pr.getShooter() instanceof LivingEntity le) attacker = le;
@@ -359,6 +365,10 @@ final class Capricorne implements Listener {
     // ================================================================= actif : Brèche du Black Wall
 
     void breach(Player p) {
+        if (TojiSpear.blocked(p)) {
+            TojiSpear.deny(p);
+            return;
+        }
         if (casting.contains(p.getUniqueId())) return;
         long now = System.currentTimeMillis();
         Long until = cooldown.get(p.getUniqueId());

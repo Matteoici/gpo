@@ -54,6 +54,7 @@ final class Cosmetics {
         if (!plugin.getConfig().getBoolean("cosmetics.enabled", true)) return out;
         if (p.isDead() || p.getGameMode() == GameMode.SPECTATOR || p.isInvisible()) return out;
         if (p.isSleeping()) return out;
+        if (TojiSpear.restricted(p)) return out; // Restriction Céleste : aucune relique, même pas leur visuel
         if (plugin.store().of(p.getUniqueId()).hideCosmetics) return out;
         for (String id : plugin.store().of(p.getUniqueId()).equipped) {
             Relic r = plugin.relics().get(id);

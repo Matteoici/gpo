@@ -16,7 +16,7 @@ for d in (MOD, DEF):
 def w(path, obj):
     with open(path, 'w') as f: json.dump(obj, f, indent=1)
 
-HANDHELD = ['dague_venin', 'croc_reine', 'faux_tisseuse', 'sceptre_abysse', 'boss_blade', 'lame_citrouille', 'croc_de_givre', 'tranche_mace', 'brise_terre', 'hache_maudite', 'arbalete_spectrale', 'faucille', 'fuga']
+HANDHELD = ['lance_ciel', 'tribaton', 'dague_venin', 'croc_reine', 'faux_tisseuse', 'sceptre_abysse', 'boss_blade', 'lame_citrouille', 'croc_de_givre', 'tranche_mace', 'brise_terre', 'hache_maudite', 'arbalete_spectrale', 'faucille', 'fuga']
 RELICS = {'trainee_flammes': 'blaze_powder', 'amulette_recolte': 'golden_carrot', 'lanterne_mineure': 'lantern',
           'couronne': 'golden_helmet', 'lanterne_eternelle': 'soul_lantern', 'bottes_recolte': 'golden_boots',
           'sac_recolte': 'bundle', 'braises_ardentes': 'magma_cream', 'crane_maudit': 'wither_skeleton_skull',
@@ -126,7 +126,7 @@ def use(mat, ids):
     USE.setdefault(mat, []).extend(ids)
 use('bow', BOWS)
 use('diamond_sword', ['lame_citrouille', 'croc_de_givre'])
-use('netherite_sword', ['tranche_mace', 'boss_blade', 'croc_reine'])
+use('netherite_sword', ['tranche_mace', 'boss_blade', 'croc_reine', 'lance_ciel'])
 use('iron_sword', ['dague_venin'])
 use('fermented_spider_eye', ['oeil_maudit'])
 use('cobweb', ['cocon'])
@@ -139,6 +139,7 @@ use('netherite_axe', ['brise_terre'])
 use('diamond_axe', ['hache_maudite'])
 use('netherite_hoe', ['arbalete_spectrale', 'faucille', 'faux_tisseuse'])
 use('breeze_rod', ['sceptre_abysse'])
+use('netherite_shovel', ['tribaton'])
 use('blaze_rod', ['fuga'])
 use('amethyst_shard', ['hollow_purple'])
 use('pumpkin_seeds', ['graine'])
