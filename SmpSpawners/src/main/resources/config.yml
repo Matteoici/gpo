@@ -1,0 +1,133 @@
+# ============================================================ SmpSpawners
+# Un spawner posé ne fait apparaître AUCUN mob : il "tue" son mob tout seul et stocke l'XP et le butin dedans.
+# Clic droit dessus = menu pour tout récupérer. Pas de mobs = pas de lag, pas de glitch, pas de ferme à construire.
+config-version: 1
+
+production:
+  # il faut un joueur à moins de X blocs pour que le spawner produise (comme en vanilla) ; false = produit dès que le chunk est chargé
+  require-player-nearby: true
+  player-range: 32
+
+storage:
+  # place dans un spawner, multipliée par le nombre de spawners empilés dedans
+  items-per-stack: 2304      # 36 piles de 64
+  xp-per-stack: 5000
+
+limits:
+  max-stack: 64              # spawners empilés au même endroit
+  max-per-chunk: 16
+  # seul celui qui l'a posé peut l'ouvrir / le casser (les admins aussi)
+  owner-only: true
+
+# un spawner "vanilla" avec un mob (acheté au marché, au shop...) devient un spawner sans mob à la pose
+convert-vanilla-spawners: true
+# casser un spawner naturel (donjon...) avec Toucher de soie donne un spawner de ce mob
+natural-silk-touch: true
+# petit texte au-dessus des spawners
+hologram: true
+
+# Raretés du tirage au hasard (spawner mystère). weight = chances relatives ; interval = secondes entre 2 "kills".
+rarities:
+  commun:     {name: "Commun",     color: "<gray>",         weight: 58,  interval: 30}
+  peu-commun: {name: "Peu commun", color: "<green>",        weight: 26,  interval: 40}
+  rare:       {name: "Rare",       color: "<aqua>",         weight: 11,  interval: 60}
+  epique:     {name: "Épique",     color: "<light_purple>", weight: 4.3, interval: 90}
+  legendaire: {name: "Légendaire", color: "<gold>",         weight: 0.7, interval: 180}
+
+# Mobs : rareté, XP par kill, butin par kill ("OBJET min-max [chance%]"). interval: pour changer celui de la rareté.
+mobs:
+  ZOMBIE:
+    rarity: commun
+    xp: 5
+    drops: ["ROTTEN_FLESH 0-2", "IRON_INGOT 1 2.5%", "CARROT 1 1%", "POTATO 1 1%"]
+  SKELETON:
+    rarity: commun
+    xp: 5
+    drops: ["BONE 0-2", "ARROW 0-2"]
+  SPIDER:
+    rarity: commun
+    xp: 5
+    drops: ["STRING 0-2", "SPIDER_EYE 1 33%"]
+  COW:
+    rarity: commun
+    xp: 2
+    drops: ["BEEF 1-3", "LEATHER 0-2"]
+  PIG:
+    rarity: commun
+    xp: 2
+    drops: ["PORKCHOP 1-3"]
+  CHICKEN:
+    rarity: commun
+    xp: 2
+    drops: ["CHICKEN 1", "FEATHER 0-2"]
+  SHEEP:
+    rarity: commun
+    xp: 2
+    drops: ["MUTTON 1-2", "WHITE_WOOL 1"]
+  CREEPER:
+    rarity: peu-commun
+    xp: 5
+    drops: ["GUNPOWDER 0-2"]
+  CAVE_SPIDER:
+    rarity: peu-commun
+    xp: 5
+    drops: ["STRING 0-2", "SPIDER_EYE 1 33%"]
+  SLIME:
+    rarity: peu-commun
+    xp: 4
+    drops: ["SLIME_BALL 0-2"]
+  DROWNED:
+    rarity: peu-commun
+    xp: 5
+    drops: ["ROTTEN_FLESH 0-2", "COPPER_INGOT 1 11%"]
+  HUSK:
+    rarity: peu-commun
+    xp: 5
+    drops: ["ROTTEN_FLESH 0-2", "IRON_INGOT 1 2.5%"]
+  WITCH:
+    rarity: peu-commun
+    xp: 5
+    drops: ["GLASS_BOTTLE 0-2 30%", "GLOWSTONE_DUST 0-2 30%", "GUNPOWDER 0-2 30%", "REDSTONE 0-2 30%", "SUGAR 0-2 30%", "STICK 0-2 30%"]
+  ENDERMAN:
+    rarity: rare
+    xp: 5
+    drops: ["ENDER_PEARL 0-1"]
+  BLAZE:
+    rarity: rare
+    xp: 10
+    drops: ["BLAZE_ROD 0-1"]
+  MAGMA_CUBE:
+    rarity: rare
+    xp: 4
+    drops: ["MAGMA_CREAM 0-1"]
+  GUARDIAN:
+    rarity: rare
+    xp: 10
+    drops: ["PRISMARINE_SHARD 0-2", "PRISMARINE_CRYSTALS 1 40%", "COD 1 40%"]
+  ZOMBIFIED_PIGLIN:
+    rarity: rare
+    xp: 5
+    drops: ["ROTTEN_FLESH 0-1", "GOLD_NUGGET 0-1", "GOLD_INGOT 1 2.5%"]
+  IRON_GOLEM:
+    rarity: epique
+    xp: 3
+    drops: ["IRON_INGOT 3-5", "POPPY 0-2"]
+  WITHER_SKELETON:
+    rarity: epique
+    xp: 5
+    drops: ["COAL 0-1", "BONE 0-2", "WITHER_SKELETON_SKULL 1 2.5%"]
+  PIGLIN_BRUTE:
+    rarity: epique
+    xp: 20
+    drops: ["GOLD_INGOT 0-1", "GOLDEN_AXE 1 8.5%"]
+  SHULKER:
+    rarity: legendaire
+    xp: 5
+    drops: ["SHULKER_SHELL 1 50%"]
+  EVOKER:
+    rarity: legendaire
+    xp: 10
+    drops: ["TOTEM_OF_UNDYING 1 35%", "EMERALD 0-1"]
+
+messages:
+  prefix: "<dark_gray>[<gold>Spawners</gold>]</dark_gray> "

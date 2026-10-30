@@ -1,0 +1,14 @@
+name: SmpSpawners
+version: '${version}'
+main: fr.smpspawners.SmpSpawners
+api-version: '26.2'
+description: "Spawners sans mobs : un mob au hasard à la pose, l'XP et le butin s'accumulent dedans, à récupérer dans un menu"
+commands:
+  spawner:
+    description: Spawners (aide, liste des mobs, admin)
+    usage: /spawner [liste|give|reload]
+    aliases: [spawners, generateur, generateurs]
+permissions:
+  smpspawners.admin:
+    description: Donner des spawners, ouvrir et casser ceux des autres, recharger
+    default: op
