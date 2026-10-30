@@ -66,7 +66,10 @@ final class PackStatus implements Listener, CommandExecutor {
         Player p = e.getPlayer();
         switch (e.getStatus()) {
             case SUCCESSFULLY_LOADED -> loaded.put(p.getUniqueId(), true);
-            case DECLINED, FAILED_DOWNLOAD, INVALID_URL, FAILED_RELOAD, DISCARDED -> {
+            // DISCARDED = l'ancienne version du pack est retirée quand le serveur en envoie une nouvelle : ce n'est pas un échec
+            case DISCARDED -> {
+            }
+            case DECLINED, FAILED_DOWNLOAD, INVALID_URL, FAILED_RELOAD -> {
                 loaded.put(p.getUniqueId(), false);
                 Bukkit.getScheduler().runTaskLater(plugin, () -> {
                     if (p.isOnline() && !has(p)) p.sendMessage(parse(plugin.msg("pack.missing")));
