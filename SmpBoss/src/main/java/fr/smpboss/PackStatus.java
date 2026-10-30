@@ -7,7 +7,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerResourcePackStatusEvent;
 
@@ -31,8 +30,24 @@ final class PackStatus implements Listener, CommandExecutor {
         this.plugin = plugin;
     }
 
+    /**
+     * Le pack du serveur (server.properties) est envoyé pendant la connexion, AVANT que le joueur soit dans le monde :
+     * on ne reçoit pas toujours sa réponse. Donc : pas de réponse = on considère qu'il l'a ; seul un refus / un échec
+     * connu le retire (et /pack permet de réessayer).
+     */
     static boolean has(Player p) {
-        return Boolean.TRUE.equals(loaded.get(p.getUniqueId()));
+        Boolean b = loaded.get(p.getUniqueId());
+        if (b != null) return b;
+        return serverHasPack();
+    }
+
+    private static boolean serverHasPack() {
+        try {
+            var rp = Bukkit.getServer().getServerResourcePack();
+            return rp != null && rp.getUrl() != null && !rp.getUrl().isBlank();
+        } catch (RuntimeException | LinkageError e) {
+            return true;
+        }
     }
 
     private static UUID serverPackId() {
@@ -60,11 +75,6 @@ final class PackStatus implements Listener, CommandExecutor {
             default -> {
             }
         }
-    }
-
-    @EventHandler
-    public void onJoin(PlayerJoinEvent e) {
-        loaded.remove(e.getPlayer().getUniqueId());
     }
 
     @EventHandler
