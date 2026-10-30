@@ -931,4 +931,14 @@ public final class SmpBoss extends JavaPlugin {
     public Set<RelicMenu> openMenus() {
         return openMenus;
     }
+
+    /** Donne à l'objet un "custom model data" texte : le resource pack l'affiche avec son modèle, sans le pack c'est l'objet vanilla. */
+    static void modelData(org.bukkit.inventory.meta.ItemMeta m, String id) {
+        try {
+            var c = m.getCustomModelDataComponent();
+            c.setStrings(java.util.List.of(id));
+            m.setCustomModelDataComponent(c);
+        } catch (RuntimeException | LinkageError ignored) {
+        }
+    }
 }

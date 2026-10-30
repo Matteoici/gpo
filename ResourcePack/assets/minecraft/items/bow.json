@@ -1,0 +1,150 @@
+{
+ "model": {
+  "type": "minecraft:select",
+  "property": "minecraft:custom_model_data",
+  "index": 0,
+  "cases": [
+   {
+    "when": "sonic_bow",
+    "model": {
+     "type": "minecraft:condition",
+     "property": "minecraft:using_item",
+     "on_false": {
+      "type": "minecraft:model",
+      "model": "limitless:item/items/sonic_bow"
+     },
+     "on_true": {
+      "type": "minecraft:range_dispatch",
+      "property": "minecraft:use_duration",
+      "scale": 0.05,
+      "entries": [
+       {
+        "threshold": 0.65,
+        "model": {
+         "type": "minecraft:model",
+         "model": "limitless:item/items/sonic_bow_pulling_1"
+        }
+       },
+       {
+        "threshold": 0.9,
+        "model": {
+         "type": "minecraft:model",
+         "model": "limitless:item/items/sonic_bow_pulling_2"
+        }
+       }
+      ],
+      "fallback": {
+       "type": "minecraft:model",
+       "model": "limitless:item/items/sonic_bow_pulling_0"
+      }
+     }
+    }
+   },
+   {
+    "when": "arc_tempete",
+    "model": {
+     "type": "minecraft:condition",
+     "property": "minecraft:using_item",
+     "on_false": {
+      "type": "minecraft:model",
+      "model": "limitless:item/items/arc_tempete"
+     },
+     "on_true": {
+      "type": "minecraft:range_dispatch",
+      "property": "minecraft:use_duration",
+      "scale": 0.05,
+      "entries": [
+       {
+        "threshold": 0.65,
+        "model": {
+         "type": "minecraft:model",
+         "model": "limitless:item/items/arc_tempete_pulling_1"
+        }
+       },
+       {
+        "threshold": 0.9,
+        "model": {
+         "type": "minecraft:model",
+         "model": "limitless:item/items/arc_tempete_pulling_2"
+        }
+       }
+      ],
+      "fallback": {
+       "type": "minecraft:model",
+       "model": "limitless:item/items/arc_tempete_pulling_0"
+      }
+     }
+    }
+   },
+   {
+    "when": "arc_feux_follets",
+    "model": {
+     "type": "minecraft:condition",
+     "property": "minecraft:using_item",
+     "on_false": {
+      "type": "minecraft:model",
+      "model": "limitless:item/items/arc_feux_follets"
+     },
+     "on_true": {
+      "type": "minecraft:range_dispatch",
+      "property": "minecraft:use_duration",
+      "scale": 0.05,
+      "entries": [
+       {
+        "threshold": 0.65,
+        "model": {
+         "type": "minecraft:model",
+         "model": "limitless:item/items/arc_feux_follets_pulling_1"
+        }
+       },
+       {
+        "threshold": 0.9,
+        "model": {
+         "type": "minecraft:model",
+         "model": "limitless:item/items/arc_feux_follets_pulling_2"
+        }
+       }
+      ],
+      "fallback": {
+       "type": "minecraft:model",
+       "model": "limitless:item/items/arc_feux_follets_pulling_0"
+      }
+     }
+    }
+   }
+  ],
+  "fallback": {
+   "type": "minecraft:condition",
+   "property": "minecraft:using_item",
+   "on_false": {
+    "type": "minecraft:model",
+    "model": "minecraft:item/bow"
+   },
+   "on_true": {
+    "type": "minecraft:range_dispatch",
+    "property": "minecraft:use_duration",
+    "scale": 0.05,
+    "entries": [
+     {
+      "threshold": 0.65,
+      "model": {
+       "type": "minecraft:model",
+       "model": "minecraft:item/bow_pulling_1"
+      }
+     },
+     {
+      "threshold": 0.9,
+      "model": {
+       "type": "minecraft:model",
+       "model": "minecraft:item/bow_pulling_2"
+      }
+     }
+    ],
+    "fallback": {
+     "type": "minecraft:model",
+     "model": "minecraft:item/bow_pulling_0"
+    }
+   }
+  }
+ }
+}

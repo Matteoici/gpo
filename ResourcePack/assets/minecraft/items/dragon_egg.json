@@ -1,0 +1,41 @@
+{
+ "model": {
+  "type": "minecraft:select",
+  "property": "minecraft:custom_model_data",
+  "index": 0,
+  "cases": [
+   {
+    "when": "egg_rare",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/egg_rare"
+    }
+   },
+   {
+    "when": "egg_epique",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/egg_epique"
+    }
+   },
+   {
+    "when": "egg_legendaire",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/egg_legendaire"
+    }
+   },
+   {
+    "when": "egg_mythique",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/egg_mythique"
+    }
+   }
+  ],
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:block/dragon_egg"
+  }
+ }
+}

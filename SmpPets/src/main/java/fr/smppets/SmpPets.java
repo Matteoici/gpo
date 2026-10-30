@@ -997,6 +997,12 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
         m.lore(lore);
         m.setEnchantmentGlintOverride(true);
         m.getPersistentDataContainer().set(eggKey, PersistentDataType.STRING, g.id);
+        try { // modèle du resource pack (sans le pack : l'œuf vanilla)
+            var cmd = m.getCustomModelDataComponent();
+            cmd.setStrings(List.of("egg_" + g.id));
+            m.setCustomModelDataComponent(cmd);
+        } catch (RuntimeException | LinkageError ignored) {
+        }
         it.setItemMeta(m);
         return it;
     }

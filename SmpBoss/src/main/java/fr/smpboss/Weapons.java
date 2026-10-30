@@ -224,6 +224,7 @@ final class Weapons implements Listener {
         m.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
         if (bow) m.addEnchant(Enchantment.INFINITY, 1, true);
         m.getPersistentDataContainer().set(key, PersistentDataType.STRING, id);
+        SmpBoss.modelData(m, id); // modèle du resource pack (sans le pack : l'objet vanilla normal)
         it.setItemMeta(m);
         return it;
     }

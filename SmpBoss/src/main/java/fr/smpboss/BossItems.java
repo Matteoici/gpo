@@ -53,6 +53,7 @@ public final class BossItems {
         m.lore(lines(plugin.getConfig().getStringList("messages.items.seed.lore")));
         m.setEnchantmentGlintOverride(true);
         m.getPersistentDataContainer().set(seedKey, PersistentDataType.BYTE, (byte) 1);
+        SmpBoss.modelData(m, "graine");
         model(m, plugin.getConfig().getString("models.seed"));
         it.setItemMeta(m);
         return it;
@@ -143,6 +144,7 @@ public final class BossItems {
         m.setEnchantmentGlintOverride(true);
         m.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
         m.getPersistentDataContainer().set(sickleKey, PersistentDataType.BYTE, (byte) 1);
+        SmpBoss.modelData(m, "faucille");
         model(m, c.getString("models.sickle"));
         it.setItemMeta(m);
         return it;

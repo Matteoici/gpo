@@ -1,0 +1,27 @@
+{
+ "model": {
+  "type": "minecraft:select",
+  "property": "minecraft:custom_model_data",
+  "index": 0,
+  "cases": [
+   {
+    "when": "lame_citrouille",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/lame_citrouille"
+    }
+   },
+   {
+    "when": "croc_de_givre",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/croc_de_givre"
+    }
+   }
+  ],
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:item/diamond_sword"
+  }
+ }
+}

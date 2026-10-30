@@ -1,0 +1,6 @@
+{
+ "parent": "minecraft:item/handheld",
+ "textures": {
+  "layer0": "limitless:item/items/arbalete_spectrale"
+ }
+}

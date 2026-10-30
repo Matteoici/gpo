@@ -1,0 +1,6 @@
+{
+ "parent": "minecraft:item/bow",
+ "textures": {
+  "layer0": "limitless:item/items/sonic_bow_pulling_0"
+ }
+}
