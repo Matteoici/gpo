@@ -1,0 +1,31 @@
+# =====================================================================
+#  SmpCouvreFeu - contrôle parental
+#  Les joueurs ajoutés ne peuvent pas se connecter pendant leurs heures interdites.
+#  L'heure est celle du SERVEUR (fuseau ci-dessous) : changer l'heure de son PC, son pays
+#  ou passer par un VPN ne change rien. Le blocage suit le compte (UUID), pas le pseudo.
+#
+#  /couvrefeu ajouter <joueur> <début> <fin> [tous|semaine|weekend]
+#       ex. /couvrefeu ajouter Kevin 22h 7h          (tous les soirs de 22h à 7h)
+#           /couvrefeu ajouter Kevin 23h30 9h weekend (vendredi et samedi soir)
+#  /couvrefeu retirer <joueur> [tous|semaine|weekend]
+#  /couvrefeu pause <joueur> <minutes>   (autorisation exceptionnelle)
+#  /couvrefeu info <joueur>  ·  /couvrefeu liste
+# =====================================================================
+
+# fuseau horaire de référence
+timezone: "Europe/Paris"
+
+# soirs "weekend" (le jour où commence la nuit) : vendredi soir et samedi soir
+weekend-days: [FRIDAY, SATURDAY]
+
+# prévenir avant d'être déconnecté (minutes)
+warn-minutes: [15, 5, 1]
+
+# bloquer aussi les autres comptes qui se connectent depuis une adresse IP déjà utilisée
+# par un joueur sous couvre-feu, pendant ses heures interdites (évite le double compte)
+block-ips: true
+
+messages:
+  kick: "<red><b>Couvre-feu</b>\n\n<gray>Tu ne peux pas te connecter maintenant.\n<gray>Reviens à partir de <white><b><until></b></white>.\n\n<dark_gray>Contrôle parental Limitless"
+  kick-ip: "<red><b>Couvre-feu</b>\n\n<gray>Connexion impossible depuis cet appareil maintenant.\n<gray>Reviens à partir de <white><b><until></b></white>."
+  warn: "<gold>⏰ <yellow>Couvre-feu dans <white><b><minutes> min</b></white><yellow> : pense à te mettre à l'abri !"

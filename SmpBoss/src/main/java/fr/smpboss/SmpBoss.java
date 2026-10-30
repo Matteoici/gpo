@@ -431,6 +431,22 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 39);
             saveConfig();
         }
+        if (getConfig().getInt("config-version", 1) < 40) {
+            // Black Flash = coup de poing chargé ; Capricorne : Foudre du Black Wall, utilisable en duel
+            var def = getConfig().getDefaults();
+            if (def != null) {
+                for (String k : new String[]{"relics.list.black_flash.lore", "relics.list.black_flash_consecutif.lore", "relics.list.projet_capricorne.lore",
+                        "messages.black-flash.armed", "messages.black-flash.missed", "messages.capricorne.strike", "messages.capricorne.strike-warn",
+                        "messages.capricorne.no-target", "black-flash.arm-seconds", "black-flash.miss-cooldown-seconds", "black-flash.bare-hand-only"}) {
+                    getConfig().set(k, def.get(k));
+                }
+                var st = def.getConfigurationSection("capricorne.strike");
+                if (st != null) for (String k : st.getKeys(false)) getConfig().set("capricorne.strike." + k, st.get(k));
+            }
+            getConfig().set("capricorne.in-duels", true);
+            getConfig().set("config-version", 40);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);

@@ -65,8 +65,13 @@ final class Capricorne implements Listener {
     private static final char SCREEN_DARK = '', SCREEN_RED = '';
 
     private final SmpBoss plugin;
-    private final Map<UUID, Long> cooldown = new HashMap<>(), ghostCd = new HashMap<>(), dropTick = new HashMap<>();
+    private final Map<UUID, Long> cooldown = new HashMap<>(), ghostCd = new HashMap<>(), dropTick = new HashMap<>(), strikeCd = new HashMap<>();
     private final Set<UUID> casting = new HashSet<>();
+    private static final Set<org.bukkit.Material> RIGHT_USE = Set.of(org.bukkit.Material.BOW, org.bukkit.Material.CROSSBOW, org.bukkit.Material.TRIDENT,
+            org.bukkit.Material.SHIELD, org.bukkit.Material.POTION, org.bukkit.Material.SPLASH_POTION, org.bukkit.Material.LINGERING_POTION,
+            org.bukkit.Material.ENDER_PEARL, org.bukkit.Material.ENDER_EYE, org.bukkit.Material.SNOWBALL, org.bukkit.Material.EGG,
+            org.bukkit.Material.FISHING_ROD, org.bukkit.Material.FIREWORK_ROCKET, org.bukkit.Material.WIND_CHARGE, org.bukkit.Material.SPYGLASS,
+            org.bukkit.Material.GOAT_HORN, org.bukkit.Material.MILK_BUCKET, org.bukkit.Material.EXPERIENCE_BOTTLE);
 
     Capricorne(SmpBoss plugin) {
         this.plugin = plugin;
@@ -104,6 +109,149 @@ final class Capricorne implements Listener {
         Long dt = dropTick.get(p.getUniqueId());
         if (dt != null && Bukkit.getCurrentTick() - dt <= 1) return;
         breach(p);
+    }
+
+    /** Accroupi + clic droit dans le vide : la Foudre du Black Wall tombe sur la cible visée. */
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onRightClick(PlayerInteractEvent e) {
+        if (e.getAction() != Action.RIGHT_CLICK_AIR || e.getHand() != EquipmentSlot.HAND) return;
+        Player p = e.getPlayer();
+        if (!p.isSneaking() || !wears(p)) return;
+        org.bukkit.inventory.ItemStack it = p.getInventory().getItemInMainHand();
+        // pas avec un objet qui sert déjà au clic droit (nourriture, arc, bouclier, armes du serveur...)
+        if (!it.getType().isAir()) {
+            org.bukkit.Material m = it.getType();
+            if (m.isEdible() || plugin.weapons().id(it) != null || RIGHT_USE.contains(m)) return;
+        }
+        strike(p);
+    }
+
+    // ================================================================= actif 2 : Foudre du Black Wall
+
+    void strike(Player p) {
+        long now = System.currentTimeMillis();
+        Long until = strikeCd.get(p.getUniqueId());
+        if (until != null && until > now) {
+            p.sendActionBar(parse(plugin.msg("weapons.cooldown").replace("<seconds>", String.valueOf((until - now) / 1000 + 1))));
+            return;
+        }
+        World w = p.getWorld();
+        Location eye = p.getEyeLocation();
+        Vector dir = eye.getDirection().normalize();
+        double range = cfg("strike.range", 48);
+        boolean duels = plugin.getConfig().getBoolean("capricorne.in-duels", true);
+        // la cible : la créature visée (visée large), sinon le bloc visé
+        RayTraceResult hit = w.rayTrace(eye, dir, range, FluidCollisionMode.NEVER, true, 1.2,
+                en -> en instanceof LivingEntity && !en.equals(p) && !(en instanceof Player o && o.getGameMode() == org.bukkit.GameMode.SPECTATOR));
+        LivingEntity target = null;
+        if (hit != null && hit.getHitEntity() instanceof LivingEntity le) {
+            target = le;
+            Boss b = plugin.king();
+            if (b != null && b.isBoss(le) && b.mainEntity() != null) target = b.mainEntity();
+        }
+        Location spot;
+        if (target != null) spot = target.getLocation();
+        else if (hit != null) spot = hit.getHitPosition().toLocation(w);
+        else {
+            p.sendActionBar(parse(plugin.msg("capricorne.no-target")));
+            return;
+        }
+        strikeCd.put(p.getUniqueId(), now + (long) (cfg("strike.cooldown-seconds", 60) * 1000));
+        p.sendActionBar(parse(plugin.msg("capricorne.strike")));
+        // avertissement : ça crépite au sol sous la cible, le ciel rougit
+        WeaponFx fx = fx();
+        LivingEntity tg = target;
+        Location g0 = spot.clone().add(0, 0.08, 0);
+        ItemDisplay ground = fx.sprite(g0, "bw_ground", 0.6f, 1, 0.6f, Display.Billboard.FIXED, null);
+        fx.later(1, () -> PackFx.tween(ground, new Vector3f(), null, new Vector3f(5, 1, 5), 10));
+        fx.kill(ground, 22);
+        fx.snd(spot, "capricorn.glitch", 2f, 0.7f);
+        fx.snd(p.getLocation(), "capricorn.zap", 1f, 1.4f);
+        // petit arc de la main du lanceur vers le ciel
+        Location hand = eye.clone().add(dir.clone().multiply(0.7)).add(0, -0.3, 0);
+        bolt(hand, hand.clone().add(0, 6, 0), 0.7f, 4);
+        int delay = (int) cfg("strike.delay-ticks", 12);
+        for (int i = 0; i < delay; i += 3) {
+            int ii = i;
+            fx.later(1 + i, () -> {
+                Location at = tg != null && tg.isValid() ? tg.getLocation() : spot;
+                ThreadLocalRandom r = ThreadLocalRandom.current();
+                arc(at.clone().add(r.nextDouble(-1, 1), 0.3, r.nextDouble(-1, 1)), new Vector(r.nextDouble(-1, 1), r.nextDouble(-0.2, 0.6), r.nextDouble(-1, 1)),
+                        r.nextDouble(1, 2.5), 0.7f, 3);
+                at.getWorld().spawnParticle(Particle.DUST, at.clone().add(0, 0.2, 0), 10, 1.2, 0.1, 1.2, 0, new Particle.DustOptions(RED, 1.2f), true);
+                if (ii == 0 && tg instanceof Player tp) tp.sendActionBar(parse(plugin.msg("capricorne.strike-warn")));
+            });
+        }
+        fx.later(1 + delay, () -> {
+            Location at = tg != null && tg.isValid() && !tg.isDead() ? tg.getLocation() : spot;
+            World ww = at.getWorld();
+            Location sky = at.clone().add(0, cfg("strike.height", 45), 0);
+            // l'éclair : un tronc épais + deux plus fins, qui scintillent 3 fois
+            for (int k = 0; k < 3; k++) {
+                int kk = k;
+                fx.later(1 + k * 3, () -> {
+                    bolt(sky, at.clone().add(0, 0.2, 0), kk == 0 ? 3.4f : 2.4f, 4);
+                    bolt(sky.clone().add(ThreadLocalRandom.current().nextDouble(-4, 4), 0, ThreadLocalRandom.current().nextDouble(-4, 4)),
+                            at.clone().add(0, 1, 0), 1.2f, 3);
+                });
+            }
+            Location m = at.clone().add(0, 1, 0);
+            fx.pop(m, "bw_burst", 11, 11, 11, 1, 3, 5, Display.Billboard.CENTER, new Quaternionf().rotateZ(0.5f));
+            fx.tpop(m, "w_glow", RED, 9, 9, 9, 1, 2, 6, Display.Billboard.CENTER, null);
+            ItemDisplay g = fx.sprite(at.clone().add(0, 0.07, 0), "bw_ground", 4, 1, 4, Display.Billboard.FIXED, null);
+            fx.later(1, () -> PackFx.tween(g, new Vector3f(), null, new Vector3f(13, 1, 13), 8));
+            fx.kill(g, 26);
+            fx.wave(at.clone().add(0, 0.1, 0), "w_shock_flat", RED, 1, 16, 10, null, Display.Billboard.FIXED);
+            fx.wave(m, "w_shock", Color.WHITE, 1, 10, 7, null, Display.Billboard.CENTER);
+            ww.spawnParticle(Particle.DUST, m, 80, 1, 2, 1, 0, new Particle.DustOptions(RED, 2f), true);
+            ww.spawnParticle(Particle.ELECTRIC_SPARK, m, 60, 1.2, 1.5, 1.2, 0.6, null, true);
+            ww.spawnParticle(Particle.EXPLOSION, m, 1, 0, 0, 0, 0, null, true);
+            fx.snd(at, "capricorn.wall", 4f, 0.55f);
+            fx.snd(at, "capricorn.zap", 3f, 0.5f);
+            for (Player o : ww.getPlayers()) {
+                double d2 = o.getLocation().distanceSquared(at);
+                if (d2 < 120 * 120) o.playSound(at, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, (float) Math.max(0.6, 2.5 - Math.sqrt(d2) / 40), 0.8f);
+                if (d2 < 14 * 14) screen(o, SCREEN_RED, 0, 1, 3);
+            }
+            PackFx.fallbackSound(at, Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 2f, 0.6f);
+            if (!p.isOnline()) return;
+            // dégâts : énormes sur la cible, un peu autour
+            double splash = cfg("strike.splash-radius", 3.5);
+            for (LivingEntity le : ult().targets(p, at.clone().add(0, 1, 0), splash + 1, duels)) {
+                boolean main = tg != null && le.equals(tg);
+                if (!main && le.getLocation().distance(at) > splash) continue;
+                if (!isBoss(le) && !allowed(p, le)) continue;
+                if (isBoss(le)) {
+                    Boss b = plugin.king();
+                    if (b != null) b.hurt(p, cfg("strike.boss-damage", 600) * (main ? 1 : 0.4));
+                    continue;
+                }
+                double frac = main ? 1 : cfg("strike.splash-factor", 0.35);
+                if (le instanceof Player) applyDamage(p, le, maxHealth(le) * cfg("strike.percent", 50) / 100.0 * frac);
+                else applyDamage(p, le, cfg("strike.damage", 120) * frac);
+                if (le.isValid() && !le.isDead()) {
+                    le.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 40, 3, false, true, true));
+                    le.setFireTicks(0);
+                }
+            }
+        });
+    }
+
+    /** Éclair en plusieurs segments qui zigzaguent entre deux points. */
+    void bolt(Location from, Location to, float width, int life) {
+        ThreadLocalRandom r = ThreadLocalRandom.current();
+        double len = from.distance(to);
+        int segs = Math.max(2, (int) Math.ceil(len / 5));
+        Location prev = from;
+        for (int s = 1; s <= segs; s++) {
+            double u = s / (double) segs;
+            Location p2 = from.clone().add(to.clone().subtract(from).toVector().multiply(u));
+            if (s < segs) p2.add(r.nextDouble(-1, 1) * Math.min(1.4, len * 0.08), r.nextDouble(-0.8, 0.8), r.nextDouble(-1, 1) * Math.min(1.4, len * 0.08));
+            arcBetween(prev, p2, width, life);
+            from.getWorld().spawnParticle(Particle.DUST, prev.clone().add(p2.clone().subtract(prev).multiply(0.5)), 6, 0.3, 0.3, 0.3, 0,
+                    new Particle.DustOptions(RED, 1.2f), true);
+            prev = p2;
+        }
     }
 
     /** Le lanceur ne prend pas ses propres dégâts de chute pendant la brèche (au cas où). */
@@ -266,7 +414,7 @@ final class Capricorne implements Listener {
             this.R = cfg("radius", 7.5);
             this.walls = Math.max(6, (int) cfg("walls", 10));
             this.H = cfg("wall-height", 11);
-            this.duels = plugin.getConfig().getBoolean("capricorne.in-duels", false);
+            this.duels = plugin.getConfig().getBoolean("capricorne.in-duels", true);
             this.CAGE = RISE + 10 + (int) cfg("cage-ticks", 100);
             this.COLLAPSE_SOUND = CAGE - 23;
             this.IMPLODE = CAGE;

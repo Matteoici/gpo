@@ -42,7 +42,8 @@ import java.util.concurrent.ThreadLocalRandom;
 import static fr.smpboss.SmpBoss.parse;
 
 /**
- * Reliques "Black Flash" (Reine Araignée) : accroupi + touche main secondaire (F) = un éclair noir et rouge part devant toi.
+ * Reliques "Black Flash" (Reine Araignée) : accroupi + touche main secondaire (F) = le poing se charge d'éclairs noirs et rouges,
+ * et le prochain coup au corps à corps qui touche (dans les 4 s) déclenche le Black Flash. Raté = petite recharge.
  * - Black Flash (légendaire) : la cible touchée perd 50 % de sa vie.
  * - Black Flash Consécutifs (prestige) : la cible est figée et encaisse une rafale de black flashs calée sur le son de la
  *   vidéo de référence (37 coups en 13 s), 95 % de sa vie au total.
@@ -61,6 +62,9 @@ final class BlackFlash implements Listener {
     private final SmpBoss plugin;
     private final Map<String, Long> cooldown = new HashMap<>();
     private final Set<UUID> busy = new HashSet<>();
+    /** poing chargé : true = Consécutifs ; tâche des effets autour du poing */
+    private final Map<UUID, Boolean> armed = new HashMap<>();
+    private final Map<UUID, BukkitTask> armTask = new HashMap<>();
 
     BlackFlash(SmpBoss plugin) {
         this.plugin = plugin;
@@ -88,7 +92,85 @@ final class BlackFlash implements Listener {
         boolean consec = d.equipped.contains(CONSEC), single = d.equipped.contains(SINGLE);
         if (!consec && !single) return;
         e.setCancelled(true);
-        cast(p, consec);
+        arm(p, consec);
+    }
+
+    // ================================================================= le poing se charge, il faut toucher
+
+    void arm(Player p, boolean consec) {
+        UUID id = p.getUniqueId();
+        if (busy.contains(id) || armed.containsKey(id)) return;
+        String key = id + (consec ? ":c" : ":s");
+        long now = System.currentTimeMillis();
+        Long until = cooldown.get(key);
+        if (until != null && until > now) {
+            p.sendActionBar(parse(plugin.msg("weapons.cooldown").replace("<seconds>", String.valueOf((until - now) / 1000 + 1))));
+            return;
+        }
+        armed.put(id, consec);
+        int window = (int) (cfg("arm-seconds", 4) * 20);
+        World w = p.getWorld();
+        w.playSound(p.getLocation(), Sound.ENTITY_WARDEN_SONIC_CHARGE, 0.9f, 2f);
+        w.playSound(p.getLocation(), Sound.BLOCK_RESPAWN_ANCHOR_CHARGE, 0.8f, 1.6f);
+        p.sendActionBar(parse(plugin.msg("black-flash.armed")));
+        int[] k = {0};
+        BukkitTask[] t = new BukkitTask[1];
+        t[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            int i = k[0]++;
+            if (!p.isOnline() || p.isDead() || !armed.containsKey(id)) {
+                t[0].cancel();
+                return;
+            }
+            if (i >= window) {
+                // raté : le poing se décharge
+                t[0].cancel();
+                armed.remove(id);
+                armTask.remove(id);
+                cooldown.put(key, System.currentTimeMillis() + (long) (cfg("miss-cooldown-seconds", 10) * 1000));
+                p.sendActionBar(parse(plugin.msg("black-flash.missed")));
+                p.getWorld().playSound(p.getLocation(), Sound.BLOCK_FIRE_EXTINGUISH, 0.6f, 1.6f);
+                return;
+            }
+            // éclairs autour du poing (main droite)
+            Location eye = p.getEyeLocation();
+            Vector dir = eye.getDirection().normalize();
+            Vector right = new Vector(-dir.getZ(), 0, dir.getX()).normalize();
+            Location fist = eye.clone().add(dir.clone().multiply(0.7)).add(right.multiply(0.35)).add(0, -0.45, 0);
+            p.getWorld().spawnParticle(Particle.DUST, fist, 3, 0.12, 0.12, 0.12, 0, new Particle.DustOptions(RED, 0.9f), true);
+            p.getWorld().spawnParticle(Particle.DUST, fist, 2, 0.1, 0.1, 0.1, 0, new Particle.DustOptions(BLACK, 0.9f), true);
+            if (i % 3 == 0) p.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, fist, 2, 0.1, 0.1, 0.1, 0.05, null, true);
+            if (i % 4 == 0) fx().pop(fist, "bf_bolt_" + (i / 4 % 4), 0.35f, 0.9f, 0.35f, 1, 0, 2, Display.Billboard.CENTER,
+                    new Quaternionf().rotateZ((float) ThreadLocalRandom.current().nextDouble(6.28)));
+            if (i % 10 == 0) p.getWorld().playSound(fist, Sound.BLOCK_AMETHYST_BLOCK_RESONATE, 0.4f, 1.8f);
+        }, 1L, 1L);
+        armTask.put(id, t[0]);
+    }
+
+    /** Le coup de poing chargé touche : Black Flash sur la cible. */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onPunch(org.bukkit.event.entity.EntityDamageByEntityEvent e) {
+        if (!(e.getDamager() instanceof Player p) || !(e.getEntity() instanceof LivingEntity hit)) return;
+        if (e.getCause() != EntityDamageEvent.DamageCause.ENTITY_ATTACK) return;
+        Boolean consec = armed.get(p.getUniqueId());
+        if (consec == null) return;
+        if (plugin.getConfig().getBoolean("black-flash.bare-hand-only", false) && !p.getInventory().getItemInMainHand().getType().isAir()) return;
+        // une zone de coups du boss : on vise le boss lui-même
+        LivingEntity t = hit;
+        Boss b = plugin.king();
+        if (b != null && b.isBoss(hit) && b.mainEntity() != null) t = b.mainEntity();
+        if (!isBoss(t) && !ult().targets(p, t.getLocation(), 0.5, plugin.getConfig().getBoolean("black-flash.in-duels", true)).contains(t)) return;
+        UUID id = p.getUniqueId();
+        armed.remove(id);
+        BukkitTask task = armTask.remove(id);
+        if (task != null) task.cancel();
+        cooldown.put(id + (consec ? ":c" : ":s"), System.currentTimeMillis()
+                + (long) (cfg(consec ? "consecutive.cooldown-seconds" : "single.cooldown-seconds", consec ? 120 : 45) * 1000));
+        LivingEntity target = t;
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            if (!p.isOnline() || !target.isValid()) return;
+            if (consec) consecutive(p, target);
+            else single(p, target);
+        });
     }
 
     /** Pendant la rafale : celui qui frappe ne prend pas de dégâts de chute / ne se fait pas pousser. */
@@ -97,6 +179,7 @@ final class BlackFlash implements Listener {
         if (e.getCause() == EntityDamageEvent.DamageCause.FALL && busy.contains(e.getEntity().getUniqueId())) e.setCancelled(true);
     }
 
+    /** Ancienne version (éclair lancé devant soi) : plus utilisée, gardée pour /boss. */
     void cast(Player p, boolean consec) {
         if (busy.contains(p.getUniqueId())) return;
         String key = p.getUniqueId() + (consec ? ":c" : ":s");

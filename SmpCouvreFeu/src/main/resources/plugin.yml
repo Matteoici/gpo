@@ -1,0 +1,15 @@
+name: SmpCouvreFeu
+version: '${version}'
+main: fr.smpcouvrefeu.SmpCouvreFeu
+api-version: '26.2'
+description: "Contrôle parental : certains joueurs ne peuvent pas se connecter à certaines heures"
+commands:
+  couvrefeu:
+    description: Contrôle parental (heures de connexion)
+    usage: /couvrefeu <ajouter|retirer|liste|info|pause>
+    aliases: [cf, controleparental]
+    permission: smpcouvrefeu.admin
+permissions:
+  smpcouvrefeu.admin:
+    description: Gérer le couvre-feu
+    default: op

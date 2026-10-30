@@ -1,6 +1,41 @@
 # Patch notes (la plus récente EN PREMIER). Chaque page = une page du livre (MiniMessage, ~13 lignes max).
 # Couleurs lisibles sur le papier : black, dark_gray, dark_red, dark_blue, dark_green, dark_aqua, dark_purple, gold.
 notes:
+  - id: "2026-10-31-foudre"
+    title: "Poing & Foudre"
+    date: "31/10/2026"
+    pages:
+      - |
+        <dark_red><b>   LIMITLESS</b>
+        <dark_gray>     Patch note
+        <black>━━━━━━━━━━
+        <dark_red><b>Poing</b>
+        <dark_red><b>& Foudre</b>
+        <dark_gray>31 octobre 2026
+        <black>Au programme :
+        <dark_red>⚡ Black Flash au poing
+        <dark_red>⚡ Foudre du Black Wall
+        <dark_blue>⚔ En arène et en duel
+      - |
+        <dark_red><b>⚡ Black Flash</b>
+        <black>Il ne part plus tout seul : c'est un <dark_red>coup de poing</dark_red>.
+
+        Accroupi + F : ton poing se charge pendant 4 s. <dark_red>Touche</dark_red> ta cible pour déclencher le Black Flash.
+
+        <dark_gray>Raté = 10 s de recharge.
+      - |
+        <dark_red><b>⚡ Foudre du</b>
+        <dark_red><b>Black Wall</b>
+        <black>Nouvelle technique du <dark_red>Projet Capricorne</dark_red> :
+
+        Accroupi + clic droit dans le vide : un éclair géant tombe du ciel sur ta cible.
+        <dark_red>50 %</dark_red> de sa vie !
+        <dark_gray>(1 min)
+      - |
+        <dark_blue><b>⚔ Partout</b>
+        <black>Black Flash et Capricorne marchent dans l'arène du boss et en duel (amical aussi).
+
+        <dark_red>Bonne chance !<black> ⚡
   - id: "2026-10-31-spawn"
     title: "Musique du spawn"
     date: "31/10/2026"

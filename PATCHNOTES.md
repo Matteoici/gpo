@@ -1,5 +1,18 @@
 # Patch notes Limitless (textes Discord)
 
+## 31/10/2026 — Poing & Foudre
+
+⚡ **POING & FOUDRE** ⚡
+
+👊 **Black Flash : c'est un coup de poing**
+> Il ne part plus tout seul devant toi. **Accroupi + F** : ton poing se charge d'éclairs noirs et rouges pendant 4 s. **Touche ta cible** au corps à corps pour déclencher le Black Flash (raté = 10 s de recharge).
+
+🌩️ **Projet Capricorne : Foudre du Black Wall**
+> Nouvelle technique : **accroupi + clic droit dans le vide**. Le sol crépite sous ta cible… puis un **éclair géant du Black Wall** tombe du ciel : **50 % de sa vie** d'un coup (recharge 1 min).
+
+⚔️ **En arène et en duel**
+> Black Flash et Capricorne marchent dans l'**arène du boss** et en **duel** (amical compris).
+
 ## 31/10/2026 — Musique du spawn
 
 🎵 **MUSIQUE DU SPAWN** 🎵
