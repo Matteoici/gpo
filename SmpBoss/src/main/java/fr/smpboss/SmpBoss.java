@@ -461,6 +461,21 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 41);
             saveConfig();
         }
+        if (getConfig().getInt("config-version", 1) < 42) {
+            // Boogie Bombe, tenues de Gojo et de Sukuna
+            addDefaultRelics();
+            var def = getConfig().getDefaults();
+            if (def != null) {
+                for (String k : new String[]{"boogie-bombe", "weapons.tenue-gojo", "weapons.tenue-sukuna", "messages.weapons.tenue-gojo",
+                        "messages.weapons.tenue-sukuna", "messages.boogie-bombe", "messages.outfits", "messages.menu.visual"}) {
+                    var sec = def.getConfigurationSection(k);
+                    if (sec == null) continue;
+                    for (String sub : sec.getKeys(true)) if (!sec.isConfigurationSection(sub) && !getConfig().isSet(k + "." + sub)) getConfig().set(k + "." + sub, sec.get(sub));
+                }
+            }
+            getConfig().set("config-version", 42);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);
@@ -470,6 +485,8 @@ public final class SmpBoss extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new BlackFlash(this), this);
         getServer().getPluginManager().registerEvents(new Capricorne(this), this);
         getServer().getPluginManager().registerEvents(new TojiSpear(this), this);
+        getServer().getPluginManager().registerEvents(new Outfits(this), this);
+        getServer().getPluginManager().registerEvents(new BoogieBomb(this), this);
         new BossMusic(this);
         PackStatus packStatus = new PackStatus(this);
         getServer().getPluginManager().registerEvents(packStatus, this);
@@ -1017,6 +1034,19 @@ public final class SmpBoss extends JavaPlugin {
                         default -> null;
                     };
                 }
+                // tenues complètes : /boss give <joueur> tenue_toji | tenue_gojo | tenue_sukuna (ou une pièce : gojo_bandeau...)
+                String set = switch (what) {
+                    case "tenue_toji", "tenuetoji" -> Weapons.TENUE;
+                    case "tenue_gojo", "tenuegojo", "gojo" -> Weapons.TENUE_GOJO;
+                    case "tenue_sukuna", "tenuesukuna", "sukuna" -> Weapons.TENUE_SUKUNA;
+                    default -> null;
+                };
+                if (set != null) {
+                    for (String pc : Weapons.OUTFITS.get(set)) loot.give(t, weapons.outfitPiece(pc));
+                    sender.sendMessage(parse("<green>Tenue donnée à " + t.getName() + "."));
+                    return true;
+                }
+                if (it == null && Weapons.outfitOf(what) != null) it = weapons.outfitPiece(what);
                 if (it == null) {
                     sender.sendMessage(parse("<red>Objet inconnu."));
                     return true;
@@ -1109,7 +1139,7 @@ public final class SmpBoss extends JavaPlugin {
         }
         else if (a.length == 3 && a[0].equalsIgnoreCase("give")) {
             out.addAll(List.of("graine", "citrouille", "faucille", "sonicbow", "tranchemace", "briseterre", "faux", "crocdegivre", "arctempete", "hollowpurple", "fuga", "lamecitrouille", "arcfeuxfollets", "hachemaudite",
-                    "oeil", "cocon", "dague", "toiles", "fauxtisseuse", "crocreine", "sceptre", "lance", "tribaton"));
+                    "oeil", "cocon", "dague", "toiles", "fauxtisseuse", "crocreine", "sceptre", "lance", "tribaton", "tenue_toji", "tenue_gojo", "tenue_sukuna"));
             for (String id : relics.all().keySet()) out.add("relique:" + id);
         }
         String last = a.length == 0 ? "" : a[a.length - 1].toLowerCase(Locale.ROOT);

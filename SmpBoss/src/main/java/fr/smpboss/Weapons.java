@@ -57,15 +57,26 @@ final class Weapons implements Listener {
             GIVRE = "croc_de_givre", TEMPETE = "arc_tempete", HOLLOW = "hollow_purple", FUGA = "fuga",
             LAME = "lame_citrouille", FOLLETS = "arc_feux_follets", HACHE = "hache_maudite",
             DAGUE = "dague_venin", ARC_TOILES = "arc_toiles", CROC_REINE = "croc_reine",
-            FAUX_TISSEUSE = "faux_tisseuse", SCEPTRE = "sceptre_abysse", LANCE = "lance_ciel", TRIBATON = "tribaton", TENUE = "tenue_toji";
-    /** les trois pièces de la Tenue de Toji (tombent ensemble) */
-    static final String[] TOJI_PIECES = {"toji_haut", "toji_pantalon", "toji_bottes"};
+            FAUX_TISSEUSE = "faux_tisseuse", SCEPTRE = "sceptre_abysse", LANCE = "lance_ciel", TRIBATON = "tribaton", TENUE = "tenue_toji",
+            TENUE_GOJO = "tenue_gojo", TENUE_SUKUNA = "tenue_sukuna";
+    /** les tenues : toutes leurs pièces tombent ensemble */
+    static final Map<String, String[]> OUTFITS = Map.of(
+            TENUE, new String[]{"toji_haut", "toji_pantalon", "toji_bottes"},
+            TENUE_GOJO, new String[]{"gojo_bandeau", "gojo_haut", "gojo_pantalon", "gojo_bottes"},
+            TENUE_SUKUNA, new String[]{"sukuna_haut", "sukuna_pantalon", "sukuna_bottes"});
+
+    /** "toji_haut" -> "tenue_toji" (null si ce n'est pas une pièce de tenue) */
+    static String outfitOf(String pid) {
+        if (pid == null) return null;
+        for (Map.Entry<String, String[]> e : OUTFITS.entrySet()) for (String x : e.getValue()) if (x.equals(pid)) return e.getKey();
+        return null;
+    }
     /** armes du Roi Citrouille */
-    static final String[] PUMPKIN = {SONIC, TRANCHE, BRISE, SPECTRAL, GIVRE, TEMPETE, HOLLOW, FUGA, LAME, FOLLETS, HACHE};
+    static final String[] PUMPKIN = {SONIC, TRANCHE, BRISE, SPECTRAL, GIVRE, TEMPETE, HOLLOW, FUGA, LAME, FOLLETS, HACHE, TENUE_GOJO, TENUE_SUKUNA};
     /** armes de la Reine Araignée */
     static final String[] SPIDER = {DAGUE, ARC_TOILES, FAUX_TISSEUSE, TRIBATON, TENUE, CROC_REINE, LANCE, SCEPTRE};
     static final String[] ALL = {SONIC, TRANCHE, BRISE, SPECTRAL, GIVRE, TEMPETE, HOLLOW, FUGA, LAME, FOLLETS, HACHE, DAGUE, ARC_TOILES, CROC_REINE,
-            FAUX_TISSEUSE, SCEPTRE, LANCE, TRIBATON, TENUE};
+            FAUX_TISSEUSE, SCEPTRE, LANCE, TRIBATON, TENUE, TENUE_GOJO, TENUE_SUKUNA};
 
     /** Chance par victoire si le config n'en donne pas. */
     static double defChance(String id) {
@@ -79,6 +90,8 @@ final class Weapons implements Listener {
 
     /** Section du config / des textes de chaque arme. */
     static String path(String id) {
+        String of = outfitOf(id);
+        if (of != null) id = of;
         return switch (id) {
             case SONIC -> "sonic-bow";
             case TRANCHE -> "tranche-mace";
@@ -97,7 +110,9 @@ final class Weapons implements Listener {
             case SCEPTRE -> "sceptre-abysse";
             case LANCE -> "lance-ciel";
             case TRIBATON -> "tribaton";
-            case TENUE, "toji_haut", "toji_pantalon", "toji_bottes" -> "tenue-toji";
+            case TENUE -> "tenue-toji";
+            case TENUE_GOJO -> "tenue-gojo";
+            case TENUE_SUKUNA -> "tenue-sukuna";
             default -> "arbalete-spectrale";
         };
     }
@@ -128,7 +143,7 @@ final class Weapons implements Listener {
     static Rarity rarity(String id) {
         if (LAME.equals(id) || FOLLETS.equals(id) || HACHE.equals(id) || DAGUE.equals(id) || ARC_TOILES.equals(id)) return Rarity.EPIC;
         if (CROC_REINE.equals(id) || LANCE.equals(id)) return Rarity.SECRET;
-        if (TRIBATON.equals(id) || TENUE.equals(id) || id.startsWith("toji_")) return Rarity.LEGENDARY;
+        if (TRIBATON.equals(id) || OUTFITS.containsKey(id) || outfitOf(id) != null) return Rarity.LEGENDARY;
         if (FAUX_TISSEUSE.equals(id)) return Rarity.LEGENDARY;
         if (SCEPTRE.equals(id)) return Rarity.PRESTIGE;
         return TRANCHE.equals(id) || GIVRE.equals(id) || TEMPETE.equals(id) ? Rarity.SECRET : Rarity.PRESTIGE;
@@ -200,8 +215,8 @@ final class Weapons implements Listener {
     // ================================================================= objets
 
     ItemStack create(String id) {
-        if (TENUE.equals(id)) return tojiPiece("toji_haut");
-        if (id.startsWith("toji_")) return tojiPiece(id);
+        if (OUTFITS.containsKey(id)) return outfitPiece(OUTFITS.get(id)[TENUE_GOJO.equals(id) ? 1 : 0]);
+        if (outfitOf(id) != null) return outfitPiece(id);
         boolean bow = SONIC.equals(id) || TEMPETE.equals(id) || FOLLETS.equals(id) || ARC_TOILES.equals(id);
         ItemStack it = new ItemStack(material(id));
         ItemMeta m = it.getItemMeta();
@@ -300,49 +315,61 @@ final class Weapons implements Listener {
         return it;
     }
 
-    /** Une pièce de la Tenue de Toji : cuir teint (se voit sans pack), solide comme du netherite, incassable. */
-    ItemStack tojiPiece(String pid) {
+    private static final Map<String, Integer> COLORS = Map.ofEntries(
+            Map.entry("toji_haut", 0x121216), Map.entry("toji_pantalon", 0xDEDACE), Map.entry("toji_bottes", 0x18161A),
+            Map.entry("gojo_bandeau", 0x0C0C10), Map.entry("gojo_haut", 0x1A1E2E), Map.entry("gojo_pantalon", 0x1A1E2E), Map.entry("gojo_bottes", 0x101014),
+            Map.entry("sukuna_haut", 0xEEEAE0), Map.entry("sukuna_pantalon", 0xE6E0D2), Map.entry("sukuna_bottes", 0x2A1A22));
+
+    /** Une pièce de tenue (Toji, Gojo, Sukuna) : cuir teint (se voit sans pack), solide comme du netherite, incassable. */
+    ItemStack outfitPiece(String pid) {
+        String set = outfitOf(pid);
+        if (set == null) {
+            pid = "toji_haut";
+            set = TENUE;
+        }
+        String base = path(set);
+        String piece = pid.substring(pid.indexOf('_') + 1);
         Material mat;
         org.bukkit.inventory.EquipmentSlotGroup slot;
-        double armor, tough;
-        org.bukkit.Color col;
-        switch (pid) {
-            case "toji_pantalon" -> {
+        double defArmor;
+        switch (piece) {
+            case "bandeau" -> {
+                mat = Material.LEATHER_HELMET;
+                slot = org.bukkit.inventory.EquipmentSlotGroup.HEAD;
+                defArmor = 3;
+            }
+            case "pantalon" -> {
                 mat = Material.LEATHER_LEGGINGS;
                 slot = org.bukkit.inventory.EquipmentSlotGroup.LEGS;
-                armor = cfg("tenue-toji.armor.pantalon", 6);
-                col = org.bukkit.Color.fromRGB(222, 218, 206);
+                defArmor = 6;
             }
-            case "toji_bottes" -> {
+            case "bottes" -> {
                 mat = Material.LEATHER_BOOTS;
                 slot = org.bukkit.inventory.EquipmentSlotGroup.FEET;
-                armor = cfg("tenue-toji.armor.bottes", 3);
-                col = org.bukkit.Color.fromRGB(24, 22, 26);
+                defArmor = 3;
             }
             default -> {
-                pid = "toji_haut";
                 mat = Material.LEATHER_CHESTPLATE;
                 slot = org.bukkit.inventory.EquipmentSlotGroup.CHEST;
-                armor = cfg("tenue-toji.armor.haut", 8);
-                col = org.bukkit.Color.fromRGB(18, 18, 22);
+                defArmor = 8;
             }
         }
-        tough = cfg("tenue-toji.toughness", 3);
         ItemStack it = new ItemStack(mat);
         org.bukkit.inventory.meta.LeatherArmorMeta m = (org.bukkit.inventory.meta.LeatherArmorMeta) it.getItemMeta();
-        m.setColor(col);
-        String piece = pid.substring(5);
-        m.displayName(parse(Rarity.LEGENDARY.name(plugin.msg("weapons.tenue-toji.pieces." + piece), 0)));
+        m.setColor(org.bukkit.Color.fromRGB(COLORS.getOrDefault(pid, 0x202020)));
+        m.displayName(parse(Rarity.LEGENDARY.name(plugin.msg("weapons." + base + ".pieces." + piece), 0)));
         List<Component> lore = new ArrayList<>();
         lore.add(parse(Rarity.LEGENDARY.tag));
         lore.add(Component.empty());
-        for (String l : plugin.getConfig().getStringList("messages.weapons.tenue-toji.lore")) lore.add(parse(l));
+        for (String l : plugin.getConfig().getStringList("messages.weapons." + base + ".lore")) lore.add(parse(l));
         m.lore(lore);
         String[] attr = {"armor", "tough", "kb", "speed"};
-        double[] val = {armor, tough, cfg("tenue-toji.knockback-resistance", 0.1), cfg("tenue-toji.speed-per-piece", 0.04)};
+        double[] val = {cfg(base + ".armor." + piece, defArmor), cfg(base + ".toughness", 3), cfg(base + ".knockback-resistance", 0.1),
+                cfg(base + ".speed-per-piece", 0.03)};
         org.bukkit.attribute.Attribute[] at = {org.bukkit.attribute.Attribute.ARMOR, org.bukkit.attribute.Attribute.ARMOR_TOUGHNESS,
                 org.bukkit.attribute.Attribute.KNOCKBACK_RESISTANCE, org.bukkit.attribute.Attribute.MOVEMENT_SPEED};
         for (int i = 0; i < at.length; i++) {
+            if (val[i] == 0) continue;
             m.addAttributeModifier(at[i], new org.bukkit.attribute.AttributeModifier(new NamespacedKey(plugin, pid + "_" + attr[i]), val[i],
                     i == 3 ? org.bukkit.attribute.AttributeModifier.Operation.ADD_SCALAR : org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER, slot));
         }
@@ -354,14 +381,16 @@ final class Weapons implements Listener {
         return it;
     }
 
-    /** Les pièces de la Tenue de Toji portées (0 à 3). */
-    int tojiPieces(Player p) {
+    /** Toutes les pièces de cette tenue sont portées ? */
+    boolean wearsOutfit(Player p, String set) {
+        String[] need = OUTFITS.get(set);
+        if (need == null) return false;
         int n = 0;
         for (ItemStack a : p.getInventory().getArmorContents()) {
             String id = id(a);
-            if (id != null && id.startsWith("toji_")) n++;
+            if (id != null && set.equals(outfitOf(id))) n++;
         }
-        return n;
+        return n >= need.length;
     }
 
     private static String fmt(double v) {
@@ -1631,9 +1660,9 @@ final class Weapons implements Listener {
             if (ThreadLocalRandom.current().nextDouble() * 100 >= chance) continue;
             ItemStack it = create(id);
             boolean inv = plugin.loot().give(p, it.clone());
-            if (TENUE.equals(id)) {
-                inv &= plugin.loot().give(p, tojiPiece("toji_pantalon"));
-                inv &= plugin.loot().give(p, tojiPiece("toji_bottes"));
+            if (OUTFITS.containsKey(id)) {
+                String first = OUTFITS.get(id)[TENUE_GOJO.equals(id) ? 1 : 0];
+                for (String pc : OUTFITS.get(id)) if (!pc.equals(first)) inv &= plugin.loot().give(p, outfitPiece(pc));
             }
             Rarity rar = rarity(id);
             String name = rar.name(plugin.msg("weapons." + path(id) + ".name"), 0);

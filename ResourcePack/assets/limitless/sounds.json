@@ -275,5 +275,26 @@
     "stream": false
    }
   ]
+ },
+ "boogie.dance": {
+  "sounds": [
+   {
+    "name": "limitless:boogie/dance"
+   }
+  ]
+ },
+ "boogie.throw": {
+  "sounds": [
+   {
+    "name": "limitless:boogie/throw"
+   }
+  ]
+ },
+ "boogie.burst": {
+  "sounds": [
+   {
+    "name": "limitless:boogie/burst"
+   }
+  ]
  }
 }

@@ -1,5 +1,18 @@
 # Patch notes Limitless (textes Discord)
 
+## 31/10/2026 — Boogie & Tenues
+
+🪩 **BOOGIE & TENUES** 🪩
+
+🪩 **Boogie Bombe** (relique légendaire, sur les deux boss)
+> **Double accroupi** (shift shift) : tu lances une boule disco. Tout le monde autour se met à **danser pendant 5 s** et ne peut **plus rien faire** (ni taper, ni manger, ni boire, ni fuir). Recharge 1 min.
+
+🔵 **Tenue de Gojo** (légendaire, Roi Citrouille, 4 pièces)
+> Complète : **l'Infini**. Les projectiles s'arrêtent avant de te toucher, le corps à corps est freiné (-30 %), presque plus de recul, et vision nocturne (les **Six Yeux**). *La Lance du Ciel Inversé traverse l'Infini…*
+
+🔴 **Tenue de Sukuna** (légendaire, Roi Citrouille, 3 pièces)
+> Complète : **Roi des Fléaux**. +20 % de dégâts, chaque coup te soigne, un coup sur trois déclenche **Démantèlement** (une entaille invisible frappe juste après), insensible au feu.
+
 ## 31/10/2026 — L'arsenal de Toji
 
 🗡️ **L'ARSENAL DE TOJI** 🗡️ *(sur la Reine Araignée)*

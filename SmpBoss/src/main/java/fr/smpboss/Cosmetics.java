@@ -613,6 +613,17 @@ final class Cosmetics {
                 if (t % 11 == 0) d.part(Particle.ELECTRIC_SPARK, false, r.nextDouble(-0.5, 0.5), r.nextDouble(0.3, 1.8), r.nextDouble(-0.5, 0.5), 2, 0.1, 0.02);
                 if (moving && t % 3 == 0) d.dust(false, r.nextDouble(-0.3, 0.3), 0.1, -0.35, red, 0.55f);
             }
+            // ---------------------------------------------------------- ♪ (légendaire) Boogie Bombe : petites lumières disco qui tournent
+            case "disco" -> {
+                if (t % 2 != 0) return;
+                Color[] cs = {Color.fromRGB(255, 60, 200), Color.fromRGB(60, 220, 255), Color.fromRGB(255, 230, 60), Color.fromRGB(120, 255, 90)};
+                double a = t * 0.15;
+                for (int k = 0; k < 4; k++) {
+                    double b = a + Math.PI / 2 * k;
+                    d.dust(false, Math.cos(b) * 0.7, 1.1 + Math.sin(t * 0.1 + k) * 0.5, Math.sin(b) * 0.7, cs[(k + t / 10) % 4], 0.6f);
+                }
+                if (t % 16 == 0) d.part(Particle.NOTE, false, 0, 2.3, 0, 1, 0.2, 1);
+            }
             case "eclipse" -> {
                 if (t % 2 == 0) {
                     double flap = Math.sin(t * 0.1) * 0.14;

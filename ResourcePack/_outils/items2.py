@@ -815,6 +815,28 @@ def tribaton():
     save(outline(a, hx('140808')), 'tribaton')
 tribaton()
 
+def disco_ball():
+    """Boogie Bombe : boule à facettes, reflets de couleur qui tournent"""
+    cols = [hx('ff3cc8'), hx('3cdcff'), hx('ffe63c'), hx('78ff5a'), hx('aa5aff')]
+    yy, xx = np.mgrid[0:16, 0:16]
+    m = (xx - 7.5) ** 2 + (yy - 8.5) ** 2 <= 6.3 ** 2
+    fr = []
+    for k in range(6):
+        a = np.zeros((16, 16, 4), np.int32)
+        for y in range(16):
+            for x in range(16):
+                if not m[y, x]: continue
+                v = 0.55 + 0.45 * (-(x - 7.5) - (y - 8.5)) / 9
+                tile = ((x + k) // 2 + y // 2) % 2
+                g = int(np.clip(110 + 120 * v + tile * 25, 60, 245))
+                a[y, x] = (g, g, min(255, g + 12), 255)
+                if (x // 2 + y // 2 * 3 + k) % 7 == 0: a[y, x] = cols[(x + y + k) % len(cols)]
+        a[3:5, 5] = hx('ffffff'); a[4, 4:7] = hx('ffffff')
+        a[1, 7:9] = hx('8a8a96'); a[0, 7:9] = hx('5a5a66')
+        fr.append(outline(a, hx('1a1424')))
+    save(None, 'relic_boogie_bombe', fr, ft=3)
+disco_ball()
+
 # --- textures du corps de la Reine (32x32)
 def chitin():
     N2 = 32; yy, xx = np.mgrid[0:N2, 0:N2]

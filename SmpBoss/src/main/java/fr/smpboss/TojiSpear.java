@@ -156,7 +156,7 @@ final class TojiSpear implements Listener {
             UUID id = p.getUniqueId();
             boolean on = holds(p) && !p.isDead() && p.getGameMode() != org.bukkit.GameMode.SPECTATOR;
             // Tenue de Toji : les 3 pièces = Corps Céleste
-            boolean set = plugin.weapons().tojiPieces(p) >= 3 && !p.isDead();
+            boolean set = plugin.weapons().wearsOutfit(p, Weapons.TENUE) && !p.isDead();
             if (set && fullSet.add(id)) {
                 set(p, Attribute.MOVEMENT_SPEED, setSpeed, cfg2("set.speed", 0.15), AttributeModifier.Operation.ADD_SCALAR);
                 set(p, Attribute.JUMP_STRENGTH, setJump, cfg2("set.jump", 0.1), AttributeModifier.Operation.ADD_NUMBER);

@@ -1,4 +1,4 @@
-config-version: 41
+config-version: 42
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -225,6 +225,7 @@ loot:
       - {relic: cornes_demon}
       - {relic: orbe_infernal}
     legendary:
+      - {relic: boogie_bombe}
       - {relic: couronne}
       - {relic: lanterne_eternelle}
       - {relic: bottes_recolte}
@@ -474,6 +475,26 @@ weapons:
       jump: 0.1
       safe-fall: 6
       damage: 0.15
+  tenue-gojo:             # 🎃 légendaire — les 4 pièces tombent ensemble
+    chance: 0.4
+    toughness: 3
+    knockback-resistance: 0.1
+    speed-per-piece: 0.03
+    armor: {bandeau: 3, haut: 8, pantalon: 6, bottes: 3}
+    set:                   # complète : l'Infini
+      knockback-resistance: 0.6
+      melee-reduction: 0.3 # -30 % de dégâts au corps à corps
+      night-vision: true   # les Six Yeux
+  tenue-sukuna:           # 🎃 légendaire — les 3 pièces tombent ensemble
+    chance: 0.4
+    toughness: 3
+    knockback-resistance: 0.1
+    speed-per-piece: 0.03
+    armor: {haut: 8, pantalon: 6, bottes: 3}
+    set:                   # complète : Roi des Fléaux
+      damage: 0.2          # +20 % de dégâts
+      lifesteal: 0.15      # 15 % des dégâts au corps à corps rendus en vie
+      dismantle-damage: 5  # Démantèlement (un coup sur trois)
   sceptre-abysse:         # 🕷 prestige
     chance: 0.02
     attack-damage: 12
@@ -785,6 +806,17 @@ relics:
       armor: 2
       speed: 8
       regen: 1
+    boogie_bombe:
+      name: "Boogie Bombe"
+      rarity: legendary
+      icon: FIREWORK_STAR
+      visual: disco
+      lore: ["<gray>Une petite boule disco qui ne pardonne pas.", "<#ff3cc8>♪ <white>Double accroupi <gray>(shift shift)",
+             "<gray>Tu lances la boule : tout le monde autour", "<gray>se met à <white>danser</white> 5 s et ne peut plus rien faire.",
+             "<dark_gray>(1 min)"]
+      damage: 5
+      speed: 6
+      health: 2
     projet_capricorne:
       name: "Projet Capricorne"
       rarity: prestige
@@ -922,7 +954,7 @@ spider-loot:
   pools:
     rare: [{relic: fil_soie}, {relic: oeil_araignee}]
     epic: [{relic: crochets_venin}, {relic: cocon_ancien}, {relic: soie_lunaire}, {relic: venin_cristallise}]
-    legendary: [{relic: pattes_reine}, {relic: cape_toile}, {relic: black_flash}, {relic: masque_mille_yeux}, {relic: fuseau_tisseuse}]
+    legendary: [{relic: pattes_reine}, {relic: cape_toile}, {relic: black_flash}, {relic: masque_mille_yeux}, {relic: fuseau_tisseuse}, {relic: boogie_bombe}]
     secret: [{relic: couronne_reine, title: "Héritier de la Toile"}]
     prestige: [{relic: coeur_abysse, title: "Cœur de l'Abysse"}, {relic: black_flash_consecutif, title: "Black Flash"},
                {relic: ailes_toile, title: "Ailes de la Toile"}, {relic: oeil_rouge_abysse, title: "L'Œil Rouge"},
@@ -967,6 +999,15 @@ black-flash:
     duration-ticks: 270    # la rafale suit le son (13 s)
     cooldown-seconds: 120
 
+
+# ================================================================ ♪ BOOGIE BOMBE (relique légendaire) : double accroupi
+boogie-bombe:
+  cooldown-seconds: 60
+  double-sneak-ms: 350     # temps max entre les deux appuis sur shift
+  throw-speed: 1.3
+  radius: 5
+  dance-seconds: 5
+  in-duels: true
 
 # ================================================================ ⛧ PROJET CAPRICORNE (relique prestige) : accroupi + clic gauche dans le vide
 capricorne:
@@ -1247,6 +1288,38 @@ messages:
         - "<#c8d2e6>✦ <b>CORPS CÉLESTE</b> <gray>(les 3 pièces)"
         - "<white>+15 % vitesse <gray>· <white>+15 % dégâts <gray>· <white>saut"
         - "<gray>Pas de dégâts de chute, ni poison, ni faiblesse, ni faim."
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<dark_gray>✧ Ne tombe pas à la mort"
+    tenue-gojo:
+      name: "Tenue de Gojo"
+      pieces:
+        bandeau: "Bandeau de Gojo"
+        haut: "Veste de Gojo"
+        pantalon: "Pantalon de Gojo"
+        bottes: "Bottes de Gojo"
+      lore:
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<gray>Aussi solide que du netherite, incassable."
+        - "<#5aaaff>✦ <b>L'INFINI</b> <gray>(les 4 pièces)"
+        - "<gray>Les projectiles s'arrêtent avant de te toucher,"
+        - "<gray>les coups au corps à corps sont freinés (-30 %),"
+        - "<gray>presque plus de recul. <#5aaaff>Six Yeux<gray> : vision nocturne."
+        - "<dark_gray>La Lance du Ciel Inversé traverse l'Infini."
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<dark_gray>✧ Ne tombe pas à la mort"
+    tenue-sukuna:
+      name: "Tenue de Sukuna"
+      pieces:
+        haut: "Kimono de Sukuna"
+        pantalon: "Hakama de Sukuna"
+        bottes: "Sandales de Sukuna"
+      lore:
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<gray>Aussi solide que du netherite, incassable."
+        - "<#aa0a1e>✦ <b>ROI DES FLÉAUX</b> <gray>(les 3 pièces)"
+        - "<white>+20 % dégâts <gray>· chaque coup te soigne un peu."
+        - "<gray>Un coup sur trois : <#aa0a1e>Démantèlement<gray>, une entaille"
+        - "<gray>invisible frappe juste après. Insensible au feu."
         - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
         - "<dark_gray>✧ Ne tombe pas à la mort"
     sceptre-abysse:
@@ -1538,6 +1611,7 @@ messages:
       thousandeyes: "<white>✧ Visuel : <#5ac8ff>deux rangées d'yeux qui clignent sur ton front"
       spindle: "<white>✧ Visuel : <#e1ebff>une toile ronde qui tourne dans ton dos"
       webwings: "<white>✧ Visuel : <#e1ebff>deux grandes ailes de toile qui battent"
+      disco: "<white>✧ Visuel : <#ff3cc8>des petites lumières disco tournent autour de toi"
       capricorne: "<white>✧ Visuel : <#ff1c30>des petits éclairs rouges crépitent autour de toi"
       redeye: "<white>✧ Visuel : <#ff2840>un œil rouge géant au-dessus de toi + pattes d'araignée"
       eternalcrown: "<white>✧ Visuel : <gradient:#ff1a1a:#ffd700:#ff1a1a>grande couronne d'or + cercle de runes au sol"
@@ -1641,6 +1715,12 @@ messages:
     special: "<#aa0814><b>✦ PERCÉE DU CIEL INVERSÉ"
     stunned: "<#aa0814><b>✦ CIEL INVERSÉ</b> <gray>· tu ne peux plus bouger"
     set-on: "<#c8d2e6><b>CORPS CÉLESTE</b> <gray>· Tenue de Toji complète"
+  boogie-bombe:
+    thrown: "<#ff3cc8><b>♪ BOOGIE BOMBE</b> <gray>· c'est l'heure de danser"
+    dancing: "<#ff3cc8><b>♪ TU DANSES</b> <gray>· impossible de faire quoi que ce soit"
+  outfits:
+    gojo-on: "<#5aaaff><b>L'INFINI</b> <gray>· Tenue de Gojo complète"
+    sukuna-on: "<#aa0a1e><b>ROI DES FLÉAUX</b> <gray>· Tenue de Sukuna complète"
   capricorne:
     cast: "<#ff1c30><b>⛧ BRÈCHE DU BLACK WALL</b> <gray>· le Capricorne s'éveille"
     warn: "<#ff1c30><b>⛧ BLACK WALL</b> <gray>· sors du cercle !"
