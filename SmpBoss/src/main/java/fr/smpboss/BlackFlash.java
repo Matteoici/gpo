@@ -65,6 +65,100 @@ final class BlackFlash implements Listener {
     /** poing chargé : true = Consécutifs ; tâche des effets autour du poing */
     private final Map<UUID, Boolean> armed = new HashMap<>();
     private final Map<UUID, BukkitTask> armTask = new HashMap<>();
+    /** joueurs figés par les Consécutifs : plus rien (manger, boire, taper, tirer, perle...) jusqu'à la fin */
+    private final Map<UUID, Long> stunned = new HashMap<>();
+
+    private boolean isStunned(org.bukkit.entity.Entity e) {
+        Long u = stunned.get(e.getUniqueId());
+        if (u == null) return false;
+        if (u < System.currentTimeMillis()) {
+            stunned.remove(e.getUniqueId());
+            return false;
+        }
+        return true;
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void stunInteract(org.bukkit.event.player.PlayerInteractEvent e) {
+        if (isStunned(e.getPlayer())) {
+            e.setCancelled(true);
+            e.setUseItemInHand(org.bukkit.event.Event.Result.DENY);
+            e.setUseInteractedBlock(org.bukkit.event.Event.Result.DENY);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void stunInteractEntity(org.bukkit.event.player.PlayerInteractEntityEvent e) {
+        if (isStunned(e.getPlayer())) e.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void stunConsume(org.bukkit.event.player.PlayerItemConsumeEvent e) {
+        if (isStunned(e.getPlayer())) e.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void stunAttack(org.bukkit.event.entity.EntityDamageByEntityEvent e) {
+        org.bukkit.entity.Entity d = e.getDamager();
+        if (d instanceof org.bukkit.entity.Projectile pr && pr.getShooter() instanceof org.bukkit.entity.Entity sh) d = sh;
+        if (isStunned(d)) e.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void stunShoot(org.bukkit.event.entity.ProjectileLaunchEvent e) {
+        if (e.getEntity().getShooter() instanceof Player p && isStunned(p)) e.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void stunBow(org.bukkit.event.entity.EntityShootBowEvent e) {
+        if (isStunned(e.getEntity())) e.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void stunSwap(PlayerSwapHandItemsEvent e) {
+        if (isStunned(e.getPlayer())) e.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void stunDrop(org.bukkit.event.player.PlayerDropItemEvent e) {
+        if (isStunned(e.getPlayer())) e.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void stunHeld(org.bukkit.event.player.PlayerItemHeldEvent e) {
+        if (isStunned(e.getPlayer())) e.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void stunPlace(org.bukkit.event.block.BlockPlaceEvent e) {
+        if (isStunned(e.getPlayer())) e.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void stunBreak(org.bukkit.event.block.BlockBreakEvent e) {
+        if (isStunned(e.getPlayer())) e.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void stunInventory(org.bukkit.event.inventory.InventoryClickEvent e) {
+        if (isStunned(e.getWhoClicked())) e.setCancelled(true);
+    }
+
+    /** pas de fuite par perle, chorus ou commande (/spawn, /home...) pendant la rafale */
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void stunTeleport(org.bukkit.event.player.PlayerTeleportEvent e) {
+        if (!isStunned(e.getPlayer())) return;
+        String c = e.getCause().name();
+        if (c.equals("ENDER_PEARL") || c.equals("CHORUS_FRUIT") || c.equals("CONSUMABLE_EFFECT") || c.equals("COMMAND")) e.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void stunCommand(org.bukkit.event.player.PlayerCommandPreprocessEvent e) {
+        if (isStunned(e.getPlayer()) && !e.getPlayer().hasPermission("smpboss.admin")) {
+            e.setCancelled(true);
+            e.getPlayer().sendActionBar(parse(plugin.msg("black-flash.stunned")));
+        }
+    }
 
     BlackFlash(SmpBoss plugin) {
         this.plugin = plugin;
@@ -282,7 +376,13 @@ final class BlackFlash implements Listener {
             if (o.getLocation().distanceSquared(c0) > 64 * 64 || PackStatus.has(o)) continue;
             o.playSound(c0, Sound.ENTITY_WARDEN_SONIC_CHARGE, 2f, 0.6f);
         }
-        if (t instanceof Player tp) tp.sendActionBar(parse(plugin.msg("black-flash.stunned")));
+        if (t instanceof Player tp) {
+            tp.sendActionBar(parse(plugin.msg("black-flash.stunned")));
+            // figé pour de vrai : il arrête de manger / boire / bloquer, et ne peut plus rien utiliser
+            stunned.put(tp.getUniqueId(), System.currentTimeMillis() + total * 50L + 600);
+            tp.clearActiveItem();
+            tp.closeInventory();
+        }
         caster.sendActionBar(parse(plugin.msg("black-flash.combo")));
         double max = maxHealth(t);
         double perHit = max * cfg("consecutive.percent", 95) / 100.0 / HITS.length;
@@ -298,6 +398,7 @@ final class BlackFlash implements Listener {
             if (broken || k > total) {
                 task[0].cancel();
                 busy.remove(caster.getUniqueId());
+                stunned.remove(t.getUniqueId());
                 if (caster.isOnline()) ult().unroot(caster, false);
                 if (!broken) {
                     // dernier coup : tout explose, la cible est projetée

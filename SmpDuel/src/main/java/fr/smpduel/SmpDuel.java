@@ -115,6 +115,37 @@ public final class SmpDuel extends JavaPlugin implements Listener {
         return e == null ? 0 : e.losses();
     }
 
+    /** Pas de lévitation (flèches, potions) en duel ni dans les arènes de duel. */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onLevitation(org.bukkit.event.entity.EntityPotionEffectEvent e) {
+        if (e.getModifiedType() != org.bukkit.potion.PotionEffectType.LEVITATION || e.getNewEffect() == null) return;
+        var c = e.getCause();
+        if (c != org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ARROW && c != org.bukkit.event.entity.EntityPotionEffectEvent.Cause.POTION_SPLASH
+                && c != org.bukkit.event.entity.EntityPotionEffectEvent.Cause.AREA_EFFECT_CLOUD && c != org.bukkit.event.entity.EntityPotionEffectEvent.Cause.POTION_DRINK) return;
+        boolean duel = e.getEntity() instanceof Player p && matches.containsKey(p.getUniqueId());
+        if (!duel && arenaAt(e.getEntity().getLocation()) == null) return;
+        e.setCancelled(true);
+    }
+
+    /** Les flèches de lévitation tirées en duel perdent leur effet. */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onArrow(org.bukkit.event.entity.ProjectileLaunchEvent e) {
+        if (!(e.getEntity() instanceof org.bukkit.entity.Arrow a)) return;
+        boolean duel = a.getShooter() instanceof Player p && matches.containsKey(p.getUniqueId());
+        if (!duel && arenaAt(a.getLocation()) == null) return;
+        try {
+            org.bukkit.potion.PotionType base = a.getBasePotionType();
+            if (base != null) for (org.bukkit.potion.PotionEffect pe : base.getPotionEffects()) {
+                if (pe.getType() == org.bukkit.potion.PotionEffectType.LEVITATION) {
+                    a.setBasePotionType(null);
+                    break;
+                }
+            }
+        } catch (RuntimeException ignored) {
+        }
+        a.removeCustomEffect(org.bukkit.potion.PotionEffectType.LEVITATION);
+    }
+
     /** Ce point est-il dans une arène de duel ? (pour les autres plugins) */
     public static boolean isArena(Location l) {
         return instance != null && l != null && instance.arenaAt(l) != null;

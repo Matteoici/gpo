@@ -401,6 +401,40 @@ final class ArenaGuard implements Listener {
         if (any) p.sendActionBar(parse("<red>Les potions de saut ne marchent pas dans l'arène."));
     }
 
+    /** Pas de lévitation venue de flèches / potions dans l'arène (ni sur les joueurs, ni sur le boss, ni sur ses monstres). */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onLevitation(org.bukkit.event.entity.EntityPotionEffectEvent e) {
+        if (e.getModifiedType() != org.bukkit.potion.PotionEffectType.LEVITATION || e.getNewEffect() == null) return;
+        var c = e.getCause();
+        if (c != org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ARROW && c != org.bukkit.event.entity.EntityPotionEffectEvent.Cause.POTION_SPLASH
+                && c != org.bukkit.event.entity.EntityPotionEffectEvent.Cause.AREA_EFFECT_CLOUD && c != org.bukkit.event.entity.EntityPotionEffectEvent.Cause.POTION_DRINK) return;
+        if (!arena.contains(e.getEntity().getLocation())) return;
+        e.setCancelled(true);
+    }
+
+    /** Les flèches de lévitation tirées dans l'arène perdent leur effet. */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onArrow(org.bukkit.event.entity.ProjectileLaunchEvent e) {
+        if (!(e.getEntity() instanceof org.bukkit.entity.Arrow a) || !arena.contains(a.getLocation())) return;
+        stripLevitation(a);
+    }
+
+    static void stripLevitation(org.bukkit.entity.Arrow a) {
+        try {
+            org.bukkit.potion.PotionType base = a.getBasePotionType();
+            if (base != null) {
+                for (PotionEffect pe : base.getPotionEffects()) {
+                    if (pe.getType() == org.bukkit.potion.PotionEffectType.LEVITATION) {
+                        a.setBasePotionType(null);
+                        break;
+                    }
+                }
+            }
+        } catch (RuntimeException ignored) {
+        }
+        a.removeCustomEffect(org.bukkit.potion.PotionEffectType.LEVITATION);
+    }
+
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onEffect(org.bukkit.event.entity.EntityPotionEffectEvent e) {
         if (!(e.getEntity() instanceof Player p) || e.getNewEffect() == null || !blockedEffect(e.getModifiedType())) return;
