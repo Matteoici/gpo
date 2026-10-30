@@ -1,0 +1,88 @@
+# Patch notes (la plus récente EN PREMIER). Chaque page = une page du livre (MiniMessage, ~13 lignes max).
+# Couleurs lisibles sur le papier : black, dark_gray, dark_red, dark_blue, dark_green, dark_aqua, dark_purple, gold.
+notes:
+  - id: "2026-10-31-halloween"
+    title: "Mise à jour d'Halloween"
+    date: "31/10/2026"
+    pages:
+      - |
+        <dark_purple><b>   LIMITLESS</b>
+        <dark_gray>     Patch note
+        <black>━━━━━━━━━━
+        <gold><b>Mise à jour
+        <gold><b>d'Halloween</b>
+        <dark_gray>31 octobre 2026
+        <black>Au programme :
+        <dark_red>☠ La Reine Araignée
+        <dark_red>✦ Black Flash
+        <dark_purple>✦ Hollow & Fûga
+        <dark_green>★ Île des Classements
+        <gold>✦ Spawners
+      - |
+        <dark_red><b>☠ Reine Araignée</b>
+        <black>Nouveau boss d'event dans son propre <dark_blue>Nid</dark_blue> : toile lumineuse, gouffre sans fond, araignée géante au plafond.
+
+        <dark_gray>➤ Invocation :
+        <black>Cocon sacrificiel (8 Yeux maudits + 1 toile) sur l'autel.
+      - |
+        <dark_red><b>⚔ Ses attaques</b>
+        <black>9 attaques : toiles, bonds, venin, couvée, pattes...
+
+        <dark_purple><b>2 spéciales :</b>
+        <dark_purple>Toile abyssale<black> : cassez les 4 ancrages !
+        <dark_purple>Éclipse<black> : elle disparaît dans le noir...
+      - |
+        <dark_red><b>★ Son butin</b>
+        <black>10 reliques, de rare à prestige.
+
+        <dark_purple><b>3 armes :</b>
+        <black>• Dague venimeuse
+        • Arc des toiles
+        • <dark_red>Croc de la Reine
+
+        <dark_gray>Un seul boss à la fois : Reine OU Roi Citrouille.
+      - |
+        <dark_red><b>✦ Black Flash</b>
+        <black>Accroupi + F : un éclair noir part devant toi.
+
+        <gold><b>Légendaire</b><black> : 50% de la vie.
+        <dark_red><b>Consécutifs</b><black> : cible figée, toute la série : 95% de la vie !
+
+        <dark_gray>Sur la Reine.
+      - |
+        <dark_purple><b>✦ Hollow & Fûga</b>
+        <black>Refaits : explosion, écran blanc, la caméra tremble, sons perso.
+
+        Tu ne bouges plus en le lançant, plus de kick « fly ».
+
+        <dark_gray>Ne partent plus sur le côté.
+      - |
+        <dark_blue><b>⚔ Armes & boss</b>
+        <black>Tous les effets des armes refaits avec leurs sons.
+
+        <gold>Roi Citrouille</gold><black> : nouvelle apparence et effets.
+
+        Reliques texturées (objet + /reliques).
+      - |
+        <dark_green><b>★ Île des</b>
+        <dark_green><b>Classements</b>
+        <black>Tous les classements sur une île flottante, podium et balise dorée.
+
+        <dark_gray>➤ L'arche au spawn
+        ➤ ou /classement ile
+      - |
+        <gold><b>✦ Spawners</b>
+        <black>Aucun mob : le spawner produit l'XP et le butin tout seul.
+
+        <dark_purple>Spawner mystère<black> : mob au hasard, du commun au légendaire !
+
+        <dark_gray>➤ Clic droit dessus
+        ➤ /spawner
+      - |
+        <dark_aqua><b>✔ Et aussi</b>
+        <black>• Quêtes de la Reine
+        • 2 titres Reine
+        • Marché : étagères qui ne disparaissent plus
+        • Plus besoin de /pack
+
+        <dark_purple>Bon Halloween !<black> ☠

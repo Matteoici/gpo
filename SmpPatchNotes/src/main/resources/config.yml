@@ -1,0 +1,4 @@
+# Ouvrir le livre tout seul à la connexion quand il y a une nouvelle mise à jour (une seule fois par joueur)
+open-on-join: true
+# délai avant l'ouverture (secondes) : le temps que le joueur charge
+delay-seconds: 4

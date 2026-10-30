@@ -1,0 +1,14 @@
+name: SmpPatchNotes
+version: '${version}'
+main: fr.smppatch.SmpPatchNotes
+api-version: '26.2'
+description: "Patch notes en livre : s'ouvre à la connexion après chaque mise à jour, /patchnote pour relire"
+commands:
+  patchnote:
+    description: Lire les nouveautés du serveur
+    usage: /patchnote [liste|numéro]
+    aliases: [patchnotes, maj, nouveautes, nouveautés, changelog]
+permissions:
+  smppatch.admin:
+    description: Recharger, rouvrir le livre à tout le monde
+    default: op
