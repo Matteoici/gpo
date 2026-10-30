@@ -203,5 +203,45 @@
     "stream": true
    }
   ]
+ },
+ "capricorn.glitch": {
+  "sounds": [
+   {
+    "name": "limitless:capricorn/glitch",
+    "stream": false
+   }
+  ]
+ },
+ "capricorn.breach": {
+  "sounds": [
+   {
+    "name": "limitless:capricorn/breach",
+    "stream": true
+   }
+  ]
+ },
+ "capricorn.wall": {
+  "sounds": [
+   {
+    "name": "limitless:capricorn/wall",
+    "stream": false
+   }
+  ]
+ },
+ "capricorn.zap": {
+  "sounds": [
+   {
+    "name": "limitless:capricorn/zap",
+    "stream": false
+   }
+  ]
+ },
+ "capricorn.collapse": {
+  "sounds": [
+   {
+    "name": "limitless:capricorn/collapse",
+    "stream": true
+   }
+  ]
  }
 }

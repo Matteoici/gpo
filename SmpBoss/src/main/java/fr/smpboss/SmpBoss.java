@@ -405,6 +405,22 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 37);
             saveConfig();
         }
+        if (getConfig().getInt("config-version", 1) < 38) {
+            // relique prestige "Projet Capricorne" (dans les deux butins)
+            addDefaultRelics();
+            for (String k : new String[]{"capricorne", "messages.menu.visual.capricorne", "messages.capricorne"}) {
+                var def = getConfig().getDefaults();
+                if (def == null || getConfig().isSet(k) && !getConfig().isConfigurationSection(k)) continue;
+                var sec = def.getConfigurationSection(k);
+                if (sec == null) {
+                    if (!getConfig().isSet(k)) getConfig().set(k, def.get(k));
+                    continue;
+                }
+                for (String sub : sec.getKeys(true)) if (!sec.isConfigurationSection(sub) && !getConfig().isSet(k + "." + sub)) getConfig().set(k + "." + sub, sec.get(sub));
+            }
+            getConfig().set("config-version", 38);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);
@@ -412,6 +428,7 @@ public final class SmpBoss extends JavaPlugin {
         weapons = new Weapons(this);
         getServer().getPluginManager().registerEvents(weapons, this);
         getServer().getPluginManager().registerEvents(new BlackFlash(this), this);
+        getServer().getPluginManager().registerEvents(new Capricorne(this), this);
         new BossMusic(this);
         PackStatus packStatus = new PackStatus(this);
         getServer().getPluginManager().registerEvents(packStatus, this);

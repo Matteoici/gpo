@@ -27,7 +27,7 @@ RELICS = {'trainee_flammes': 'blaze_powder', 'amulette_recolte': 'golden_carrot'
           'pattes_reine': 'black_candle', 'cape_toile': 'blue_banner', 'couronne_reine': 'netherite_helmet', 'coeur_abysse': 'heart_of_the_sea',
           'black_flash': 'redstone', 'black_flash_consecutif': 'nether_star',
           'soie_lunaire': 'white_dye', 'venin_cristallise': 'lime_dye', 'masque_mille_yeux': 'black_dye', 'fuseau_tisseuse': 'lead',
-          'ailes_toile': 'phantom_membrane', 'oeil_rouge_abysse': 'ender_eye'}
+          'ailes_toile': 'phantom_membrane', 'oeil_rouge_abysse': 'ender_eye', 'projet_capricorne': 'echo_shard'}
 FLAT = ['oeil_maudit', 'cocon', 'hollow_purple', 'graine', 'egg_rare', 'egg_epique', 'egg_legendaire', 'egg_mythique'] + ['relic_' + r for r in RELICS]
 BOWS = ['sonic_bow', 'arc_tempete', 'arc_feux_follets', 'arc_toiles']
 

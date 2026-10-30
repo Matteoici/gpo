@@ -723,6 +723,36 @@ def red_eye():
     save(None, 'relic_oeil_rouge_abysse', fr, ft=6)
 red_eye()
 
+def capricorne():
+    # éclat noir du Black Wall : cornes de capricorne rouges, coeur de données, déchirure glitch
+    fr = []
+    yy, xx = np.mgrid[0:16, 0:16]
+    for k in range(6):
+        a = np.zeros((16, 16, 4), np.int32)
+        m = (np.abs(xx - 7.5) * 1.15 + np.abs(yy - 9.5) * 0.8 <= 5.6)
+        a[m] = hx('0a0206')
+        edge = m & ~(np.roll(m, 1, 0) & np.roll(m, -1, 0) & np.roll(m, 1, 1) & np.roll(m, -1, 1))
+        a[edge] = hx('5c0010')
+        rr = np.random.default_rng(31 + k)
+        bits = m & ~edge & (rr.random((16, 16)) < 0.35)
+        a[bits] = hx('8a0016')
+        for s_ in (-1, 1):
+            for t in np.linspace(0, 1, 30):
+                ang = 1.9 - 2.3 * t
+                x = 7.5 + s_ * (1.6 + 4.6 * t * math.cos(ang - 1.6) + 1.2 * t)
+                y = 5.4 - 4.4 * math.sin(t * 2.2) * 0.95
+                xi, yi = int(round(x)), int(round(y))
+                if 0 <= xi < 16 and 0 <= yi < 16: a[yi, xi] = hx('ff2a40') if t < 0.8 else hx('ffb0b8')
+        c = [hx('ff2a40'), hx('ff5a6a'), hx('ffd0d6'), hx('ff5a6a'), hx('ff2a40'), hx('c41c2c')][k]
+        a[9:11, 7:9] = c
+        if k in (2, 5):
+            y0 = 7 + k % 3
+            a[y0] = np.roll(a[y0], 1 if k == 2 else -1, axis=0)
+            a[y0, 3:13][a[y0, 3:13, 3] > 0] = hx('00e5ff')
+        fr.append(outline(a, hx('140004')))
+    save(None, 'relic_projet_capricorne', fr, ft=3)
+capricorne()
+
 # --- textures du corps de la Reine (32x32)
 def chitin():
     N2 = 32; yy, xx = np.mgrid[0:N2, 0:N2]

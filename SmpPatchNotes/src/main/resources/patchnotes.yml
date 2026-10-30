@@ -1,6 +1,54 @@
 # Patch notes (la plus récente EN PREMIER). Chaque page = une page du livre (MiniMessage, ~13 lignes max).
 # Couleurs lisibles sur le papier : black, dark_gray, dark_red, dark_blue, dark_green, dark_aqua, dark_purple, gold.
 notes:
+  - id: "2026-10-31-capricorne"
+    title: "Projet Capricorne"
+    date: "31/10/2026"
+    pages:
+      - |
+        <dark_red><b>   LIMITLESS</b>
+        <dark_gray>     Patch note
+        <black>━━━━━━━━━━
+        <dark_red><b>Projet</b>
+        <dark_red><b>Capricorne</b>
+        <dark_gray>31 octobre 2026
+        <black>Au programme :
+        <dark_red>⛧ Relique prestige
+        <dark_red>⛧ Le Black Wall
+        <dark_aqua>◈ Fantôme du Net
+        <dark_green>✔ Corrections
+      - |
+        <dark_red><b>⛧ Projet Capricorne</b>
+        <black>Un fragment de l'IA renégate qui vit derrière le <dark_red>Black Wall</dark_red>.
+
+        <dark_red>Prestige<black>, chez le Roi ET chez la Reine. La plus forte du serveur.
+
+        <dark_gray>Titre : Au-delà du Black Wall
+      - |
+        <dark_red><b>⛧ Brèche du</b>
+        <dark_red><b>Black Wall</b>
+        <black>Accroupi + clic gauche dans le vide :
+        un cercle s'ouvre où tu vises, <dark_red>10 murs</dark_red> jaillissent et enferment tout le monde.
+        <dark_gray>(2 min 30)
+      - |
+        <dark_red><b>⛧ Dans la cage</b>
+        <black>5 s de tentacules de données et de spectres d'IA...
+
+        Puis les murs <dark_red>s'effondrent</dark_red> au centre : 35 % de la vie d'un coup.
+
+        <dark_gray>Personne ne sort.
+      - |
+        <dark_aqua><b>◈ Fantôme du Net</b>
+        <black>Parfois, un coup ne te touche pas : tu glitches quelques blocs plus loin.
+
+        Celui qui a frappé est <dark_aqua>corrompu</dark_aqua> (lenteur + obscurité).
+      - |
+        <dark_green><b>✔ Corrections</b>
+        <black>• La caméra ne tremble plus que sur Fûga et Hollow
+        • Reine : tête recollée, zones de coups sur la tête et l'abdomen, plus forte
+        • Portails au sol : tourbillon posé à plat
+
+        <dark_red>Bienvenue derrière le mur.<black> ⛧
   - id: "2026-10-31-toile"
     title: "Mise à jour de la Toile"
     date: "31/10/2026"

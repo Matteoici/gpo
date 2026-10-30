@@ -592,6 +592,43 @@ final class Cosmetics {
                 if (t % 6 == 0) d.dust(true, 0, cy - 0.25 - (t % 18) * 0.03, 0.12, red, 0.4f);
                 draw("spiderlegs", d, w, moving);
             }
+            // ---------------------------------------------------------- ⛧ (prestige) Projet Capricorne : cornes du Black Wall, hélice de données, glitch
+            case "capricorne" -> {
+                Color red = Color.fromRGB(255, 28, 48), deep = Color.fromRGB(110, 0, 14), cyan = Color.fromRGB(0, 229, 255);
+                if (t % 2 == 0) {
+                    // deux cornes de capricorne qui s'enroulent vers l'arrière
+                    for (int s = -1; s <= 1; s += 2) {
+                        for (int i = 0; i <= 12; i++) {
+                            double u = i / 12.0, a = u * 2.6;
+                            double x = s * (0.16 + 0.22 * u + 0.12 * Math.sin(a));
+                            double y = 2.0 + 0.55 * Math.sin(a * 0.8) - 0.1 * u;
+                            double z = -0.05 - 0.45 * (1 - Math.cos(a * 0.7));
+                            d.dust(true, x, y, z, u > 0.8 ? Color.fromRGB(255, 170, 180) : (i % 3 == 0 ? deep : red), (float) (0.75 - 0.35 * u));
+                        }
+                    }
+                } else {
+                    // hélice de données noire et rouge qui tourne autour du corps
+                    double spin = t * 0.12;
+                    for (int k = 0; k < 2; k++) {
+                        for (int i = 0; i < 6; i++) {
+                            double y = 0.15 + i * 0.32 + ((t * 0.04) % 0.32);
+                            double a = spin + y * 2.2 + k * Math.PI;
+                            d.dust(false, Math.cos(a) * 0.75, y, Math.sin(a) * 0.75, i % 2 == 0 ? red : BFBLACK, 0.55f);
+                        }
+                    }
+                }
+                // glitch : un double décalé rouge/cyan apparaît par moments
+                if (t % 23 == 0) {
+                    double off = r.nextDouble(0.15, 0.3);
+                    for (int i = 0; i < 8; i++) {
+                        double y = 0.2 + i * 0.22;
+                        d.dust(false, -off, y, -0.1, red, 0.6f);
+                        d.dust(false, off, y, -0.1, cyan, 0.6f);
+                    }
+                }
+                if (t % 9 == 0) d.dust(false, r.nextDouble(-1.0, 1.0), r.nextDouble(0.2, 2.2), r.nextDouble(-0.8, 0.4), deep, 0.9f);
+                if (moving && t % 2 == 0) d.dust(false, r.nextDouble(-0.3, 0.3), 0.15, -0.4, r.nextBoolean() ? red : BFBLACK, 0.8f);
+            }
             case "eclipse" -> {
                 if (t % 2 == 0) {
                     double flap = Math.sin(t * 0.1) * 0.14;

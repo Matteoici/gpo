@@ -1,4 +1,4 @@
-config-version: 37
+config-version: 38
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -238,6 +238,7 @@ loot:
     prestige:
       - {relic: couronne_roi_eternel, title: "Le Roi Éternel"}
       - {relic: ailes_eclipse, title: "Survivant de l'Apocalypse"}
+      - {relic: projet_capricorne, title: "Au-delà du Black Wall"}
 
 # ---------------------------------------------------------------- Armes du Roi (butin rare, gardées à la mort)
 weapons:
@@ -737,6 +738,20 @@ relics:
       armor: 2
       speed: 8
       regen: 1
+    projet_capricorne:
+      name: "Projet Capricorne"
+      rarity: prestige
+      icon: ECHO_SHARD
+      visual: capricorne
+      lore: ["<gray>Un fragment de l'IA renégate qui vit derrière", "<gray>le Black Wall. Il ne t'obéit pas : il te tolère.",
+             "<#ff1c30>⛧ <white>Accroupi + clic gauche dans le vide", "<gray>Brèche du Black Wall : des murs jaillissent",
+             "<gray>et enferment tout le monde. Tentacules de données,", "<gray>spectres d'IA, puis tout s'effondre. <dark_gray>(2 min 30)",
+             "<#00e5ff>◈ <white>Fantôme du Net <gray>: parfois, un coup ne te", "<gray>touche pas, tu glitches plus loin."]
+      damage: 20
+      health: 6
+      armor: 4
+      speed: 15
+      regen: 2
 
 # ---------------------------------------------------------------- Sac (relique secrète)
 backpack:
@@ -861,7 +876,8 @@ spider-loot:
     legendary: [{relic: pattes_reine}, {relic: cape_toile}, {relic: black_flash}, {relic: masque_mille_yeux}, {relic: fuseau_tisseuse}]
     secret: [{relic: couronne_reine, title: "Héritier de la Toile"}]
     prestige: [{relic: coeur_abysse, title: "Cœur de l'Abysse"}, {relic: black_flash_consecutif, title: "Black Flash"},
-               {relic: ailes_toile, title: "Ailes de la Toile"}, {relic: oeil_rouge_abysse, title: "L'Œil Rouge"}]
+               {relic: ailes_toile, title: "Ailes de la Toile"}, {relic: oeil_rouge_abysse, title: "L'Œil Rouge"},
+               {relic: projet_capricorne, title: "Au-delà du Black Wall"}]
 
 
 # ================================================================ 📳 TREMBLEMENT DE L'ÉCRAN (Hollow, Fûga, boss...)
@@ -898,6 +914,33 @@ black-flash:
     boss-damage: 400
     duration-ticks: 270    # la rafale suit le son (13 s)
     cooldown-seconds: 120
+
+
+# ================================================================ ⛧ PROJET CAPRICORNE (relique prestige) : accroupi + clic gauche dans le vide
+capricorne:
+  range: 32                # portée de la visée
+  cooldown-seconds: 150
+  in-duels: false          # true = utilisable en duel (contre l'adversaire)
+  radius: 7.5              # rayon de la cage
+  walls: 10                # nombre de murs
+  wall-height: 11
+  cage-ticks: 100          # durée de la cage avant l'effondrement (20 = 1 s)
+  tendril-every: 8         # un tentacule de données toutes les X ticks
+  tendril-percent: 6       # % de la vie max d'un joueur par tentacule
+  tendril-damage: 14       # contre un monstre
+  ghost-every: 22          # un spectre d'IA toutes les X ticks
+  ghost-percent: 8
+  ghost-damage: 18
+  collapse-percent: 35     # effondrement final : % de la vie max d'un joueur
+  collapse-damage: 60
+  boss-tendril-damage: 30
+  boss-ghost-damage: 40
+  boss-collapse-damage: 450
+  ghost:                   # passif "Fantôme du Net"
+    enabled: true
+    chance: 15             # % de chance d'esquiver un coup
+    cooldown-seconds: 10
+    corrupt-ticks: 60      # lenteur + obscurité pour celui qui a frappé
 
 messages:
   pack:
@@ -1390,6 +1433,7 @@ messages:
       thousandeyes: "<white>✧ Visuel : <#5ac8ff>deux rangées d'yeux qui clignent sur ton front"
       spindle: "<white>✧ Visuel : <#e1ebff>une toile ronde qui tourne dans ton dos"
       webwings: "<white>✧ Visuel : <#e1ebff>deux grandes ailes de toile qui battent"
+      capricorne: "<white>✧ Visuel : <#ff1c30>cornes de capricorne rouges + hélice de données, glitch"
       redeye: "<white>✧ Visuel : <#ff2840>un œil rouge géant au-dessus de toi + pattes d'araignée"
       eternalcrown: "<white>✧ Visuel : <gradient:#ff1a1a:#ffd700:#ff1a1a>grande couronne d'or + cercle de runes au sol"
       eclipse: "<white>✧ Visuel : <gradient:#ff1a1a:#ffd700:#ff1a1a>grandes ailes de feu + éclipse au-dessus de la tête"
@@ -1482,6 +1526,12 @@ messages:
       shadow-dash: "<#3a6bff>🕷 <b>Ruée de l'ombre</b> <gray>· quitte la ligne"
       ceiling-drop: "<#3a6bff>🕸 <b>Chute du plafond</b> <gray>· sors du cercle !"
       fang-nova: "<#46eb82>☠ <b>Crocs de l'Abysse</b> <gray>· saute par-dessus les vagues"
+  capricorne:
+    cast: "<#ff1c30><b>⛧ BRÈCHE DU BLACK WALL</b> <gray>· le Capricorne s'éveille"
+    warn: "<#ff1c30><b>⛧ BLACK WALL</b> <gray>· sors du cercle !"
+    trapped: "<#ff1c30>⛧ <gray>le Black Wall te repousse..."
+    collapse: "<#ff1c30><b>⛧ EFFONDREMENT"
+    ghost: "<#00e5ff>◈ <b>Fantôme du Net</b> <gray>· le coup t'a traversé"
   black-flash:
     stunned: "<#ff1e2d><b>⚡ BLACK FLASH</b> <gray>· tu es figé !"
     combo: "<#ff1e2d><b>⚡ BLACK FLASH CONSÉCUTIFS"
