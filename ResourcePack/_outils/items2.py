@@ -724,31 +724,32 @@ def red_eye():
 red_eye()
 
 def capricorne():
-    # éclat noir du Black Wall : cornes de capricorne rouges, coeur de données, déchirure glitch
+    # éclat noir du Black Wall, cornes de capricorne enroulées, coeur rouge qui pulse, ligne de glitch
     fr = []
     yy, xx = np.mgrid[0:16, 0:16]
+    horn = [(6, 6), (5, 5), (4, 4), (3, 3), (2, 2), (2, 1), (1, 1), (0, 2), (0, 3), (1, 4), (2, 4)]
     for k in range(6):
         a = np.zeros((16, 16, 4), np.int32)
-        m = (np.abs(xx - 7.5) * 1.15 + np.abs(yy - 9.5) * 0.8 <= 5.6)
-        a[m] = hx('0a0206')
-        edge = m & ~(np.roll(m, 1, 0) & np.roll(m, -1, 0) & np.roll(m, 1, 1) & np.roll(m, -1, 1))
-        a[edge] = hx('5c0010')
+        m = (np.abs(xx - 7.5) / 3.6 + np.abs(yy - 10.0) / 5.6) <= 1
+        a[m] = hx('120308')
         rr = np.random.default_rng(31 + k)
-        bits = m & ~edge & (rr.random((16, 16)) < 0.35)
-        a[bits] = hx('8a0016')
-        for s_ in (-1, 1):
-            for t in np.linspace(0, 1, 30):
-                ang = 1.9 - 2.3 * t
-                x = 7.5 + s_ * (1.6 + 4.6 * t * math.cos(ang - 1.6) + 1.2 * t)
-                y = 5.4 - 4.4 * math.sin(t * 2.2) * 0.95
-                xi, yi = int(round(x)), int(round(y))
-                if 0 <= xi < 16 and 0 <= yi < 16: a[yi, xi] = hx('ff2a40') if t < 0.8 else hx('ffb0b8')
-        c = [hx('ff2a40'), hx('ff5a6a'), hx('ffd0d6'), hx('ff5a6a'), hx('ff2a40'), hx('c41c2c')][k]
-        a[9:11, 7:9] = c
+        bits = m & (rr.random((16, 16)) < 0.3)
+        a[bits] = hx('5c0010')
+        # facettes
+        a[m & (xx < 7.5) & (yy < 10)] = np.maximum(a[m & (xx < 7.5) & (yy < 10)], hx('2a0610'))
+        for (x, y), i in zip(horn, range(len(horn))):
+            col = hx('ffb0b8') if i >= len(horn) - 2 else (hx('ff2a40') if i % 2 == 0 else hx('c41c2c'))
+            a[y, x] = col
+            a[y, 15 - x] = col
+        pulse = [hx('ff2a40'), hx('ff5a6a'), hx('ffd0d6'), hx('ff5a6a'), hx('ff2a40'), hx('c41c2c')][k]
+        a[9:12, 7:9] = pulse
+        a[10, 6] = a[10, 9] = hx('8a0016')
         if k in (2, 5):
-            y0 = 7 + k % 3
-            a[y0] = np.roll(a[y0], 1 if k == 2 else -1, axis=0)
-            a[y0, 3:13][a[y0, 3:13, 3] > 0] = hx('00e5ff')
+            y0 = 8 if k == 2 else 12
+            row = a[y0].copy()
+            a[y0] = np.roll(row, 1 if k == 2 else -1, axis=0)
+            on = a[y0, :, 3] > 0
+            a[y0, on] = hx('00e5ff')
         fr.append(outline(a, hx('140004')))
     save(None, 'relic_projet_capricorne', fr, ft=3)
 capricorne()
