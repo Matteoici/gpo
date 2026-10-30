@@ -1,6 +1,55 @@
 # Patch notes (la plus récente EN PREMIER). Chaque page = une page du livre (MiniMessage, ~13 lignes max).
 # Couleurs lisibles sur le papier : black, dark_gray, dark_red, dark_blue, dark_green, dark_aqua, dark_purple, gold.
 notes:
+  - id: "2026-10-31-toile"
+    title: "Mise à jour de la Toile"
+    date: "31/10/2026"
+    pages:
+      - |
+        <dark_blue><b>   LIMITLESS</b>
+        <dark_gray>     Patch note
+        <black>━━━━━━━━━━
+        <dark_blue><b>Mise à jour
+        <dark_blue><b>de la Toile</b>
+        <dark_gray>31 octobre 2026
+        <black>Au programme :
+        <dark_red>☠ Reine ×3
+        <dark_purple>♫ Musiques des boss
+        <dark_blue>✦ 6 reliques + 2 armes
+        <dark_aqua>✦ Portails & arènes
+        <gold>★ Top ELO
+      - |
+        <dark_red><b>☠ La Reine grandit</b>
+        <black>Elle est maintenant <dark_red>3 fois plus grande</dark_red>, et son nid aussi.
+
+        <dark_purple><b>♫ Musiques</b>
+        <black>Chaque boss a sa musique pendant le combat : une valse macabre pour le Roi, une toile angoissante pour la Reine.
+      - |
+        <dark_blue><b>✦ Nouveau butin</b>
+        <black>Épique : Soie Lunaire, Venin Cristallisé
+        <gold>Légendaire<black> : Masque aux Mille Yeux, Fuseau de la Tisseuse
+        <dark_red>Prestige<black> : Ailes de la Toile, Œil Rouge de l'Abysse
+      - |
+        <dark_blue><b>⚔ 2 nouvelles armes</b>
+        <gold><b>Faux de la Tisseuse</b>
+        <black>(légendaire) : un filet fige tout devant toi.
+
+        <dark_red><b>Sceptre de l'Abysse</b>
+        <black>(prestige) : 8 pattes géantes s'abattent sur la zone visée.
+      - |
+        <dark_aqua><b>✦ Portails</b>
+        <black>Fini les portails du Nether : des tourbillons animés à la place.
+
+        Chaque arène a son entrée et sa commande :
+        <dark_blue>/arenearaignee
+        <gold>/arenecitrouille
+      - |
+        <gold><b>★ Et aussi</b>
+        <black>• Top ELO des duels sur l'Île des Classements
+        • /drops araignee : le butin de la Reine à part
+        • Scoreboard : un statut par boss
+
+        <dark_purple>Bonne chasse !<black> ☠
   - id: "2026-10-31-halloween"
     title: "Mise à jour d'Halloween"
     date: "31/10/2026"

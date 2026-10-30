@@ -1,5 +1,35 @@
 # Patch notes Limitless (textes Discord)
 
+## 31/10/2026 — Mise à jour de la Toile
+
+🕸️ **MISE À JOUR DE LA TOILE** 🕸️
+
+🕷️ **La Reine Araignée grandit**
+> Elle est maintenant **3 fois plus grande**, et son nid aussi.
+
+🎵 **Musiques des boss**
+> Pendant le combat, chaque boss a sa musique : une **valse macabre** pour le Roi Citrouille, une **toile angoissante** pour la Reine.
+
+🎁 **Nouveau butin de la Reine**
+> 🟣 **Épique** : Soie Lunaire, Venin Cristallisé
+> 🟡 **Légendaire** : Masque aux Mille Yeux, Fuseau de la Tisseuse
+> 🔴 **Prestige** : Ailes de la Toile, Œil Rouge de l'Abysse
+
+⚔️ **2 nouvelles armes**
+> 🟡 **Faux de la Tisseuse** (légendaire) : un filet géant fige tout ce qui est devant toi
+> 🔴 **Sceptre de l'Abysse** (prestige) : vise le sol, 8 pattes géantes s'abattent sur la zone
+
+🌀 **Portails**
+> Fini les portails du Nether : place à des **tourbillons animés**. Chaque arène a son entrée :
+> ➤ **/arenearaignee** (ou /nid) · **/arenecitrouille**
+
+🏆 **Et aussi**
+> • **Top ELO des duels** sur l'Île des Classements
+> • **/drops araignee** : le butin de la Reine, séparé de celui du Roi
+> • Scoreboard : un statut pour chaque boss
+
+📖 Tout est dans le livre en jeu : **/patchnote**
+
 ## 31/10/2026 — Mise à jour d'Halloween
 
 🎃 **MISE À JOUR D'HALLOWEEN** 🎃
