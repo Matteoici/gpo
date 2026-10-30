@@ -38,5 +38,110 @@
     "stream": true
    }
   ]
+ },
+ "weapons.sonic": {
+  "sounds": [
+   {
+    "name": "limitless:weapons/sonic"
+   }
+  ]
+ },
+ "weapons.slash": {
+  "sounds": [
+   {
+    "name": "limitless:weapons/slash"
+   }
+  ]
+ },
+ "weapons.quake": {
+  "sounds": [
+   {
+    "name": "limitless:weapons/quake"
+   }
+  ]
+ },
+ "weapons.soul": {
+  "sounds": [
+   {
+    "name": "limitless:weapons/soul"
+   }
+  ]
+ },
+ "weapons.soul_boom": {
+  "sounds": [
+   {
+    "name": "limitless:weapons/soul_boom"
+   }
+  ]
+ },
+ "weapons.frost": {
+  "sounds": [
+   {
+    "name": "limitless:weapons/frost"
+   }
+  ]
+ },
+ "weapons.thunder": {
+  "sounds": [
+   {
+    "name": "limitless:weapons/thunder"
+   }
+  ]
+ },
+ "weapons.fire_slash": {
+  "sounds": [
+   {
+    "name": "limitless:weapons/fire_slash"
+   }
+  ]
+ },
+ "weapons.wisp": {
+  "sounds": [
+   {
+    "name": "limitless:weapons/wisp"
+   }
+  ]
+ },
+ "weapons.curse": {
+  "sounds": [
+   {
+    "name": "limitless:weapons/curse"
+   }
+  ]
+ },
+ "boss.roar": {
+  "sounds": [
+   {
+    "name": "limitless:boss/roar"
+   }
+  ]
+ },
+ "boss.boom": {
+  "sounds": [
+   {
+    "name": "limitless:boss/boom"
+   }
+  ]
+ },
+ "boss.whoosh": {
+  "sounds": [
+   {
+    "name": "limitless:boss/whoosh"
+   }
+  ]
+ },
+ "boss.magic": {
+  "sounds": [
+   {
+    "name": "limitless:boss/magic"
+   }
+  ]
+ },
+ "weapons.impact": {
+  "sounds": [
+   {
+    "name": "limitless:weapons/impact"
+   }
+  ]
  }
 }

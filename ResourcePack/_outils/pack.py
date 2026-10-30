@@ -52,9 +52,9 @@ def tflat(t):
         {"from":[0,8.05,0],"to":[16,8.05,16],"shade":False,"faces":{"up":tface(tint=False,tx='#1'),"down":tface(tint=False,tx='#1')}}]}
 def tcross(t):  # deux plans croisés le long de Y (éclairs, rayons) : on les oriente dans la direction voulue
     return {"textures":ttex(t),"elements":[
-        {"from":[8,0,0],"to":[8,16,16],"shade":False,"faces":{"east":tface(90),"west":tface(90)}},
+        {"from":[8,0,0],"to":[8,16,16],"shade":False,"faces":{"east":tface(),"west":tface()}},
         {"from":[0,0,8],"to":[16,16,8],"shade":False,"faces":{"north":tface(),"south":tface()}},
-        {"from":[8.05,0,0],"to":[8.05,16,16],"shade":False,"faces":{"east":tface(90,False,'#1'),"west":tface(90,False,'#1')}},
+        {"from":[8.05,0,0],"to":[8.05,16,16],"shade":False,"faces":{"east":tface(0,False,'#1'),"west":tface(0,False,'#1')}},
         {"from":[0,0,8.05],"to":[16,16,8.05],"shade":False,"faces":{"north":tface(tint=False,tx='#1'),"south":tface(tint=False,tx='#1')}}]}
 tinted={}
 for t in ['w_glow','w_ring','w_shock','w_spark','w_slash','w_spike']+['w_burst_%d'%i for i in range(12)]: tinted[t]=tquad(t)

@@ -1,0 +1,6 @@
+Ordre pour regénérer le pack (depuis ce dossier, avec les textures vanilla 26.2 dans VAN) :
+  python3 tex2.py <pack> ; python3 tex_hollow.py <pack> ; python3 tex_extra.py <pack> ; python3 tex_white.py <pack>
+  python3 items2.py <VAN>/assets/minecraft/textures/item <pack>
+  python3 pack.py <pack>          (modèles fx + sounds.json de base)
+  python3 sfx.py <pack>           (sons perso, APRES pack.py car il complète sounds.json)
+  python3 items_pack.py <pack> <VAN>/assets/minecraft/items
