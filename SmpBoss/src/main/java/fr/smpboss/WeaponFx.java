@@ -3,6 +3,7 @@ package fr.smpboss;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Location;
+import org.bukkit.Particle;
 import org.bukkit.SoundCategory;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
@@ -470,5 +471,94 @@ final class WeaponFx extends PackFx {
         boom(c.clone().add(0, 1, 0), VENOM, (float) Math.max(4, r * 0.7));
         wave(c.clone().add(0, 0.2, 0), "w_shock_flat", ABYSS, 1, (float) (r * 2.4), 8, null, Display.Billboard.FIXED);
         ult.quake(c, 14, 10, 3f);
+    }
+
+    // ---------------------------------------------------------------- Faux de la Tisseuse : le filet
+    static final Color DEEP = Color.fromRGB(18, 26, 80);
+
+    void weaverNet(Player p, Vector f, double range, List<? extends Entity> caught) {
+        Location eye = p.getEyeLocation();
+        snd(eye, "spider.web", 2f, 0.8f);
+        Location start = eye.clone().add(f.clone().multiply(1.2)).add(0, -0.3, 0);
+        Quaternionf face = new Quaternionf().rotationTo(new Vector3f(0, 0, 1), v(f));
+        ItemDisplay net = t(start, "w_web", WEB, 1.2f, 1.2f, 1.2f, Display.Billboard.FIXED, face);
+        float big = (float) (range * 1.15);
+        Vector3f fly = v(f.clone().multiply(range * 0.7));
+        later(1, () -> tween(net, fly, new Quaternionf(face).rotateZ(1.2f), new Vector3f(big, big, big), 6));
+        later(10, () -> tween(net, fly, new Quaternionf(face).rotateZ(1.6f), new Vector3f(0.05f, 0.05f, 0.05f), 8));
+        kill(net, 20);
+        // particules pour tout le monde (avec ou sans pack)
+        Particle.DustOptions silk = new Particle.DustOptions(Color.fromRGB(230, 238, 255), 1.2f);
+        for (int i = 1; i <= 6; i++) {
+            int ii = i;
+            later(i, () -> {
+                Location c = start.clone().add(f.clone().multiply(range * 0.7 * ii / 6.0));
+                double w = 0.6 + ii * range * 0.12;
+                Vector side = new Vector(-f.getZ(), 0, f.getX());
+                for (int k = -4; k <= 4; k++)
+                    c.getWorld().spawnParticle(Particle.DUST, c.clone().add(side.clone().multiply(w * k / 4.0)).add(0, Math.sin(k) * 0.3, 0), 2, 0.05, 0.25, 0.05, 0, silk);
+            });
+        }
+        Location hand = eye.clone().add(0, -0.5, 0);
+        later(5, () -> {
+            for (Entity en : caught) {
+                if (!en.isValid()) continue;
+                Location to = en.getLocation().add(0, en.getHeight() * 0.6, 0);
+                Vector seg = to.toVector().subtract(hand.toVector());
+                if (seg.lengthSquared() < 0.3) continue;
+                tpop(hand.clone().add(seg.clone().multiply(0.5)), "w_beam_x", WEB, 0.14f, (float) seg.length(), 0.14f, 1, 8, 4, Display.Billboard.FIXED, alongY(seg));
+            }
+        });
+    }
+
+    // ---------------------------------------------------------------- Sceptre de l'Abysse : les huit pattes
+    void abyssLegsWarn(Location c, double r) {
+        Location g = c.clone().add(0, 0.08, 0);
+        float d = (float) (r * 2.1);
+        ItemDisplay rune = t(g, "w_rune_flat", ABYSS, 0.3f, 1, 0.3f, Display.Billboard.FIXED, null);
+        later(1, () -> tween(rune, new Vector3f(), new Quaternionf().rotateY(1.4f), new Vector3f(d, 1, d), 12));
+        later(14, () -> tween(rune, new Vector3f(), new Quaternionf().rotateY(2.2f), new Vector3f(0.05f, 1, 0.05f), 6));
+        kill(rune, 22);
+        wave(g, "w_shock_flat", DEEP, d, 0.4f, 14, null, Display.Billboard.FIXED);
+        snd(c, "spider.hiss", 2.5f, 0.6f);
+        Particle.DustOptions blue = new Particle.DustOptions(ABYSS, 1.6f);
+        for (int i = 0; i < 16; i += 2) {
+            int ii = i;
+            later(i, () -> {
+                for (int k = 0; k < 24; k++) {
+                    double a = Math.PI * 2 * k / 24 + ii * 0.1;
+                    c.getWorld().spawnParticle(Particle.DUST, c.clone().add(Math.cos(a) * r, 0.2, Math.sin(a) * r), 1, 0, 0, 0, 0, blue);
+                }
+            });
+        }
+    }
+
+    void abyssLegs(Location c, double r) {
+        snd(c, "spider.screech", 3f, 0.6f);
+        snd(c, "weapons.impact", 2.5f, 0.7f);
+        Location target = c.clone().add(0, 0.6, 0);
+        for (int k = 0; k < 8; k++) {
+            double a = Math.PI * 2 * k / 8 + 0.2;
+            Location base = c.clone().add(Math.cos(a) * (r + 2.5), -0.6, Math.sin(a) * (r + 2.5));
+            Location knee = c.clone().add(Math.cos(a) * (r * 0.75), r * 0.9 + 1.5, Math.sin(a) * (r * 0.75));
+            Location tip = target.clone().add(Math.cos(a) * 0.7, 0, Math.sin(a) * 0.7);
+            int dl = k % 2;
+            for (Location[] sg : new Location[][]{{base, knee}, {knee, tip}}) {
+                Vector seg = sg[1].toVector().subtract(sg[0].toVector());
+                Location mid = sg[0].clone().add(seg.clone().multiply(0.5));
+                float th = sg[0] == base ? 1.5f : 1.1f;
+                later(dl, () -> tpop(mid, "w_spike_x", DEEP, th, (float) seg.length(), th, 3, 10, 6, Display.Billboard.FIXED, alongY(seg)));
+            }
+            later(dl, () -> wave(base.clone().add(0, 0.7, 0), "w_shock_flat", ABYSS, 0.5f, 3.5f, 8, null, Display.Billboard.FIXED));
+        }
+        later(3, () -> {
+            boom(target.clone().add(0, 0.6, 0), ABYSS, (float) Math.max(4, r * 0.9));
+            wave(c.clone().add(0, 0.15, 0), "w_shock_flat", WEB, 1, (float) (r * 2.6), 9, null, Display.Billboard.FIXED);
+            ItemDisplay cr = t(c.clone().add(0, 0.06, 0), "w_crack_flat", ABYSS, (float) r * 2, 1, (float) r * 2, Display.Billboard.FIXED, null);
+            kill(cr, 40);
+            ult.quake(c, 18, 12, 3.5f);
+            c.getWorld().spawnParticle(Particle.SCULK_SOUL, c.clone().add(0, 1, 0), 40, r * 0.4, 0.6, r * 0.4, 0.05);
+            c.getWorld().spawnParticle(Particle.EXPLOSION, c.clone().add(0, 1, 0), 3, r * 0.3, 0.3, r * 0.3, 0);
+        });
     }
 }

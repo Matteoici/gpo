@@ -1,7 +1,7 @@
 # ==================================================================== SmpBoard
 # Variables : {player} {rank} (préfixe du grade, via Vault/LuckPerms) {group} {money} {online} {max} {ping}
 #   {kills} {deaths} {kd} {playtime} {world} {x} {y} {z} {date} {time} {tps} {ip}
-#   {server} (nom du serveur) {boss} (statut du Roi Citrouille) {duel_elo} {duel_wins} {duel_losses}
+#   {server} (nom du serveur) {boss} (statut du Roi Citrouille) {reine} (statut de la Reine Araignée) {duel_elo} {duel_wins} {duel_losses}
 #   + toutes les variables PlaceholderAPI (%...%), ex : %smpguilds_name_formatted%
 # Couleurs : MiniMessage (<red>, <#ff7a00>, <gradient:...>, <b>) ; les codes & et § marchent aussi.
 # Après une modif : /sb reload
@@ -46,9 +46,9 @@ lines:
   - " <gray>Kills : <white>{kills} <dark_gray>· <gray>Morts : <white>{deaths}"
   - " <gray>Duels : <gold>{duel_elo} ELO"
   - ""
-  - "<#ff7a00>☠ <white><b>Roi Citrouille"
-  - " {boss}"
-  - ""
+  - "<#ff7a00>☠ <white><b>Boss"
+  - " <gray>☠ Citrouille : {boss}"
+  - " <gray>🕷 Reine : {reine}"
   - "<#ffb347>{ip}"
 
 tab:
@@ -62,6 +62,7 @@ tab:
     - ""
     - "<gray>En ligne : <green>{online}</green><dark_gray>/{max}</dark_gray>  <dark_gray>·</dark_gray>  <gray>Ping : <white>{ping} ms</white>  <dark_gray>·</dark_gray>  <gray>TPS : <white>{tps}"
     - "<gray>☠ Roi Citrouille : {boss}"
+    - "<gray>🕷 Reine Araignée : {reine}"
     - "<#ffb347>{ip}"
     - ""
   # nom dans le TAB ("" = ne pas y toucher). SmpTitles ajoute son titre devant tout seul.

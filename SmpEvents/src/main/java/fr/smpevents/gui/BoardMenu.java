@@ -18,7 +18,7 @@ import static fr.smpevents.Texts.pp;
 /** /classement : tous les classements, avec ta place dans chacun. */
 public final class BoardMenu extends Menu {
 
-    private static final int[] SLOTS = {11, 13, 15, 20, 22, 24, 29, 31, 33};
+    private static final int[] SLOTS = {11, 13, 15, 19, 21, 23, 25, 29, 31, 33};
 
     public BoardMenu(SmpEvents plugin, Player viewer) {
         super(plugin, viewer, 5, plugin.texts().get("gui.boards.title"));

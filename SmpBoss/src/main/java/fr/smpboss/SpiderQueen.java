@@ -321,7 +321,7 @@ public final class SpiderQueen implements Boss {
         maxHp = hpFor(fighters);
         hp = maxHp;
         if (plugin.getConfig().getBoolean("boss.damage-sidebar", true)) board = new DamageBoard(plugin);
-        size = (float) cfg("size", 1.9);
+        size = (float) cfg("size", 5.7);
         // elle descend du ciel au bout d'un fil
         Location sky = at.clone().add(0, 22, 0);
         boss = w.spawn(sky, Spider.class, z -> {
@@ -546,7 +546,7 @@ public final class SpiderQueen implements Boss {
         csound(c, "spider.screech", 4f, to == 3 ? 0.5f : 0.7f, "entity.spider.death");
         sound(c, "entity.generic.explode", 3f, 0.7f);
         rig.poseTarget = 1;
-        float from = size, target = (float) cfg("size-phase-" + to, to == 2 ? 2.25 : 2.6);
+        float from = size, target = (float) cfg("size-phase-" + to, to == 2 ? 6.75 : 7.8);
         repeat(1, 40, i -> {
             if (boss == null || !boss.isValid()) return;
             size = from + (target - from) * (i + 1) / 40f;

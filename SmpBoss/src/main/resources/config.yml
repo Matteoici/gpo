@@ -1,4 +1,4 @@
-config-version: 35
+config-version: 36
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -417,6 +417,24 @@ weapons:
     damage: 12            # Toile Abyssale (clic droit)
     radius: 9
     cooldown-seconds: 16
+  faux-tisseuse:          # 🕷 légendaire
+    chance: 0.4
+    attack-damage: 13
+    attack-speed: 1.2
+    damage: 9             # Filet de la Tisseuse (clic droit)
+    range: 9
+    angle: 80
+    root-seconds: 2.5
+    cooldown-seconds: 12
+  sceptre-abysse:         # 🕷 prestige
+    chance: 0.02
+    attack-damage: 12
+    attack-speed: 1.4
+    damage: 18            # Pattes de l'Abysse (clic droit)
+    radius: 5.5
+    range: 28
+    knock-up: 0.9
+    cooldown-seconds: 25
 
 relics:
   max-equipped: 2
@@ -662,6 +680,63 @@ relics:
       health: 4
       armor: 3
       regen: 1
+    soie_lunaire:
+      name: "Soie Lunaire"
+      rarity: epic
+      icon: WHITE_DYE
+      visual: moonsilk
+      lore: ["<gray>Filée sous la pleine lune,", "<gray>elle brille encore dans le noir."]
+      speed: 8
+      health: 1
+    venin_cristallise:
+      name: "Venin Cristallisé"
+      rarity: epic
+      icon: LIME_DYE
+      visual: venomcrystal
+      lore: ["<gray>Une goutte du venin de la Reine,", "<gray>durcie en cristal."]
+      damage: 9
+      armor: 1
+    masque_mille_yeux:
+      name: "Masque aux Mille Yeux"
+      rarity: legendary
+      icon: BLACK_DYE
+      visual: thousandeyes
+      lore: ["<gray>Tous ses yeux s'ouvrent en même temps.", "<gray>Plus rien ne t'échappe."]
+      damage: 9
+      health: 2
+      speed: 4
+    fuseau_tisseuse:
+      name: "Fuseau de la Tisseuse"
+      rarity: legendary
+      icon: LEAD
+      visual: spindle
+      lore: ["<gray>Une toile parfaite tourne dans ton dos."]
+      health: 3
+      armor: 3
+      regen: 1
+      speed: 3
+    ailes_toile:
+      name: "Ailes de la Toile"
+      rarity: prestige
+      icon: PHANTOM_MEMBRANE
+      visual: webwings
+      lore: ["<gray>Deux toiles immenses, tissées par la Reine elle-même.", "<gray>Une chance sur dix mille... et elles sont à toi."]
+      speed: 18
+      health: 4
+      damage: 12
+      armor: 3
+      regen: 1
+    oeil_rouge_abysse:
+      name: "Œil Rouge de l'Abysse"
+      rarity: prestige
+      icon: ENDER_EYE
+      visual: redeye
+      lore: ["<gray>Le dernier œil de la Reine. Il te suit partout,", "<gray>et il regarde là où tu regardes."]
+      damage: 18
+      health: 5
+      armor: 2
+      speed: 8
+      regen: 1
 
 # ---------------------------------------------------------------- Sac (relique secrète)
 backpack:
@@ -719,9 +794,9 @@ spider:
   max-minutes: 20
   speed: 0.3
   melee-damage: 10
-  size: 1.9                # taille du corps (phase 1)
-  size-phase-2: 2.25
-  size-phase-3: 2.6
+  size: 5.7                # taille du corps (phase 1) — 3× l'ancienne
+  size-phase-2: 6.75
+  size-phase-3: 7.8
   zone-scale: 1.4
   phase-2-at: 0.66
   phase-3-at: 0.33
@@ -781,10 +856,20 @@ spider-loot:
     rare: 20
   pools:
     rare: [{relic: fil_soie}, {relic: oeil_araignee}]
-    epic: [{relic: crochets_venin}, {relic: cocon_ancien}]
-    legendary: [{relic: pattes_reine}, {relic: cape_toile}, {relic: black_flash}]
+    epic: [{relic: crochets_venin}, {relic: cocon_ancien}, {relic: soie_lunaire}, {relic: venin_cristallise}]
+    legendary: [{relic: pattes_reine}, {relic: cape_toile}, {relic: black_flash}, {relic: masque_mille_yeux}, {relic: fuseau_tisseuse}]
     secret: [{relic: couronne_reine, title: "Héritier de la Toile"}]
-    prestige: [{relic: coeur_abysse, title: "Cœur de l'Abysse"}, {relic: black_flash_consecutif, title: "Black Flash"}]
+    prestige: [{relic: coeur_abysse, title: "Cœur de l'Abysse"}, {relic: black_flash_consecutif, title: "Black Flash"},
+               {relic: ailes_toile, title: "Ailes de la Toile"}, {relic: oeil_rouge_abysse, title: "L'Œil Rouge"}]
+
+
+# ================================================================ 🎵 MUSIQUES DES BOSS (resource pack)
+# Pendant le combat, ceux qui sont dans l'arène entendent la musique du boss (catégorie « Jukebox »).
+music:
+  enabled: true
+  volume: 0.75
+  pumpkin-seconds: 60.48   # durée de la boucle (ne pas changer sans changer le son)
+  spider-seconds: 67.2
 
 
 # ================================================================ ⚡ BLACK FLASH (reliques de la Reine) : accroupi + F
@@ -937,6 +1022,7 @@ messages:
     day: "<aqua>☾ À la nuit"
     ready: "<green>✔ Disponible"
     closed: "<gray>—"
+    waiting: "<gray>⏸ L'autre boss combat"
   drops:
     title: "<dark_gray>☠ Butin du Roi Citrouille"
     separator: "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
@@ -990,6 +1076,27 @@ messages:
         - "<gray>sa cible dans une toile collante."
         - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
         - "<white>🕸 <damage> ❤</white>   <dark_gray>|</dark_gray>   <white>⏳ <cooldown> s"
+        - "<dark_gray>✧ Ne tombe pas à la mort · incassable"
+    faux-tisseuse:
+      name: "Faux de la Tisseuse"
+      lore:
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<#e1ebff>✦ <b>FILET DE LA TISSEUSE</b> <gray>(clic droit)"
+        - "<gray>Un filet géant part en cône devant toi :"
+        - "<gray>tout ce qu'il attrape est <white>figé</white> et empoisonné."
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<white>⚔ 13</white> <gray>au corps à corps   <dark_gray>|</dark_gray>   <white>🕸 <damage> ❤</white>   <dark_gray>|</dark_gray>   <white>⏳ <cooldown> s"
+        - "<dark_gray>✧ Ne tombe pas à la mort · incassable"
+    sceptre-abysse:
+      name: "Sceptre de l'Abysse"
+      lore:
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<#3a6bff>✦ <b>PATTES DE L'ABYSSE</b> <gray>(clic droit)"
+        - "<gray>Vise le sol : huit pattes géantes"
+        - "<gray>jaillissent et s'abattent sur la zone."
+        - "<gray>Ceux qui sont dessous volent et voient noir."
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<white>⚔ 12</white> <gray>au corps à corps   <dark_gray>|</dark_gray>   <white>💥 <damage> ❤</white>   <dark_gray>|</dark_gray>   <white>⏳ <cooldown> s"
         - "<dark_gray>✧ Ne tombe pas à la mort · incassable"
     croc-reine:
       name: "Croc de la Reine"
@@ -1264,6 +1371,12 @@ messages:
       silkcrown: "<white>✧ Visuel : <#e1ebff>couronne de soie et saphir"
       abyss: "<white>✧ Visuel : <gradient:#3a6bff:#e1ebff:#3a6bff>pattes, yeux et brume de l'Abysse"
       blackflash: "<white>✧ Visuel : <#ff1e2d>éclairs rouges et noirs autour des poings"
+      moonsilk: "<white>✧ Visuel : <#e3e9ff>fil d'argent qui s'enroule autour de toi"
+      venomcrystal: "<white>✧ Visuel : <#46eb82>éclats de venin qui tournent à ta taille"
+      thousandeyes: "<white>✧ Visuel : <#5ac8ff>deux rangées d'yeux qui clignent sur ton front"
+      spindle: "<white>✧ Visuel : <#e1ebff>une toile ronde qui tourne dans ton dos"
+      webwings: "<white>✧ Visuel : <#e1ebff>deux grandes ailes de toile qui battent"
+      redeye: "<white>✧ Visuel : <#ff2840>un œil rouge géant au-dessus de toi + pattes d'araignée"
       eternalcrown: "<white>✧ Visuel : <gradient:#ff1a1a:#ffd700:#ff1a1a>grande couronne d'or + cercle de runes au sol"
       eclipse: "<white>✧ Visuel : <gradient:#ff1a1a:#ffd700:#ff1a1a>grandes ailes de feu + éclipse au-dessus de la tête"
       backpack: "<white>✧ Visuel : <gold>sac à dos de la Récolte"
@@ -1319,6 +1432,21 @@ messages:
     status-fight: "<red><b>⚔ EN COMBAT ⚔</b>\n<gray>Phase <white><phase></white>/3  <dark_gray>·</dark_gray>  <red>❤</red> <white><hp></white><gray>/<max>"
     portal-hologram: "<gradient:#3a6bff:#e1ebff><b>🕷 BOSS FIGHT 🕷</b></gradient>\n<#7fb6ff><b>Reine Araignée</b>\n\n<status>\n\n<dark_gray>Entre dans le portail pour rejoindre sa toile"
     altar-hologram: "<gradient:#3a6bff:#e1ebff><b>🕷 Autel de la Reine 🕷</b></gradient>\n<gray>Clic droit avec un <aqua>Cocon sacrificiel\n<status>"
+    drops-title: "<dark_gray>🕷 Butin de la Reine Araignée"
+    drops-info-lore:
+      - "<gray>Chaque victoire (≥ 5 % des dégâts) :"
+      - "<white>• <gray>des yeux maudits + de l'argent, toujours"
+      - "<white>• <gray>une chance pour <white>chaque arme de la Reine</white>"
+      - "<white>• <gray>un tirage de rareté, puis un objet au hasard :"
+      - "  <#6d8cff>❂ Prestige <white><prestige> %"
+      - "  <white>✧ Mythical <white><secret> %"
+      - "  <gold>★ Légendaire <white><legendary> %"
+      - "  <light_purple>◆ Épique <white><epic> %"
+      - "  <aqua>◇ Rare <white><rare> %"
+      - ""
+      - "<gray>Garantie : un <gold>Légendaire</gold> au bout de <white><pity-legendary></white> victoires"
+      - "<gray>sans, un <white>Mythical</white> au bout de <white><pity-secret></white>."
+      - "<dark_gray>(compteur commun aux deux boss)"
     items:
       eye:
         name: "<#5aa0ff><b>Œil maudit"

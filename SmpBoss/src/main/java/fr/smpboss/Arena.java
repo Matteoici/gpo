@@ -129,7 +129,7 @@ public final class Arena {
 
     /** "/boss arene" ou "/boss araignee arene" (textes d'aide). */
     private String cmd() {
-        return spider ? "/boss araignee arene" : "/boss arene";
+        return spider ? "/arenearaignee" : "/arenecitrouille";
     }
 
     private Location myAltar() {
@@ -452,7 +452,7 @@ public final class Arena {
                 customSpawn = p.getLocation().clone();
                 save();
                 sender.sendMessage(parse("<green>Point d'arrivée de l'arène placé ici <gray>(là où tu regardes compte aussi). "
-                        + "<white>/arene</white><gray>, le portail du spawn et /boss arene tp y mènent."));
+                        + "<white>/arene</white><gray>, le portail du spawn et " + cmd() + " tp y mènent."));
             }
             case "portail", "portal" -> portalCommand(sender, a);
             case "sortie", "exit" -> exitCommand(sender, a);
@@ -550,7 +550,7 @@ public final class Arena {
     private void portalCommand(CommandSender sender, String[] a) {
         String what = a.length >= 3 ? a[2].toLowerCase(java.util.Locale.ROOT) : "";
         if (what.equals("info") || what.equals("voir")) {
-            if (portal == null) sender.sendMessage(parse("<red>Pas de zone portail. <gray>/boss arene portail pos1 puis pos2"));
+            if (portal == null) sender.sendMessage(parse("<red>Pas de zone portail. <gray>" + cmd() + " portail pos1 puis pos2"));
             else {
                 sender.sendMessage(parse("<gold>Zone portail</gold> <gray>" + portalWorld + " : <white>" + portal[0] + " " + portal[1] + " " + portal[2]
                         + "</white> → <white>" + portal[3] + " " + portal[4] + " " + portal[5] + "</white> · arrivée : "
@@ -567,8 +567,8 @@ public final class Arena {
             return;
         }
         if (!(sender instanceof Player p) || !(what.equals("pos1") || what.equals("pos2"))) {
-            sender.sendMessage(parse("<gold>/boss arene portail pos1</gold> <gray>(un coin)</gray> <gold>puis pos2</gold> <gray>(le coin opposé) · "
-                    + "<gold>/boss arene portail supprimer"));
+            sender.sendMessage(parse("<gold>" + cmd() + " portail pos1</gold> <gray>(un coin)</gray> <gold>puis pos2</gold> <gray>(le coin opposé) · "
+                    + "<gold>" + cmd() + " portail supprimer"));
             return;
         }
         Location l = p.getLocation().getBlock().getLocation();
@@ -582,7 +582,7 @@ public final class Arena {
                     Math.max(portalPos1.getBlockY(), portalPos2.getBlockY()) + 1, Math.max(portalPos1.getBlockZ(), portalPos2.getBlockZ())};
             save();
             sender.sendMessage(parse("<green>Zone portail créée <gray>(" + (portal[3] - portal[0] + 1) + "×" + (portal[4] - portal[1] + 1) + "×"
-                    + (portal[5] - portal[2] + 1) + ") : entrer dedans = téléporté dans l'arène. <white>/boss arene portail info</white> pour la revoir."));
+                    + (portal[5] - portal[2] + 1) + ") : entrer dedans = téléporté dans l'arène. <white>" + cmd() + " portail info</white> pour la revoir."));
             if (entrance() == null) sender.sendMessage(parse("<red>Attention : l'arène n'est pas encore construite / définie, le portail ne mènera nulle part."));
             showPortal(p);
         }
@@ -645,7 +645,7 @@ public final class Arena {
             p.setFireTicks(0);
             Bukkit.getScheduler().runTaskLater(plugin, () -> p.setFireTicks(0), 1L);
             p.getWorld().playSound(e, org.bukkit.Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 0.6f);
-            p.sendActionBar(parse("<dark_red><b>☠ L'arène du Roi Citrouille</b>"));
+            p.sendActionBar(parse(spider ? "<#5aa0ff><b>🕷 Le Nid de la Reine Araignée</b>" : "<dark_red><b>☠ L'arène du Roi Citrouille</b>"));
         });
     }
 
@@ -654,7 +654,7 @@ public final class Arena {
     private void exitCommand(CommandSender sender, String[] a) {
         String what = a.length >= 3 ? a[2].toLowerCase(java.util.Locale.ROOT) : "";
         if (what.equals("info") || what.equals("voir")) {
-            if (exitBox == null) sender.sendMessage(parse("<red>Pas de zone de sortie. <gray>/boss arene sortie pos1 puis pos2"));
+            if (exitBox == null) sender.sendMessage(parse("<red>Pas de zone de sortie. <gray>" + cmd() + " sortie pos1 puis pos2"));
             else {
                 sender.sendMessage(parse("<green>Zone de sortie</green> <gray>" + exitWorld + " : <white>" + exitBox[0] + " " + exitBox[1] + " " + exitBox[2]
                         + "</white> → <white>" + exitBox[3] + " " + exitBox[4] + " " + exitBox[5]));
@@ -672,8 +672,8 @@ public final class Arena {
             return;
         }
         if (!(sender instanceof Player p) || !(what.equals("pos1") || what.equals("pos2"))) {
-            sender.sendMessage(parse("<green>/boss arene sortie pos1</green> <gray>(un coin)</gray> <green>puis pos2</green> <gray>(le coin opposé) · "
-                    + "<green>/boss arene sortie info|supprimer"));
+            sender.sendMessage(parse("<green>" + cmd() + " sortie pos1</green> <gray>(un coin)</gray> <green>puis pos2</green> <gray>(le coin opposé) · "
+                    + "<green>" + cmd() + " sortie info|supprimer"));
             return;
         }
         Location l = p.getLocation().getBlock().getLocation();
@@ -750,7 +750,7 @@ public final class Arena {
             Location at = portalHolo.getLocation().subtract(0, 0.2, 0);
             if (portalClick == null || !portalClick.isValid() || portalClick.getWorld() != at.getWorld() || portalClick.getLocation().distanceSquared(at) > 0.25) {
                 if (portalClick != null) portalClick.remove();
-                portalClick = DropsMenu.spawnClick(plugin, at, 2.6f, 2.8f);
+                portalClick = DropsMenu.spawnClick(plugin, at, 2.6f, 2.8f, spider);
             }
         }
     }
@@ -846,10 +846,12 @@ public final class Arena {
             sender.sendMessage(parse("<red>Un chantier est déjà en cours."));
             return;
         }
-        int size = a.length >= 3 ? parseInt(a[2], 20) : 20;
+        int def = spider ? 32 : 20;   // la Reine est immense : son nid est plus grand
+        int size = a.length >= 3 ? parseInt(a[2], def) : def;
         size = Math.max(14, Math.min(40, size));
         // hauteur : "ici" (sous tes pieds, défaut), "ciel" (île flottante tout en haut) ou un Y précis
         String where = a.length >= 4 ? a[3].toLowerCase(java.util.Locale.ROOT) : "ici";
+        if (a.length >= 3 && !a[2].matches("\\d+")) where = a[2].toLowerCase(java.util.Locale.ROOT); // "construire ciel"
         World pw = p.getWorld();
         int skyY = pw.getMaxHeight() - size - 32;
         int targetY;
@@ -866,13 +868,13 @@ public final class Arena {
             sender.sendMessage(parse("<gray>Centre = " + (sky ? "au-dessus de toi, à Y <white>" + targetY + "</white> (île de roche flottante)"
                     : "le bloc sous tes pieds") + " : ce sera l'autel. C'est une bulle fermée de rayon ≈ <white>" + total
                     + "</white> blocs et " + (size + 25) + " de haut, " + (spider ? "la tête d'araignée (sortie)" : "le crâne-portail") + " est au <white>nord</white>. Tout ce qui est dedans est remplacé."));
-            sender.sendMessage(parse("<gray>Une sauvegarde est faite : <aqua>/boss arene annuler</aqua> remet tout comme avant."));
+            sender.sendMessage(parse("<gray>Une sauvegarde est faite : <aqua>" + cmd() + " annuler</aqua> remet tout comme avant."));
             sender.sendMessage(parse("<yellow>Retape <white>" + cmd + "</white> dans les 20 secondes pour confirmer."));
             return;
         }
         confirm.remove(p.getUniqueId());
         if (backupFile.exists()) {
-            sender.sendMessage(parse("<red>Une arène construite existe déjà (sauvegarde présente). <gray>/boss arene annuler d'abord, "
+            sender.sendMessage(parse("<red>Une arène construite existe déjà (sauvegarde présente). <gray>" + cmd() + " annuler d'abord, "
                     + "ou supprime plugins/SmpBoss/arena-backup.dat pour garder l'ancienne telle quelle."));
             return;
         }

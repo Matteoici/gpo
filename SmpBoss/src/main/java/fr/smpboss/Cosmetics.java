@@ -489,6 +489,109 @@ final class Cosmetics {
                 }
                 if (t % 40 == 0) d.part(Particle.ELECTRIC_SPARK, false, 0, 1.0, 0.2, 3, 0.3, 0.05);
             }
+            // ---------------------------------------------------------- (Reine, épique) soie lunaire : un fil argenté qui s'enroule autour de toi
+            case "moonsilk" -> {
+                if (t % 2 != 0) return;
+                for (int i = 0; i < 6; i++) {
+                    double u = ((t * 0.04 + i / 6.0) % 1.0);
+                    double a = u * Math.PI * 4 + t * 0.05;
+                    d.dust(false, Math.cos(a) * 0.55, 0.1 + u * 1.9, Math.sin(a) * 0.55, i % 3 == 0 ? SILVER : WEBC, 0.5f);
+                }
+                if (t % 20 == 0) d.part(Particle.END_ROD, false, r.nextDouble(-0.5, 0.5), r.nextDouble(0.3, 1.8), r.nextDouble(-0.5, 0.5), 1, 0, 0.003);
+            }
+            // ---------------------------------------------------------- (Reine, épique) éclats de venin cristallisé qui tournent à la taille
+            case "venomcrystal" -> {
+                if (t % 2 != 0) return;
+                for (int k = 0; k < 5; k++) {
+                    double a = t * 0.06 + Math.PI * 2 * k / 5;
+                    double y = 1.0 + Math.sin(t * 0.08 + k) * 0.08;
+                    double x = Math.cos(a) * 0.7, z = Math.sin(a) * 0.7;
+                    d.dust(false, x, y, z, VENOMC, 0.7f);
+                    d.dust(false, x, y + 0.12, z, Color.fromRGB(190, 255, 210), 0.4f);
+                    d.dust(false, x, y - 0.1, z, Color.fromRGB(20, 120, 60), 0.45f);
+                }
+                if (r.nextInt(8) == 0) d.part(Particle.FALLING_DRIPSTONE_WATER, false, r.nextDouble(-0.6, 0.6), 0.9, r.nextDouble(-0.6, 0.6), 1, 0, 0);
+            }
+            // ---------------------------------------------------------- (Reine, légendaire) masque aux mille yeux : deux rangées d'yeux qui clignent
+            case "thousandeyes" -> {
+                if (t % 2 != 0) return;
+                for (int row = 0; row < 2; row++) {
+                    for (int k = 0; k < 9; k++) {
+                        double a = -1.2 + 2.4 * k / 8;
+                        if ((t / 3 + k * 5 + row * 3) % 23 == 0) continue; // clignement
+                        double rr = 0.33;
+                        d.dust(true, Math.sin(a) * rr, 1.72 + row * 0.13, Math.cos(a) * rr, (k + row) % 3 == 0 ? EYEC : ABYSSC, row == 0 ? 0.5f : 0.4f);
+                    }
+                }
+                double pulse = 0.5 + 0.5 * Math.sin(t * 0.15);
+                d.dust(true, 0, 2.02, 0.31, pulse > 0.5 ? Color.fromRGB(255, 50, 72) : EYEC, 0.7f);
+            }
+            // ---------------------------------------------------------- (Reine, légendaire) fuseau : une toile ronde qui tourne dans ton dos
+            case "spindle" -> {
+                if (t % 2 != 0) return;
+                double spin = t * 0.03, R = 0.75, cy = 1.25;
+                for (int k = 0; k < 8; k++) {
+                    double a = spin + Math.PI * 2 * k / 8;
+                    for (int i = 1; i <= 4; i++) d.dust(false, Math.cos(a) * R * i / 4, cy + Math.sin(a) * R * i / 4, -0.42, WEBC, 0.38f);
+                }
+                for (int ring = 1; ring <= 3; ring++) {
+                    double rr = R * ring / 3.3;
+                    for (int k = 0; k < 8 + ring * 4; k++) {
+                        double a = spin + Math.PI * 2 * k / (8 + ring * 4);
+                        d.dust(false, Math.cos(a) * rr, cy + Math.sin(a) * rr, -0.42, ring == 3 ? SILVER : WEBC, 0.32f);
+                    }
+                }
+                d.dust(false, 0, cy, -0.45, ABYSSC, 0.8f);
+            }
+            // ---------------------------------------------------------- ❂ (Reine, prestige) ailes de toile : deux grandes toiles qui battent
+            case "webwings" -> {
+                if (t % 2 != 0) return;
+                double flap = Math.sin(t * 0.12) * 0.25;
+                for (int s = -1; s <= 1; s += 2) {
+                    double ox = s * 0.95, oy = 1.45, oz = -0.35 - 0.15;
+                    // rayons
+                    for (int k = 0; k < 7; k++) {
+                        double a = -1.3 + 2.6 * k / 6;
+                        for (int i = 1; i <= 6; i++) {
+                            double u = i / 6.0, len = 0.9;
+                            double x = ox + s * Math.cos(a) * len * u, y = oy + Math.sin(a) * len * u + flap * u * Math.abs(Math.cos(a));
+                            d.dust(false, x, y, oz - 0.25 * u * Math.abs(Math.cos(a)), k % 3 == 0 ? SILVER : WEBC, 0.42f);
+                        }
+                    }
+                    // fils de la spirale
+                    for (int ring = 1; ring <= 3; ring++) {
+                        double rr = 0.9 * ring / 3.4;
+                        for (int k = 0; k <= 10; k++) {
+                            double a = -1.3 + 2.6 * k / 10;
+                            double x = ox + s * Math.cos(a) * rr, y = oy + Math.sin(a) * rr + flap * (rr / 0.9) * Math.abs(Math.cos(a));
+                            d.dust(false, x, y, oz - 0.25 * (rr / 0.9) * Math.abs(Math.cos(a)), WEBC, 0.32f);
+                        }
+                    }
+                    d.dust(false, ox, oy, oz, ABYSSC, 0.9f);
+                }
+                // attache entre les omoplates
+                for (int i = 0; i < 5; i++) d.dust(false, -0.95 + 1.9 * i / 4, 1.45, -0.42, DEEPC, 0.5f);
+                if (t % 10 == 0) d.dust(false, r.nextDouble(-1.6, 1.6), r.nextDouble(0.8, 2.2), -0.6, ABYSSC, 1.0f);
+                if (moving && t % 4 == 0) d.part(Particle.WHITE_ASH, false, r.nextDouble(-1.4, 1.4), 1.2, -0.6, 2, 0.1, 0.01);
+            }
+            // ---------------------------------------------------------- ❂ (Reine, prestige) l'œil rouge : un grand œil flotte au-dessus et regarde où tu regardes
+            case "redeye" -> {
+                if (t % 2 != 0) return;
+                Color red = Color.fromRGB(255, 40, 60), dark = Color.fromRGB(70, 0, 12);
+                double cy = 2.55 + Math.sin(t * 0.07) * 0.06;
+                for (int k = 0; k < 14; k++) {
+                    double a = Math.PI * 2 * k / 14;
+                    d.dust(true, Math.cos(a) * 0.32, cy + Math.sin(a) * 0.2, 0.05, dark, 0.55f);
+                }
+                for (int k = 0; k < 8; k++) {
+                    double a = Math.PI * 2 * k / 8;
+                    d.dust(true, Math.cos(a) * 0.17, cy + Math.sin(a) * 0.12, 0.1, red, 0.5f);
+                }
+                boolean blink = (t / 2) % 60 == 0;
+                if (!blink) d.dust(true, 0, cy, 0.18, BFBLACK, 0.8f);
+                if (t % 6 == 0) d.dust(true, 0, cy - 0.25 - (t % 18) * 0.03, 0.12, red, 0.4f);
+                draw("spiderlegs", d, w, moving);
+            }
             case "eclipse" -> {
                 if (t % 2 == 0) {
                     double flap = Math.sin(t * 0.1) * 0.14;

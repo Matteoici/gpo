@@ -22,13 +22,23 @@ commands:
     usage: /arene [araignee]
     aliases: [arena, arène]
     permission: smpboss.arena.join
+  arenearaignee:
+    description: "Nid de la Reine Araignée : y aller (joueurs) / le construire et le régler (admin)"
+    usage: /arenearaignee [tp|construire|portail|sortie|setspawn|annuler]
+    aliases: [arenaaraignee, nid, arenereine, spiderarena]
+    permission: smpboss.arena.join
+  arenecitrouille:
+    description: "Arène du Roi Citrouille : y aller (joueurs) / la construire et la régler (admin)"
+    usage: /arenecitrouille [tp|construire|portail|sortie|setspawn|annuler]
+    aliases: [arenacitrouille, areneroi, pumpkinarena]
+    permission: smpboss.arena.join
   topguildes:
     description: Classement des guildes contre le boss
     usage: /topguildes
     aliases: [topguilde, guildtop, topguild, classementguildes]
   drops:
-    description: Chances de drop du Roi Citrouille
-    usage: /drops
+    description: Chances de drop des boss
+    usage: /drops [citrouille|araignee]
     aliases: [chances, loottable]
   sac:
     description: Ouvrir ton sac (relique)

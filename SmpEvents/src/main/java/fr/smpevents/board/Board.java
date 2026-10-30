@@ -15,7 +15,8 @@ public enum Board {
     QUESTS("quetes", Material.WRITABLE_BOOK, Format.COUNT),
     KOTH("koth", Material.GOLDEN_HELMET, Format.COUNT),
     HUNTERS("chasseurs", Material.CROSSBOW, Format.MONEY),
-    WANTED("primes", Material.TARGET, Format.MONEY);
+    WANTED("primes", Material.TARGET, Format.MONEY),
+    ELO("elo", Material.DIAMOND_SWORD, Format.COUNT);
 
     public enum Format {
         MONEY, COUNT, HOURS
@@ -44,6 +45,7 @@ public enum Board {
             case "quests", "quete" -> QUESTS;
             case "hunters", "chasseur", "bounty" -> HUNTERS;
             case "wanted", "prime", "recherches" -> WANTED;
+            case "duel", "duels", "classement-duel", "topelo" -> ELO;
             default -> null;
         };
     }
@@ -79,7 +81,7 @@ public enum Board {
             case QUESTS -> d.questsDone;
             case KOTH -> d.kothWins;
             case HUNTERS -> d.bountyEarned;
-            case WANTED -> 0;
+            case WANTED, ELO -> 0;
         };
     }
 }

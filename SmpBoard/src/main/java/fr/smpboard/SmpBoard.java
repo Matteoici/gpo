@@ -138,6 +138,30 @@ public final class SmpBoard extends JavaPlugin implements Listener {
             c.set("tab.header", fixed);
             changed = true;
         }
+        // la Reine Araignée a son propre statut : {reine}
+        List<String> lines = new ArrayList<>(c.getStringList("lines"));
+        if (lines.stream().noneMatch(l -> l.contains("{reine}"))) {
+            int i = lines.indexOf("<#ff7a00>☠ <white><b>Roi Citrouille");
+            if (i >= 0 && i + 1 < lines.size() && lines.get(i + 1).trim().equals("{boss}")) {
+                lines.set(i, " <gray>☠ Citrouille : {boss}");
+                lines.set(i + 1, " <gray>🕷 Reine : {reine}");
+                lines.add(i, "<#ff7a00>☠ <white><b>Boss");
+                if (lines.size() > 15 && i + 3 < lines.size() && lines.get(i + 3).isEmpty()) lines.remove(i + 3);
+                c.set("lines", lines);
+                changed = true;
+            }
+        }
+        List<String> footer = new ArrayList<>(c.getStringList("tab.footer"));
+        if (footer.stream().noneMatch(l -> l.contains("{reine}"))) {
+            for (int i = 0; i < footer.size(); i++) {
+                if (footer.get(i).contains("{boss}")) {
+                    footer.add(i + 1, "<gray>🕷 Reine Araignée : {reine}");
+                    c.set("tab.footer", footer);
+                    changed = true;
+                    break;
+                }
+            }
+        }
         if (changed) saveConfig();
     }
 
@@ -362,6 +386,7 @@ public final class SmpBoard extends JavaPlugin implements Listener {
             if (s.contains("{rank}")) s = rep(s, "{rank}", vault == null ? "" : legacyToMini(vault.prefix(p)));
             if (s.contains("{group}")) s = rep(s, "{group}", vault == null ? "" : vault.group(p));
             if (s.contains("{boss}")) s = rep(s, "{boss}", boss());
+            if (s.contains("{reine}")) s = rep(s, "{reine}", reine());
             if (s.contains("{duel_")) {
                 s = rep(s, "{duel_elo}", duel("elo", p.getUniqueId(), "1000"));
                 s = rep(s, "{duel_wins}", duel("wins", p.getUniqueId(), "0"));
@@ -425,6 +450,23 @@ public final class SmpBoard extends JavaPlugin implements Listener {
                 bossPlugin = pl;
             }
             return String.valueOf(bossMethod.invoke(pl));
+        } catch (ReflectiveOperationException e) {
+            return getConfig().getString("no-boss", "<gray>—");
+        }
+    }
+
+    private Method reineMethod;
+    private Object reinePlugin;
+
+    private String reine() {
+        Plugin pl = Bukkit.getPluginManager().getPlugin("SmpBoss");
+        if (pl == null || !pl.isEnabled()) return getConfig().getString("no-boss", "<gray>—");
+        try {
+            if (reinePlugin != pl) {
+                reineMethod = pl.getClass().getMethod("spiderScoreboardStatus");
+                reinePlugin = pl;
+            }
+            return String.valueOf(reineMethod.invoke(pl));
         } catch (ReflectiveOperationException e) {
             return getConfig().getString("no-boss", "<gray>—");
         }

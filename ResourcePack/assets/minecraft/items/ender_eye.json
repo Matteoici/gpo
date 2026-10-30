@@ -10,6 +10,13 @@
      "type": "minecraft:model",
      "model": "limitless:item/items/relic_oeil_jugement"
     }
+   },
+   {
+    "when": "relic_oeil_rouge_abysse",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/relic_oeil_rouge_abysse"
+    }
    }
   ],
   "fallback": {

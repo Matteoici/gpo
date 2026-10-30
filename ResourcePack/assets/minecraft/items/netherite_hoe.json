@@ -17,6 +17,13 @@
      "type": "minecraft:model",
      "model": "limitless:item/items/faucille"
     }
+   },
+   {
+    "when": "faux_tisseuse",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/faux_tisseuse"
+    }
    }
   ],
   "fallback": {

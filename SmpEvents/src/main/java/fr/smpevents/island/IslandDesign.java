@@ -13,7 +13,7 @@ import java.util.Set;
  *
  *  - île flottante aux bords irréguliers, dessous en roche qui finit en pointe, cristaux et mousse qui pendent
  *  - au centre : un podium 1-2-3 (or / fer / cuivre), une balise sur la 1re marche : faisceau doré visible de loin
- *  - autour : 9 socles en quartz, chacun avec un classement en hologramme au-dessus
+ *  - autour : 10 socles en quartz, chacun avec un classement en hologramme au-dessus
  *  - allées, cerisiers, fleurs, lanternes, haie d'azalée au bord pour ne pas tomber
  *  - au sud : l'arche du portail qui ramène au spawn
  */
@@ -211,9 +211,9 @@ public final class IslandDesign {
 
     private List<Double> pedestalAngles() {
         List<Double> out = new ArrayList<>();
-        // 9 socles sur 310°, en laissant le sud (l'arrivée) libre
+        // 10 socles sur 304°, en laissant le sud (l'arrivée) libre
         double from = Math.toRadians(90 + 28), span = Math.toRadians(360 - 56);
-        for (int i = 0; i < 9; i++) out.add(from + span * i / 8.0);
+        for (int i = 0; i < 10; i++) out.add(from + span * i / 9.0);
         return out;
     }
 
@@ -257,7 +257,7 @@ public final class IslandDesign {
         }
     }
 
-    /** 9 socles en anneau ; hologramme au-dessus de chacun. */
+    /** 10 socles en anneau ; hologramme au-dessus de chacun. */
     private void pedestals() {
         int rr = ringR();
         for (double a : pedestalAngles()) {

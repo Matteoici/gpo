@@ -95,6 +95,14 @@ public final class SmpDuel extends JavaPlugin implements Listener {
         return e == null ? 1000 : e.elo;
     }
 
+    /** Classement ELO (meilleur en premier), seulement ceux qui ont déjà joué un duel. Pour les classements de SmpEvents. */
+    public static java.util.Map<UUID, Integer> eloRanking() {
+        java.util.Map<UUID, Integer> out = new java.util.LinkedHashMap<>();
+        if (instance == null) return out;
+        for (Map.Entry<UUID, Stats.Entry> e : instance.stats.top(Integer.MAX_VALUE)) out.put(e.getKey(), e.getValue().elo);
+        return out;
+    }
+
     public static int wins(UUID id) {
         if (instance == null) return 0;
         Stats.Entry e = instance.stats.peek(id);

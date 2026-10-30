@@ -56,18 +56,21 @@ final class Weapons implements Listener {
     static final String SONIC = "sonic_bow", TRANCHE = "tranche_mace", BRISE = "brise_terre", SPECTRAL = "arbalete_spectrale",
             GIVRE = "croc_de_givre", TEMPETE = "arc_tempete", HOLLOW = "hollow_purple", FUGA = "fuga",
             LAME = "lame_citrouille", FOLLETS = "arc_feux_follets", HACHE = "hache_maudite",
-            DAGUE = "dague_venin", ARC_TOILES = "arc_toiles", CROC_REINE = "croc_reine";
+            DAGUE = "dague_venin", ARC_TOILES = "arc_toiles", CROC_REINE = "croc_reine",
+            FAUX_TISSEUSE = "faux_tisseuse", SCEPTRE = "sceptre_abysse";
     /** armes du Roi Citrouille */
     static final String[] PUMPKIN = {SONIC, TRANCHE, BRISE, SPECTRAL, GIVRE, TEMPETE, HOLLOW, FUGA, LAME, FOLLETS, HACHE};
     /** armes de la Reine Araignée */
-    static final String[] SPIDER = {DAGUE, ARC_TOILES, CROC_REINE};
-    static final String[] ALL = {SONIC, TRANCHE, BRISE, SPECTRAL, GIVRE, TEMPETE, HOLLOW, FUGA, LAME, FOLLETS, HACHE, DAGUE, ARC_TOILES, CROC_REINE};
+    static final String[] SPIDER = {DAGUE, ARC_TOILES, FAUX_TISSEUSE, CROC_REINE, SCEPTRE};
+    static final String[] ALL = {SONIC, TRANCHE, BRISE, SPECTRAL, GIVRE, TEMPETE, HOLLOW, FUGA, LAME, FOLLETS, HACHE, DAGUE, ARC_TOILES, CROC_REINE,
+            FAUX_TISSEUSE, SCEPTRE};
 
     /** Chance par victoire si le config n'en donne pas. */
     static double defChance(String id) {
         return switch (rarity(id)) {
             case PRESTIGE -> 0.01;
             case EPIC -> 3;
+            case LEGENDARY -> 0.4;
             default -> 0.5;
         };
     }
@@ -88,6 +91,8 @@ final class Weapons implements Listener {
             case DAGUE -> "dague-venin";
             case ARC_TOILES -> "arc-toiles";
             case CROC_REINE -> "croc-reine";
+            case FAUX_TISSEUSE -> "faux-tisseuse";
+            case SCEPTRE -> "sceptre-abysse";
             default -> "arbalete-spectrale";
         };
     }
@@ -107,7 +112,8 @@ final class Weapons implements Listener {
             case DAGUE -> Material.IRON_SWORD;
             case ARC_TOILES -> Material.BOW;
             case CROC_REINE -> Material.NETHERITE_SWORD;
-            default -> Material.NETHERITE_HOE;
+            case SCEPTRE -> Material.BREEZE_ROD;
+            default -> Material.NETHERITE_HOE; // faux spectrale, faux de la tisseuse
         };
     }
 
@@ -115,6 +121,8 @@ final class Weapons implements Listener {
     static Rarity rarity(String id) {
         if (LAME.equals(id) || FOLLETS.equals(id) || HACHE.equals(id) || DAGUE.equals(id) || ARC_TOILES.equals(id)) return Rarity.EPIC;
         if (CROC_REINE.equals(id)) return Rarity.SECRET;
+        if (FAUX_TISSEUSE.equals(id)) return Rarity.LEGENDARY;
+        if (SCEPTRE.equals(id)) return Rarity.PRESTIGE;
         return TRANCHE.equals(id) || GIVRE.equals(id) || TEMPETE.equals(id) ? Rarity.SECRET : Rarity.PRESTIGE;
     }
 
@@ -131,6 +139,8 @@ final class Weapons implements Listener {
             case DAGUE -> 7;
             case ARC_TOILES -> 6;
             case CROC_REINE -> 12;
+            case FAUX_TISSEUSE -> 9;
+            case SCEPTRE -> 18;
             default -> 14;
         };
     }
@@ -147,6 +157,8 @@ final class Weapons implements Listener {
             case DAGUE -> 9;
             case ARC_TOILES -> 8;
             case CROC_REINE -> 16;
+            case FAUX_TISSEUSE -> 12;
+            case SCEPTRE -> 25;
             default -> 2;
         };
     }
@@ -216,6 +228,15 @@ final class Weapons implements Listener {
                     org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND));
             m.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_SPEED, new org.bukkit.attribute.AttributeModifier(
                     new NamespacedKey(plugin, "faux_speed"), cfg("arbalete-spectrale.attack-speed", 1.2) - 4,
+                    org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND));
+        }
+        if (FAUX_TISSEUSE.equals(id) || SCEPTRE.equals(id)) {
+            boolean faux = FAUX_TISSEUSE.equals(id);
+            m.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_DAMAGE, new org.bukkit.attribute.AttributeModifier(
+                    new NamespacedKey(plugin, id + "_damage"), cfg(path(id) + ".attack-damage", faux ? 13 : 12) - 1,
+                    org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND));
+            m.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_SPEED, new org.bukkit.attribute.AttributeModifier(
+                    new NamespacedKey(plugin, id + "_speed"), cfg(path(id) + ".attack-speed", faux ? 1.2 : 1.4) - 4,
                     org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND));
         }
         if (DAGUE.equals(id) || CROC_REINE.equals(id)) {
@@ -1137,6 +1158,94 @@ final class Weapons implements Listener {
                 le.addPotionEffect(new PotionEffect(PotionEffectType.POISON, 80, 1, false, true, true));
             }
         }, 14L);
+    }
+
+    /** Faux de la Tisseuse (légendaire) : clic droit = un filet géant part en cône devant toi ; ceux qu'il attrape sont figés. */
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onWeaverNet(PlayerInteractEvent e) {
+        if (e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        if (e.getHand() != EquipmentSlot.HAND || !FAUX_TISSEUSE.equals(id(e.getItem()))) return;
+        Block b = e.getClickedBlock();
+        if (b != null && b.getType().isInteractable() && !e.getPlayer().isSneaking()) return;
+        e.setCancelled(true); // pas de labour avec la faux
+        Player p = e.getPlayer();
+        if (!ready(p, FAUX_TISSEUSE, cfg("faux-tisseuse.cooldown-seconds", 12))) return;
+        World w = p.getWorld();
+        double range = cfg("faux-tisseuse.range", 9), dmg = cfg("faux-tisseuse.damage", 9);
+        double half = Math.toRadians(cfg("faux-tisseuse.angle", 80) / 2);
+        int root = (int) (cfg("faux-tisseuse.root-seconds", 2.5) * 20);
+        Location eye = p.getEyeLocation();
+        Vector f = eye.getDirection().setY(0);
+        if (f.lengthSquared() < 1e-4) f = new Vector(0, 0, 1);
+        f.normalize();
+        Boss k = plugin.king();
+        List<LivingEntity> caught = new ArrayList<>();
+        for (Entity en : w.getNearbyEntities(p.getLocation(), range, 4, range)) {
+            if (!hittable(p, en)) continue;
+            Vector to = en.getLocation().toVector().subtract(p.getLocation().toVector()).setY(0);
+            double d = to.length();
+            if (d > range || d < 0.01) continue;
+            if (to.normalize().dot(f) < Math.cos(half)) continue;
+            caught.add((LivingEntity) en);
+        }
+        w.playSound(p.getLocation(), org.bukkit.Sound.ENTITY_SPIDER_AMBIENT, 1.6f, 0.7f);
+        w.playSound(p.getLocation(), org.bukkit.Sound.ITEM_TRIDENT_THROW, 1.2f, 0.6f);
+        fx().weaverNet(p, f, range, caught);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            for (LivingEntity le : caught) {
+                if (!le.isValid() || le.isDead()) continue;
+                le.setNoDamageTicks(0);
+                le.damage(dmg, p);
+                if (k == null || !k.isBoss(le)) {
+                    ultimates.freezeFor(le, root);
+                    le.addPotionEffect(new PotionEffect(PotionEffectType.POISON, 60, 0, false, true, true));
+                }
+                fx().webTrap(le.getLocation());
+            }
+        }, 6L);
+    }
+
+    /** Sceptre de l'Abysse (prestige) : clic droit = huit pattes géantes jaillissent du sol et s'abattent sur la zone visée. */
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onAbyssLegs(PlayerInteractEvent e) {
+        if (e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        if (e.getHand() != EquipmentSlot.HAND || !SCEPTRE.equals(id(e.getItem()))) return;
+        Block b = e.getClickedBlock();
+        if (b != null && b.getType().isInteractable() && !e.getPlayer().isSneaking()) return;
+        Player p = e.getPlayer();
+        World w = p.getWorld();
+        double reach = cfg("sceptre-abysse.range", 28), r = cfg("sceptre-abysse.radius", 5.5), dmg = cfg("sceptre-abysse.damage", 18);
+        RayTraceResult hit = w.rayTraceBlocks(p.getEyeLocation(), p.getEyeLocation().getDirection(), reach, org.bukkit.FluidCollisionMode.NEVER, true);
+        Location c;
+        if (hit != null && hit.getHitBlock() != null) c = hit.getHitPosition().toLocation(w);
+        else {
+            c = p.getEyeLocation().add(p.getEyeLocation().getDirection().multiply(reach));
+            for (int i = 0; i < 30 && c.getBlock().isPassable() && c.getY() > w.getMinHeight(); i++) c.add(0, -1, 0);
+        }
+        c.setY(Math.floor(c.getY()) + (c.getBlock().isPassable() ? 0 : 1));
+        if (!ready(p, SCEPTRE, cfg("sceptre-abysse.cooldown-seconds", 25))) return;
+        Location center = c;
+        w.playSound(center, org.bukkit.Sound.ENTITY_WARDEN_DIG, 2f, 0.6f);
+        w.playSound(p.getLocation(), org.bukkit.Sound.ENTITY_SPIDER_AMBIENT, 2f, 0.4f);
+        fx().abyssLegsWarn(center, r);
+        Boss k = plugin.king();
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (!p.isOnline()) return;
+            fx().abyssLegs(center, r);
+            w.playSound(center, org.bukkit.Sound.ENTITY_SPIDER_DEATH, 2.5f, 0.4f);
+            w.playSound(center, org.bukkit.Sound.ENTITY_GENERIC_EXPLODE, 1.6f, 0.7f);
+            for (Entity en : w.getNearbyEntities(center, r, 4, r)) {
+                if (!hittable(p, en) || en.getLocation().distanceSquared(center) > r * r) continue;
+                LivingEntity le = (LivingEntity) en;
+                le.setNoDamageTicks(0);
+                le.damage(dmg, p);
+                if (k == null || !k.isBoss(le)) {
+                    le.setVelocity(new Vector(0, cfg("sceptre-abysse.knock-up", 0.9), 0));
+                    le.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 60, 0, false, true, true));
+                    le.addPotionEffect(new PotionEffect(PotionEffectType.POISON, 80, 1, false, true, true));
+                }
+            }
+        }, 16L);
     }
 
     // ================================================================= Croc de Givre (épée SECRÈTE) : RUÉE GLACIALE

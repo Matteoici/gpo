@@ -385,6 +385,15 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 35);
             saveConfig();
         }
+        if (getConfig().getInt("config-version", 1) < 36) {
+            // Reine 3× plus grande, nouvelles reliques et armes de la Reine, musiques
+            harder("spider.size", 1.9, 5.7);
+            harder("spider.size-phase-2", 2.25, 6.75);
+            harder("spider.size-phase-3", 2.6, 7.8);
+            addDefaultRelics();
+            getConfig().set("config-version", 36);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);
@@ -392,6 +401,7 @@ public final class SmpBoss extends JavaPlugin {
         weapons = new Weapons(this);
         getServer().getPluginManager().registerEvents(weapons, this);
         getServer().getPluginManager().registerEvents(new BlackFlash(this), this);
+        new BossMusic(this);
         PackStatus packStatus = new PackStatus(this);
         getServer().getPluginManager().registerEvents(packStatus, this);
         var packCmd = getCommand("pack");
@@ -481,18 +491,20 @@ public final class SmpBoss extends JavaPlugin {
                 }
             }
         }
-        var pools = def.getConfigurationSection("loot.pools");
-        if (pools == null) return;
-        for (String rarity : pools.getKeys(false)) {
-            List<java.util.Map<?, ?>> mine = new ArrayList<>(getConfig().getMapList("loot.pools." + rarity));
-            for (java.util.Map<?, ?> m : def.getMapList("loot.pools." + rarity)) {
-                Object relic = m.get("relic");
-                if (relic == null) continue;
-                boolean has = false;
-                for (java.util.Map<?, ?> x : mine) if (relic.equals(x.get("relic"))) has = true;
-                if (!has) mine.add(m);
+        for (String L : new String[]{"loot.pools", "spider-loot.pools"}) {
+            var pools = def.getConfigurationSection(L);
+            if (pools == null) continue;
+            for (String rarity : pools.getKeys(false)) {
+                List<java.util.Map<?, ?>> mine = new ArrayList<>(getConfig().getMapList(L + "." + rarity));
+                for (java.util.Map<?, ?> m : def.getMapList(L + "." + rarity)) {
+                    Object relic = m.get("relic");
+                    if (relic == null) continue;
+                    boolean has = false;
+                    for (java.util.Map<?, ?> x : mine) if (relic.equals(x.get("relic"))) has = true;
+                    if (!has) mine.add(m);
+                }
+                getConfig().set(L + "." + rarity, mine);
             }
-            getConfig().set("loot.pools." + rarity, mine);
         }
     }
 
@@ -658,7 +670,8 @@ public final class SmpBoss extends JavaPlugin {
 
     /** Statut court du boss (MiniMessage) pour le scoreboard (SmpBoard le lit). */
     public String scoreboardStatus() {
-        if (king != null && king.active()) return msg("scoreboard.fight").replace("<phase>", String.valueOf(king.phase()));
+        if (king instanceof PumpkinKing && king.active()) return msg("scoreboard.fight").replace("<phase>", String.valueOf(king.phase()));
+        if (king instanceof SpiderQueen && king.active()) return msg("scoreboard.waiting");
         if (altar == null || altar.getWorld() == null) return msg("scoreboard.closed");
         long left = lastEnd + getConfig().getLong("boss.cooldown-minutes", 15) * 60_000L - System.currentTimeMillis();
         if (left > 0) {
@@ -737,7 +750,7 @@ public final class SmpBoss extends JavaPlugin {
             }
             case "invoquer", "summon" -> {
                 if (spiderAltar == null) {
-                    sender.sendMessage(parse("<red>Pas d'autel : /boss araignee arene construire, ou /boss araignee autel"));
+                    sender.sendMessage(parse("<red>Pas d'autel : /arenearaignee construire, ou /boss araignee autel"));
                     return;
                 }
                 if (king != null && king.active()) {
@@ -759,8 +772,8 @@ public final class SmpBoss extends JavaPlugin {
             }
             default -> {
                 sender.sendMessage(parse("<dark_aqua><b>🕷 Reine Araignée"));
-                sender.sendMessage(parse("<aqua>/boss araignee arene construire [taille] [ici|ciel|Y]</aqua> <gray>- construit son arène noir/bleu (l'autel au centre)"));
-                sender.sendMessage(parse("<aqua>/boss araignee arene portail|sortie|tp|setspawn|annuler ...</aqua> <gray>- comme l'arène du Roi"));
+                sender.sendMessage(parse("<aqua>/arenearaignee construire [taille] [ici|ciel|Y]</aqua> <gray>- construit son nid (l'autel au centre)"));
+                sender.sendMessage(parse("<aqua>/arenearaignee portail|sortie|tp|setspawn|annuler ...</aqua> <gray>- réglages de son arène"));
                 sender.sendMessage(parse("<aqua>/boss araignee autel</aqua> <gray>- l'autel = le bloc regardé"));
                 sender.sendMessage(parse("<aqua>/boss araignee invoquer</aqua> <gray>- la lance tout de suite"));
                 sender.sendMessage(parse("<aqua>/boss araignee stop</aqua> <gray>- l'arrête"));
@@ -788,7 +801,27 @@ public final class SmpBoss extends JavaPlugin {
             return true;
         }
         if (name.equals("drops")) {
-            if (sender instanceof Player p) DropsMenu.open(this, p, 0);
+            boolean sp = a.length >= 1 && (a[0].toLowerCase(Locale.ROOT).startsWith("araign") || a[0].equalsIgnoreCase("reine"));
+            if (sender instanceof Player p) DropsMenu.open(this, p, 0, sp);
+            return true;
+        }
+        if (name.equals("arenearaignee") || name.equals("arenecitrouille")) {
+            Arena ar = name.equals("arenearaignee") ? spiderArena : arena;
+            boolean adm = sender.hasPermission("smpboss.admin");
+            String first = a.length == 0 ? "" : a[0].toLowerCase(Locale.ROOT);
+            if (a.length == 0 || !adm || (first.equals("tp") && a.length == 1)) {
+                if (sender instanceof Player p) ar.join(p);
+                else sender.sendMessage(parse("<red>" + label + " tp <joueur>"));
+                return true;
+            }
+            if (first.equals("aide") || first.equals("help")) {
+                ar.command(sender, new String[]{"arene"});
+                return true;
+            }
+            String[] b = new String[a.length + 1];
+            b[0] = "arene";
+            System.arraycopy(a, 0, b, 1, a.length);
+            ar.command(sender, b);
             return true;
         }
         if (name.equals("arene")) {
@@ -838,7 +871,12 @@ public final class SmpBoss extends JavaPlugin {
             }
             case "panneau", "sign" -> {
                 if (!(sender instanceof Player sp)) return true;
-                DropsMenu.signCommand(this, sp, a.length >= 2 && (a[1].equalsIgnoreCase("retirer") || a[1].equalsIgnoreCase("remove")));
+                boolean rm = false, spi = false;
+                for (int i = 1; i < a.length; i++) {
+                    if (a[i].equalsIgnoreCase("retirer") || a[i].equalsIgnoreCase("remove")) rm = true;
+                    if (a[i].toLowerCase(Locale.ROOT).startsWith("araign") || a[i].equalsIgnoreCase("reine")) spi = true;
+                }
+                DropsMenu.signCommand(this, sp, rm, spi);
             }
             case "ult", "ulti" -> {
                 Player t = a.length >= 3 ? Bukkit.getPlayerExact(a[2]) : sender instanceof Player sp ? sp : null;
@@ -892,6 +930,8 @@ public final class SmpBoss extends JavaPlugin {
                         case "dague", "dague_venin" -> weapons.create(Weapons.DAGUE);
                         case "arctoiles", "arc_toiles", "toiles" -> weapons.create(Weapons.ARC_TOILES);
                         case "crocreine", "croc_reine", "croc" -> weapons.create(Weapons.CROC_REINE);
+                        case "fauxtisseuse", "faux_tisseuse", "tisseuse" -> weapons.create(Weapons.FAUX_TISSEUSE);
+                        case "sceptre", "sceptreabysse", "sceptre_abysse" -> weapons.create(Weapons.SCEPTRE);
                         case "sonicbow", "sonic_bow", "arc" -> weapons.create(Weapons.SONIC);
                         case "tranchemace", "tranche_mace", "epee", "épée" -> weapons.create(Weapons.TRANCHE);
                         case "briseterre", "brise_terre", "hache" -> weapons.create(Weapons.BRISE);
@@ -952,7 +992,7 @@ public final class SmpBoss extends JavaPlugin {
                 sender.sendMessage(parse("<gold><b>Roi Citrouille"));
                 sender.sendMessage(parse("<aqua>/boss autel</aqua> <gray>- le bloc que tu regardes devient l'autel"));
                 sender.sendMessage(parse("<aqua>/boss invoquer</aqua> · <aqua>/boss stop</aqua> · <aqua>/boss reload"));
-                sender.sendMessage(parse("<aqua>/boss arene</aqua> <gray>- construire / protéger l'arène infernale du boss"));
+                sender.sendMessage(parse("<aqua>/arenecitrouille</aqua> <gray>- construire / régler l'arène du Roi · <aqua>/arenearaignee</aqua> <gray>- celle de la Reine"));
                 sender.sendMessage(parse("<aqua>/boss give <joueur> <graine|citrouille|faucille|relique:id> [n]"));
                 sender.sendMessage(parse("<gray>Autel : " + (altar == null ? "<red>pas placé" : altar.getBlockX() + " " + altar.getBlockY()
                         + " " + altar.getBlockZ()) + "<gray> · Boss : " + (king != null && king.active() ? "<green>en cours" : "aucun")));
@@ -964,6 +1004,21 @@ public final class SmpBoss extends JavaPlugin {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command cmd, String label, String[] a) {
         List<String> out = new ArrayList<>();
+        if (cmd.getName().equalsIgnoreCase("arenearaignee") || cmd.getName().equalsIgnoreCase("arenecitrouille")) {
+            if (!sender.hasPermission("smpboss.admin")) return out;
+            if (a.length == 1) out.addAll(List.of("tp", "construire", "annuler", "setspawn", "portail", "sortie", "recuperer", "definir", "supprimer"));
+            else if (a.length == 2 && (a[0].equalsIgnoreCase("portail") || a[0].equalsIgnoreCase("sortie"))) out.addAll(List.of("pos1", "pos2", "info", "supprimer"));
+            else if (a.length == 2 && a[0].equalsIgnoreCase("construire")) out.addAll(List.of("20", "24", "28", "32", "36", "ciel", "ici"));
+            else if (a.length == 3 && a[0].equalsIgnoreCase("construire")) out.addAll(List.of("ici", "ciel"));
+            else if (a.length == 2 && a[0].equalsIgnoreCase("tp")) for (Player p : Bukkit.getOnlinePlayers()) out.add(p.getName());
+            String last = a.length == 0 ? "" : a[a.length - 1].toLowerCase(Locale.ROOT);
+            out.removeIf(s -> !s.toLowerCase(Locale.ROOT).startsWith(last));
+            return out;
+        }
+        if (cmd.getName().equalsIgnoreCase("drops")) {
+            if (a.length == 1) out.addAll(List.of("citrouille", "araignee"));
+            return out;
+        }
         if (!cmd.getName().equalsIgnoreCase("boss")) return out;
         if (a.length == 1) out.addAll(List.of("autel", "invoquer", "stop", "give", "retirer", "reload", "arene", "topguildes", "ult", "panneau"));
         else if (a.length == 2 && a[0].toLowerCase(Locale.ROOT).startsWith("ar"))
@@ -981,7 +1036,8 @@ public final class SmpBoss extends JavaPlugin {
             if (t != null) out.addAll(store.of(t.getUniqueId()).relics);
         }
         else if (a.length == 3 && a[0].equalsIgnoreCase("give")) {
-            out.addAll(List.of("graine", "citrouille", "faucille", "sonicbow", "tranchemace", "briseterre", "faux", "crocdegivre", "arctempete", "hollowpurple", "fuga", "lamecitrouille", "arcfeuxfollets", "hachemaudite"));
+            out.addAll(List.of("graine", "citrouille", "faucille", "sonicbow", "tranchemace", "briseterre", "faux", "crocdegivre", "arctempete", "hollowpurple", "fuga", "lamecitrouille", "arcfeuxfollets", "hachemaudite",
+                    "oeil", "cocon", "dague", "toiles", "fauxtisseuse", "crocreine", "sceptre"));
             for (String id : relics.all().keySet()) out.add("relique:" + id);
         }
         String last = a.length == 0 ? "" : a[a.length - 1].toLowerCase(Locale.ROOT);
@@ -1083,6 +1139,19 @@ public final class SmpBoss extends JavaPlugin {
         } catch (IOException e) {
             getLogger().warning("Sauvegarde de l'autel de la Reine impossible : " + e.getMessage());
         }
+    }
+
+    /** Statut court de la Reine pour le scoreboard ({reine} dans SmpBoard). */
+    public String spiderScoreboardStatus() {
+        if (king instanceof SpiderQueen q && q.active()) return msg("scoreboard.fight").replace("<phase>", String.valueOf(q.phase()));
+        if (king != null && king.active()) return msg("scoreboard.waiting");
+        if (spiderAltar == null || spiderAltar.getWorld() == null) return msg("scoreboard.closed");
+        long left = spiderLastEnd + getConfig().getLong("spider.cooldown-minutes", 15) * 60_000L - System.currentTimeMillis();
+        if (left > 0) {
+            long s = left / 1000;
+            return msg("scoreboard.cooldown").replace("<time>", String.format("%d:%02d", s / 60, s % 60));
+        }
+        return msg("scoreboard.ready");
     }
 
     /** Statut de la Reine (hologrammes de son autel et de son portail). */

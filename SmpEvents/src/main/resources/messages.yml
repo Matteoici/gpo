@@ -55,6 +55,7 @@ hologram:
     koth: "<gold><b>♛ TOP ROI DE LA COLLINE ♛"
     chasseurs: "<light_purple><b>✪ TOP CHASSEURS DE PRIMES ✪"
     primes: "<dark_red><b>☠ LES PLUS RECHERCHÉS ☠"
+    elo: "<aqua><b>⚔ TOP ELO DES DUELS ⚔"
   separator: "<dark_gray><st>                              </st>"
   rank-color:
     "1": "<#ffd700>"
@@ -84,7 +85,7 @@ boards:
     - "<gradient:#3cff9a:#00c8ff><b>Classements</b></gradient>"
     - "<aqua>/classement placer <type></aqua> <dark_gray>- <gray>pose un hologramme 2 blocs au-dessus de toi"
     - "<gray>  Plusieurs à la suite : <white>/classement placer argent,kills,temps"
-    - "<gray>  Types : <white>argent, kills, morts, monstres, temps, quetes, koth, chasseurs, primes"
+    - "<gray>  Types : <white>argent, kills, morts, monstres, temps, quetes, koth, chasseurs, primes, elo"
     - "<aqua>/classement reset <type|tout> confirmer</aqua> <dark_gray>- <gray>remet un classement à zéro (nouvelle saison)"
     - "<aqua>/classement retirer [numéro]</aqua> <dark_gray>- <gray>le plus proche ou ce numéro"
     - "<aqua>/classement liste</aqua> <dark_gray>- <gray>tous les classements posés (clic = TP)"

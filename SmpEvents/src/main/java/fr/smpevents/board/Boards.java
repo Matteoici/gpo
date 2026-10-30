@@ -145,6 +145,12 @@ public final class Boards {
             List<Entry> list = new ArrayList<>();
             if (b == Board.WANTED) {
                 for (Bounty bo : plugin.bounties().all()) list.add(new Entry(bo.target, bo.targetName, bo.total()));
+            } else if (b == Board.ELO) {
+                for (var en : eloRanking().entrySet()) {
+                    String name = Bukkit.getOfflinePlayer(en.getKey()).getName();
+                    if (name == null || excluded.contains(name.toLowerCase(Locale.ROOT))) continue;
+                    list.add(new Entry(en.getKey(), name, en.getValue()));
+                }
             } else {
                 for (PlayerData d : plugin.data().all()) {
                     if (d.name == null || excluded.contains(d.name.toLowerCase(Locale.ROOT))) continue;
@@ -154,6 +160,19 @@ public final class Boards {
             }
             list.sort(Comparator.comparingDouble(Entry::value).reversed());
             sorted.put(b, list);
+        }
+    }
+
+    /** ELO des duels (SmpDuel), lu sans dépendance : vide si le plugin n'est pas là. */
+    @SuppressWarnings("unchecked")
+    private static Map<UUID, Integer> eloRanking() {
+        var pl = Bukkit.getPluginManager().getPlugin("SmpDuel");
+        if (pl == null || !pl.isEnabled()) return Map.of();
+        try {
+            Object r = pl.getClass().getMethod("eloRanking").invoke(null);
+            return r instanceof Map<?, ?> m ? (Map<UUID, Integer>) m : Map.of();
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            return Map.of();
         }
     }
 

@@ -47,17 +47,19 @@ final class DropsMenu implements InventoryHolder {
     private final SmpBoss plugin;
     private final Inventory inv;
     private final int page;
+    private final boolean spider;
 
     private record Entry(ItemStack item, Rarity rarity, double chance) {}
 
-    private DropsMenu(SmpBoss plugin, int page) {
+    private DropsMenu(SmpBoss plugin, int page, boolean spider) {
         this.plugin = plugin;
+        this.spider = spider;
         List<Entry> all = entries();
         int pages = Math.max(1, (all.size() + PER_PAGE - 1) / PER_PAGE);
         this.page = Math.max(0, Math.min(page, pages - 1));
-        this.inv = Bukkit.createInventory(this, 54, parse(plugin.msg("drops.title")));
+        this.inv = Bukkit.createInventory(this, 54, parse(plugin.msg(spider ? "spider.drops-title" : "drops.title")));
         // bandes
-        ItemStack band = pane(Material.ORANGE_STAINED_GLASS_PANE), dark = pane(Material.BLACK_STAINED_GLASS_PANE);
+        ItemStack band = pane(spider ? Material.LIGHT_BLUE_STAINED_GLASS_PANE : Material.ORANGE_STAINED_GLASS_PANE), dark = pane(Material.BLACK_STAINED_GLASS_PANE);
         for (int i = 0; i < 9; i++) inv.setItem(i, i % 2 == 0 ? band : dark);
         for (int i = 45; i < 54; i++) inv.setItem(i, i % 2 == 0 ? band : dark);
         inv.setItem(INFO, info());
@@ -69,7 +71,12 @@ final class DropsMenu implements InventoryHolder {
     }
 
     static void open(SmpBoss plugin, Player p, int page) {
-        p.openInventory(new DropsMenu(plugin, page).inv);
+        open(plugin, p, page, false);
+    }
+
+    /** spider = butin de la Reine Araignée (ses armes, sa section spider-loot). */
+    static void open(SmpBoss plugin, Player p, int page, boolean spider) {
+        p.openInventory(new DropsMenu(plugin, page, spider).inv);
         p.playSound(p.getLocation(), Sound.BLOCK_CHEST_OPEN, 0.6f, 1.2f);
     }
 
@@ -85,22 +92,23 @@ final class DropsMenu implements InventoryHolder {
         List<Entry> out = new ArrayList<>();
         // armes : tirage à part, chacune sa chance
         Weapons w = plugin.weapons();
-        for (String id : Weapons.ALL) {
+        for (String id : spider ? Weapons.SPIDER : Weapons.PUMPKIN) {
             double ch = c.getDouble("weapons." + Weapons.path(id) + ".chance", Weapons.defChance(id));
             if (ch <= 0) continue;
             ItemStack it = w.create(id);
             out.add(new Entry(withChance(it, ch, null), Weapons.rarity(id), ch));
         }
         // reliques et objets : d'abord la rareté, puis un objet au hasard dans la liste
-        boolean hasPrestige = !c.getMapList("loot.pools.prestige").isEmpty();
+        String L = spider ? "spider-loot." : "loot.";
+        boolean hasPrestige = !c.getMapList(L + "pools.prestige").isEmpty();
         Map<Rarity, Double> rar = Map.of(
-                Rarity.PRESTIGE, hasPrestige ? c.getDouble("loot.chances.prestige", 0.01) : 0,
-                Rarity.SECRET, c.getDouble("loot.chances.secret", 0.5),
-                Rarity.LEGENDARY, c.getDouble("loot.chances.legendary", 1),
-                Rarity.EPIC, c.getDouble("loot.chances.epic", 5),
-                Rarity.RARE, c.getDouble("loot.chances.rare", 20));
+                Rarity.PRESTIGE, hasPrestige ? chance(L, "prestige", 0.01) : 0,
+                Rarity.SECRET, chance(L, "secret", 0.5),
+                Rarity.LEGENDARY, chance(L, "legendary", 1),
+                Rarity.EPIC, chance(L, "epic", 5),
+                Rarity.RARE, chance(L, "rare", 20));
         for (Rarity r : new Rarity[]{Rarity.PRESTIGE, Rarity.SECRET, Rarity.LEGENDARY, Rarity.EPIC, Rarity.RARE}) {
-            List<Map<?, ?>> pool = c.getMapList("loot.pools." + r.name().toLowerCase(Locale.ROOT));
+            List<Map<?, ?>> pool = c.getMapList(L + "pools." + r.name().toLowerCase(Locale.ROOT));
             if (pool.isEmpty() || rar.get(r) <= 0) continue;
             double each = rar.get(r) / pool.size();
             for (Map<?, ?> e : pool) {
@@ -112,6 +120,11 @@ final class DropsMenu implements InventoryHolder {
         }
         out.sort((a, b) -> a.rarity() != b.rarity() ? b.rarity().ordinal() - a.rarity().ordinal() : Double.compare(a.chance(), b.chance()));
         return out;
+    }
+
+    private double chance(String L, String r, double def) {
+        var c = plugin.getConfig();
+        return c.getDouble(L + "chances." + r, c.getDouble("loot.chances." + r, def));
     }
 
     private ItemStack item(Rarity r, Map<?, ?> e) {
@@ -153,16 +166,20 @@ final class DropsMenu implements InventoryHolder {
 
     private ItemStack info() {
         var c = plugin.getConfig();
-        ItemStack it = new ItemStack(Material.NETHER_STAR);
+        String L = spider ? "spider-loot." : "loot.";
+        ItemStack it = new ItemStack(spider ? Material.COBWEB : Material.NETHER_STAR);
         ItemMeta m = it.getItemMeta();
         m.displayName(line(plugin.msg("drops.info-name")));
         List<Component> lore = new ArrayList<>();
-        for (String l : plugin.getConfig().getStringList("messages.drops.info-lore")) {
-            lore.add(line(l.replace("<prestige>", pct(c.getMapList("loot.pools.prestige").isEmpty() ? 0 : c.getDouble("loot.chances.prestige", 0.01)))
-                    .replace("<secret>", pct(c.getDouble("loot.chances.secret", 0.5)))
-                    .replace("<legendary>", pct(c.getDouble("loot.chances.legendary", 1)))
-                    .replace("<epic>", pct(c.getDouble("loot.chances.epic", 5)))
-                    .replace("<rare>", pct(c.getDouble("loot.chances.rare", 20)))
+        List<String> src = plugin.getConfig().getStringList(spider ? "messages.spider.drops-info-lore" : "messages.drops.info-lore");
+        if (src.isEmpty() && plugin.getConfig().getDefaults() != null)
+            src = plugin.getConfig().getDefaults().getStringList(spider ? "messages.spider.drops-info-lore" : "messages.drops.info-lore");
+        for (String l : src) {
+            lore.add(line(l.replace("<prestige>", pct(c.getMapList(L + "pools.prestige").isEmpty() ? 0 : chance(L, "prestige", 0.01)))
+                    .replace("<secret>", pct(chance(L, "secret", 0.5)))
+                    .replace("<legendary>", pct(chance(L, "legendary", 1)))
+                    .replace("<epic>", pct(chance(L, "epic", 5)))
+                    .replace("<rare>", pct(chance(L, "rare", 20)))
                     .replace("<pity-secret>", String.valueOf(c.getInt("loot.pity.secret", 300)))
                     .replace("<pity-legendary>", String.valueOf(c.getInt("loot.pity.legendary", 150)))));
         }
@@ -225,10 +242,10 @@ final class DropsMenu implements InventoryHolder {
             if (!(e.getWhoClicked() instanceof Player p) || e.getRawSlot() < 0 || e.getRawSlot() >= m.inv.getSize()) return;
             switch (e.getRawSlot()) {
                 case PREV -> {
-                    if (m.inv.getItem(PREV) != null && m.inv.getItem(PREV).getType() == Material.ARROW) open(plugin, p, m.page - 1);
+                    if (m.inv.getItem(PREV) != null && m.inv.getItem(PREV).getType() == Material.ARROW) open(plugin, p, m.page - 1, m.spider);
                 }
                 case NEXT -> {
-                    if (m.inv.getItem(NEXT) != null && m.inv.getItem(NEXT).getType() == Material.ARROW) open(plugin, p, m.page + 1);
+                    if (m.inv.getItem(NEXT) != null && m.inv.getItem(NEXT).getType() == Material.ARROW) open(plugin, p, m.page + 1, m.spider);
                 }
                 case CLOSE -> p.closeInventory();
                 default -> {
@@ -247,16 +264,19 @@ final class DropsMenu implements InventoryHolder {
             if (!(e.getRightClicked() instanceof Interaction i) || !i.getPersistentDataContainer().has(tag, PersistentDataType.BYTE)) return;
             e.setCancelled(true);
             if (e.getHand() != EquipmentSlot.HAND) return;
-            open(plugin, e.getPlayer(), 0);
+            Byte kind = i.getPersistentDataContainer().get(tag, PersistentDataType.BYTE);
+            open(plugin, e.getPlayer(), 0, kind != null && kind == 2);
         }
 
         /** Clic droit sur un panneau enregistré (/boss panneau). */
         @EventHandler(priority = EventPriority.HIGH)
         public void onSign(PlayerInteractEvent e) {
             if (e.getAction() != Action.RIGHT_CLICK_BLOCK || e.getHand() != EquipmentSlot.HAND || e.getClickedBlock() == null) return;
-            if (!plugin.getConfig().getStringList("drops-signs").contains(key(e.getClickedBlock()))) return;
+            String k = key(e.getClickedBlock());
+            boolean sp = plugin.getConfig().getStringList("spider-drops-signs").contains(k);
+            if (!sp && !plugin.getConfig().getStringList("drops-signs").contains(k)) return;
             e.setCancelled(true);
-            open(plugin, e.getPlayer(), 0);
+            open(plugin, e.getPlayer(), 0, sp);
         }
 
         NamespacedKey tag() {
@@ -270,33 +290,42 @@ final class DropsMenu implements InventoryHolder {
 
     /** /boss panneau [retirer] : le bloc regardé (un panneau...) ouvre le menu du butin. */
     static void signCommand(SmpBoss plugin, Player p, boolean remove) {
+        signCommand(plugin, p, remove, false);
+    }
+
+    static void signCommand(SmpBoss plugin, Player p, boolean remove, boolean spider) {
+        String path = spider ? "spider-drops-signs" : "drops-signs";
         Block b = p.getTargetBlockExact(6);
         if (b == null || b.getType().isAir()) {
             p.sendMessage(parse("<red>Regarde le panneau (à moins de 6 blocs)."));
             return;
         }
-        List<String> list = new ArrayList<>(plugin.getConfig().getStringList("drops-signs"));
+        List<String> list = new ArrayList<>(plugin.getConfig().getStringList(path));
         String k = key(b);
         if (remove) {
             if (list.remove(k)) p.sendMessage(parse("<yellow>Ce bloc n'ouvre plus le menu du butin."));
             else p.sendMessage(parse("<red>Ce bloc n'était pas enregistré."));
         } else if (!list.contains(k)) {
             list.add(k);
-            p.sendMessage(parse("<green>Clic droit sur ce bloc = menu du butin (chances de drop de chaque relique / arme)."));
+            p.sendMessage(parse("<green>Clic droit sur ce bloc = menu du butin " + (spider ? "de la Reine Araignée" : "du Roi Citrouille") + " (chances de drop de chaque relique / arme)."));
         } else p.sendMessage(parse("<gray>Déjà enregistré."));
-        plugin.getConfig().set("drops-signs", list);
+        plugin.getConfig().set(path, list);
         plugin.saveConfig();
     }
 
     /** Zone cliquable invisible sous un hologramme. */
     static Interaction spawnClick(SmpBoss plugin, Location at, float width, float height) {
+        return spawnClick(plugin, at, width, height, false);
+    }
+
+    static Interaction spawnClick(SmpBoss plugin, Location at, float width, float height, boolean spider) {
         NamespacedKey tag = new NamespacedKey(plugin, "drops_click");
         return at.getWorld().spawn(at, Interaction.class, i -> {
             i.setPersistent(false);
             i.setInteractionWidth(width);
             i.setInteractionHeight(height);
             i.setResponsive(true);
-            i.getPersistentDataContainer().set(tag, PersistentDataType.BYTE, (byte) 1);
+            i.getPersistentDataContainer().set(tag, PersistentDataType.BYTE, (byte) (spider ? 2 : 1));
         });
     }
 }

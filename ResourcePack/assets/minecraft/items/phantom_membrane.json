@@ -10,6 +10,13 @@
      "type": "minecraft:model",
      "model": "limitless:item/items/relic_ailes_demon"
     }
+   },
+   {
+    "when": "relic_ailes_toile",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/relic_ailes_toile"
+    }
    }
   ],
   "fallback": {
