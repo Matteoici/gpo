@@ -1,4 +1,4 @@
-config-version: 33
+config-version: 34
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -395,6 +395,29 @@ weapons:
 # visual = cosmétique visible : backpack (sac à dos), crown (couronne flottante), lantern (lanterne à la ceinture),
 #          wisp (feu follet d'âme sur l'épaule), amulet (amulette), boots (feuilles d'automne), flames (empreintes de feu)
 # item-model = modèle du pack de textures (plus tard, ex. "monserveur:couronne")
+  # 🕷 armes de la Reine Araignée (tombent seulement sur elle)
+  dague-venin:
+    chance: 3
+    attack-damage: 8
+    attack-speed: 2.0
+    damage: 7             # bond venimeux (clic droit)
+    dash-power: 1.8
+    poison-seconds: 4
+    cooldown-seconds: 9
+  arc-toiles:
+    chance: 3
+    damage: 6             # tir tendu : toile collante
+    web-seconds: 4
+    place-webs: 1         # 0 = pas de vraies toiles posées
+    cooldown-seconds: 8
+  croc-reine:
+    chance: 0.5
+    attack-damage: 15
+    attack-speed: 1.6
+    damage: 12            # Toile Abyssale (clic droit)
+    radius: 9
+    cooldown-seconds: 16
+
 relics:
   max-equipped: 2
   list:
@@ -547,6 +570,78 @@ relics:
       damage: 15
       armor: 4
       regen: 2
+    # ---- 🕷 reliques de la Reine Araignée (tombent seulement sur elle)
+    fil_soie:
+      name: "Fil de Soie"
+      rarity: rare
+      icon: STRING
+      visual: silk
+      lore: ["<gray>Un fil arraché à la toile de la Reine."]
+      speed: 4
+      damage: 2
+    oeil_araignee:
+      name: "Œil d'Araignée"
+      rarity: rare
+      icon: SPIDER_EYE
+      visual: eyes
+      lore: ["<gray>Il voit tout... même derrière toi."]
+      damage: 4
+      health: 0.5
+    crochets_venin:
+      name: "Crochets Venimeux"
+      rarity: epic
+      icon: PRISMARINE_SHARD
+      visual: venom
+      lore: ["<gray>Encore humides de venin."]
+      damage: 10
+      speed: 3
+    cocon_ancien:
+      name: "Cocon Ancien"
+      rarity: epic
+      icon: COBWEB
+      visual: silk
+      lore: ["<gray>Quelque chose bouge encore dedans."]
+      health: 2
+      armor: 3
+    pattes_reine:
+      name: "Pattes de la Reine"
+      rarity: legendary
+      icon: BLACK_CANDLE
+      visual: spiderlegs
+      lore: ["<gray>Huit pattes dans ton dos. Personne ne t'approche."]
+      speed: 10
+      damage: 6
+      health: 1
+    cape_toile:
+      name: "Cape de Toile"
+      rarity: legendary
+      icon: BLUE_BANNER
+      visual: webcape
+      lore: ["<gray>Tissée pendant mille nuits."]
+      armor: 3
+      health: 3
+      regen: 1
+    couronne_reine:
+      name: "Couronne de la Reine des Toiles"
+      rarity: secret
+      icon: NETHERITE_HELMET
+      visual: silkcrown
+      lore: ["<gray>Fils d'argent et saphir de l'Abysse."]
+      health: 3
+      damage: 12
+      armor: 3
+      speed: 4
+    coeur_abysse:
+      name: "Cœur de l'Abysse"
+      rarity: prestige
+      icon: HEART_OF_THE_SEA
+      visual: abyss
+      lore: ["<gray>Le cœur de la Reine bat encore.", "<gray>Une chance sur dix mille... et il est à toi."]
+      health: 5
+      damage: 15
+      armor: 4
+      speed: 15
+      regen: 2
 
 # ---------------------------------------------------------------- Sac (relique secrète)
 backpack:
@@ -592,6 +687,85 @@ models:
   sacrifice: ""
 
 # ---------------------------------------------------------------- Textes
+
+# ================================================================ 🕷 REINE ARAIGNÉE (2e boss, arène noir / bleu)
+#  /boss araignee arene construire  ·  autel au centre  ·  Cocon sacrificiel = 8 Yeux maudits + 1 toile
+#  Un seul boss à la fois : la Reine ne peut pas être réveillée pendant le Roi, et inversement.
+spider:
+  arena-radius: 18
+  cooldown-minutes: 15
+  health-per-player: 2400
+  extra-player-health: 0.7
+  max-minutes: 20
+  speed: 0.3
+  melee-damage: 10
+  size: 1.9                # taille du corps (phase 1)
+  size-phase-2: 2.25
+  size-phase-3: 2.6
+  zone-scale: 1.4
+  phase-2-at: 0.66
+  phase-3-at: 0.33
+  enrage-at: 0.12
+  attack-interval:
+    1: 70
+    2: 58
+    3: 48
+  brood-size: 2
+  brood-health: 8
+  # Toile Abyssale (phase 2) : casser les 4 cocons avant la fin
+  web-at: 0.5
+  web-seconds: 25
+  web-hits: 5              # coups par cocon (seul)
+  web-hits-per-player: 2   # + par joueur en plus
+  web-hit-credit: 15       # chaque coup sur un cocon compte comme 15 dégâts (pour le butin)
+  stun-seconds: 8
+  stun-multiplier: 1.5
+  # Éclipse des Mille Yeux (phase 3)
+  eclipse-at: 0.2
+  eclipse-strikes: 6
+  bite-radius: 9
+  damage:
+    multiplier: 1.3
+    phase-1-multiplier: 1.25
+    phase-2-multiplier: 1.4
+    phase-3-multiplier: 1.3
+    armor-pierce: 0.3
+    phase-shockwave: 4
+    web: 6
+    pounce: 10
+    venom: 5
+    sweep: 9
+    bite: 8
+    dash: 10
+    drop: 14
+    nova: 7
+    web-drip: 4
+    embrace: 16
+    eclipse: 9
+    abyss-bite: 16
+  # Yeux maudits lâchés par les araignées (8 + 1 toile = Cocon sacrificiel)
+  eyes:
+    enabled: true
+    chance: 6
+    mobs: [SPIDER, CAVE_SPIDER]
+    from-spawners: false
+
+spider-loot:
+  always-commands: ["tokens give %player% 15", "eco give %player% 25000"]
+  always-eyes: [1, 3]
+  chances:
+    prestige: 0.01
+    secret: 0.5
+    legendary: 1
+    epic: 5
+    rare: 20
+  pools:
+    rare: [{relic: fil_soie}, {relic: oeil_araignee}]
+    epic: [{relic: crochets_venin}, {relic: cocon_ancien}]
+    legendary: [{relic: pattes_reine}, {relic: cape_toile}]
+    secret: [{relic: couronne_reine, title: "Héritier de la Toile"}]
+    prestige: [{relic: coeur_abysse, title: "Cœur de l'Abysse"}]
+
 messages:
   pack:
     missing: "<gold>⚠ Tu n'as pas le pack du serveur : tu vois les attaques en version simplifiée. <yellow><click:run_command:'/pack'><u>Clique ici</u></click> <gold>(ou /pack) pour réessayer de le télécharger."
@@ -763,6 +937,37 @@ messages:
     ult-forbidden: "<dark_gray>[<#6d8cff>❂</#6d8cff>]</dark_gray> <red>Impossible d'utiliser <item> <red>en duel."
     ult-cooldown: "<dark_gray>[<#6d8cff>❂</#6d8cff>]</dark_gray> <gray><item> <gray>se recharge encore <white><time></white>."
     broadcast: "<gradient:#ffffff:#4a4a4a:#ffffff><b>✧ ARME DU ROI ✧</b></gradient> <white><player></white> <gray>a obtenu</gray> <item> <gray>!!!"
+    dague-venin:
+      name: "Dague Venimeuse"
+      lore:
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<#46eb82>✦ <b>BOND VENIMEUX</b> <gray>(clic droit)"
+        - "<gray>Tu bondis en avant : tout ce que tu"
+        - "<gray>traverses est empoisonné."
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<white>⚔ 8</white> <gray>au corps à corps   <dark_gray>|</dark_gray>   <white>☠ <damage> ❤</white>   <dark_gray>|</dark_gray>   <white>⏳ <cooldown> s"
+        - "<dark_gray>✧ Ne tombe pas à la mort · incassable"
+    arc-toiles:
+      name: "Arc des Toiles"
+      lore:
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<#e1ebff>✦ <b>PIÈGE DE SOIE</b> <gray>(tir tendu)"
+        - "<gray>La flèche laisse un fil et emprisonne"
+        - "<gray>sa cible dans une toile collante."
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<white>🕸 <damage> ❤</white>   <dark_gray>|</dark_gray>   <white>⏳ <cooldown> s"
+        - "<dark_gray>✧ Ne tombe pas à la mort · incassable"
+    croc-reine:
+      name: "Croc de la Reine"
+      lore:
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<#3a6bff>✦ <b>TOILE ABYSSALE</b> <gray>(clic droit)"
+        - "<gray>Des fils attrapent tous les ennemis"
+        - "<gray>autour de toi et les tirent vers toi,"
+        - "<gray>puis le venin explose."
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<white>⚔ 15</white> <gray>au corps à corps   <dark_gray>|</dark_gray>   <white>💥 <damage> ❤</white>   <dark_gray>|</dark_gray>   <white>⏳ <cooldown> s"
+        - "<dark_gray>✧ Ne tombe pas à la mort · incassable"
     sonic-bow:
       name: "Sonic Bow"
       not-charged: "<red>Tends l'arc au maximum pour lancer l'onde."
@@ -1017,6 +1222,13 @@ messages:
       name: "<gray><b>Coffre de butin</b> <dark_gray>(vide)"
       lore: ["<dark_gray>Si ton inventaire est plein quand tu gagnes", "<dark_gray>un objet, il t'attend ici : rien ne se perd."]
     visual:
+      silk: "<white>✧ Visuel : <#e1ebff>fil de soie qui suit tes pas"
+      eyes: "<white>✧ Visuel : <#5ac8ff>huit yeux bleus autour de la tête"
+      venom: "<white>✧ Visuel : <#46eb82>gouttes de venin"
+      spiderlegs: "<white>✧ Visuel : <#3a6bff>huit pattes d'araignée dans le dos"
+      webcape: "<white>✧ Visuel : <#e1ebff>cape tissée de toile"
+      silkcrown: "<white>✧ Visuel : <#e1ebff>couronne de soie et saphir"
+      abyss: "<white>✧ Visuel : <gradient:#3a6bff:#e1ebff:#3a6bff>pattes, yeux et brume de l'Abysse"
       eternalcrown: "<white>✧ Visuel : <gradient:#ff1a1a:#ffd700:#ff1a1a>grande couronne d'or + cercle de runes au sol"
       eclipse: "<white>✧ Visuel : <gradient:#ff1a1a:#ffd700:#ff1a1a>grandes ailes de feu + éclipse au-dessus de la tête"
       backpack: "<white>✧ Visuel : <gold>sac à dos de la Récolte"
@@ -1026,3 +1238,70 @@ messages:
       amulet: "<white>✧ Visuel : <gold>amulette dorée"
       boots: "<white>✧ Visuel : <gold>feuilles d'automne sous tes pas"
       flames: "<white>✧ Visuel : <gold>empreintes de flammes"
+  # ============================================================ 🕷 Reine Araignée
+  spider:
+    name: "<gradient:#3a6bff:#e1ebff><b>🕷 Reine Araignée 🕷"
+    spiderling: "<#5aa0ff>Araignée de la Reine"
+    summoning: "<gradient:#3a6bff:#e1ebff><b>🕷 <player> a déposé un cocon... La Reine Araignée descend de sa toile !</b></gradient> <gray>/arene araignee"
+    bar-1: "<#5aa0ff><b>🕷 La Tisseuse</b> "
+    bar-2: "<#7a5cff><b>🕷 La Reine Affamée</b> "
+    bar-3: "<#ff3248><b>🕷 L'Abysse aux Mille Yeux</b> "
+    title-start: "<gradient:#3a6bff:#e1ebff><b>REINE ARAIGNÉE"
+    subtitle-start: "<gray>Ne reste pas dans les toiles..."
+    title-phase-2: "<#7a5cff><b>LA REINE AFFAMÉE"
+    subtitle-phase-2: "<gray>Elle grandit... et elle a faim."
+    title-phase-3: "<#ff3248><b>L'ABYSSE"
+    subtitle-phase-3: "<gray>Ses yeux deviennent rouges."
+    title-enrage: "<#ff3248><b>FURIE"
+    subtitle-enrage: "<gray>Elle frappe plus vite et plus fort !"
+    title-web: "<#e1ebff><b>TOILE ABYSSALE"
+    subtitle-web: "<white>Brisez les 4 cocons avant l'Étreinte !"
+    title-web-broken: "<#5aa0ff><b>LA TOILE CÈDE !"
+    subtitle-web-broken: "<gray>Elle tombe, sonnée : <white>frappez-la maintenant !"
+    title-embrace: "<#ff3248><b>L'ÉTREINTE"
+    subtitle-embrace: "<gray>Trop tard... la toile vous écrase."
+    title-eclipse: "<#ff3248><b>ÉCLIPSE DES MILLE YEUX"
+    subtitle-eclipse: "<gray>Regarde le sol : la ligne rouge annonce son passage."
+    title-defeat: "<gradient:#3a6bff:#e1ebff><b>REINE VAINCUE"
+    subtitle-defeat: "<gray>La toile se déchire..."
+    defeated: "<gradient:#3a6bff:#e1ebff><b>🕷 La Reine Araignée est vaincue !</b></gradient>"
+    vanished: "<gray>🕷 La Reine Araignée a disparu."
+    left: "<gray>🕷 Personne dans son arène... la Reine remonte dans sa toile."
+    timeout: "<gray>🕷 Le combat a duré trop longtemps : la Reine remonte dans sa toile."
+    stopped: "<gray>🕷 La Reine Araignée a été arrêtée par le staff."
+    shielded: "<#e1ebff>🕸 La toile la protège : <white>brisez les cocons !"
+    stunned: "<#5aa0ff>💫 Elle est sonnée : <white>dégâts x1,5 !"
+    web-timer: "<#e1ebff>🕸 Cocons restants : <white><n></white> <dark_gray>·</dark_gray> <gray>Étreinte dans <white><s> s"
+    web-anchor-broken: "<#5aa0ff>🕸 <white><player></white> <gray>a brisé un cocon ! <white><n></white> <gray>restant(s)"
+    bite-warning: "<#ff3248>🕷 <b>Morsure de l'Abysse</b> <gray>· éloigne-toi d'elle !"
+    cocoon-hint: "<gray>Pose le cocon sur <aqua>l'autel de la Reine</aqua> (au centre de son arène)."
+    summon-already: "<red>La Reine Araignée est déjà réveillée !"
+    summon-other: "<red>Le Roi Citrouille est en plein combat : <white>la Reine attendra qu'il soit vaincu."
+    king-blocked: "<red>La Reine Araignée est en plein combat : <white>le Roi attendra qu'elle soit vaincue."
+    king-status-busy: "<#5aa0ff>🕷 La Reine Araignée combat en ce moment"
+    status-other: "<gold>♛ Le Roi Citrouille combat en ce moment"
+    status-ready: "<green><b>✔ DISPONIBLE MAINTENANT"
+    status-fight: "<red><b>⚔ EN COMBAT ⚔</b>\n<gray>Phase <white><phase></white>/3  <dark_gray>·</dark_gray>  <red>❤</red> <white><hp></white><gray>/<max>"
+    portal-hologram: "<gradient:#3a6bff:#e1ebff><b>🕷 BOSS FIGHT 🕷</b></gradient>\n<#7fb6ff><b>Reine Araignée</b>\n\n<status>\n\n<dark_gray>Entre dans le portail pour rejoindre sa toile"
+    altar-hologram: "<gradient:#3a6bff:#e1ebff><b>🕷 Autel de la Reine 🕷</b></gradient>\n<gray>Clic droit avec un <aqua>Cocon sacrificiel\n<status>"
+    items:
+      eye:
+        name: "<#5aa0ff><b>Œil maudit"
+        lore:
+          - "<gray>Arraché à une araignée."
+          - "<gray>8 yeux + 1 toile = <aqua>Cocon sacrificiel"
+      cocoon:
+        name: "<gradient:#3a6bff:#e1ebff><b>Cocon sacrificiel"
+        lore:
+          - "<gray>Pose-le sur l'autel de la Reine"
+          - "<gray>pour la réveiller."
+    attack:
+      web-shot: "<#e1ebff>🕸 <b>Jet de toile</b> <gray>· sors des cercles"
+      pounce: "<#5aa0ff>🕷 <b>Bond</b> <gray>· elle va sauter sur toi !"
+      venom-rain: "<#46eb82>☠ <b>Pluie de venin</b> <gray>· évite les flaques"
+      brood: "<#e1ebff>🥚 <b>Couvée</b> <gray>· casse les œufs vite"
+      leg-sweep: "<#5aa0ff>🕷 <b>Balayage</b> <gray>· recule !"
+      silk-pull: "<#e1ebff>🕸 <b>Fils de soie</b> <gray>· elle te ramène vers elle"
+      shadow-dash: "<#3a6bff>🕷 <b>Ruée de l'ombre</b> <gray>· quitte la ligne"
+      ceiling-drop: "<#3a6bff>🕸 <b>Chute du plafond</b> <gray>· sors du cercle !"
+      fang-nova: "<#46eb82>☠ <b>Crocs de l'Abysse</b> <gray>· saute par-dessus les vagues"

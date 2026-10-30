@@ -55,8 +55,13 @@ final class Weapons implements Listener {
 
     static final String SONIC = "sonic_bow", TRANCHE = "tranche_mace", BRISE = "brise_terre", SPECTRAL = "arbalete_spectrale",
             GIVRE = "croc_de_givre", TEMPETE = "arc_tempete", HOLLOW = "hollow_purple", FUGA = "fuga",
-            LAME = "lame_citrouille", FOLLETS = "arc_feux_follets", HACHE = "hache_maudite";
-    static final String[] ALL = {SONIC, TRANCHE, BRISE, SPECTRAL, GIVRE, TEMPETE, HOLLOW, FUGA, LAME, FOLLETS, HACHE};
+            LAME = "lame_citrouille", FOLLETS = "arc_feux_follets", HACHE = "hache_maudite",
+            DAGUE = "dague_venin", ARC_TOILES = "arc_toiles", CROC_REINE = "croc_reine";
+    /** armes du Roi Citrouille */
+    static final String[] PUMPKIN = {SONIC, TRANCHE, BRISE, SPECTRAL, GIVRE, TEMPETE, HOLLOW, FUGA, LAME, FOLLETS, HACHE};
+    /** armes de la Reine Araignée */
+    static final String[] SPIDER = {DAGUE, ARC_TOILES, CROC_REINE};
+    static final String[] ALL = {SONIC, TRANCHE, BRISE, SPECTRAL, GIVRE, TEMPETE, HOLLOW, FUGA, LAME, FOLLETS, HACHE, DAGUE, ARC_TOILES, CROC_REINE};
 
     /** Chance par victoire si le config n'en donne pas. */
     static double defChance(String id) {
@@ -80,6 +85,9 @@ final class Weapons implements Listener {
             case LAME -> "lame-citrouille";
             case FOLLETS -> "arc-feux-follets";
             case HACHE -> "hache-maudite";
+            case DAGUE -> "dague-venin";
+            case ARC_TOILES -> "arc-toiles";
+            case CROC_REINE -> "croc-reine";
             default -> "arbalete-spectrale";
         };
     }
@@ -96,13 +104,17 @@ final class Weapons implements Listener {
             case LAME -> Material.DIAMOND_SWORD;
             case FOLLETS -> Material.BOW;
             case HACHE -> Material.DIAMOND_AXE;
+            case DAGUE -> Material.IRON_SWORD;
+            case ARC_TOILES -> Material.BOW;
+            case CROC_REINE -> Material.NETHERITE_SWORD;
             default -> Material.NETHERITE_HOE;
         };
     }
 
     /** PRESTIGE : Sonic Bow, Brise-Terre, Faux des Âmes, Violet Imaginaire, Fûga. SECRET : le reste. */
     static Rarity rarity(String id) {
-        if (LAME.equals(id) || FOLLETS.equals(id) || HACHE.equals(id)) return Rarity.EPIC;
+        if (LAME.equals(id) || FOLLETS.equals(id) || HACHE.equals(id) || DAGUE.equals(id) || ARC_TOILES.equals(id)) return Rarity.EPIC;
+        if (CROC_REINE.equals(id)) return Rarity.SECRET;
         return TRANCHE.equals(id) || GIVRE.equals(id) || TEMPETE.equals(id) ? Rarity.SECRET : Rarity.PRESTIGE;
     }
 
@@ -116,6 +128,9 @@ final class Weapons implements Listener {
             case LAME -> 6;
             case FOLLETS -> 70;
             case HACHE -> 5;
+            case DAGUE -> 7;
+            case ARC_TOILES -> 6;
+            case CROC_REINE -> 12;
             default -> 14;
         };
     }
@@ -129,6 +144,9 @@ final class Weapons implements Listener {
             case LAME -> 10;
             case FOLLETS -> 6;
             case HACHE -> 12;
+            case DAGUE -> 9;
+            case ARC_TOILES -> 8;
+            case CROC_REINE -> 16;
             default -> 2;
         };
     }
@@ -158,7 +176,7 @@ final class Weapons implements Listener {
     // ================================================================= objets
 
     ItemStack create(String id) {
-        boolean bow = SONIC.equals(id) || TEMPETE.equals(id) || FOLLETS.equals(id);
+        boolean bow = SONIC.equals(id) || TEMPETE.equals(id) || FOLLETS.equals(id) || ARC_TOILES.equals(id);
         ItemStack it = new ItemStack(material(id));
         ItemMeta m = it.getItemMeta();
         String base = "weapons." + path(id) + ".";
@@ -198,6 +216,15 @@ final class Weapons implements Listener {
                     org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND));
             m.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_SPEED, new org.bukkit.attribute.AttributeModifier(
                     new NamespacedKey(plugin, "faux_speed"), cfg("arbalete-spectrale.attack-speed", 1.2) - 4,
+                    org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND));
+        }
+        if (DAGUE.equals(id) || CROC_REINE.equals(id)) {
+            boolean croc = CROC_REINE.equals(id);
+            m.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_DAMAGE, new org.bukkit.attribute.AttributeModifier(
+                    new NamespacedKey(plugin, id + "_damage"), cfg(path(id) + ".attack-damage", croc ? 15 : 8) - 1,
+                    org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND));
+            m.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_SPEED, new org.bukkit.attribute.AttributeModifier(
+                    new NamespacedKey(plugin, id + "_speed"), cfg(path(id) + ".attack-speed", croc ? 1.6 : 2.0) - 4,
                     org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND));
         }
         if (LAME.equals(id) || HACHE.equals(id)) {
@@ -323,7 +350,7 @@ final class Weapons implements Listener {
         RayTraceResult wall = w.rayTraceBlocks(eye, dir, range, FluidCollisionMode.NEVER, true);
         double len = wall == null ? range : wall.getHitPosition().distance(eye.toVector());
         double dmg = cfg("sonic-bow.damage", 10);
-        PumpkinKing k = plugin.king();
+        Boss k = plugin.king();
         w.playSound(eye, org.bukkit.Sound.ENTITY_WARDEN_SONIC_CHARGE, 1.2f, 1.8f);
         w.playSound(eye, org.bukkit.Sound.ENTITY_WARDEN_SONIC_BOOM, 3f, 1.2f);
         w.playSound(eye, org.bukkit.Sound.BLOCK_BEACON_POWER_SELECT, 1.2f, 2f);
@@ -407,7 +434,7 @@ final class Weapons implements Listener {
         int steps = (int) cfg("tranche-mace.length", 18);
         double dmg = cfg("tranche-mace.damage", 12);
         int lev = (int) (cfg("tranche-mace.levitation-seconds", 5) * 20);
-        PumpkinKing k = plugin.king();
+        Boss k = plugin.king();
         Set<UUID> hit = new HashSet<>();
         // nouveau style : lame rouge sang au tranchant blanc, bords noirs, traînée de cendres
         Particle.DustOptions blood = new Particle.DustOptions(Color.fromRGB(200, 10, 30), 1.6f);
@@ -455,7 +482,7 @@ final class Weapons implements Listener {
         }, 0L, 1L);
     }
 
-    private void touch(Player p, Entity en, Set<UUID> hit, double dmg, int lev, PumpkinKing k) {
+    private void touch(Player p, Entity en, Set<UUID> hit, double dmg, int lev, Boss k) {
         if (!(en instanceof LivingEntity le) || en.equals(p) || !hit.add(en.getUniqueId())) return;
         if (en instanceof Player t && (t.getGameMode() == org.bukkit.GameMode.SPECTATOR || t.getGameMode() == org.bukkit.GameMode.CREATIVE)) return;
         le.setNoDamageTicks(0);
@@ -502,7 +529,7 @@ final class Weapons implements Listener {
         Vector fwd = dir;
         int len = (int) cfg("brise-terre.rift-length", 24);
         double dmg = cfg("brise-terre.damage", 16), after = cfg("brise-terre.aftershock-damage", 8);
-        PumpkinKing k = plugin.king();
+        Boss k = plugin.king();
         Location origin = p.getLocation();
         List<Location> line = new ArrayList<>();
         Set<UUID> hit = new HashSet<>();
@@ -598,7 +625,7 @@ final class Weapons implements Listener {
     /** Réplique : 1 s plus tard, toute la faille explose une 2e fois. */
     private void aftershock(Player p, List<Location> line, double dmg) {
         if (line.isEmpty()) return;
-        PumpkinKing k = plugin.king();
+        Boss k = plugin.king();
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             Set<UUID> hit = new HashSet<>();
             World w = line.get(0).getWorld();
@@ -634,7 +661,7 @@ final class Weapons implements Listener {
         Location at = e.getEntity().getLocation();
         World w = at.getWorld();
         double dmg = cfg("brise-terre.quake-damage", 10);
-        PumpkinKing k = plugin.king();
+        Boss k = plugin.king();
         w.playSound(at, org.bukkit.Sound.ITEM_MACE_SMASH_GROUND, 1.4f, 0.6f);
         w.spawnParticle(Particle.EXPLOSION, at, 2, 0.5, 0.1, 0.5, 0, null, true);
         org.bukkit.block.data.BlockData bd = at.clone().add(0, -1, 0).getBlock().getBlockData();
@@ -708,7 +735,7 @@ final class Weapons implements Listener {
         double range = cfg("arbalete-spectrale.range", 40), dmg = cfg("arbalete-spectrale.damage", 14);
         RayTraceResult wall = w.rayTraceBlocks(eye, dir, range, FluidCollisionMode.NEVER, true);
         double len = wall == null ? range : wall.getHitPosition().distance(eye.toVector());
-        PumpkinKing k = plugin.king();
+        Boss k = plugin.king();
         w.playSound(eye, org.bukkit.Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1f, 0.6f);
         w.playSound(eye, org.bukkit.Sound.PARTICLE_SOUL_ESCAPE, 2f, 0.6f);
         fx().soulLance(eye, dir, len);
@@ -763,7 +790,7 @@ final class Weapons implements Listener {
         World w = le.getWorld();
         Location c = le.getLocation().add(0, 1, 0);
         double dmg = cfg("arbalete-spectrale.burst-damage", 16), heal = cfg("arbalete-spectrale.burst-heal", 8);
-        PumpkinKing k = plugin.king();
+        Boss k = plugin.king();
         w.playSound(c, org.bukkit.Sound.ENTITY_WARDEN_SONIC_BOOM, 1f, 1.6f);
         w.playSound(c, org.bukkit.Sound.ENTITY_WITHER_BREAK_BLOCK, 0.6f, 1.4f);
         fx().detonate(c);
@@ -806,7 +833,7 @@ final class Weapons implements Listener {
         Location center = ground == null ? c : ground;
         double r = cfg("arbalete-spectrale.rain-radius", 5), dmg = cfg("arbalete-spectrale.rain-damage", 4);
         ThreadLocalRandom rnd = ThreadLocalRandom.current();
-        PumpkinKing k = plugin.king();
+        Boss k = plugin.king();
         w.playSound(p.getLocation(), org.bukkit.Sound.ENTITY_EVOKER_CAST_SPELL, 1f, 0.6f);
         w.playSound(center, org.bukkit.Sound.ENTITY_ALLAY_ITEM_THROWN, 2f, 0.5f);
         fx().soulRain(center, r, 30);
@@ -949,7 +976,7 @@ final class Weapons implements Listener {
         w.playSound(c, org.bukkit.Sound.ENTITY_GENERIC_EXPLODE, 0.8f, 1.4f);
         w.playSound(c, org.bukkit.Sound.ITEM_MACE_SMASH_GROUND, 1.2f, 0.8f);
         fx().cursedSlam(c, r);
-        PumpkinKing k = plugin.king();
+        Boss k = plugin.king();
         for (Entity en : w.getNearbyEntities(c, r, 2.5, r)) {
             if (!hittable(p, en) || en.getLocation().distanceSquared(c) > r * r) continue;
             LivingEntity le = (LivingEntity) en;
@@ -961,6 +988,155 @@ final class Weapons implements Listener {
                 le.setVelocity(push.setY(up));
             }
         }
+    }
+
+    // ================================================================= armes de la Reine Araignée
+
+    /** Dague Venimeuse : clic droit = bond en avant à travers les ennemis, qui sont empoisonnés. */
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onVenomDash(PlayerInteractEvent e) {
+        if (e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        if (e.getHand() != EquipmentSlot.HAND || !DAGUE.equals(id(e.getItem()))) return;
+        Block b = e.getClickedBlock();
+        if (b != null && b.getType().isInteractable() && !e.getPlayer().isSneaking()) return;
+        Player p = e.getPlayer();
+        if (!ready(p, DAGUE, cfg("dague-venin.cooldown-seconds", 9))) return;
+        World w = p.getWorld();
+        Vector dir = p.getLocation().getDirection();
+        dir.setY(Math.max(-0.1, Math.min(0.25, dir.getY()))).normalize();
+        double power = cfg("dague-venin.dash-power", 1.8), dmg = cfg("dague-venin.damage", 7);
+        int poison = (int) (cfg("dague-venin.poison-seconds", 4) * 20);
+        p.setVelocity(dir.clone().multiply(power).setY(dir.getY() * power + 0.15));
+        noFall.put(p.getUniqueId(), System.currentTimeMillis() + 2500);
+        w.playSound(p.getLocation(), org.bukkit.Sound.ENTITY_SPIDER_AMBIENT, 1.4f, 1.6f);
+        w.playSound(p.getLocation(), org.bukkit.Sound.ENTITY_BREEZE_WIND_BURST, 1f, 1.6f);
+        fx().venomDash(p, 8);
+        Boss k = plugin.king();
+        Set<UUID> hit = new HashSet<>();
+        int[] t = {0};
+        org.bukkit.scheduler.BukkitTask[] task = new org.bukkit.scheduler.BukkitTask[1];
+        task[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            if (++t[0] > 8 || !p.isOnline() || p.isDead()) {
+                task[0].cancel();
+                return;
+            }
+            Location l = p.getLocation().add(0, 1, 0);
+            w.spawnParticle(Particle.DUST, l, 5, 0.3, 0.5, 0.3, 0, new Particle.DustOptions(Color.fromRGB(60, 230, 120), 1.3f));
+            for (Entity en : w.getNearbyEntities(l, 1.7, 1.5, 1.7)) {
+                if (!hittable(p, en) || !hit.add(en.getUniqueId())) continue;
+                LivingEntity le = (LivingEntity) en;
+                le.setNoDamageTicks(0);
+                le.damage(dmg, p);
+                le.addPotionEffect(new PotionEffect(PotionEffectType.POISON, poison, 1, false, true, true));
+                fx().venomHit(le.getLocation().add(0, 1, 0));
+                w.playSound(le.getLocation(), org.bukkit.Sound.ENTITY_SPIDER_HURT, 1f, 1.4f);
+            }
+        }, 1L, 1L);
+    }
+
+    /** Arc des Toiles : tir tendu = la flèche laisse un fil et emprisonne la cible dans des toiles. */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onWebShoot(EntityShootBowEvent e) {
+        if (!(e.getEntity() instanceof Player p) || !ARC_TOILES.equals(id(e.getBow())) || e.getForce() < 0.9f) return;
+        if (!(e.getProjectile() instanceof org.bukkit.entity.AbstractArrow a)) return;
+        if (!ready(p, ARC_TOILES, cfg("arc-toiles.cooldown-seconds", 8))) return;
+        a.getPersistentDataContainer().set(webKey, PersistentDataType.BYTE, (byte) 1);
+        p.getWorld().playSound(p.getLocation(), org.bukkit.Sound.ENTITY_SPIDER_STEP, 1.5f, 0.6f);
+        fx().webArrow(a);
+    }
+
+    private final NamespacedKey webKey = new NamespacedKey("smpboss", "web_arrow");
+    /** toiles posées par l'arc : retirées après quelques secondes */
+    private final Set<Block> webs = new HashSet<>();
+
+    @EventHandler
+    public void onWebHit(org.bukkit.event.entity.ProjectileHitEvent e) {
+        if (!(e.getEntity() instanceof org.bukkit.entity.AbstractArrow a) || !a.getPersistentDataContainer().has(webKey)) return;
+        a.getPersistentDataContainer().remove(webKey);
+        if (!(a.getShooter() instanceof Player p)) return;
+        Location at = e.getHitEntity() != null ? e.getHitEntity().getLocation() : a.getLocation();
+        double dmg = cfg("arc-toiles.damage", 6);
+        int slow = (int) (cfg("arc-toiles.web-seconds", 4) * 20);
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            fx().webTrap(at);
+            for (Entity en : at.getWorld().getNearbyEntities(at, 2.5, 2, 2.5)) {
+                if (!hittable(p, en)) continue;
+                LivingEntity le = (LivingEntity) en;
+                le.setNoDamageTicks(0);
+                le.damage(dmg, p);
+                Boss k = plugin.king();
+                if (k == null || !k.isBoss(en)) le.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, slow, 4, false, true, true));
+            }
+            // vraies toiles autour des pieds (seulement dans l'air, jamais dans une zone protégée), retirées après
+            if (cfg("arc-toiles.place-webs", 1) > 0 && !ultimates.protectedPlace(p, at)) {
+                List<Block> placed = new ArrayList<>();
+                for (int x = -1; x <= 1; x++) for (int z = -1; z <= 1; z++) {
+                    if (Math.abs(x) + Math.abs(z) > 1) continue;
+                    Block bl = at.getBlock().getRelative(x, 0, z);
+                    if (bl.getType().isAir()) {
+                        bl.setType(Material.COBWEB, false);
+                        placed.add(bl);
+                        webs.add(bl);
+                    }
+                }
+                Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                    for (Block bl : placed) {
+                        if (bl.getType() == Material.COBWEB) bl.setType(Material.AIR, false);
+                        webs.remove(bl);
+                    }
+                }, slow);
+            }
+        });
+        if (e.getHitEntity() == null) Bukkit.getScheduler().runTaskLater(plugin, a::remove, 2L);
+    }
+
+    /** Les toiles de l'arc ne lâchent pas de ficelle quand on les casse. */
+    @EventHandler(ignoreCancelled = true)
+    public void onWebBreak(org.bukkit.event.block.BlockBreakEvent e) {
+        if (webs.remove(e.getBlock())) e.setDropItems(false);
+    }
+
+    /** Croc de la Reine : clic droit = Toile Abyssale : les ennemis proches sont tirés vers toi et piégés, puis le venin explose. */
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onQueenFang(PlayerInteractEvent e) {
+        if (e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        if (e.getHand() != EquipmentSlot.HAND || !CROC_REINE.equals(id(e.getItem()))) return;
+        Block b = e.getClickedBlock();
+        if (b != null && b.getType().isInteractable() && !e.getPlayer().isSneaking()) return;
+        Player p = e.getPlayer();
+        if (!ready(p, CROC_REINE, cfg("croc-reine.cooldown-seconds", 16))) return;
+        World w = p.getWorld();
+        double r = cfg("croc-reine.radius", 9), dmg = cfg("croc-reine.damage", 12);
+        Location c = p.getLocation();
+        Boss k = plugin.king();
+        List<LivingEntity> caught = new ArrayList<>();
+        for (Entity en : w.getNearbyEntities(c, r, 4, r)) {
+            if (!hittable(p, en) || en.getLocation().distanceSquared(c) > r * r) continue;
+            caught.add((LivingEntity) en);
+        }
+        w.playSound(c, org.bukkit.Sound.ENTITY_SPIDER_AMBIENT, 2f, 0.5f);
+        w.playSound(c, org.bukkit.Sound.ENTITY_WARDEN_SONIC_CHARGE, 1.2f, 1.5f);
+        fx().queenFang(c, r, caught);
+        for (LivingEntity le : caught) {
+            if (k != null && k.isBoss(le)) continue;
+            Vector pull = c.toVector().subtract(le.getLocation().toVector());
+            double d = pull.length();
+            if (d > 1.5) le.setVelocity(pull.normalize().multiply(Math.min(1.6, 0.35 + d * 0.12)).setY(0.35));
+            le.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 40, 6, false, true, true));
+        }
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (!p.isOnline()) return;
+            Location cc = p.getLocation();
+            w.playSound(cc, org.bukkit.Sound.ENTITY_SPIDER_DEATH, 2f, 0.6f);
+            w.playSound(cc, org.bukkit.Sound.ENTITY_GENERIC_EXPLODE, 1f, 1.4f);
+            fx().queenFangBurst(cc, r);
+            for (LivingEntity le : caught) {
+                if (!le.isValid() || le.isDead() || le.getLocation().distanceSquared(cc) > (r + 2) * (r + 2)) continue;
+                le.setNoDamageTicks(0);
+                le.damage(dmg, p);
+                le.addPotionEffect(new PotionEffect(PotionEffectType.POISON, 80, 1, false, true, true));
+            }
+        }, 14L);
     }
 
     // ================================================================= Croc de Givre (épée SECRÈTE) : RUÉE GLACIALE
@@ -993,7 +1169,7 @@ final class Weapons implements Listener {
         fx().frostDash(p, 10);
         Particle.DustOptions ice = new Particle.DustOptions(Color.fromRGB(170, 230, 255), 1.4f), white = new Particle.DustOptions(Color.WHITE, 1.0f);
         org.bukkit.block.data.BlockData packed = Material.PACKED_ICE.createBlockData();
-        PumpkinKing k = plugin.king();
+        Boss k = plugin.king();
         Set<UUID> hit = new HashSet<>();
         int[] t = {0};
         org.bukkit.scheduler.BukkitTask[] task = new org.bukkit.scheduler.BukkitTask[1];
@@ -1086,7 +1262,7 @@ final class Weapons implements Listener {
     private LivingEntity nearestFoe(Player p, Location c, double r, Set<UUID> skip) {
         LivingEntity best = null;
         double bd = r * r;
-        PumpkinKing k = plugin.king();
+        Boss k = plugin.king();
         for (Entity en : c.getWorld().getNearbyEntities(c, r, r, r)) {
             if (!(en instanceof LivingEntity le) || en.equals(p) || le.isDead() || skip.contains(en.getUniqueId())) continue;
             if (en instanceof Player t) {
@@ -1125,7 +1301,7 @@ final class Weapons implements Listener {
         cur.setNoDamageTicks(0);
         cur.damage(dmg, p);
         cur.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 40, 0, false, false, true));
-        PumpkinKing k = plugin.king();
+        Boss k = plugin.king();
         if (k == null || !k.isBoss(cur)) cur.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 30, 2, false, true, true));
         if (jump >= (int) cfg("arc-tempete.chain", 4)) return;
         LivingEntity next = nearestFoe(p, cur.getLocation(), cfg("arc-tempete.chain-range", 8), done);
@@ -1249,7 +1425,11 @@ final class Weapons implements Listener {
 
     /** Tirage des armes après une victoire (chacune a sa chance). */
     void roll(Player p) {
-        for (String id : ALL) {
+        roll(p, false);
+    }
+
+    void roll(Player p, boolean spider) {
+        for (String id : spider ? SPIDER : PUMPKIN) {
             double chance = cfg(path(id) + ".chance", defChance(id));
             chance *= plugin.petLuck(p);
             if (ThreadLocalRandom.current().nextDouble() * 100 >= chance) continue;

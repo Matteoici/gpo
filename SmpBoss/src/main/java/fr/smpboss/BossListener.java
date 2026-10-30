@@ -83,7 +83,7 @@ final class BossListener implements Listener {
     /** Pendant le combat, l'armure s'use beaucoup moins (les attaques du boss touchent souvent). */
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onWear(PlayerItemDamageEvent e) {
-        PumpkinKing k = plugin.king();
+        Boss k = plugin.king();
         Player p = e.getPlayer();
         if (k == null || !k.active() || !k.inFight(p)) return;
         boolean armor = false;
@@ -99,9 +99,20 @@ final class BossListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onDamage(EntityDamageEvent e) {
-        PumpkinKing k = plugin.king();
+        Boss k = plugin.king();
         Entity ent = e.getEntity();
         if (ent instanceof Player p) plugin.relics().hurt(p);
+        // cocons de la Toile Abyssale (Reine Araignée)
+        if (k instanceof SpiderQueen q && q.isAnchor(ent)) {
+            e.setCancelled(true);
+            Player hb = null;
+            if (e instanceof EntityDamageByEntityEvent ed) {
+                if (ed.getDamager() instanceof Player pp) hb = pp;
+                else if (ed.getDamager() instanceof Projectile pr && pr.getShooter() instanceof Player pp) hb = pp;
+            }
+            if (hb != null) q.hitAnchor(ent, hb);
+            return;
+        }
         if (k == null || !k.isBoss(ent)) return;
         Player by = null;
         if (e instanceof EntityDamageByEntityEvent ed) {
@@ -117,7 +128,7 @@ final class BossListener implements Listener {
                 // tirée depuis l'extérieur de la piste : ne compte pas, même si le tireur est descendu depuis
                 if (pr.getPersistentDataContainer().has(offFloorKey, org.bukkit.persistence.PersistentDataType.BYTE)) {
                     e.setCancelled(true);
-                    p.sendActionBar(SmpBoss.parse("<red>☠ Tir depuis l'extérieur de l'arène : le Roi ne sent rien."));
+                    p.sendActionBar(SmpBoss.parse("<red>☠ Tir depuis l'extérieur de l'arène : le boss ne sent rien."));
                     return;
                 }
                 by = p;
@@ -128,18 +139,18 @@ final class BossListener implements Listener {
             return;
         }
         // anti-cheese : on ne frappe le Roi que depuis la piste (pas du pont du portail, du muret, de dehors...)
-        Arena ar = plugin.arena();
+        Arena ar = k.arena();
         if (ar != null && ar.defined() && plugin.getConfig().getBoolean("arena.protection.floor-only-damage", true)
                 && ar.contains(e.getEntity().getLocation()) && !ar.onFightFloor(by.getLocation())) {
             e.setCancelled(true);
             Long last = cheeseWarn.get(by.getUniqueId());
             if (last == null || System.currentTimeMillis() - last > 2000) {
                 cheeseWarn.put(by.getUniqueId(), System.currentTimeMillis());
-                by.sendActionBar(SmpBoss.parse("<red>☠ Le Roi ne sent rien d'ici... <gold>descends dans l'arène</gold> pour le frapper."));
+                by.sendActionBar(SmpBoss.parse("<red>☠ Le boss ne sent rien d'ici... <gold>descends dans l'arène</gold> pour le frapper."));
             }
             return;
         }
-        if (plugin.arena() != null) plugin.arena().unprotect(by);
+        if (ar != null) ar.unprotect(by);
         // dégâts bruts (épée + Tranchant + coup critique), sans l'armure du boss qui les réduisait d'un quart ;
         // bonus pour le corps à corps (plus risqué que l'arc)
         boolean melee = e instanceof EntityDamageByEntityEvent ed2 && ed2.getDamager() instanceof Player;
@@ -160,9 +171,9 @@ final class BossListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onLaunch(org.bukkit.event.entity.ProjectileLaunchEvent e) {
         if (!(e.getEntity().getShooter() instanceof Player p)) return;
-        Arena ar = plugin.arena();
+        Arena ar = plugin.fightArena();
         if (ar == null || !ar.defined() || !plugin.getConfig().getBoolean("arena.protection.floor-only-damage", true)) return;
-        PumpkinKing k = plugin.king();
+        Boss k = plugin.king();
         if (k == null || !k.active()) return;
         if (!ar.onFightFloor(p.getLocation())) {
             e.getEntity().getPersistentDataContainer().set(offFloorKey, org.bukkit.persistence.PersistentDataType.BYTE, (byte) 1);
@@ -171,21 +182,30 @@ final class BossListener implements Listener {
 
     @EventHandler
     public void onCombust(EntityCombustEvent e) {
-        PumpkinKing k = plugin.king();
+        Boss k = plugin.king();
         if (k != null && (k.isBoss(e.getEntity()) || k.isMinion(e.getEntity()))) e.setCancelled(true);
     }
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onDeath(EntityDeathEvent e) {
         LivingEntity dead = e.getEntity();
-        PumpkinKing k = plugin.king();
+        Boss k = plugin.king();
         if (k != null && (k.isBoss(dead) || k.isMinion(dead))) {
             e.getDrops().clear();
             e.setDroppedExp(0);
             return;
         }
-        // graines maudites
         var c = plugin.getConfig();
+        // yeux maudits (Reine Araignée)
+        Player eyeKiller = dead.getKiller();
+        if (eyeKiller != null && !(dead instanceof Player) && c.getBoolean("spider.eyes.enabled", true)
+                && c.getStringList("spider.eyes.mobs").contains(dead.getType().name())
+                && !(dead.getPersistentDataContainer().has(spawnerKey, PersistentDataType.BYTE) && !c.getBoolean("spider.eyes.from-spawners", false))
+                && ThreadLocalRandom.current().nextDouble() * 100 < c.getDouble("spider.eyes.chance", 6)) {
+            e.getDrops().add(plugin.items().cursedEye(1));
+            dead.getWorld().spawnParticle(Particle.SOUL, dead.getLocation().add(0, 0.6, 0), 10, 0.3, 0.3, 0.3, 0.02);
+        }
+        // graines maudites
         if (!c.getBoolean("seeds.enabled", true)) return;
         Player killer = dead.getKiller();
         if (killer == null || dead instanceof Player) return;
@@ -223,6 +243,13 @@ final class BossListener implements Listener {
         if (a == Action.RIGHT_CLICK_BLOCK && plugin.isAltar(e.getClickedBlock()) && plugin.items().isSacrifice(hand)) {
             e.setCancelled(true);
             plugin.trySummon(p);
+            return;
+        }
+        // autel de la Reine Araignée
+        if (plugin.items().isCocoon(hand)) {
+            e.setCancelled(true); // le cocon ne se pose jamais comme une toile
+            if (a == Action.RIGHT_CLICK_BLOCK && plugin.isSpiderAltar(e.getClickedBlock())) plugin.trySummonSpider(p);
+            else if (a == Action.RIGHT_CLICK_BLOCK) p.sendActionBar(parse(plugin.msg("spider.cocoon-hint")));
             return;
         }
         // relique : l'ajouter à sa collection
@@ -313,7 +340,7 @@ final class BossListener implements Listener {
     /** Une perle lancée sur le Roi le traverse (pas de téléportation sur lui). */
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onProjectileHit(org.bukkit.event.entity.ProjectileHitEvent e) {
-        PumpkinKing k = plugin.king();
+        Boss k = plugin.king();
         if (k == null || e.getHitEntity() == null || !k.isBoss(e.getHitEntity())) return;
         if (e.getEntity() instanceof org.bukkit.entity.EnderPearl || e.getEntity() instanceof org.bukkit.entity.Snowball
                 || e.getEntity() instanceof org.bukkit.entity.Egg) {
@@ -325,7 +352,7 @@ final class BossListener implements Listener {
     public void onPlayerDeath(PlayerDeathEvent e) {
         Player p = e.getEntity();
         // mort dans l'arène : on garde tout, sac compris
-        if (plugin.arena() != null && plugin.arena().contains(p.getLocation()) && plugin.getConfig().getBoolean("arena.keep-inventory", true)) {
+        if (plugin.arenaAt(p.getLocation()) != null && plugin.getConfig().getBoolean("arena.keep-inventory", true)) {
             plugin.relics().updateBackpack(p);
             return;
         }

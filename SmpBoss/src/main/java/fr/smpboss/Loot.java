@@ -29,27 +29,33 @@ public final class Loot {
 
     /** Résultat d'un tirage pour un joueur. */
     public void reward(Player p) {
+        reward(p, false);
+    }
+
+    /** spider = butin de la Reine Araignée (section "spider-loot" : ses reliques, ses armes, des yeux maudits). */
+    public void reward(Player p, boolean spider) {
         var c = plugin.getConfig();
+        String L = spider ? "spider-loot." : "loot.";
         PlayerData d = plugin.store().of(p.getUniqueId());
         d.kills++;
 
-        // ---- toujours : commandes + graines
-        for (String cmd : c.getStringList("loot.always-commands")) run(p, cmd);
-        List<Integer> seeds = c.getIntegerList("loot.always-seeds");
+        // ---- toujours : commandes + graines (ou yeux maudits)
+        for (String cmd : c.getStringList(L + "always-commands")) run(p, cmd);
+        List<Integer> seeds = c.getIntegerList(spider ? L + "always-eyes" : L + "always-seeds");
         int min = seeds.isEmpty() ? 1 : seeds.get(0), max = seeds.size() > 1 ? seeds.get(1) : min;
         int n = ThreadLocalRandom.current().nextInt(min, max + 1);
-        if (n > 0) give(p, plugin.items().seed(n));
-        // ---- armes rares (Sonic Bow, Tranche Mace) : tirage à part
-        plugin.weapons().roll(p);
+        if (n > 0) give(p, spider ? plugin.items().cursedEye(n) : plugin.items().seed(n));
+        // ---- armes : tirage à part (celles du boss vaincu)
+        plugin.weapons().roll(p, spider);
 
         // ---- tirage de rareté (avec garantie)
         ThreadLocalRandom r = ThreadLocalRandom.current();
         double roll = r.nextDouble() * 100;
-        double prestige = c.getDouble("loot.chances.prestige", 0.01);
-        double secret = c.getDouble("loot.chances.secret", 0.5);
-        double legendary = c.getDouble("loot.chances.legendary", 1);
-        double epic = c.getDouble("loot.chances.epic", 5);
-        double rare = c.getDouble("loot.chances.rare", 20);
+        double prestige = c.getDouble(L + "chances.prestige", c.getDouble("loot.chances.prestige", 0.01));
+        double secret = c.getDouble(L + "chances.secret", c.getDouble("loot.chances.secret", 0.5));
+        double legendary = c.getDouble(L + "chances.legendary", c.getDouble("loot.chances.legendary", 1));
+        double epic = c.getDouble(L + "chances.epic", c.getDouble("loot.chances.epic", 5));
+        double rare = c.getDouble(L + "chances.rare", c.getDouble("loot.chances.rare", 20));
         // familiers porte-bonheur (SmpPets) : toutes les chances un peu plus hautes
         double luck = plugin.petLuck(p);
         prestige *= luck;
@@ -59,7 +65,7 @@ public final class Loot {
         rare *= luck;
         int pitySecret = c.getInt("loot.pity.secret", 300), pityLegendary = c.getInt("loot.pity.legendary", 150);
         Rarity got;
-        boolean hasPrestige = !c.getMapList("loot.pools.prestige").isEmpty();
+        boolean hasPrestige = !c.getMapList(L + "pools.prestige").isEmpty();
         if (hasPrestige && roll < prestige) got = Rarity.PRESTIGE;
         else if ((roll -= hasPrestige ? prestige : 0) < secret || (pitySecret > 0 && d.pitySecret + 1 >= pitySecret)) got = Rarity.SECRET;
         else if (roll < secret + legendary || (pityLegendary > 0 && d.pityLegendary + 1 >= pityLegendary)) got = Rarity.LEGENDARY;
@@ -82,7 +88,7 @@ public final class Loot {
             p.sendMessage(parse(plugin.msg("loot.common")));
             return;
         }
-        List<Map<?, ?>> pool = c.getMapList("loot.pools." + got.name().toLowerCase(Locale.ROOT));
+        List<Map<?, ?>> pool = c.getMapList(L + "pools." + got.name().toLowerCase(Locale.ROOT));
         if (pool.isEmpty()) return;
         Map<?, ?> e = pool.get(r.nextInt(pool.size()));
         givePoolEntry(p, got, e);

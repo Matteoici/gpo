@@ -72,6 +72,42 @@ public final class BossItems {
         return it;
     }
 
+    private final NamespacedKey eyeKey = new NamespacedKey("smpboss", "cursed_eye"), cocoonKey = new NamespacedKey("smpboss", "cocoon");
+
+    /** Œil maudit : lâché par les araignées. 8 + une toile = cocon sacrificiel (pour la Reine). */
+    public ItemStack cursedEye(int amount) {
+        ItemStack it = new ItemStack(Material.FERMENTED_SPIDER_EYE, Math.max(1, amount));
+        ItemMeta m = it.getItemMeta();
+        m.displayName(parse(plugin.msg("spider.items.eye.name")));
+        m.lore(lines(plugin.getConfig().getStringList("messages.spider.items.eye.lore")));
+        m.setEnchantmentGlintOverride(true);
+        m.getPersistentDataContainer().set(eyeKey, PersistentDataType.BYTE, (byte) 1);
+        SmpBoss.modelData(m, "oeil_maudit");
+        it.setItemMeta(m);
+        return it;
+    }
+
+    public ItemStack cocoon() {
+        ItemStack it = new ItemStack(Material.COBWEB);
+        ItemMeta m = it.getItemMeta();
+        m.displayName(parse(plugin.msg("spider.items.cocoon.name")));
+        m.lore(lines(plugin.getConfig().getStringList("messages.spider.items.cocoon.lore")));
+        m.setEnchantmentGlintOverride(true);
+        m.setMaxStackSize(16);
+        m.getPersistentDataContainer().set(cocoonKey, PersistentDataType.BYTE, (byte) 1);
+        SmpBoss.modelData(m, "cocon");
+        it.setItemMeta(m);
+        return it;
+    }
+
+    public boolean isCursedEye(ItemStack it) {
+        return it != null && it.hasItemMeta() && it.getItemMeta().getPersistentDataContainer().has(eyeKey, PersistentDataType.BYTE);
+    }
+
+    public boolean isCocoon(ItemStack it) {
+        return it != null && it.hasItemMeta() && it.getItemMeta().getPersistentDataContainer().has(cocoonKey, PersistentDataType.BYTE);
+    }
+
     public boolean isSeed(ItemStack it) {
         return it != null && it.hasItemMeta() && it.getItemMeta().getPersistentDataContainer().has(seedKey, PersistentDataType.BYTE);
     }

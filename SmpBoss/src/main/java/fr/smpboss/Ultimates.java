@@ -111,8 +111,7 @@ final class Ultimates {
      * (on y tape le Roi et ses monstres, pas ses coéquipiers).
      */
     private boolean shielded(Entity en) {
-        Arena arena = plugin.arena();
-        if (en instanceof Player && arena != null && arena.contains(en.getLocation())) return true;
+        if (en instanceof Player && plugin.arenaAt(en.getLocation()) != null) return true;
         if (en instanceof Player pl && duelCall("inDuel", java.util.UUID.class, pl.getUniqueId())) return true;
         return duelCall("isArena", Location.class, en.getLocation());
     }
@@ -197,7 +196,7 @@ final class Ultimates {
     /** Joueurs et monstres dans la zone (une seule recherche). */
     List<LivingEntity> targets(Player caster, Location c, double r) {
         List<LivingEntity> out = new ArrayList<>();
-        PumpkinKing k = plugin.king();
+        Boss k = plugin.king();
         for (Entity en : c.getWorld().getNearbyEntities(c, r, r, r)) {
             if (!(en instanceof LivingEntity le) || en.equals(caster) || le.isDead()) continue;
             if (en.getScoreboardTags().contains("smp_pet")) continue; // familiers (SmpPets)
@@ -351,7 +350,7 @@ final class Ultimates {
     // ================================================================= figer
 
     private void freeze(LivingEntity e, int ticks, boolean frost) {
-        PumpkinKing k = plugin.king();
+        Boss k = plugin.king();
         if (k != null && k.isBoss(e)) return; // le Roi ne se fige pas
         Frozen old = frozen.get(e.getUniqueId());
         boolean ai = old != null ? old.ai() : e.hasAI();
@@ -739,12 +738,17 @@ final class Ultimates {
                 && !(b.getState(false) instanceof org.bukkit.block.Container) && !(b.getState(false) instanceof org.bukkit.block.Sign);
     }
 
+    /** Poser un bloc ici serait refusé par une protection (zone, claim, arène...) ? */
+    boolean protectedPlace(Player p, Location at) {
+        List<Block> l = new ArrayList<>(List.of(at.getBlock()));
+        return allowedByProtections(p, at, l).isEmpty();
+    }
+
     /** Fait passer les blocs par la vérification "explosion" de tous les plugins de protection. */
     private List<Block> allowedByProtections(Player caster, Location center, List<Block> blocks) {
         if (blocks.isEmpty()) return blocks;
         // sécurité en plus : jamais dans l'arène du Roi Citrouille
-        Arena arena = plugin.arena();
-        if (arena != null) blocks.removeIf(arena::contains);
+        blocks.removeIf(b -> plugin.arenaAt(b.getLocation()) != null);
         org.bukkit.event.entity.EntityExplodeEvent ev = new org.bukkit.event.entity.EntityExplodeEvent(caster, center, new ArrayList<>(blocks), 0f,
                 org.bukkit.ExplosionResult.DESTROY);
         Bukkit.getPluginManager().callEvent(ev);

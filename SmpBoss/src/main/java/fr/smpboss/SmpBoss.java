@@ -38,8 +38,12 @@ public final class SmpBoss extends JavaPlugin {
     private Backpacks backpacks;
     private Cosmetics cosmetics;
     private InvButtons invButtons;
-    private PumpkinKing king;
-    private Arena arena;
+    /** le boss en cours (Roi Citrouille OU Reine Araignée : jamais les deux en même temps) */
+    private Boss king;
+    private Arena arena, spiderArena;
+    private Location spiderAltar;
+    private long spiderLastEnd;
+    private AltarHologram spiderHologram;
     private GuildTop guildTop;
     private AltarHologram hologram;
     private Location altar;
@@ -369,6 +373,12 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 33);
             saveConfig();
         }
+        if (getConfig().getInt("config-version", 1) < 34) {
+            // Reine Araignée : ses reliques (le reste de ses réglages est lu dans le plugin)
+            addDefaultRelics();
+            getConfig().set("config-version", 34);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);
@@ -384,6 +394,7 @@ public final class SmpBoss extends JavaPlugin {
         store.load();
         relics.load();
         loadAltar();
+        loadSpiderAltar();
         registerRecipe();
         getServer().getPluginManager().registerEvents(new BossListener(this), this);
         getServer().getPluginManager().registerEvents(new DropsMenu.Listen(this), this);
@@ -391,6 +402,7 @@ public final class SmpBoss extends JavaPlugin {
         hologram = new AltarHologram(this);
         Bukkit.getScheduler().runTaskTimer(this, () -> {
             if (arena != null) arena.portalTick();
+            if (spiderArena != null) spiderArena.portalTick();
         }, 40L, 5L);
         Bukkit.getScheduler().runTaskTimer(this, hologram::tick, 40L, 10L);
         arena = new Arena(this);
@@ -399,6 +411,15 @@ public final class SmpBoss extends JavaPlugin {
         Bukkit.getScheduler().runTaskTimer(this, arena::ambience, 40L, 10L);
         Bukkit.getScheduler().runTaskTimer(this, arena::tint, 40L, 10L);
         Bukkit.getScheduler().runTaskTimer(this, guard::sweep, 100L, 100L);
+        // la Reine Araignée : son arène (noir / bleu), son autel, sa protection
+        spiderArena = new Arena(this, true);
+        ArenaGuard spiderGuard = new ArenaGuard(this, spiderArena);
+        getServer().getPluginManager().registerEvents(spiderGuard, this);
+        Bukkit.getScheduler().runTaskTimer(this, spiderArena::ambience, 45L, 10L);
+        Bukkit.getScheduler().runTaskTimer(this, spiderArena::tint, 45L, 10L);
+        Bukkit.getScheduler().runTaskTimer(this, spiderGuard::sweep, 105L, 100L);
+        spiderHologram = new AltarHologram(this, true);
+        Bukkit.getScheduler().runTaskTimer(this, spiderHologram::tick, 45L, 10L);
         invButtons = new InvButtons(this);
         getServer().getPluginManager().registerEvents(invButtons, this);
         Bukkit.getScheduler().runTaskTimer(this, invButtons::tick, 40L, 40L);
@@ -422,7 +443,9 @@ public final class SmpBoss extends JavaPlugin {
             weapons.ultimates.shutdown();
         }
         if (arena != null) arena.shutdown();
+        if (spiderArena != null) spiderArena.shutdown();
         if (hologram != null) hologram.remove();
+        if (spiderHologram != null) spiderHologram.remove();
         if (relics != null) relics.removeAll();
         for (Player p : Bukkit.getOnlinePlayers()) {
             if (invButtons != null) {
@@ -499,6 +522,13 @@ public final class SmpBoss extends JavaPlugin {
     // ================================================================= recette
 
     private void registerRecipe() {
+        NamespacedKey ck = new NamespacedKey(this, "cocoon");
+        Bukkit.removeRecipe(ck);
+        ShapedRecipe cr = new ShapedRecipe(ck, items.cocoon());
+        cr.shape("EEE", "ECE", "EEE");
+        cr.setIngredient('E', new RecipeChoice.ExactChoice(items.cursedEye(1)));
+        cr.setIngredient('C', Material.COBWEB);
+        Bukkit.addRecipe(cr);
         NamespacedKey key = new NamespacedKey(this, "sacrifice");
         Bukkit.removeRecipe(key);
         ShapedRecipe r = new ShapedRecipe(key, items.sacrifice());
@@ -609,6 +639,7 @@ public final class SmpBoss extends JavaPlugin {
 
     /** Ligne d'état de l'autel (texte flottant). */
     String altarStatus() {
+        if (king instanceof SpiderQueen && king.active()) return msg("spider.king-status-busy");
         long left = lastEnd + getConfig().getLong("boss.cooldown-minutes", 15) * 60_000L - System.currentTimeMillis();
         if (left > 0) return msg("altar.status-cooldown").replace("<minutes>", String.valueOf(left / 60_000 + 1));
         if (getConfig().getBoolean("boss.night-only", false) && altar != null) {
@@ -636,6 +667,7 @@ public final class SmpBoss extends JavaPlugin {
 
     /** Statut du boss pour l'hologramme du portail : en combat, disponible, ou dans combien de temps. */
     String bossStatus() {
+        if (king instanceof SpiderQueen && king.active()) return msg("spider.king-status-busy");
         if (king != null && king.active()) {
             return msg("portal.status-fight").replace("<phase>", String.valueOf(king.phase()))
                     .replace("<hp>", String.valueOf((long) Math.ceil(Math.max(0, king.hp())))).replace("<max>", String.valueOf((long) king.maxHp()))
@@ -660,7 +692,7 @@ public final class SmpBoss extends JavaPlugin {
     /** Un joueur utilise la citrouille sacrificielle sur l'autel. */
     public void trySummon(Player p) {
         if (king != null && king.active()) {
-            p.sendMessage(parse(msg("summon.already")));
+            p.sendMessage(parse(msg(king instanceof SpiderQueen ? "spider.king-blocked" : "summon.already")));
             return;
         }
         long cd = getConfig().getLong("boss.cooldown-minutes", 15) * 60_000L;
@@ -681,6 +713,53 @@ public final class SmpBoss extends JavaPlugin {
         hand.setAmount(hand.getAmount() - 1);
         king = new PumpkinKing(this, altar);
         king.start(p);
+    }
+
+    private void spiderCommand(CommandSender sender, String[] a) {
+        String sub = a.length < 2 ? "" : a[1].toLowerCase(Locale.ROOT);
+        switch (sub) {
+            case "autel", "altar" -> {
+                if (!(sender instanceof Player p)) return;
+                Block b = p.getTargetBlockExact(6);
+                if (b == null || b.getType().isAir()) {
+                    sender.sendMessage(parse("<red>Regarde le bloc qui servira d'autel (à moins de 6 blocs)."));
+                    return;
+                }
+                setSpiderAltar(b.getLocation());
+                sender.sendMessage(parse("<aqua>Autel de la Reine placé sur ce bloc. <gray>Clic droit dessus avec un Cocon sacrificiel."));
+            }
+            case "invoquer", "summon" -> {
+                if (spiderAltar == null) {
+                    sender.sendMessage(parse("<red>Pas d'autel : /boss araignee arene construire, ou /boss araignee autel"));
+                    return;
+                }
+                if (king != null && king.active()) {
+                    sender.sendMessage(parse("<red>Un boss est déjà en cours (" + (king instanceof SpiderQueen ? "la Reine" : "le Roi Citrouille") + ")."));
+                    return;
+                }
+                king = new SpiderQueen(this, spiderAltar);
+                king.start(sender instanceof Player p ? p : Bukkit.getOnlinePlayers().stream().findFirst().orElse(null));
+            }
+            case "stop" -> {
+                if (king instanceof SpiderQueen q) q.leave("spider.stopped");
+                spiderLastEnd = 0;
+                sender.sendMessage(parse("<green>Reine arrêtée (temps d'attente remis à zéro)."));
+            }
+            case "arene", "arène", "arena" -> {
+                String[] b = new String[Math.max(1, a.length - 1)];
+                System.arraycopy(a, 1, b, 0, a.length - 1);
+                spiderArena.command(sender, b);
+            }
+            default -> {
+                sender.sendMessage(parse("<dark_aqua><b>🕷 Reine Araignée"));
+                sender.sendMessage(parse("<aqua>/boss araignee arene construire [taille] [ici|ciel|Y]</aqua> <gray>- construit son arène noir/bleu (l'autel au centre)"));
+                sender.sendMessage(parse("<aqua>/boss araignee arene portail|sortie|tp|setspawn|annuler ...</aqua> <gray>- comme l'arène du Roi"));
+                sender.sendMessage(parse("<aqua>/boss araignee autel</aqua> <gray>- l'autel = le bloc regardé"));
+                sender.sendMessage(parse("<aqua>/boss araignee invoquer</aqua> <gray>- la lance tout de suite"));
+                sender.sendMessage(parse("<aqua>/boss araignee stop</aqua> <gray>- l'arrête"));
+                sender.sendMessage(parse("<gray>Joueurs : <white>/arene araignee</white> · objet : <white>/boss give <joueur> cocon|oeil</white>"));
+            }
+        }
     }
 
     void bossEnded() {
@@ -706,7 +785,10 @@ public final class SmpBoss extends JavaPlugin {
             return true;
         }
         if (name.equals("arene")) {
-            if (sender instanceof Player p) arena.join(p);
+            if (sender instanceof Player p) {
+                boolean sp = a.length >= 1 && (a[0].toLowerCase(Locale.ROOT).startsWith("araign") || a[0].equalsIgnoreCase("reine"));
+                (sp ? spiderArena : arena).join(p);
+            }
             return true;
         }
         if (name.equals("sac")) {
@@ -740,6 +822,7 @@ public final class SmpBoss extends JavaPlugin {
                 king.start(sender instanceof Player p ? p : Bukkit.getOnlinePlayers().stream().findFirst().orElse(null));
             }
             case "arene", "arène", "arena" -> arena.command(sender, a);
+            case "araignee", "araignée", "spider", "reine" -> spiderCommand(sender, a);
             case "topguildes" -> {
                 if (a.length >= 2 && a[1].equalsIgnoreCase("reset")) {
                     guildTop.reset();
@@ -793,6 +876,15 @@ public final class SmpBoss extends JavaPlugin {
                             yield s;
                         }
                         case "faucille", "sickle" -> items.sickle();
+                        case "oeil", "oeil_maudit", "yeux", "eye" -> items.cursedEye(n);
+                        case "cocon", "cocoon" -> {
+                            ItemStack s = items.cocoon();
+                            s.setAmount(Math.min(16, n));
+                            yield s;
+                        }
+                        case "dague", "dague_venin" -> weapons.create(Weapons.DAGUE);
+                        case "arctoiles", "arc_toiles", "toiles" -> weapons.create(Weapons.ARC_TOILES);
+                        case "crocreine", "croc_reine", "croc" -> weapons.create(Weapons.CROC_REINE);
                         case "sonicbow", "sonic_bow", "arc" -> weapons.create(Weapons.SONIC);
                         case "tranchemace", "tranche_mace", "epee", "épée" -> weapons.create(Weapons.TRANCHE);
                         case "briseterre", "brise_terre", "hache" -> weapons.create(Weapons.BRISE);
@@ -924,8 +1016,105 @@ public final class SmpBoss extends JavaPlugin {
         return backpacks;
     }
 
-    public PumpkinKing king() {
+    public Boss king() {
         return king;
+    }
+
+    /** Le Roi Citrouille en cours (null si aucun, ou si c'est la Reine qui est là). */
+    public PumpkinKing pumpkin() {
+        return king instanceof PumpkinKing k ? k : null;
+    }
+
+    public Arena spiderArena() {
+        return spiderArena;
+    }
+
+    public Location spiderAltar() {
+        return spiderAltar == null ? null : spiderAltar.clone();
+    }
+
+    public boolean isSpiderAltar(Block b) {
+        return spiderAltar != null && b != null && b.getWorld() == spiderAltar.getWorld() && b.getX() == spiderAltar.getBlockX()
+                && b.getY() == spiderAltar.getBlockY() && b.getZ() == spiderAltar.getBlockZ();
+    }
+
+    /** L'arène du boss en cours (sinon celle du Roi). */
+    public Arena fightArena() {
+        return king != null && king.active() ? king.arena() : arena;
+    }
+
+    /** L'arène qui contient ce point (Roi ou Reine), ou null. */
+    public Arena arenaAt(Location l) {
+        if (arena != null && arena.defined() && arena.contains(l)) return arena;
+        if (spiderArena != null && spiderArena.defined() && spiderArena.contains(l)) return spiderArena;
+        return null;
+    }
+
+    private File spiderAltarFile() {
+        return new File(getDataFolder(), "altar-spider.yml");
+    }
+
+    private void loadSpiderAltar() {
+        File f = spiderAltarFile();
+        if (!f.exists()) return;
+        YamlConfiguration y = YamlConfiguration.loadConfiguration(f);
+        World w = Bukkit.getWorld(y.getString("world", "world"));
+        if (w != null) spiderAltar = new Location(w, y.getInt("x"), y.getInt("y"), y.getInt("z"));
+    }
+
+    void setSpiderAltar(Location l) {
+        spiderAltar = l == null ? null : l.clone();
+        YamlConfiguration y = new YamlConfiguration();
+        if (spiderAltar != null) {
+            y.set("world", spiderAltar.getWorld().getName());
+            y.set("x", spiderAltar.getBlockX());
+            y.set("y", spiderAltar.getBlockY());
+            y.set("z", spiderAltar.getBlockZ());
+        }
+        try {
+            y.save(spiderAltarFile());
+        } catch (IOException e) {
+            getLogger().warning("Sauvegarde de l'autel de la Reine impossible : " + e.getMessage());
+        }
+    }
+
+    /** Statut de la Reine (hologrammes de son autel et de son portail). */
+    String spiderStatus() {
+        if (king instanceof SpiderQueen q && q.active()) {
+            return msg("spider.status-fight").replace("<phase>", String.valueOf(q.phase()))
+                    .replace("<hp>", String.valueOf((long) Math.ceil(Math.max(0, q.hp())))).replace("<max>", String.valueOf((long) q.maxHp()));
+        }
+        if (king != null && king.active()) return msg("spider.status-other");
+        if (spiderAltar == null || spiderAltar.getWorld() == null) return msg("portal.status-closed");
+        long left = spiderLastEnd + getConfig().getLong("spider.cooldown-minutes", 15) * 60_000L - System.currentTimeMillis();
+        if (left > 0) {
+            long sec = left / 1000;
+            return msg("portal.status-cooldown").replace("<time>", String.format("%d:%02d", sec / 60, sec % 60));
+        }
+        return msg("spider.status-ready");
+    }
+
+    /** Un joueur pose le cocon sacrificiel sur l'autel de la Reine. */
+    public void trySummonSpider(Player p) {
+        if (king != null && king.active()) {
+            p.sendMessage(parse(msg(king instanceof SpiderQueen ? "spider.summon-already" : "spider.summon-other")));
+            return;
+        }
+        long left = spiderLastEnd + getConfig().getLong("spider.cooldown-minutes", 15) * 60_000L - System.currentTimeMillis();
+        if (left > 0) {
+            p.sendMessage(parse(msg("summon.cooldown").replace("<minutes>", String.valueOf(left / 60_000 + 1))));
+            return;
+        }
+        ItemStack hand = p.getInventory().getItemInMainHand();
+        if (!items.isCocoon(hand)) return;
+        hand.setAmount(hand.getAmount() - 1);
+        king = new SpiderQueen(this, spiderAltar);
+        king.start(p);
+    }
+
+    void spiderEnded() {
+        spiderLastEnd = System.currentTimeMillis();
+        king = null;
     }
 
     public Set<RelicMenu> openMenus() {

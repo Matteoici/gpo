@@ -175,7 +175,9 @@ final class Cosmetics {
     private static final Color NAVY = Color.fromRGB(11, 26, 74), NIGHT = Color.fromRGB(42, 63, 158), STAR = Color.fromRGB(109, 140, 255),
             SILVER = Color.fromRGB(227, 233, 255), PUMPKIN = Color.fromRGB(255, 130, 20), STEM = Color.fromRGB(70, 150, 40),
             VIOLET = Color.fromRGB(150, 60, 220), CRIMSON = Color.fromRGB(200, 10, 40), ASH = Color.fromRGB(90, 85, 90),
-            TEAL = Color.fromRGB(60, 220, 200), CREAM = Color.fromRGB(255, 240, 210);
+            TEAL = Color.fromRGB(60, 220, 200), CREAM = Color.fromRGB(255, 240, 210),
+            WEBC = Color.fromRGB(230, 238, 255), EYEC = Color.fromRGB(90, 200, 255), ABYSSC = Color.fromRGB(40, 90, 255),
+            VENOMC = Color.fromRGB(70, 235, 130), DEEPC = Color.fromRGB(14, 18, 40);
 
     private void draw(String visual, Draw d, Worn w, boolean moving) {
         ThreadLocalRandom r = ThreadLocalRandom.current();
@@ -401,6 +403,76 @@ final class Cosmetics {
                 if (t % 60 == 0) for (int k = 0; k < 8; k++) d.dust(true, 0.8 - k * 0.15, 2.9 - k * 0.07, 0.3, k == 0 ? SILVER : STAR, (float) (0.9 - k * 0.08));
             }
             // ---------------------------------------------------------- ❂ PRESTIGE : ailes de la nuit et croissant de lune
+            // ---------------------------------------------------------- (Reine Araignée) fil de soie qui suit tes pas
+            case "silk" -> {
+                if (t % 3 != 0) return;
+                for (int i = 0; i < 4; i++) d.dust(false, Math.sin(t * 0.2 + i) * 0.15, 0.15 + i * 0.12, -0.35 - i * 0.12, WEBC, 0.45f);
+            }
+            // ---------------------------------------------------------- (Reine) huit yeux bleus qui flottent autour de la tête
+            case "eyes" -> {
+                if (t % 2 != 0) return;
+                for (int k = 0; k < 8; k++) {
+                    double a = t * 0.05 + Math.PI * 2 * k / 8;
+                    boolean blink = (t / 4 + k * 7) % 40 == 0;
+                    if (!blink) d.dust(true, Math.cos(a) * 0.55, 1.95 + Math.sin(a * 2 + t * 0.1) * 0.06, Math.sin(a) * 0.55, k % 4 == 0 ? EYEC : ABYSSC, 0.55f);
+                }
+            }
+            // ---------------------------------------------------------- (Reine) gouttes de venin vertes qui tombent des mains
+            case "venom" -> {
+                if (t % 3 != 0) return;
+                for (int s = -1; s <= 1; s += 2) {
+                    d.dust(false, s * 0.4, 0.85 - (t % 12) * 0.05, 0.1, VENOMC, 0.6f);
+                    if (r.nextInt(6) == 0) d.part(Particle.FALLING_DRIPSTONE_WATER, false, s * 0.4, 0.8, 0.1, 1, 0.02, 0);
+                }
+            }
+            // ---------------------------------------------------------- (Reine) huit pattes d'araignée dans le dos, qui bougent
+            case "spiderlegs" -> {
+                if (t % 2 != 0) return;
+                for (int s = -1; s <= 1; s += 2) {
+                    for (int j = 0; j < 4; j++) {
+                        double sw = Math.sin(t * 0.12 + j * 1.3 + (s > 0 ? 0 : Math.PI)) * 0.12;
+                        double y0 = 1.35 - j * 0.12, z0 = -0.2;
+                        double kx = s * (0.45 + j * 0.05), ky = y0 + 0.35 + sw, kz = z0 - 0.25 + j * 0.05;
+                        double fx = s * (0.75 + j * 0.08), fy = y0 - 0.35 + sw * 0.5, fz = z0 - 0.45 + j * 0.15;
+                        for (int i = 0; i <= 4; i++) {
+                            double u = i / 4.0;
+                            d.dust(false, s * 0.12 + (kx - s * 0.12) * u, y0 + (ky - y0) * u, z0 + (kz - z0) * u, DEEPC, 0.55f);
+                            d.dust(false, kx + (fx - kx) * u, ky + (fy - ky) * u, kz + (fz - kz) * u, i == 4 ? ABYSSC : DEEPC, 0.5f);
+                        }
+                    }
+                }
+            }
+            // ---------------------------------------------------------- (Reine) cape tissée de toile (fils blancs sur fond nuit)
+            case "webcape" -> {
+                if (t % 2 != 0) return;
+                double flow = moving ? 0.4 : 0.07;
+                for (int i = 0; i <= 7; i++) {
+                    double v = i / 7.0;
+                    double y = 1.42 - 0.95 * v, z = -0.18 - flow * v * v - 0.04 * Math.sin(t * 0.25 + v * 4);
+                    for (int j = 0; j <= 4; j++) {
+                        double x = (-0.28 + 0.14 * j) * (1 + 0.25 * v);
+                        boolean thread = j == 2 || i % 2 == 0;
+                        d.dust(false, x, y, z, thread ? WEBC : DEEPC, thread ? 0.5f : 0.8f);
+                    }
+                }
+            }
+            // ---------------------------------------------------------- (Reine) couronne de soie argentée, gemme bleue
+            case "silkcrown" -> {
+                if (t % 2 != 0) return;
+                double spin = t * 0.02;
+                for (int k = 0; k < 12; k++) {
+                    double a = spin + Math.PI * 2 * k / 12;
+                    d.dust(true, Math.cos(a) * 0.3, 2.02, Math.sin(a) * 0.3, WEBC, 0.55f);
+                    if (k % 3 == 0) d.dust(true, Math.cos(a) * 0.27, 2.2, Math.sin(a) * 0.27, WEBC, 0.45f);
+                }
+                d.dust(true, 0, 2.15, 0.3, EYEC, 0.8f);
+            }
+            // ---------------------------------------------------------- (Reine, prestige) l'Abysse : pattes, yeux et brume bleue
+            case "abyss" -> {
+                draw("spiderlegs", d, w, moving);
+                draw("eyes", d, w, moving);
+                if (t % 4 == 0) d.dust(false, r.nextDouble(-0.6, 0.6), r.nextDouble(0.2, 1.8), r.nextDouble(-0.6, 0.6), ABYSSC, 1.2f);
+            }
             case "eclipse" -> {
                 if (t % 2 == 0) {
                     double flap = Math.sin(t * 0.1) * 0.14;

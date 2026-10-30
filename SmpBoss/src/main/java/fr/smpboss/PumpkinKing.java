@@ -59,7 +59,7 @@ import static fr.smpboss.SmpBoss.parse;
  * Le Roi Citrouille. Une créature agrandie (vie gérée par le plugin, au-delà de la limite de Minecraft),
  * des citrouilles en orbite, 3 phases, des attaques toujours annoncées par un cercle au sol.
  */
-public final class PumpkinKing {
+public final class PumpkinKing implements Boss {
 
     private enum Attack {
         BARRAGE, VINES, FLAME_WAVE, MINIONS, SEED_RAIN, VORTEX, SPIKES, SCYTHE, CHARGE, METEOR,
@@ -124,6 +124,14 @@ public final class PumpkinKing {
         return plugin.getConfig().getDouble("boss." + path, def);
     }
 
+    public Arena arena() {
+        return plugin.arena();
+    }
+
+    public String kind() {
+        return "roi";
+    }
+
     public boolean isBoss(Entity e) {
         return e != null && e == boss;
     }
@@ -137,25 +145,25 @@ public final class PumpkinKing {
     }
 
     /** Pour l'hologramme du portail. */
-    double hp() {
+    public double hp() {
         return hp;
     }
 
-    double maxHp() {
+    public double maxHp() {
         return maxHp;
     }
 
-    int phase() {
+    public int phase() {
         return phase;
     }
 
-    int fighters() {
+    public int fighters() {
         return fighters;
     }
 
     // ================================================================= invocation
 
-    void start(Player summoner) {
+    public void start(Player summoner) {
         World w = altar.getWorld();
         Location top = altar.clone().add(0.5, 1, 0.5);
         String who = summoner == null ? "?" : summoner.getName();
@@ -530,7 +538,7 @@ public final class PumpkinKing {
     // ================================================================= dégâts reçus
 
     /** Un joueur frappe le boss. Renvoie false si le coup est ignoré (invulnérable). */
-    boolean hurt(Player by, double amount) {
+    public boolean hurt(Player by, double amount) {
         if (ended || reviving || invulnerable > 0 || boss == null) return false;
         if (by != null) damage.merge(by.getUniqueId(), amount, Double::sum);
         // un joueur de plus sur le boss : sa vie grandit d'autant (le % de vie reste le même)
@@ -1573,7 +1581,7 @@ public final class PumpkinKing {
     }
 
     /** Le joueur est dans le combat (dans l'arène du boss). */
-    boolean inFight(Player p) {
+    public boolean inFight(Player p) {
         return !ended && p.getWorld() == altar.getWorld() && horizontalDist(p.getLocation(), altar) <= cfg("arena-radius", 18) + 12
                 && Math.abs(p.getLocation().getY() - altar.getY()) < 30;
     }
@@ -3296,7 +3304,7 @@ public final class PumpkinKing {
         plugin.store().save(true);
     }
 
-    void leave(String msgKey) {
+    public void leave(String msgKey) {
         if (ended) return;
         ended = true;
         if (boss != null && boss.isValid()) {
@@ -3318,8 +3326,8 @@ public final class PumpkinKing {
             Player p = Bukkit.getPlayer(e.getKey());
             if (p == null) continue;
             long dmg = Math.round(e.getValue());
-            if (dmg > 0) Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "smpevents progress " + p.getName() + " BOSS_DAMAGE " + dmg);
-            if (won && e.getValue() >= minDamage) Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "smpevents progress " + p.getName() + " BOSS_WIN 1");
+            if (dmg > 0) Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "smpevents progress " + p.getName() + " BOSS_DAMAGE " + dmg + " ROI");
+            if (won && e.getValue() >= minDamage) Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "smpevents progress " + p.getName() + " BOSS_WIN 1 ROI");
         }
     }
 
@@ -3341,7 +3349,7 @@ public final class PumpkinKing {
         return plugin.getConfig().getDouble("loot.min-damage-percent", 5) / 100.0;
     }
 
-    void cleanup() {
+    public void cleanup() {
         if (board != null) {
             board.close();
             board = null;

@@ -392,4 +392,83 @@ final class WeaponFx extends PackFx {
         tflip(to, "w_burst_", 12, 1, SKY, 0.8f, 3, Display.Billboard.CENTER);
         snd(to, "weapons.thunder", 1.5f, 1.4f);
     }
+
+    // ================================================================= armes de la Reine Araignée
+
+    static final Color VENOM = Color.fromRGB(70, 235, 130), WEB = Color.fromRGB(225, 235, 255), ABYSS = Color.fromRGB(40, 90, 255);
+
+    void venomDash(Player p, int ticks) {
+        snd(p.getLocation(), "spider.hiss", 2f, 1.4f);
+        int[] k = {0};
+        BukkitTask[] task = new BukkitTask[1];
+        task[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            if (++k[0] > ticks || !p.isOnline() || p.isDead()) {
+                task[0].cancel();
+                return;
+            }
+            Location l = p.getLocation().add(0, 1, 0);
+            Vector vel = p.getVelocity();
+            if (vel.lengthSquared() > 0.05) tpop(l, "w_spike_x", VENOM, 0.9f, 2.6f, 0.9f, 1, 0, 5, Display.Billboard.FIXED, alongY(vel.clone().multiply(-1)));
+            puff(l, Color.fromRGB(30, 90, 50), 1.6f);
+        }, 1L, 1L);
+    }
+
+    void venomHit(Location at) {
+        tflip(at, "w_burst_", 12, 1, VENOM, 0.8f, 2.8f, Display.Billboard.CENTER);
+        tpop(at, "w_spark", Color.WHITE, 1.8f, 1.8f, 1.8f, 1, 1, 3, Display.Billboard.CENTER, null);
+    }
+
+    void webArrow(Entity arrow) {
+        Location[] prev = {arrow.getLocation()};
+        int[] k = {0};
+        BukkitTask[] task = new BukkitTask[1];
+        task[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            if (!arrow.isValid() || (arrow instanceof org.bukkit.entity.AbstractArrow a && a.isInBlock()) || ++k[0] > 80) {
+                task[0].cancel();
+                return;
+            }
+            Location now = arrow.getLocation();
+            Vector seg = now.toVector().subtract(prev[0].toVector());
+            if (seg.lengthSquared() > 0.04) {
+                Location mid = prev[0].clone().add(seg.clone().multiply(0.5));
+                tpop(mid, "w_beam_x", WEB, 0.12f, (float) seg.length(), 0.12f, 1, 14, 6, Display.Billboard.FIXED, alongY(seg));
+            }
+            prev[0] = now;
+        }, 1L, 1L);
+    }
+
+    void webTrap(Location at) {
+        snd(at, "spider.web", 2f, 1f);
+        Location g = at.clone().add(0, 0.1, 0);
+        ItemDisplay web = t(g, "w_web_flat", WEB, 0.3f, 1, 0.3f, Display.Billboard.FIXED, null);
+        later(1, () -> tween(web, new Vector3f(), null, new Vector3f(5, 1, 5), 3));
+        later(70, () -> tween(web, new Vector3f(), null, new Vector3f(0.05f, 1, 0.05f), 8));
+        kill(web, 80);
+        tpop(at.clone().add(0, 1, 0), "w_web", WEB, 3.5f, 3.5f, 3.5f, 2, 4, 4, Display.Billboard.CENTER, null);
+    }
+
+    void queenFang(Location c, double r, List<? extends Entity> caught) {
+        snd(c, "spider.screech", 2.5f, 1f);
+        ult.quake(c, 12, 8, 2.5f);
+        float s = (float) (r * 2.2);
+        ItemDisplay web = t(c.clone().add(0, 0.12, 0), "w_web_flat", ABYSS, 0.3f, 1, 0.3f, Display.Billboard.FIXED, null);
+        later(1, () -> tween(web, new Vector3f(), new Quaternionf().rotateY(0.6f), new Vector3f(s, 1, s), 5));
+        later(16, () -> tween(web, new Vector3f(), new Quaternionf().rotateY(1.2f), new Vector3f(0.05f, 1, 0.05f), 8));
+        kill(web, 26);
+        Location hand = c.clone().add(0, 1.2, 0);
+        for (Entity en : caught) {
+            Location to = en.getLocation().add(0, en.getHeight() * 0.6, 0);
+            Vector seg = to.toVector().subtract(hand.toVector());
+            if (seg.lengthSquared() < 0.3) continue;
+            Location mid = hand.clone().add(seg.clone().multiply(0.5));
+            tpop(mid, "w_beam_x", WEB, 0.18f, (float) seg.length(), 0.18f, 1, 10, 4, Display.Billboard.FIXED, alongY(seg));
+        }
+    }
+
+    void queenFangBurst(Location c, double r) {
+        snd(c, "weapons.impact", 2f, 1.4f);
+        boom(c.clone().add(0, 1, 0), VENOM, (float) Math.max(4, r * 0.7));
+        wave(c.clone().add(0, 0.2, 0), "w_shock_flat", ABYSS, 1, (float) (r * 2.4), 8, null, Display.Billboard.FIXED);
+        ult.quake(c, 14, 10, 3f);
+    }
 }

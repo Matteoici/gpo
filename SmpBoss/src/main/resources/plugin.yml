@@ -19,7 +19,7 @@ commands:
     aliases: [relics, relique, cosmetiques, cosmetique, butin]
   arene:
     description: Aller dans l'arène du boss
-    usage: /arene
+    usage: /arene [araignee]
     aliases: [arena, arène]
     permission: smpboss.arena.join
   topguildes:

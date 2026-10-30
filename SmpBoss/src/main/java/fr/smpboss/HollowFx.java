@@ -323,7 +323,7 @@ final class HollowFx extends PackFx {
         later(2, () -> {
             for (LivingEntity le : ult.targets(p, m, blast)) {
                 if (le instanceof Player pl && (pl.getGameMode() == org.bukkit.GameMode.CREATIVE || pl.getGameMode() == org.bukkit.GameMode.SPECTATOR)) continue;
-                PumpkinKing king = plugin.king();
+                Boss king = plugin.king();
                 if (king != null && king.isBoss(le)) continue;
                 Vector push = le.getLocation().toVector().subtract(m.toVector());
                 double d = push.length();
