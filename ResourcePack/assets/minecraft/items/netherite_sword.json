@@ -10,6 +10,13 @@
      "type": "minecraft:model",
      "model": "limitless:item/items/tranche_mace"
     }
+   },
+   {
+    "when": "boss_blade",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/boss_blade"
+    }
    }
   ],
   "fallback": {

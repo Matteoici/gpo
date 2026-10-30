@@ -1,7 +1,7 @@
 """Textures d'objets custom, faites à partir des formes vanilla (16x16, même orientation en main) recolorées
 avec des dégradés à la main + détails pixel par pixel. Certaines sont animées (.mcmeta)."""
 import numpy as np, os, sys, json, colorsys, math
-from PIL import Image
+from PIL import Image, ImageDraw
 
 VAN = sys.argv[1]           # dossier des textures vanilla items/
 OUT = sys.argv[2]           # racine du pack
@@ -291,4 +291,265 @@ egg('egg_epique', [hx('2d0d4d'), hx('55208a'), hx('8a3fd1'), hx('b77bff'), hx('e
 egg('egg_legendaire', [hx('4a2a02'), hx('8f5a06'), hx('d99a12'), hx('ffd23f'), hx('fff4b8')], hx('6b3a02'), hx('ffffff'))
 egg('egg_mythique', [hx('12020a'), hx('3d0620'), hx('7a0f3d'), hx('c42a5e'), hx('ff7aa8')], hx('ff2a6a'), hx('ffb3d1'))
 
+
+# ================================================================== RELIQUES
+
+def shade(mask, ramp, glint=True):
+    """peint une forme avec un dégradé pixel art : clair en haut à gauche, sombre en bas à droite, bords marqués"""
+    out = np.zeros((16, 16, 4), np.int32)
+    ys, xs = np.nonzero(mask)
+    if not len(xs): return out
+    cx, cy = xs.mean(), ys.mean(); size = max(np.ptp(xs), np.ptp(ys), 1)
+    n = len(ramp)
+    for x, y in zip(xs, ys):
+        v = 0.55 + 0.5 * (-(x - cx) - (y - cy)) / size
+        if y + 1 > 15 or not mask[y + 1, x] or x + 1 > 15 or not mask[y, x + 1]: v -= 0.28
+        if y - 1 < 0 or not mask[y - 1, x] or x - 1 < 0 or not mask[y, x - 1]: v += 0.22
+        out[y, x] = ramp[int(np.clip(round(v * (n - 1)), 0, n - 1))]
+    return out
+
+def over(a, b):
+    m = b[..., 3] > 0; a = a.copy(); a[m] = b[m]; return a
+
+def outline(a, col=hx('140a10')):
+    r = outline_of(a); a = a.copy(); a[r] = col; return a
+
+def disk(cx, cy, r):
+    y, x = np.mgrid[0:16, 0:16]; return (x - cx) ** 2 + (y - cy) ** 2 <= r * r
+
+def rect(x0, y0, x1, y1):
+    m = np.zeros((16, 16), bool); m[y0:y1 + 1, x0:x1 + 1] = True; return m
+
+def spike(cx, top, bottom, w=1.6):
+    m = np.zeros((16, 16), bool)
+    for y in range(top, bottom + 1):
+        hw = (y - top) / max(1, bottom - top) * w + 0.3
+        for x in range(16):
+            if abs(x + 0.5 - cx) <= hw: m[y, x] = True
+    return m
+
+GOLD = [hx('5a3405'), hx('9a5c08'), hx('d99a12'), hx('ffd23f'), hx('fff4b8')]
+NETH = [hx('140f12'), hx('2a2026'), hx('43363d'), hx('5e4c55'), hx('7f6b74')]
+
+def crown(name, ramp, gems, tip, frames_fx=None):
+    m = rect(2, 9, 13, 12)
+    for cx, top in [(3, 5), (8, 3), (13, 5)]: m |= spike(cx, top, 9)
+    m |= spike(5.5, 7, 9, 1.0) | spike(10.5, 7, 9, 1.0)
+    a = shade(m, ramp)
+    for x in range(2, 14): a[9, x] = ramp[-1] if x % 2 == 0 else ramp[-2]
+    for x in range(2, 14): a[12, x] = ramp[1]
+    for (x, y), g in zip([(4, 10), (7, 10), (8, 10), (11, 10)], gems): a[y, x] = g
+    for x, y in [(3, 4), (8, 2), (13, 4)]: a[y, x] = tip
+    a = outline(a)
+    if frames_fx:
+        save(None, name, [f(a.copy()) for f in frames_fx], ft=4)
+    else:
+        save(a, name)
+
+def tw(pts, col):
+    def f(b):
+        for x, y in pts:
+            if 0 <= x < 16 and 0 <= y < 16: b[y, x] = col
+        return b
+    return f
+
+crown('relic_couronne', GOLD, [hx('ff7a10'), hx('ff9a20'), hx('ff9a20'), hx('ff7a10')], hx('ff8a1a'))
+crown('relic_couronne_roi_eternel', [hx('6b3f02'), hx('b87808'), hx('f2bd2e'), hx('ffe680'), hx('ffffff')],
+      [hx('ff2a4a'), hx('ffffff'), hx('ffffff'), hx('3a8bff')], hx('ffffff'),
+      frames_fx=[tw([(8, 1)], hx('ffffff')), tw([(2, 3), (14, 3)], hx('ffffff')), tw([(6, 6)], hx('fff4b8')), tw([(10, 8)], hx('ffffff'))])
+crown('relic_couronne_enfers', NETH, [hx('ff5a00'), hx('ffb02e'), hx('ffb02e'), hx('ff5a00')], hx('ff6a00'),
+      frames_fx=[tw([(3, 3), (8, 1), (13, 3)], hx('ff9a1f')), tw([(3, 2), (8, 0), (13, 2)], hx('ffd04a')), tw([(3, 3), (8, 1), (13, 3)], hx('ff5a00'))])
+
+# amulette : chaîne en U + médaillon doré avec une graine de citrouille orange
+def amulet():
+    a = np.zeros((16, 16, 4), np.int32)
+    for t in np.linspace(0, math.pi, 30):
+        x = 8 + math.cos(t) * 5.5; y = 1 + math.sin(t) * 6.5
+        a[int(round(y)), int(round(x))] = hx('c48210') if int(t * 10) % 2 else hx('ffd23f')
+    m = disk(8, 11, 3.6)
+    a = over(a, shade(m, GOLD))
+    a = over(a, shade(disk(8, 11, 1.9), [hx('8a2f02'), hx('d95f0b'), hx('ff9a20'), hx('ffd27a')]))
+    a[12, 7] = hx('2f6b1e'); a[9, 8] = hx('fff4b8')
+    save(outline(a), 'relic_amulette_recolte')
+amulet()
+
+# crâne maudit : crâne sombre, yeux violets qui pulsent
+def skull():
+    m = disk(8, 7, 5.6) & ~rect(0, 13, 15, 15)
+    m |= rect(5, 11, 10, 13)
+    base = shade(m, [hx('1a1a1e'), hx('2c2c33'), hx('44444d'), hx('5c5c66')])
+    for (x0, y0) in [(4, 7), (9, 7)]:
+        for dx in range(3):
+            for dy in range(2): base[y0 + dy, x0 + dx] = hx('050508')
+    base[10, 7] = hx('050508'); base[10, 8] = hx('050508')
+    for x in (6, 8): base[13, x] = hx('0a0a0e')
+    base = outline(base)
+    fr = []
+    for c in [hx('9a3cff'), hx('c77bff'), hx('f0d0ff'), hx('c77bff')]:
+        f = base.copy(); f[7, 5] = c; f[7, 10] = c; f[8, 5] = (c[0] // 2, c[1] // 2, c[2] // 2, 255); f[8, 10] = f[8, 5]
+        fr.append(f)
+    save(None, 'relic_crane_maudit', fr, ft=5)
+skull()
+
+# ailes du démon : deux ailes de chauve-souris rouge sombre
+def wings(name, membrane, bone, mirror_gap=1):
+    m = np.zeros((16, 16), bool)
+    # aile gauche : bord du haut qui monte vers la pointe extérieure, bas festonné (entre les "doigts")
+    for x in range(0, 7):
+        top = int(round(2 + (x / 6) ** 1.5 * 4))
+        scal = [11, 8, 12, 9, 12, 10, 11][x]
+        m[top:scal + 1, x] = True
+    m[6:11, 7] = True
+    m |= m[:, ::-1]
+    a = shade(m, membrane)
+    for x in range(0, 7):
+        top = int(round(2 + (x / 6) ** 1.5 * 4)); a[top, x] = bone; a[top, 15 - x] = bone
+    for (x0, y0, x1, y1) in [(6, 6, 2, 11), (6, 6, 0, 9), (6, 6, 4, 12)]:
+        for t in np.linspace(0, 1, 8):
+            x = int(round(x0 + (x1 - x0) * t)); y = int(round(y0 + (y1 - y0) * t))
+            if m[y, x]: a[y, x] = bone; a[y, 15 - x] = bone
+    save(outline(a), name)
+wings('relic_ailes_demon', [hx('2a0408'), hx('4f0a12'), hx('7a1420'), hx('a8222f')], hx('d94a4a'))
+
+# cape de la nuit : cape bleu nuit, lune rouge, étoiles
+def cape():
+    m = np.zeros((16, 16), bool)
+    for y in range(2, 15):
+        hw = 2.5 + (y - 2) * 0.42
+        for x in range(16):
+            if abs(x + 0.5 - 8) <= hw: m[y, x] = True
+    for x in range(16):
+        if x % 3 == 0: m[14, x] = False
+    a = shade(m, [hx('05060f'), hx('0d1026'), hx('1a1f45'), hx('2c3470')])
+    for x in range(5, 11): a[2, x] = hx('f2bd2e')
+    a[3, 8] = hx('ff2a4a')
+    a = over(a, shade(disk(8, 9, 2.2), [hx('7a0b22'), hx('c41c3a'), hx('ff5a5a')]))
+    for x, y in [(5, 6), (11, 7), (6, 12), (10, 12)]: a[y, x] = hx('ffffff')
+    save(outline(a), 'relic_cape_nuit')
+cape()
+
+# orbes infernaux : trois boules de magma qui tournent
+def orbs():
+    fr = []
+    for k in range(6):
+        a = np.zeros((16, 16, 4), np.int32)
+        for i in range(3):
+            ang = k * math.pi / 9 + i * 2 * math.pi / 3 - math.pi / 2
+            cx, cy = 8 + math.cos(ang) * 4.6, 8 + math.sin(ang) * 4.6
+            a = over(a, shade(disk(cx, cy, 2.4), [hx('5c1002'), hx('b02a00'), hx('ff6a00'), hx('ffc43a')]))
+        for t in range(0, 360, 30):
+            x = int(round(8 + math.cos(math.radians(t + k * 20)) * 4.6)); y = int(round(8 + math.sin(math.radians(t + k * 20)) * 4.6))
+            if a[y, x, 3] == 0: a[y, x] = (255, 120, 20, 120)
+        fr.append(outline(a))
+    save(None, 'relic_orbe_infernal', fr, ft=2)
+orbs()
+
+# à partir des textures vanilla
+def recolor(base, name, ramp, extra=None, frames=None, ft=3, mask_fn=None, ramp2=None):
+    a = load(base); op = a[..., 3] > 0
+    m1 = op if mask_fn is None else (op & mask_fn(a))
+    b = remap(a, m1, ramp)
+    if ramp2 is not None: b = remap(b, op & ~m1, ramp2)
+    if extra: extra(b)
+    if frames: save(None, name, [f(b.copy()) for f in frames], ft=ft)
+    else: save(b, name)
+
+def bright(a):
+    h, s, v = hsv(a); return (v > 0.75) & (s > 0.3) & (h > 20) & (h < 70)
+def cyan(a):
+    h, s, v = hsv(a); return (h > 150) & (h < 220) & (s > 0.3)
+
+def flames(pts, cols):
+    return [tw(pts, c) for c in cols]
+
+recolor('blaze_powder', 'relic_trainee_flammes', [hx('5c1002'), hx('b02a00'), hx('ff5a00'), hx('ff9a1f'), hx('ffe066')],
+        frames=[tw([(7, 3), (9, 5)], hx('fff1b8')), tw([(6, 4), (10, 4)], hx('ffd04a')), tw([(8, 2), (5, 6)], hx('fff1b8'))])
+recolor('lantern', 'relic_lanterne_mineure', [hx('2b0c02'), hx('8a3305'), hx('ff8a1a'), hx('ffd27a')], mask_fn=bright,
+        ramp2=[hx('14100c'), hx('2a2018'), hx('463626'), hx('6b553c')],
+        frames=[tw([], hx('000000')), tw([(7, 9)], hx('fff1b8')), tw([(8, 10)], hx('ffffff'))])
+recolor('soul_lantern', 'relic_lanterne_eternelle', [hx('053b2a'), hx('0f8a5a'), hx('3fffb0'), hx('d2fff0')], mask_fn=cyan,
+        ramp2=[hx('0c1014'), hx('18222a'), hx('283844'), hx('3c5264')],
+        frames=[tw([], hx('000000')), tw([(7, 9)], hx('ffffff')), tw([(8, 10)], hx('d2fff0'))])
+recolor('golden_boots', 'relic_bottes_recolte', [hx('2b1404'), hx('5c300c'), hx('a85a14'), hx('e8962e'), hx('ffd27a')],
+        extra=lambda b: (px(b, [(3, 9), (12, 9)], hx('5ca33a')), px(b, [(4, 8), (11, 8)], hx('2f6b1e'))))
+recolor('bundle', 'relic_sac_recolte', [hx('3a1203'), hx('7a2e05'), hx('c45a0b'), hx('ff9020'), hx('ffc24a')],
+        frames=[tw([(6, 9), (9, 9), (7, 11), (8, 11)], c) for c in (hx('ffe066'), hx('fff1b8'), hx('ffd04a'))])
+recolor('magma_cream', 'relic_braises_ardentes', [hx('3a0a02'), hx('8a1e02'), hx('e04a06'), hx('ff9a1f'), hx('fff1b8')],
+        frames=[tw([(4, 4)], hx('ffd04a')), tw([(11, 5), (3, 11)], hx('ffd04a')), tw([(12, 12)], hx('fff1b8'))])
+recolor('goat_horn', 'relic_cornes_demon', [hx('120204'), hx('3a060c'), hx('6b0d18'), hx('a8222f'), hx('ff5a4a')])
+recolor('ender_eye', 'relic_oeil_jugement', [hx('2b0204'), hx('7a0b10'), hx('d42a1a'), hx('ff8a2a'), hx('ffe066')],
+        frames=[tw([], hx('000000')), tw([(7, 7), (8, 8)], hx('ffffff')), tw([], hx('000000')), tw([(7, 8)], hx('fff1b8'))], ft=5)
+recolor('elytra', 'relic_ailes_eclipse', [hx('05030a'), hx('120a1f'), hx('24163d'), hx('3d2766'), hx('f2bd2e')])
+
 print('ok', sorted(f for f in os.listdir(D) if f.endswith('.png')))
+
+# ================================================================== BOSS (Roi Citrouille) : citrouille 32x32, couronne, lame
+import json as _json
+def boss_textures():
+    N2 = 32
+    yy, xx = np.mgrid[0:N2, 0:N2]
+    rng = np.random.default_rng(66)
+    # côté : côtes verticales sombres, dégradé, taches pourries
+    ribs = np.cos((xx + 0.5) / N2 * np.pi * 6) * 0.5 + 0.5
+    v = 0.35 + 0.5 * ribs ** 0.6 - 0.18 * ((yy - 16) / 16) ** 2
+    v += rng.normal(0, 0.035, v.shape)
+    PUMP = [hx('3d1403'), hx('6b2605'), hx('a8420a'), hx('d9650f'), hx('ff8c1f')]
+    idx = np.clip((v * (len(PUMP))).astype(int), 0, len(PUMP) - 1)
+    side = np.zeros((N2, N2, 4), np.int32)
+    for i, c in enumerate(PUMP): side[idx == i] = c
+    for _ in range(5):
+        cx, cy, r = rng.integers(3, 29), rng.integers(3, 29), rng.uniform(1.2, 2.5)
+        side[(xx - cx) ** 2 + (yy - cy) ** 2 < r * r] = hx('2a1004')
+    side[0, :] = hx('2a0e02'); side[-1, :] = hx('2a0e02')
+    save(side, 'boss_pumpkin_side')
+    # dessus : côtes en étoile + tige
+    r = np.hypot(xx - 15.5, yy - 15.5); th = np.arctan2(yy - 15.5, xx - 15.5)
+    v = 0.4 + 0.45 * (np.cos(th * 6) * 0.5 + 0.5) ** 0.6 - r / 60
+    idx = np.clip((v * len(PUMP)).astype(int), 0, len(PUMP) - 1)
+    top = np.zeros((N2, N2, 4), np.int32)
+    for i, c in enumerate(PUMP): top[idx == i] = c
+    top[r < 4] = hx('1f3a12'); top[r < 2.5] = hx('2f5a1c'); top[(r < 1.2)] = hx('4a7a2a')
+    save(top, 'boss_pumpkin_top')
+    # visage (calque lumineux animé) : yeux triangulaires méchants, bouche à dents
+    face = Image.new('RGBA', (N2, N2), (0, 0, 0, 0)); d = ImageDraw.Draw(face)
+    d.polygon([(3, 6), (14, 11), (11, 15), (4, 14)], fill=(255, 255, 255, 255))
+    d.polygon([(29, 6), (18, 11), (21, 15), (28, 14)], fill=(255, 255, 255, 255))
+    d.polygon([(13, 16), (19, 16), (16, 20)], fill=(255, 255, 255, 255))
+    mouth = [(2, 19), (7, 22), (10, 19), (13, 23), (16, 19), (19, 23), (22, 19), (25, 22), (30, 19), (27, 28), (23, 25), (20, 29), (16, 26), (12, 29), (9, 25), (5, 28)]
+    d.polygon(mouth, fill=(255, 255, 255, 255))
+    m = np.array(face)[..., 3] > 0
+    from scipy.ndimage import binary_erosion, distance_transform_edt
+    dist = distance_transform_edt(m)
+    frames = []
+    for k in range(4):
+        f = np.zeros((N2, N2, 4), np.int32)
+        flick = [1.0, 0.85, 1.1, 0.92][k]
+        f[m] = hx('ff6a00')
+        f[m & (dist * flick > 1.2)] = hx('ffb02e')
+        f[m & (dist * flick > 2.2)] = hx('fff1a8')
+        rim = m & ~binary_erosion(m)
+        f[rim] = hx('c43a00')
+        frames.append(f)
+    save(None, 'boss_pumpkin_face', frames, ft=3)
+    # couronne (texture 16x16 : or + gemmes)
+    cr = np.zeros((16, 16, 4), np.int32)
+    g = (np.cos(xx[:16, :16] * 0.9) * 0.5 + 0.5) * 0.4 + 0.5 - (yy[:16, :16] / 16) * 0.35
+    for i, c in enumerate(GOLD): cr[np.clip((g * len(GOLD)).astype(int), 0, len(GOLD) - 1) == i] = c
+    cr[6:9, 3:5] = hx('ff2a4a'); cr[6:9, 11:13] = hx('3a8bff'); cr[6:9, 7:9] = hx('ff8a1a')
+    cr[7, 3] = hx('ffb3b3'); cr[7, 11] = hx('b3d4ff'); cr[7, 7] = hx('ffe0b3')
+    save(cr, 'boss_crown')
+boss_textures()
+
+# lame du boss : épée noire dentelée, tranchant orange qui pulse
+def bpulse(k):
+    def f(b):
+        a = load('netherite_sword'); op, brown = classes(a)
+        blade = op & ~brown
+        ys, xs = np.nonzero(blade)
+        for x, y in zip(xs, ys):
+            if x - y >= 0 and (x + y + k) % 3 == 0: b[y, x] = [hx('ff5a00'), hx('ff9a1f'), hx('ffd04a')][(x + k) % 3]
+        return b
+    return f
+sword('netherite_sword', 'boss_blade', [hx('0a0608'), hx('1c1216'), hx('2e2026'), hx('47343c'), hx('ff6a00')],
+      [hx('1a0d05'), hx('331c0c'), hx('4d2c14'), hx('6b421f')], frames=[bpulse(0), bpulse(1), bpulse(2)])
+print('boss ok')

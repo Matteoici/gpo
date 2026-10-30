@@ -69,12 +69,30 @@ abstract class PackFx {
     }
 
     protected ItemDisplay sprite(Location at, String name, float sx, float sy, float sz, Display.Billboard bb, Quaternionf rot) {
+        return spriteOf(at, model(name), sx, sy, sz, bb, rot);
+    }
+
+    /** Effet teintable du pack (fx/w_...) : la couleur est donnée ici. */
+    protected static ItemStack tmodel(String name, org.bukkit.Color c) {
+        ItemStack it = model(name);
+        ItemMeta m = it.getItemMeta();
+        try {
+            var cmd = m.getCustomModelDataComponent();
+            cmd.setColors(List.of(c));
+            m.setCustomModelDataComponent(cmd);
+        } catch (RuntimeException | LinkageError ignored) {
+        }
+        it.setItemMeta(m);
+        return it;
+    }
+
+    protected ItemDisplay spriteOf(Location at, ItemStack item, float sx, float sy, float sz, Display.Billboard bb, Quaternionf rot) {
         Location l = at.clone();
         l.setYaw(0);
         l.setPitch(0);
         ItemDisplay d = at.getWorld().spawn(l, ItemDisplay.class, e -> {
             e.setPersistent(false);
-            e.setItemStack(model(name));
+            e.setItemStack(item);
             e.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.NONE);
             e.setBillboard(bb);
             e.setBrightness(new Display.Brightness(15, 15));

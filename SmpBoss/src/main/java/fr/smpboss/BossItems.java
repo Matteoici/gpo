@@ -98,6 +98,7 @@ public final class BossItems {
         m.setEnchantmentGlintOverride(true);
         m.addItemFlags(ItemFlag.values());
         m.getPersistentDataContainer().set(relicKey, PersistentDataType.STRING, r.id());
+        SmpBoss.modelData(m, "relic_" + r.id());
         model(m, r.itemModel());
         it.setItemMeta(m);
         return it;

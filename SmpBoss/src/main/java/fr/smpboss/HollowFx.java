@@ -41,7 +41,7 @@ import java.util.concurrent.ThreadLocalRandom;
 final class HollowFx extends PackFx {
 
     private static final String SND_CHARGE = NS + ":hollow.charge", SND_BURST = NS + ":hollow.burst";
-    private static final int RED_AT = 58, ORBIT_END = 270, MERGE = 322, BOOM = 332, WHITE_END = 470, WHITE_START = 20;
+    private static final int RED_AT = 58, ORBIT_END = 270, MERGE = 322, BOOM = 332, WHITE_END = 432, WHITE_START = 20;
 
     HollowFx(SmpBoss plugin, Ultimates ult) {
         super(plugin, ult);
@@ -240,17 +240,16 @@ final class HollowFx extends PackFx {
         Location below = groundBelow(m, 40);
         Location gc = below == null ? m.clone() : below;
         // ---- le BOOM (visible pendant 1 s avant l'écran blanc, comme sur la vidéo)
-        flash(m, ult.cfg("hollow-purple.whiteout-radius", 120), WHITE, 0, 1, 5);
         pop(m, "glow_white", 34, 34, 34, 1, 2, 6, Display.Billboard.CENTER, null);
         ItemDisplay core = sprite(m, "orb_purple", 3.6f, 3.6f, 3.6f, Display.Billboard.CENTER, null);
         later(1, () -> tween(core, new Vector3f(), null, new Vector3f(11, 11, 11), 3));
         later(6, () -> tween(core, new Vector3f(), null, new Vector3f(7, 7, 7), 6));
-        later(WHITE_START + 2, () -> tween(core, new Vector3f(), null, new Vector3f(0.1f, 0.1f, 0.1f), 6));
-        kill(core, WHITE_START + 9);
+        later(70, () -> tween(core, new Vector3f(), null, new Vector3f(0.1f, 0.1f, 0.1f), 10));
+        kill(core, 81);
         ItemDisplay glow = sprite(m, "glow_purple", 8, 8, 8, Display.Billboard.CENTER, null);
         later(1, () -> tween(glow, new Vector3f(), null, new Vector3f(30, 30, 30), 4));
-        later(WHITE_START, () -> tween(glow, new Vector3f(), null, new Vector3f(0.1f, 0.1f, 0.1f), 8));
-        kill(glow, WHITE_START + 9);
+        later(66, () -> tween(glow, new Vector3f(), null, new Vector3f(0.1f, 0.1f, 0.1f), 12));
+        kill(glow, 79);
         flip(m, "pburst_", 16, 2, 14, 70, Display.Billboard.CENTER, 0);
         later(2, () -> pop(m, "ring_pink", 50, 50, 50, 6, 0, 5, Display.Billboard.CENTER, null));
         later(5, () -> pop(m, "ring_pink", 80, 80, 80, 8, 0, 6, Display.Billboard.CENTER, null));
@@ -298,6 +297,7 @@ final class HollowFx extends PackFx {
         w.spawnParticle(Particle.EXPLOSION_EMITTER, m, 6, 3, 2, 3, 0, null, true);
         w.spawnParticle(Particle.SONIC_BOOM, m, 30, 6, 4, 6, 0, null, true);
         w.playSound(m, Sound.ENTITY_GENERIC_EXPLODE, 6f, 0.5f);
+        sound(m, NS + ":weapons.impact", 300);
         w.playSound(m, Sound.ENTITY_WARDEN_SONIC_BOOM, 6f, 0.6f);
         w.playSound(m, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 6f, 0.6f);
         fallback(m, Particle.DUST, 400, 10, 8, 10, 0, new Particle.DustOptions(Color.fromRGB(190, 60, 255), 4f));
@@ -322,7 +322,24 @@ final class HollowFx extends PackFx {
             }
             // écran blanc avec éclats violets pour ceux qui sont près (environ 7 s)
             int len = WHITE_END - BOOM;
-            if (k >= WHITE_START && k < len && k % 2 == 0) whiteout(m, ult.cfg("hollow-purple.whiteout-radius", 120), (k - WHITE_START) / 2, k + 2 >= len);
+            // pas d'écran blanc : l'explosion reste visible et continue de pulser (ondes, lueur, éclats)
+            if (k >= WHITE_START && k < 80 && k % 10 == 0) {
+                float g = 40 + (k - WHITE_START) * 0.8f;
+                pop(m, "glow_purple", g, g, g, 3, 2, 8, Display.Billboard.CENTER, null);
+                pop(m, "shock_purple_up", g * 1.2f, g * 1.2f, g * 1.2f, 8, 0, 4, Display.Billboard.CENTER, null);
+                pop(gc.clone().add(0, 0.3, 0), "shock_purple", g * 1.8f, 1, g * 1.8f, 10, 0, 5, Display.Billboard.FIXED, null);
+                for (int i = 0; i < 4; i++) {
+                    double a = rnd.nextDouble(Math.PI * 2), el = rnd.nextDouble(-0.3, 0.9);
+                    Vector dir = new Vector(Math.cos(a) * Math.cos(el), Math.sin(el), Math.sin(a) * Math.cos(el));
+                    Quaternionf q = new Quaternionf().rotateZ((float) rnd.nextDouble(6.28));
+                    ItemDisplay ink = sprite(m.clone().add(dir.clone().multiply(6)), "ink_" + rnd.nextInt(4), 4, 4, 4, Display.Billboard.CENTER, q);
+                    Vector3f to = new Vector3f((float) dir.getX(), (float) dir.getY(), (float) dir.getZ()).mul((float) rnd.nextDouble(16, 30));
+                    later(1, () -> tween(ink, to, q, new Vector3f(14, 14, 14), 12));
+                    later(14, () -> tween(ink, new Vector3f(to).mul(1.2f), q, new Vector3f(0.05f, 0.05f, 0.05f), 6));
+                    kill(ink, 21);
+                }
+                m.getWorld().spawnParticle(Particle.EXPLOSION, m, 4, 6, 4, 6, 0, null, true);
+            }
             if (k == WHITE_START) ult.quake(m, R * 0.7, len - WHITE_START, 2.2f); // ça tremble encore pendant l'écran blanc
             // éclats violets et éclairs qui retombent autour
             if (k > 10 && k < len && k % 4 == 0) {

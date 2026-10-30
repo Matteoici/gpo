@@ -1,0 +1,20 @@
+{
+ "model": {
+  "type": "minecraft:select",
+  "property": "minecraft:custom_model_data",
+  "index": 0,
+  "cases": [
+   {
+    "when": "relic_lanterne_mineure",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/relic_lanterne_mineure"
+    }
+   }
+  ],
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:item/lantern"
+  }
+ }
+}

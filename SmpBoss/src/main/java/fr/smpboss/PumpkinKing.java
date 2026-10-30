@@ -173,7 +173,7 @@ public final class PumpkinKing {
             ItemDisplay d = w.spawn(l, ItemDisplay.class, e -> {
                 e.setPersistent(false);
                 e.getPersistentDataContainer().set(bossKey, PersistentDataType.BYTE, (byte) 3);
-                e.setItemStack(new ItemStack(Material.JACK_O_LANTERN));
+                e.setItemStack(bossPumpkin());
                 e.setBrightness(new Display.Brightness(15, 15));
                 e.setTeleportDuration(3);
                 e.setViewRange(2f);
@@ -221,7 +221,7 @@ public final class PumpkinKing {
             base(z, Attribute.KNOCKBACK_RESISTANCE, 1);
             base(z, Attribute.FOLLOW_RANGE, 48);
             EntityEquipment eq = z.getEquipment();
-            eq.setHelmet(new ItemStack(Material.JACK_O_LANTERN));
+            eq.setHelmet(bossPumpkin());
             eq.setChestplate(leather(Material.LEATHER_CHESTPLATE, 0x2f4a1e));
             eq.setLeggings(leather(Material.LEATHER_LEGGINGS, 0x3a2a14));
             eq.setBoots(leather(Material.LEATHER_BOOTS, 0x2a1a0c));
@@ -241,7 +241,7 @@ public final class PumpkinKing {
             orbit.add(w.spawn(at, ItemDisplay.class, d -> {
                 d.setPersistent(false);
                 d.getPersistentDataContainer().set(bossKey, PersistentDataType.BYTE, (byte) 2);
-                d.setItemStack(new ItemStack(Material.JACK_O_LANTERN));
+                d.setItemStack(bossPumpkin());
                 d.setTeleportDuration(2);
                 d.setInterpolationDuration(2);
                 d.setBrightness(new Display.Brightness(15, 15));
@@ -252,7 +252,7 @@ public final class PumpkinKing {
         crown = w.spawn(at, ItemDisplay.class, d -> {
             d.setPersistent(false);
             d.getPersistentDataContainer().set(bossKey, PersistentDataType.BYTE, (byte) 2);
-            d.setItemStack(new ItemStack(Material.GOLDEN_HELMET));
+            d.setItemStack(bossCrown());
             d.setTeleportDuration(2);
             d.setBrightness(new Display.Brightness(15, 15));
             d.setGlowing(true);
@@ -275,10 +275,33 @@ public final class PumpkinKing {
     }
 
     /** L'épée du Roi (brillante). */
+    /** Citrouille du Roi (tête, citrouilles en orbite, bombes) : modèle 3D du pack, sinon citrouille vanilla. */
+    private static ItemStack bossPumpkin() {
+        ItemStack it = new ItemStack(Material.JACK_O_LANTERN);
+        var m = it.getItemMeta();
+        SmpBoss.modelData(m, "boss_pumpkin");
+        it.setItemMeta(m);
+        return it;
+    }
+
+    private static ItemStack bossCrown() {
+        ItemStack it = new ItemStack(Material.GOLDEN_HELMET);
+        var m = it.getItemMeta();
+        SmpBoss.modelData(m, "boss_crown");
+        it.setItemMeta(m);
+        return it;
+    }
+
+    private WeaponFx fx() {
+        Weapons w = plugin.weapons();
+        return w == null ? null : w.ultimates.weaponFx;
+    }
+
     private static ItemStack blade() {
         ItemStack it = new ItemStack(Material.NETHERITE_SWORD);
         var m = it.getItemMeta();
         m.setEnchantmentGlintOverride(true);
+        SmpBoss.modelData(m, "boss_blade");
         it.setItemMeta(m);
         return it;
     }
@@ -609,7 +632,7 @@ public final class PumpkinKing {
             Location from = boss.getLocation().add(0, scale * 1.7, 0);
             ItemDisplay ball = boss.getWorld().spawn(from, ItemDisplay.class, d -> {
                 d.setPersistent(false);
-                d.setItemStack(new ItemStack(Material.JACK_O_LANTERN));
+                d.setItemStack(bossPumpkin());
                 d.setTeleportDuration(1);
                 d.setBrightness(new Display.Brightness(15, 15));
                 d.setTransformation(new Transformation(new Vector3f(), new Quaternionf(), new Vector3f(1.3f, 1.3f, 1.3f),
@@ -795,6 +818,11 @@ public final class PumpkinKing {
         at.getWorld().spawnParticle(Particle.EXPLOSION, at.clone().add(0, 0.5, 0), 3, 0.6, 0.3, 0.6, 0, null, true);
         at.getWorld().spawnParticle(Particle.FLAME, at.clone().add(0, 0.5, 0), 40, r * 0.4, 0.3, r * 0.4, 0.05, null, true);
         sound(at, "entity.generic.explode", 2f, 0.9f);
+        WeaponFx fx = fx();
+        if (fx != null) {
+            fx.boom(at.clone().add(0, 1, 0), phase == 3 ? WeaponFx.SOUL : WeaponFx.ORANGE_C, (float) Math.max(3, r * 1.6));
+            fx.puff(at.clone().add(0, 1.5, 0), Color.fromRGB(60, 40, 30), (float) Math.max(3, r * 1.4));
+        }
         for (Player p : nearby(at, r)) {
             hit(p, dmg * mult());
             if (fire) p.setFireTicks(40);
@@ -3061,6 +3089,13 @@ public final class PumpkinKing {
         sound(c, "entity.generic.explode", 3f, 0.6f);
         sound(c, "entity.warden.sonic_boom", 2f, 0.7f);
         shake(c, r * 2.5);
+        WeaponFx sfx = fx();
+        if (sfx != null) {
+            Color col = phase == 3 ? WeaponFx.SOUL : WeaponFx.ORANGE_C;
+            sfx.wave(c.clone().add(0, 0.2, 0), "w_shock_flat", col, 1, (float) (r * 2.2), 10, null, Display.Billboard.FIXED);
+            sfx.wave(c.clone().add(0, 0.3, 0), "w_ring_flat", col, 1, (float) (r * 1.6), 8, null, Display.Billboard.FIXED);
+            sfx.boom(c.clone().add(0, 1.5, 0), col, (float) Math.max(4, r));
+        }
         repeat(1, 10, i -> {
             double rr = r * (i + 1) / 10.0;
             int pts = (int) Math.max(24, rr * 8);
@@ -3084,6 +3119,8 @@ public final class PumpkinKing {
     /** Tremblement de caméra pour les joueurs proches. */
     private void shake(Location c, double r) {
         for (Player p : nearby(c, r)) p.playHurtAnimation((float) ThreadLocalRandom.current().nextDouble(360));
+        Weapons w = plugin.weapons();
+        if (w != null) w.ultimates.quake(c, r, 12, 3.5f);
     }
 
     /** Cercle de flammes au sol qui marque le bord de l'arène. */
@@ -3154,7 +3191,7 @@ public final class PumpkinKing {
             ItemDisplay d = c.getWorld().spawn(c, ItemDisplay.class, e -> {
                 e.setPersistent(false);
                 e.getPersistentDataContainer().set(bossKey, PersistentDataType.BYTE, (byte) 4);
-                e.setItemStack(new ItemStack(r.nextInt(3) == 0 ? Material.JACK_O_LANTERN : Material.PUMPKIN));
+                e.setItemStack(r.nextInt(3) == 0 ? bossPumpkin() : new ItemStack(Material.PUMPKIN));
                 e.setBrightness(new Display.Brightness(15, 15));
                 e.setTeleportDuration(1);
             });
@@ -3339,6 +3376,12 @@ public final class PumpkinKing {
 
     /** Cercle d'avertissement au sol. */
     private void ring(Location c, double r, Color color, int ticks) {
+        WeaponFx fx = fx();
+        if (fx != null) {
+            // zone d'impact dessinée au sol (cercle magique + anneau) pendant toute l'attente
+            fx.tpop(c.clone().add(0, 0.12, 0), "w_ring_flat", color, (float) (r * 2.25), 1, (float) (r * 2.25), 3, Math.max(1, ticks - 6), 3, Display.Billboard.FIXED, null);
+            fx.tpop(c.clone().add(0, 0.1, 0), "w_rune_flat", color, (float) (r * 1.9), 1, (float) (r * 1.9), 4, Math.max(1, ticks - 7), 3, Display.Billboard.FIXED, null);
+        }
         Particle.DustOptions dust = new Particle.DustOptions(color, 1.5f);
         int pts = (int) Math.max(18, r * 10);
         repeat(3, Math.max(1, ticks / 3), i -> {
@@ -3381,8 +3424,25 @@ public final class PumpkinKing {
         }, ticks));
     }
 
+    private static final java.util.Map<String, String> CUSTOM = java.util.Map.ofEntries(
+            java.util.Map.entry("entity.generic.explode", "boss.boom"), java.util.Map.entry("entity.dragon_fireball.explode", "boss.boom"),
+            java.util.Map.entry("entity.wither.spawn", "boss.roar"), java.util.Map.entry("entity.ravager.roar", "boss.roar"),
+            java.util.Map.entry("entity.ender_dragon.growl", "boss.roar"), java.util.Map.entry("entity.wither.death", "boss.roar"),
+            java.util.Map.entry("entity.player.attack.sweep", "boss.whoosh"), java.util.Map.entry("entity.ender_dragon.flap", "boss.whoosh"),
+            java.util.Map.entry("entity.breeze.wind_burst", "boss.whoosh"), java.util.Map.entry("entity.evoker.prepare_summon", "boss.magic"),
+            java.util.Map.entry("entity.evoker.prepare_attack", "boss.magic"), java.util.Map.entry("block.end_portal.spawn", "boss.magic"),
+            java.util.Map.entry("entity.elder_guardian.curse", "boss.magic"), java.util.Map.entry("block.respawn_anchor.charge", "boss.magic"),
+            java.util.Map.entry("entity.warden.sonic_boom", "weapons.impact"), java.util.Map.entry("entity.lightning_bolt.thunder", "weapons.thunder"));
+
     private static void sound(Location l, String key, float volume, float pitch) {
         l.getWorld().playSound(Sound.sound(Key.key("minecraft", key), Sound.Source.HOSTILE, volume, pitch), l.getX(), l.getY(), l.getZ());
+        String custom = CUSTOM.get(key);
+        if (custom == null) return;
+        double r = 16 * Math.max(1, volume);
+        for (Player o : l.getWorld().getPlayers()) {
+            if (!PackStatus.has(o) || o.getLocation().distanceSquared(l) > r * r) continue;
+            o.playSound(l, "limitless:" + custom, org.bukkit.SoundCategory.HOSTILE, Math.min(volume, 3f), Math.max(0.7f, Math.min(1.3f, pitch)));
+        }
     }
 
     private void titleAll(String title, String sub) {

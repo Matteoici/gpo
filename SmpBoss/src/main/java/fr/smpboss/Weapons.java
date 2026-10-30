@@ -233,6 +233,10 @@ final class Weapons implements Listener {
         return v == Math.rint(v) ? String.valueOf((long) v) : String.valueOf(Math.round(v * 10) / 10.0);
     }
 
+    WeaponFx fx() {
+        return ultimates.weaponFx;
+    }
+
     String id(ItemStack it) {
         if (it == null || !it.hasItemMeta()) return null;
         return it.getItemMeta().getPersistentDataContainer().get(key, PersistentDataType.STRING);
@@ -318,6 +322,7 @@ final class Weapons implements Listener {
         w.playSound(eye, org.bukkit.Sound.ENTITY_WARDEN_SONIC_CHARGE, 1.2f, 1.8f);
         w.playSound(eye, org.bukkit.Sound.ENTITY_WARDEN_SONIC_BOOM, 3f, 1.2f);
         w.playSound(eye, org.bukkit.Sound.BLOCK_BEACON_POWER_SELECT, 1.2f, 2f);
+        fx().sonic(eye, dir, len);
         Set<UUID> hit = new HashSet<>();
         Particle.DustOptions violet = new Particle.DustOptions(Color.fromRGB(170, 90, 255), 1.5f);
         Particle.DustOptions pale = new Particle.DustOptions(Color.fromRGB(235, 215, 255), 1.0f);
@@ -406,6 +411,7 @@ final class Weapons implements Listener {
         w.playSound(start, org.bukkit.Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.6f, 0.5f);
         w.playSound(start, org.bukkit.Sound.ITEM_TRIDENT_RIPTIDE_3, 1f, 1.2f);
         w.playSound(start, org.bukkit.Sound.ENTITY_BLAZE_SHOOT, 0.6f, 0.6f);
+        fx().slash(start, fwd, axis, steps);
         int[] i = {0};
         org.bukkit.scheduler.BukkitTask[] task = new org.bukkit.scheduler.BukkitTask[1];
         task[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
@@ -458,6 +464,7 @@ final class Weapons implements Listener {
         w.spawnParticle(Particle.CLOUD, le.getLocation(), 10, 0.3, 0.1, 0.3, 0.05, null, true);
         w.playSound(le.getLocation(), org.bukkit.Sound.ENTITY_BREEZE_JUMP, 1f, 1.0f);
         w.playSound(le.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_ATTACK_CRIT, 1f, 0.7f);
+        fx().slashHit(le.getLocation().add(0, 1, 0));
     }
 
     // ================================================================= Brise-Terre (hache) : FAILLE + SÉISME
@@ -497,6 +504,7 @@ final class Weapons implements Listener {
         ThreadLocalRandom rnd = ThreadLocalRandom.current();
         w.playSound(origin, org.bukkit.Sound.ITEM_MACE_SMASH_GROUND_HEAVY, 1.6f, 0.6f);
         w.playSound(origin, org.bukkit.Sound.ENTITY_RAVAGER_ROAR, 0.8f, 0.6f);
+        fx().rift(origin, fwd, len);
         int[] i = {0};
         org.bukkit.scheduler.BukkitTask[] task = new org.bukkit.scheduler.BukkitTask[1];
         task[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
@@ -590,6 +598,7 @@ final class Weapons implements Listener {
             Set<UUID> hit = new HashSet<>();
             World w = line.get(0).getWorld();
             w.playSound(line.get(line.size() / 2), org.bukkit.Sound.ENTITY_GENERIC_EXPLODE, 1.4f, 0.7f);
+            fx().aftershock(line.get(line.size() / 2));
             for (int n = 0; n < line.size(); n += 2) {
                 Location g = line.get(n);
                 w.spawnParticle(Particle.EXPLOSION, g.clone().add(0, 0.5, 0), 1, 0, 0, 0, 0, null, true);
@@ -697,6 +706,7 @@ final class Weapons implements Listener {
         PumpkinKing k = plugin.king();
         w.playSound(eye, org.bukkit.Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1f, 0.6f);
         w.playSound(eye, org.bukkit.Sound.PARTICLE_SOUL_ESCAPE, 2f, 0.6f);
+        fx().soulLance(eye, dir, len);
         Particle.DustOptions teal = new Particle.DustOptions(Color.fromRGB(70, 235, 220), 1.3f);
         Set<UUID> hit = new HashSet<>();
         int pierced = 0;
@@ -717,6 +727,7 @@ final class Weapons implements Listener {
                     le.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, (int) (cfg("arbalete-spectrale.mark-seconds", 6) * 20), 0, false, false, true));
                     le.addPotionEffect(new PotionEffect(PotionEffectType.WITHER, 80, 1, false, true, true));
                     markFx(le);
+                    fx().markHit(le.getLocation().add(0, 1, 0));
                     w.playSound(le.getLocation(), org.bukkit.Sound.ENTITY_VEX_CHARGE, 1f, 0.7f);
                 }
             }
@@ -750,6 +761,7 @@ final class Weapons implements Listener {
         PumpkinKing k = plugin.king();
         w.playSound(c, org.bukkit.Sound.ENTITY_WARDEN_SONIC_BOOM, 1f, 1.6f);
         w.playSound(c, org.bukkit.Sound.ENTITY_WITHER_BREAK_BLOCK, 0.6f, 1.4f);
+        fx().detonate(c);
         w.spawnParticle(Particle.SOUL, c, 60, 0.6, 0.8, 0.6, 0.12, null, true);
         w.spawnParticle(Particle.SCULK_SOUL, c, 40, 0.5, 0.6, 0.5, 0.12, null, true);
         w.spawnParticle(Particle.SOUL_FIRE_FLAME, c, 80, 0.2, 0.2, 0.2, 0.25, null, true);
@@ -792,6 +804,7 @@ final class Weapons implements Listener {
         PumpkinKing k = plugin.king();
         w.playSound(p.getLocation(), org.bukkit.Sound.ENTITY_EVOKER_CAST_SPELL, 1f, 0.6f);
         w.playSound(center, org.bukkit.Sound.ENTITY_ALLAY_ITEM_THROWN, 2f, 0.5f);
+        fx().soulRain(center, r, 30);
         int[] t = {0};
         org.bukkit.scheduler.BukkitTask[] task = new org.bukkit.scheduler.BukkitTask[1];
         task[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
@@ -866,6 +879,7 @@ final class Weapons implements Listener {
         w.spawnParticle(Particle.SWEEP_ATTACK, p.getLocation().add(f.clone().multiply(2)).add(0, 1.1, 0), 3, 0.8, 0.2, 0.8, 0);
         w.playSound(p.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.2f, 0.8f);
         w.playSound(p.getLocation(), org.bukkit.Sound.ITEM_FIRECHARGE_USE, 1f, 1.2f);
+        fx().pumpkinSlash(p.getLocation(), f, reach);
         for (Entity en : w.getNearbyEntities(p.getLocation(), reach, 2.5, reach)) {
             if (!hittable(p, en)) continue;
             Vector to = en.getLocation().toVector().subtract(p.getLocation().toVector()).setY(0);
@@ -890,6 +904,7 @@ final class Weapons implements Listener {
         cooldown.put(k, now + (long) (cfg("arc-feux-follets.cooldown-seconds", 6) * 1000));
         double ratio = cfg("arc-feux-follets.damage", 70) / 100.0;
         Vector v = main.getVelocity();
+        List<Entity> wisps = new ArrayList<>(List.of(main));
         for (int side = -1; side <= 1; side += 2) {
             Vector dir = v.clone().rotateAroundY(Math.toRadians(8 * side));
             org.bukkit.entity.Arrow a = p.getWorld().spawnArrow(main.getLocation(), dir, (float) v.length(), 0f);
@@ -899,9 +914,11 @@ final class Weapons implements Listener {
             a.setCritical(main.isCritical());
             a.setGlowing(true);
             a.setFireTicks(main.getFireTicks());
+            wisps.add(a);
         }
         p.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, p.getEyeLocation().add(p.getLocation().getDirection()), 12, 0.3, 0.3, 0.3, 0.02);
         p.getWorld().playSound(p.getLocation(), org.bukkit.Sound.PARTICLE_SOUL_ESCAPE, 1.5f, 1.2f);
+        fx().wispShot(p.getEyeLocation(), wisps);
     }
 
     /** Hache Maudite : clic droit = onde de choc autour de toi (4 blocs) qui projette en l'air. */
@@ -926,6 +943,7 @@ final class Weapons implements Listener {
         w.spawnParticle(Particle.SOUL, c.clone().add(0, 0.5, 0), 20, r * 0.4, 0.2, r * 0.4, 0.02);
         w.playSound(c, org.bukkit.Sound.ENTITY_GENERIC_EXPLODE, 0.8f, 1.4f);
         w.playSound(c, org.bukkit.Sound.ITEM_MACE_SMASH_GROUND, 1.2f, 0.8f);
+        fx().cursedSlam(c, r);
         PumpkinKing k = plugin.king();
         for (Entity en : w.getNearbyEntities(c, r, 2.5, r)) {
             if (!hittable(p, en) || en.getLocation().distanceSquared(c) > r * r) continue;
@@ -967,6 +985,7 @@ final class Weapons implements Listener {
         noFall.put(p.getUniqueId(), System.currentTimeMillis() + 3000);
         w.playSound(p.getLocation(), org.bukkit.Sound.ENTITY_BREEZE_WIND_BURST, 1.4f, 1.3f);
         w.playSound(p.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_HURT_FREEZE, 1.2f, 0.7f);
+        fx().frostDash(p, 10);
         Particle.DustOptions ice = new Particle.DustOptions(Color.fromRGB(170, 230, 255), 1.4f), white = new Particle.DustOptions(Color.WHITE, 1.0f);
         org.bukkit.block.data.BlockData packed = Material.PACKED_ICE.createBlockData();
         PumpkinKing k = plugin.king();
@@ -1002,6 +1021,7 @@ final class Weapons implements Listener {
                 w.spawnParticle(Particle.BLOCK, c, 30, 0.4, 0.6, 0.4, 0, packed);
                 w.spawnParticle(Particle.SNOWFLAKE, c, 20, 0.4, 0.6, 0.4, 0.05);
                 w.playSound(c, org.bukkit.Sound.BLOCK_GLASS_BREAK, 1.2f, 1.4f);
+                fx().frostHit(c);
             }
         }, 1L, 1L);
     }
@@ -1026,6 +1046,7 @@ final class Weapons implements Listener {
         a.getPersistentDataContainer().set(stormKey, PersistentDataType.BYTE, (byte) 1);
         a.setPickupStatus(org.bukkit.entity.AbstractArrow.PickupStatus.CREATIVE_ONLY);
         p.getWorld().playSound(p.getLocation(), org.bukkit.Sound.ITEM_TRIDENT_THUNDER, 0.5f, 1.8f);
+        fx().stormArrow(a);
         Particle.DustOptions sky = new Particle.DustOptions(Color.fromRGB(120, 200, 255), 1.1f);
         int[] t = {0};
         org.bukkit.scheduler.BukkitTask[] task = new org.bukkit.scheduler.BukkitTask[1];
@@ -1050,6 +1071,7 @@ final class Weapons implements Listener {
         LivingEntity first = e.getHitEntity() instanceof LivingEntity le && !le.equals(p) ? le : nearestFoe(p, at, 4, Set.of());
         Bukkit.getScheduler().runTask(plugin, () -> {
             at.getWorld().strikeLightningEffect(first != null ? first.getLocation() : at);
+            fx().skyBolt(first != null ? first.getLocation() : at);
             if (first != null) storm(p, first, first.getLocation().add(0, 1, 0), new HashSet<>(), 0, cfg("arc-tempete.damage", 10));
         });
         if (e.getHitEntity() == null) Bukkit.getScheduler().runTaskLater(plugin, a::remove, 2L);
@@ -1094,6 +1116,7 @@ final class Weapons implements Listener {
         w.spawnParticle(Particle.ELECTRIC_SPARK, to, 25, 0.4, 0.6, 0.4, 0.2);
         w.playSound(to, org.bukkit.Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 1.2f, 1.4f);
         if (jump > 0) w.playSound(to, org.bukkit.Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 0.35f, 1.8f);
+        fx().chain(from, to);
         cur.setNoDamageTicks(0);
         cur.damage(dmg, p);
         cur.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 40, 0, false, false, true));

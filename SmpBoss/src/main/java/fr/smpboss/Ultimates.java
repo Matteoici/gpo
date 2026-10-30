@@ -80,11 +80,13 @@ final class Ultimates {
 
     final FugaFx fugaFx;
     final HollowFx hollowFx;
+    final WeaponFx weaponFx;
 
     Ultimates(SmpBoss plugin) {
         this.plugin = plugin;
         this.fugaFx = new FugaFx(plugin, this);
         this.hollowFx = new HollowFx(plugin, this);
+        this.weaponFx = new WeaponFx(plugin, this);
         this.jumpKey = new NamespacedKey(plugin, "ult_freeze_jump");
         this.gravKey = new NamespacedKey(plugin, "ult_freeze_gravity");
     }
@@ -369,6 +371,7 @@ final class Ultimates {
     void shutdown() {
         fugaFx.removeAll();
         hollowFx.removeAll();
+        weaponFx.removeAll();
         for (UUID id : new ArrayList<>(rooted.keySet())) {
             Player p = Bukkit.getPlayer(id);
             if (p != null) unroot(p, false);

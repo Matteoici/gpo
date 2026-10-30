@@ -207,6 +207,7 @@ final class FugaFx extends PackFx {
         int burn = (int) (ult.cfg("fuga.burn-seconds", 10) * 20);
         ThreadLocalRandom rnd = ThreadLocalRandom.current();
         sound(c, SND_IMPACT, 300);
+        sound(c, NS + ":weapons.impact", 300);
         List<LivingEntity> list = ult.targets(p, c, R);
         Map<UUID, Double> dist = new HashMap<>();
         for (LivingEntity le : list) dist.put(le.getUniqueId(), le.getLocation().distance(c));
@@ -272,6 +273,7 @@ final class FugaFx extends PackFx {
             // ---- flash blanc : le jour revient, la colonne jaillit
             if (k == c0) {
                 flash(gc, 150, WHITE, 1, 2, 12);
+                sound(gc, NS + ":boss.boom", 260);
                 dayAgain(dark);
                 pop(gc.clone().add(0, 10, 0), "glow_white", 60, 60, 60, 1, 2, 10, Display.Billboard.CENTER, null);
                 pop(gc.clone().add(0, 0.3, 0), "shock", 40, 1, 40, 8, 0, 5, Display.Billboard.FIXED, null);

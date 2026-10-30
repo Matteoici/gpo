@@ -208,6 +208,7 @@ public final class RelicMenu implements InventoryHolder {
         m.lore(lore);
         if (equipped) m.setEnchantmentGlintOverride(true);
         m.addItemFlags(ItemFlag.values());
+        SmpBoss.modelData(m, "relic_" + r.id()); // texture du pack (sans le pack : l'icône vanilla)
         if (r.itemModel() != null && !r.itemModel().isBlank()) {
             var k = org.bukkit.NamespacedKey.fromString(r.itemModel());
             if (k != null) m.setItemModel(k);
