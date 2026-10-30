@@ -1,11 +1,12 @@
 # =====================================================================
 #  🎃 Quêtes d'HALLOWEEN : données EN PLUS des quêtes normales pendant l'événement
 #  (combien par jour / par semaine et jusqu'à quand : quests.events.halloween dans config.yml)
-#  Même format que quests.yml. BOSS_DAMAGE / BOSS_WIN = combat contre le Roi Citrouille (SmpBoss).
+#  Même format que quests.yml. BOSS_DAMAGE / BOSS_WIN = combat contre un boss de SmpBoss :
+#  targets [ROI] = Roi Citrouille, [REINE] = Reine Araignée, [] = les deux.
 #  Après une modification : /smpevents reload
 # =====================================================================
 # (ne pas toucher : sert à ajouter les nouvelles quêtes aux fichiers déjà installés)
-version: 2
+version: 3
 
 daily:
   citrouilles:
@@ -74,7 +75,7 @@ daily:
     name: "<#ff7a00>🕯 Allumer l'ambiance : poser <amount> bougies"
   roi-degats:
     type: BOSS_DAMAGE
-    targets: []
+    targets: [ROI]
     amount: 500
     reward: 40000
     icon: GOLDEN_SWORD
@@ -123,10 +124,50 @@ daily:
     icon: SLIME_BALL
     name: "<#ff7a00>🟢 Dissoudre <amount> slimes"
 
+  reine-degats:
+    type: BOSS_DAMAGE
+    targets: [REINE]
+    amount: 500
+    reward: 40000
+    icon: COBWEB
+    commands: ["caisse cle %player% rare 1"]
+    name: "<#5aa0ff>🕷 Infliger <amount> dégâts à la Reine Araignée <gray>(+ clé Rare)"
+  toiles:
+    type: MINE
+    targets: [COBWEB]
+    amount: 24
+    reward: 15000
+    icon: COBWEB
+    name: "<#5aa0ff>🕸 Arracher <amount> toiles d'araignée"
+  nid:
+    type: KILL_MOB
+    targets: [SPIDER, CAVE_SPIDER]
+    amount: 40
+    reward: 25000
+    icon: FERMENTED_SPIDER_EYE
+    commands: ["boss give %player% oeil 2"]
+    name: "<#5aa0ff>🕷 Nettoyer un nid : <amount> araignées <gray>(+ 2 Yeux maudits)"
+
 weekly:
+  reine:
+    type: BOSS_WIN
+    targets: [REINE]
+    amount: 1
+    reward: 250000
+    icon: SPIDER_EYE
+    commands: ["boss give %player% oeil 8", "pets donner %player% legendaire 1"]
+    name: "<gradient:#3a6bff:#e1ebff><b>🕷 Vaincre la Reine Araignée</b></gradient> <gray>(+ Œuf Légendaire)"
+  tisseuse:
+    type: BOSS_DAMAGE
+    targets: [REINE]
+    amount: 3000
+    reward: 150000
+    icon: STRING
+    commands: ["pets donner %player% epique 1"]
+    name: "<#5aa0ff>🕸 Infliger <amount> dégâts à la Reine <gray>(+ Œuf Épique)"
   roi:
     type: BOSS_WIN
-    targets: []
+    targets: [ROI]
     amount: 1
     reward: 250000
     icon: JACK_O_LANTERN

@@ -29,6 +29,7 @@ counters:
   koth: "KOTH gagnés"
   bounty: "Primes encaissées"
   boss: "Rois Citrouille vaincus"
+  reine: "Reines Araignées vaincues"
   quest-weekly: "Quêtes de la semaine"
   quest: "Quêtes du jour"
   event: "Événements gagnés"
@@ -43,6 +44,8 @@ titles:
   bounty_50: {display: "<gradient:#8e0e00:#ff4b2b><b>☠ Faucheur", description: "Encaisser 50 primes", requires: {bounty: 50}}
   boss_1:   {display: "<#ff7a00>🎃 Briseur de Citrouille", description: "Vaincre le Roi Citrouille", requires: {boss: 1}}
   boss_10:  {display: "<gradient:#ff7a00:#7a1fa2><b>🎃 Fléau du Roi", description: "Vaincre 10 fois le Roi Citrouille", requires: {boss: 10}}
+  reine_1:  {display: "<#5aa0ff>🕷 Briseur de Toiles", description: "Vaincre la Reine Araignée", requires: {reine: 1}}
+  reine_10: {display: "<gradient:#3a6bff:#e1ebff><b>🕷 Fléau de la Reine", description: "Vaincre 10 fois la Reine Araignée", requires: {reine: 10}}
   quest_10: {display: "<green>✔ Travailleur", description: "Finir 10 quêtes de la semaine", requires: {quest-weekly: 10}}
   quest_100: {display: "<gradient:#56ab2f:#a8e063><b>✔ Infatigable", description: "Finir 100 quêtes du jour", requires: {quest: 100}}
   event_1:  {display: "<aqua>★ Champion", description: "Gagner un événement du staff", requires: {event: 1}}

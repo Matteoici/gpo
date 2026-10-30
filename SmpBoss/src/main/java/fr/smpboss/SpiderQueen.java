@@ -228,34 +228,33 @@ public final class SpiderQueen implements Boss {
             Vector up = new Vector(0, 1, 0);
             Quaternionf facing = new Quaternionf().rotateY((float) -rad);
             double crouch = Math.min(0, pose) * 0.45 * S, rear = Math.max(0, pose);
-            Location B = base.clone().add(0, 0.85 * S + crouch + Math.sin(clock * 2) * 0.03 * S, 0);
+            Location B = base.clone().add(0, 0.8 * S + crouch + Math.sin(clock * 2) * 0.03 * S, 0);
             // céphalothorax (penché vers le haut quand elle se cabre), abdomen qui respire
             Quaternionf headRot = new Quaternionf(facing).rotateX((float) (-0.5 * rear));
-            set(head, B.clone().add(f.clone().multiply(0.38 * S)).add(0, rear * 0.35 * S, 0), headRot,
-                    new Vector3f((float) (0.95 * S), (float) (0.7 * S), (float) (1.0 * S)));
+            set(head, B.clone().add(f.clone().multiply(0.36 * S)).add(0, rear * 0.35 * S, 0), headRot,
+                    new Vector3f((float) (0.85 * S), (float) (0.62 * S), (float) (0.9 * S)));
             double breathe = 1 + Math.sin(tick * 0.12) * 0.03;
-            set(abdomen, B.clone().add(f.clone().multiply(-0.95 * S)).add(0, 0.18 * S, 0), new Quaternionf(facing).rotateX(0.15f),
-                    new Vector3f((float) (1.35 * S * breathe), (float) (1.1 * S * breathe), (float) (1.6 * S)));
+            set(abdomen, B.clone().add(f.clone().multiply(-0.9 * S)).add(0, 0.2 * S, 0), new Quaternionf(facing).rotateX(0.15f),
+                    new Vector3f((float) (1.2 * S * breathe), (float) (1.0 * S * breathe), (float) (1.45 * S)));
             // yeux (sans pack : deux cubes lumineux devant)
             for (int s = 0; s < 2; s++) {
-                Location e = B.clone().add(f.clone().multiply(0.9 * S)).add(r.clone().multiply((s == 0 ? 0.18 : -0.18) * S)).add(0, 0.15 * S + rear * 0.45 * S, 0);
+                Location e = B.clone().add(f.clone().multiply(0.8 * S)).add(r.clone().multiply((s == 0 ? 0.18 : -0.18) * S)).add(0, 0.15 * S + rear * 0.45 * S, 0);
                 set(eyes[s], e, facing, new Vector3f((float) (0.16 * S), (float) (0.16 * S), (float) (0.08 * S)));
             }
             // pattes : 4 de chaque côté, marche en alternance
             int i = 0;
             for (int side = -1; side <= 1; side += 2) {
                 for (int j = 0; j < 4; j++) {
-                    Location hip = B.clone().add(f.clone().multiply((0.55 - 0.32 * j) * 0.6 * S)).add(r.clone().multiply(side * 0.34 * S));
+                    Location hip = B.clone().add(f.clone().multiply((0.5 - 0.3 * j) * 0.6 * S)).add(r.clone().multiply(side * 0.32 * S));
                     double ph = clock + ((j % 2 == 0) ? 0 : Math.PI) + (side > 0 ? 0 : Math.PI);
-                    double stride = moving ? 0.42 * S : 0.0, lift = moving ? Math.max(0, Math.cos(ph)) * 0.35 * S : 0;
+                    double stride = moving ? 0.45 * S : 0.0, lift = moving ? Math.max(0, Math.cos(ph)) * 0.35 * S : 0;
                     double twitch = moving ? 0 : Math.sin(tick * 0.2 + j * 1.7 + side) * 0.04 * S;
-                    Location foot = base.clone().add(f.clone().multiply((0.95 - 0.62 * j) * S + Math.sin(ph) * stride + twitch))
-                            .add(r.clone().multiply(side * (1.5 + (j == 0 || j == 3 ? -0.1 : 0.05)) * S)).add(0, lift, 0);
+                    Location foot = base.clone().add(f.clone().multiply((1.35 - 0.9 * j) * S + Math.sin(ph) * stride + twitch))
+                            .add(r.clone().multiply(side * (1.95 + (j == 0 || j == 3 ? -0.15 : 0.1)) * S)).add(0, lift, 0);
                     // pattes avant levées quand elle se cabre
-                    if (j == 0 && rear > 0.05) foot = foot.add(f.clone().multiply(0.3 * S * rear)).add(0, 1.3 * S * rear, 0);
+                    if (j == 0 && rear > 0.05) foot = foot.add(f.clone().multiply(0.3 * S * rear)).add(0, 1.4 * S * rear, 0);
                     if (j == 1 && rear > 0.05) foot = foot.add(0, 0.6 * S * rear, 0);
-                    Location knee = hip.clone().add(foot).multiply(0.5).add(up.clone().multiply(0.78 * S)).add(r.clone().multiply(side * 0.28 * S));
-                    knee.setWorld(base.getWorld());
+                    Location knee = hip.clone().add(foot.toVector().subtract(hip.toVector()).multiply(0.4)).add(up.clone().multiply(0.95 * S));
                     segment(legs[i++], hip, knee, 0.17 * S);
                     segment(legs[i++], knee, foot, 0.13 * S);
                 }
@@ -923,6 +922,7 @@ public final class SpiderQueen implements Boss {
         Location from = boss.getLocation();
         Location sky = from.clone().add(0, 14, 0);
         boss.setAI(false);
+        boss.setGravity(false);
         airborne = true;
         invulnerable = 70;
         csound(from, "spider.web", 2.5f, 0.6f, "entity.spider.ambient");
@@ -944,7 +944,10 @@ public final class SpiderQueen implements Boss {
         later(54, () -> {
             if (boss == null || !boss.isValid() || dest[0] == null) {
                 airborne = false;
-                if (boss != null && boss.isValid()) boss.setAI(true);
+                if (boss != null && boss.isValid()) {
+                    boss.setGravity(true);
+                    boss.setAI(true);
+                }
                 return;
             }
             Location start = sky.clone();
@@ -959,6 +962,7 @@ public final class SpiderQueen implements Boss {
                 airborne = false;
                 invulnerable = 0;
                 if (boss == null || !boss.isValid()) return;
+                boss.setGravity(true);
                 boss.setAI(true);
                 shockwave(dest[0], r, 1.6, cfg("damage.drop", 14));
                 placeWebs(dest[0], 2, 80);
@@ -1018,6 +1022,8 @@ public final class SpiderQueen implements Boss {
         shielded = true;
         airborne = true;
         boss.setAI(false);
+        boss.setGravity(false);
+        boss.setVelocity(new Vector());
         titleAll("title-web", "subtitle-web");
         Location center = altar.clone().add(0.5, 1, 0.5);
         Location top = center.clone().add(0, 11, 0);
@@ -1226,6 +1232,7 @@ public final class SpiderQueen implements Boss {
         }, () -> {
             airborne = false;
             if (boss == null || !boss.isValid()) return;
+            boss.setGravity(true);
             shockwave(to, 8, 1.2, cfg("damage.phase-shockwave", 4));
             then.run();
         });
@@ -1241,6 +1248,7 @@ public final class SpiderQueen implements Boss {
         eclipseDone = true;
         airborne = true;
         boss.setAI(false);
+        boss.setGravity(false);
         invulnerable = 400;
         titleAll("title-eclipse", "subtitle-eclipse");
         Location center = ground(altar.clone().add(0.5, 1, 0.5));
@@ -1325,7 +1333,10 @@ public final class SpiderQueen implements Boss {
                 for (Player p : nearby(center, rr)) p.addPotionEffect(new PotionEffect(PotionEffectType.POISON, 100, 1, false, true, true));
                 airborne = false;
                 invulnerable = 0;
-                if (boss != null && boss.isValid()) boss.setAI(true);
+                if (boss != null && boss.isValid()) {
+                    boss.setGravity(true);
+                    boss.setAI(true);
+                }
                 nextAttack = 30;
             });
         });

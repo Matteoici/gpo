@@ -65,6 +65,17 @@ public final class SmpTitles extends JavaPlugin implements Listener, TabExecutor
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        // titres de la Reine Araignée (ajoutés aux configs déjà installées)
+        if (!getConfig().isSet("titles.reine_1")) {
+            getConfig().set("counters.reine", "Reines Araignées vaincues");
+            getConfig().set("titles.reine_1.display", "<#5aa0ff>🕷 Briseur de Toiles");
+            getConfig().set("titles.reine_1.description", "Vaincre la Reine Araignée");
+            getConfig().set("titles.reine_1.requires.reine", 1);
+            getConfig().set("titles.reine_10.display", "<gradient:#3a6bff:#e1ebff><b>🕷 Fléau de la Reine");
+            getConfig().set("titles.reine_10.description", "Vaincre 10 fois la Reine Araignée");
+            getConfig().set("titles.reine_10.requires.reine", 10);
+            saveConfig();
+        }
         file = new File(getDataFolder(), "players.yml");
         loadTitles();
         loadData();
