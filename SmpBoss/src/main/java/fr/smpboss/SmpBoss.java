@@ -1040,7 +1040,7 @@ public final class SmpBoss extends JavaPlugin {
 
     /** L'arène du boss en cours (sinon celle du Roi). */
     public Arena fightArena() {
-        return king != null && king.active() ? king.arena() : arena;
+        return king != null && king.active() ? king.bossArena() : arena;
     }
 
     /** L'arène qui contient ce point (Roi ou Reine), ou null. */

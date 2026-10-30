@@ -143,5 +143,33 @@
     "name": "limitless:weapons/impact"
    }
   ]
+ },
+ "spider.screech": {
+  "sounds": [
+   {
+    "name": "limitless:spider/screech"
+   }
+  ]
+ },
+ "spider.hiss": {
+  "sounds": [
+   {
+    "name": "limitless:spider/hiss"
+   }
+  ]
+ },
+ "spider.web": {
+  "sounds": [
+   {
+    "name": "limitless:spider/web"
+   }
+  ]
+ },
+ "spider.skitter": {
+  "sounds": [
+   {
+    "name": "limitless:spider/skitter"
+   }
+  ]
  }
 }

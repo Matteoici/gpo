@@ -17,6 +17,13 @@
      "type": "minecraft:model",
      "model": "limitless:item/items/boss_blade"
     }
+   },
+   {
+    "when": "croc_reine",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/croc_reine"
+    }
    }
   ],
   "fallback": {

@@ -1,0 +1,20 @@
+{
+ "model": {
+  "type": "minecraft:select",
+  "property": "minecraft:custom_model_data",
+  "index": 0,
+  "cases": [
+   {
+    "when": "relic_pattes_reine",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/relic_pattes_reine"
+    }
+   }
+  ],
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:item/black_candle"
+  }
+ }
+}

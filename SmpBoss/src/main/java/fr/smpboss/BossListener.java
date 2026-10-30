@@ -139,7 +139,7 @@ final class BossListener implements Listener {
             return;
         }
         // anti-cheese : on ne frappe le Roi que depuis la piste (pas du pont du portail, du muret, de dehors...)
-        Arena ar = k.arena();
+        Arena ar = k.bossArena();
         if (ar != null && ar.defined() && plugin.getConfig().getBoolean("arena.protection.floor-only-damage", true)
                 && ar.contains(e.getEntity().getLocation()) && !ar.onFightFloor(by.getLocation())) {
             e.setCancelled(true);

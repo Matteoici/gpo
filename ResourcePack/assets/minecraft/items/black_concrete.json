@@ -1,0 +1,41 @@
+{
+ "model": {
+  "type": "minecraft:select",
+  "property": "minecraft:custom_model_data",
+  "index": 0,
+  "cases": [
+   {
+    "when": "spider_head",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/spider_head"
+    }
+   },
+   {
+    "when": "spider_abdomen",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/spider_abdomen"
+    }
+   },
+   {
+    "when": "spider_leg_upper",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/spider_leg_upper"
+    }
+   },
+   {
+    "when": "spider_leg_lower",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/spider_leg_lower"
+    }
+   }
+  ],
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:block/black_concrete"
+  }
+ }
+}

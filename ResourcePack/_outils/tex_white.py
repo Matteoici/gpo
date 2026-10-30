@@ -136,3 +136,18 @@ for f in range(8):
     g = np.full(d.shape, 0.6); g[d > 0.35] = 0.85; g[d > 0.6] = 1.0
     save('w_puff_%d' % f, rgba(np.dstack([g, g, g]) * 255, a.astype(float)))
 print('ok')
+
+# toile d'araignée (rayons + spirale), pour les pièges et le sol de la Reine
+n = 256; x, y = grid(n); r = np.sqrt(x * x + y * y); th = np.arctan2(y, x)
+spokes = 14
+d = np.zeros((n, n))
+ang = (th / (2 * np.pi) * spokes) % 1
+d = np.maximum(d, np.clip(1 - (np.minimum(ang, 1 - ang) * 2 * np.pi * r / spokes) / 0.014, 0, 1) * (r < 0.98))
+# spirale : anneaux un peu "affaissés" entre les rayons
+sag = np.sin(ang * np.pi) * 0.03
+for k in range(1, 9):
+    rr = 0.11 * k - sag * (0.5 + k * 0.08)
+    d = np.maximum(d, np.clip(1 - np.abs(r - rr) / 0.012, 0, 1) * (r < 0.98))
+d = np.maximum(d, np.clip(1 - r / 0.05, 0, 1))
+layers('w_web', np.clip(d, 0, 1), cuts=(0.2, 0.5, 0.8), core=0.6)
+print('web ok')

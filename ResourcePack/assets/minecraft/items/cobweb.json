@@ -1,0 +1,27 @@
+{
+ "model": {
+  "type": "minecraft:select",
+  "property": "minecraft:custom_model_data",
+  "index": 0,
+  "cases": [
+   {
+    "when": "cocon",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/cocon"
+    }
+   },
+   {
+    "when": "relic_cocon_ancien",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/relic_cocon_ancien"
+    }
+   }
+  ],
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:item/cobweb"
+  }
+ }
+}

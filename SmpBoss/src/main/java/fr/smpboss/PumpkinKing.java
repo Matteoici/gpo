@@ -124,7 +124,7 @@ public final class PumpkinKing implements Boss {
         return plugin.getConfig().getDouble("boss." + path, def);
     }
 
-    public Arena arena() {
+    public Arena bossArena() {
         return plugin.arena();
     }
 

@@ -10,6 +10,13 @@
      "type": "minecraft:model",
      "model": "limitless:item/items/relic_couronne_enfers"
     }
+   },
+   {
+    "when": "relic_couronne_reine",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/relic_couronne_reine"
+    }
    }
   ],
   "fallback": {

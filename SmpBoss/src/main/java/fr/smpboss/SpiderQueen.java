@@ -98,7 +98,7 @@ public final class SpiderQueen implements Boss {
 
     // ================================================================= Boss
 
-    public Arena arena() {
+    public Arena bossArena() {
         return plugin.spiderArena();
     }
 
@@ -1136,7 +1136,7 @@ public final class SpiderQueen implements Boss {
     void hitAnchor(Entity st, Player by) {
         int[] v = anchors.get(st);
         if (v == null || by == null) return;
-        Arena ar = arena();
+        Arena ar = bossArena();
         if (ar != null && ar.defined() && !ar.onFightFloor(by.getLocation())) return;
         v[0]--;
         damage.merge(by.getUniqueId(), cfg("web-hit-credit", 15), Double::sum);
@@ -1482,7 +1482,7 @@ public final class SpiderQueen implements Boss {
 
     private void hit(Player p, double amount) {
         if (boss == null || p.isDead()) return;
-        Arena ar = arena();
+        Arena ar = bossArena();
         if (ar != null && ar.isProtected(p)) return;
         double pierce = Math.max(0, Math.min(1, cfg("damage.armor-pierce", 0.3)));
         double normal = amount * (1 - pierce);

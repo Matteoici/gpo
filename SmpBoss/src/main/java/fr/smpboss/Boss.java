@@ -31,7 +31,7 @@ public interface Boss {
     void cleanup();
 
     /** L'arène où se passe le combat. */
-    Arena arena();
+    Arena bossArena();
 
     /** "roi" ou "reine" (messages, quêtes, butin). */
     String kind();

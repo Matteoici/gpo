@@ -481,6 +481,184 @@ recolor('ender_eye', 'relic_oeil_jugement', [hx('2b0204'), hx('7a0b10'), hx('d42
         frames=[tw([], hx('000000')), tw([(7, 7), (8, 8)], hx('ffffff')), tw([], hx('000000')), tw([(7, 8)], hx('fff1b8'))], ft=5)
 recolor('elytra', 'relic_ailes_eclipse', [hx('05030a'), hx('120a1f'), hx('24163d'), hx('3d2766'), hx('f2bd2e')])
 
+
+# ================================================================== REINE ARAIGNÉE
+def nav(n=5):
+    return [hx('05060c'), hx('0b0f1f'), hx('141c38'), hx('22305e'), hx('3a5aa8')][:n]
+
+# --- armes
+sword('iron_sword', 'dague_venin', [hx('06120a'), hx('0f2a16'), hx('1d5a2c'), hx('35a050'), hx('7dffa0')],
+      [hx('0a0a10'), hx('16161f'), hx('24243a'), hx('34345a')], frames=[tw([(13, 2)], hx('7dffa0')), tw([(12, 4)], hx('baffcc')), tw([(10, 5)], hx('7dffa0'))])
+bow('arc_toiles', [hx('0b0f1f'), hx('1d2a55'), hx('3a5aa8'), hx('8fb0ff'), hx('e1ebff')], [hx('cfd8ff'), hx('ffffff')],
+    [hx('3a5aa8'), hx('8fb0ff'), hx('ffffff')], hx('ffffff'), hx('5ac8ff'))
+sword('netherite_sword', 'croc_reine', [hx('04050c'), hx('0d1430'), hx('1e2f70'), hx('3a6bff'), hx('e1ebff')],
+      [hx('060608'), hx('101018'), hx('1c1c2a'), hx('2a2a40')], frames=[tw([(12, 3), (13, 2)], hx('ffffff')), tw([(11, 4)], hx('8fd0ff')), tw([(13, 1)], hx('5ac8ff'))])
+
+# --- yeux maudits, cocon
+recolor('fermented_spider_eye', 'oeil_maudit', [hx('060a1e'), hx('102060'), hx('2a50c0'), hx('5aa0ff'), hx('c8e6ff')],
+        frames=[tw([], hx('000000')), tw([(7, 7)], hx('ffffff')), tw([], hx('000000')), tw([(8, 6)], hx('e1ebff'))], ft=5)
+
+def cocoon_tex(name, glow):
+    m = disk(8, 8.5, 5.6) | disk(8, 5, 3.6) | disk(8, 12, 3.6)
+    a = shade(m, [hx('8e98b8'), hx('b8c2e0'), hx('dce3f5'), hx('f4f7ff')])
+    for y in range(3, 15, 2):
+        for x in range(3, 14):
+            if m[y, x] and (x + y) % 4 == 0: a[y, x] = hx('c8d0ec')
+    for (x, y) in [(6, 7), (9, 9), (7, 11), (10, 6)]:
+        if m[y, x]: a[y, x] = glow
+    a[1, 8] = hx('e1ebff'); a[0, 8] = hx('e1ebff')
+    return outline(a, hx('1a2040'))
+fr = []
+for k in range(4):
+    g = [hx('3a6bff'), hx('5aa0ff'), hx('8fd0ff'), hx('5aa0ff')][k]
+    fr.append(cocoon_tex('cocon', g))
+save(None, 'cocon', fr, ft=5)
+
+# --- reliques
+recolor('string', 'relic_fil_soie', [hx('6a78a8'), hx('a8b6e0'), hx('e1ebff'), hx('ffffff')],
+        frames=[tw([(4, 4)], hx('8fd0ff')), tw([(8, 8)], hx('8fd0ff')), tw([(11, 11)], hx('8fd0ff'))], ft=4)
+recolor('spider_eye', 'relic_oeil_araignee', [hx('060a1e'), hx('123070'), hx('2a6bff'), hx('7fd3ff'), hx('e1f6ff')],
+        frames=[tw([], hx('000000')), tw([(6, 6)], hx('ffffff')), tw([], hx('000000')), tw([(9, 7)], hx('ffffff'))], ft=5)
+
+def fangs():
+    a = np.zeros((16, 16, 4), np.int32)
+    for s_ in (-1, 1):
+        m = np.zeros((16, 16), bool)
+        for t in np.linspace(0, 1, 30):
+            x = 8 + s_ * (4.5 - 3.5 * t) - s_ * math.sin(t * 2.6) * 1.2; y = 2 + 11 * t
+            w = 2.0 * (1 - t) + 0.4
+            yy, xx = np.mgrid[0:16, 0:16]
+            m |= (xx - x) ** 2 + (yy - y) ** 2 <= w * w
+        a = over(a, shade(m, [hx('3a4250'), hx('8890a0'), hx('d8dce6'), hx('ffffff')]))
+    a = outline(a, hx('101420'))
+    fr = []
+    for k in range(4):
+        f = a.copy()
+        dy = k * 1
+        px(f, [(5, 13 + dy if 13 + dy < 16 else 15), (10, 13 + dy if 13 + dy < 16 else 15)], hx('46eb82'))
+        px(f, [(5, 12), (10, 12)], hx('7dffa0'))
+        fr.append(f)
+    save(None, 'relic_crochets_venin', fr, ft=4)
+fangs()
+
+def old_cocoon():
+    a = cocoon_tex('x', hx('46eb82'))
+    a[7, 7] = hx('0a0f20'); a[8, 8] = hx('0a0f20')
+    save(a, 'relic_cocon_ancien')
+old_cocoon()
+
+def legs_icon():
+    a = np.zeros((16, 16, 4), np.int32)
+    body = disk(8, 8, 2.6)
+    for s_ in (-1, 1):
+        for j in range(4):
+            yy0 = 5.5 + j * 1.7
+            kx, ky = 8 + s_ * 4.5, yy0 - 3 + j * 0.5
+            fx_, fy = 8 + s_ * 7.2, yy0 + 2 + j * 0.6
+            for t in np.linspace(0, 1, 12):
+                x = 8 + (kx - 8) * t; y = yy0 + (ky - yy0) * t
+                if 0 <= round(y) < 16 and 0 <= round(x) < 16: a[round(y), round(x)] = hx('1d2a55')
+                x = kx + (fx_ - kx) * t; y = ky + (fy - ky) * t
+                if 0 <= round(y) < 16 and 0 <= round(x) < 16: a[round(y), round(x)] = hx('3a5aa8') if t > 0.8 else hx('141c38')
+    a = over(a, shade(body, nav()))
+    a[7, 7] = hx('7fd3ff'); a[7, 9] = hx('7fd3ff')
+    save(outline(a, hx('05060c')), 'relic_pattes_reine')
+legs_icon()
+
+def web_cape():
+    m = np.zeros((16, 16), bool)
+    for y in range(2, 15):
+        hw = 2.5 + (y - 2) * 0.42
+        for x in range(16):
+            if abs(x + 0.5 - 8) <= hw: m[y, x] = True
+    a = shade(m, [hx('05060c'), hx('0b0f1f'), hx('141c38'), hx('22305e')])
+    for y in range(3, 15):
+        for x in range(16):
+            if m[y, x] and (x == 8 or (y - 2) % 3 == 0 and (x + y) % 2 == 0 or abs(x - 8) == (y - 2) // 2): a[y, x] = hx('cfd8ff')
+    for x in range(5, 11): a[2, x] = hx('c8d0ec')
+    a[3, 8] = hx('5aa0ff')
+    save(outline(a), 'relic_cape_toile')
+web_cape()
+
+crown('relic_couronne_reine', [hx('3a4250'), hx('6a7488'), hx('a8b4cc'), hx('dce3f5'), hx('ffffff')],
+      [hx('3a6bff'), hx('7fd3ff'), hx('7fd3ff'), hx('3a6bff')], hx('e1ebff'),
+      frames_fx=[tw([(8, 1)], hx('ffffff')), tw([(2, 3), (14, 3)], hx('8fd0ff')), tw([(6, 6)], hx('e1ebff'))])
+
+recolor('heart_of_the_sea', 'relic_coeur_abysse', [hx('04050c'), hx('0b1640'), hx('1e3fa8'), hx('3a6bff'), hx('8fd0ff')],
+        frames=[tw([(7, 7), (8, 7)], hx('ff3248')), tw([(7, 7), (8, 7)], hx('ff7a8a')), tw([(7, 7), (8, 7)], hx('ffffff')), tw([(7, 7), (8, 7)], hx('ff7a8a'))], ft=4)
+
+# --- textures du corps de la Reine (32x32)
+def chitin():
+    N2 = 32; yy, xx = np.mgrid[0:N2, 0:N2]
+    rng = np.random.default_rng(77)
+    v = 0.35 + 0.25 * np.sin(yy * 0.45 + np.sin(xx * 0.3) * 1.5) + rng.normal(0, 0.08, (N2, N2))
+    pal = [hx('03040a'), hx('070a16'), hx('0d1430'), hx('16224c'), hx('24387a')]
+    idx = np.clip((v * len(pal)).astype(int), 0, len(pal) - 1)
+    a = np.zeros((N2, N2, 4), np.int32)
+    for i, c in enumerate(pal): a[idx == i] = c
+    for _ in range(30):
+        x, y = rng.integers(0, 32), rng.integers(0, 32)
+        a[y, x] = hx('3a5aa8') if rng.random() < 0.5 else hx('020308')
+    return a
+save(chitin(), 'spider_chitin')
+def mark():
+    N2 = 32; a = np.zeros((N2, N2, 4), np.int32)
+    yy, xx = np.mgrid[0:N2, 0:N2]
+    # sablier + chevrons lumineux
+    hour = (np.abs(xx - 15.5) <= np.abs(yy - 15.5) * 0.55 + 1.2) & (np.abs(yy - 15.5) < 9)
+    chev = np.zeros_like(hour)
+    for k in range(3):
+        y0 = 3 + k * 3
+        chev |= (np.abs(np.abs(xx - 15.5) - (yy - y0) * 1.6) < 1.0) & (yy >= y0) & (yy < y0 + 5)
+    a[hour] = hx('3a8bff'); a[hour & (np.abs(xx - 15.5) < 1.5)] = hx('a8e0ff')
+    a[chev & ~hour] = hx('2a6bff')
+    return a
+fr = []
+for k in range(4):
+    m_ = mark(); g = [1.0, 0.8, 0.65, 0.8][k]
+    m_[..., :3] = (m_[..., :3] * g).astype(int)
+    fr.append(m_)
+save(None, 'spider_mark', fr, ft=5)
+def eyes_tex():
+    a = np.zeros((16, 16, 4), np.int32)
+    for (cx, cy, r) in [(6, 8, 1.8), (10, 8, 1.8), (4, 6, 1.0), (12, 6, 1.0), (5, 4, 0.8), (11, 4, 0.8), (7, 5, 0.8), (9, 5, 0.8)]:
+        m = disk(cx, cy, r)
+        a[m] = hx('3aa8ff')
+        a[disk(cx - 0.4, cy - 0.4, max(0.5, r * 0.4))] = hx('e1f6ff')
+    return a
+save(eyes_tex(), 'spider_eyes')
+red = eyes_tex(); red[(red[..., 2] > 200) & (red[..., 0] < 100)] = hx('ff3248')
+save(red, 'spider_eyes_red')
+def leg_tex():
+    a = chitin()[:16, :16].copy()
+    for y in range(16):
+        if y % 5 == 0: a[y, :] = hx('22305e')
+    rng = np.random.default_rng(5)
+    for _ in range(14):
+        a[rng.integers(0, 16), rng.integers(0, 16)] = hx('020308')
+    return a
+save(leg_tex(), 'spider_leg')
+j = np.zeros((16, 16, 4), np.int32); j[...] = hx('3a8bff'); j[6:10, :] = hx('a8e0ff')
+save(j, 'spider_joint')
+f = np.zeros((16, 16, 4), np.int32); f[...] = hx('c8d0e0'); f[10:, :] = hx('3a6bff'); f[:3, :] = hx('6a7488')
+save(f, 'spider_fang')
+def silk():
+    N2 = 32; yy, xx = np.mgrid[0:N2, 0:N2]
+    rng = np.random.default_rng(9)
+    v = 0.6 + 0.2 * np.sin((xx + yy) * 0.7) + 0.15 * np.sin((xx - yy) * 0.5) + rng.normal(0, 0.05, (N2, N2))
+    pal = [hx('9aa4c4'), hx('c0c8e4'), hx('dde4f6'), hx('f6f8ff')]
+    a = np.zeros((N2, N2, 4), np.int32)
+    idx = np.clip((v * len(pal)).astype(int) - 1, 0, len(pal) - 1)
+    for i, c in enumerate(pal): a[idx == i] = c
+    for k in range(5):
+        x0 = rng.integers(0, 32)
+        for y in range(32):
+            x = int(x0 + math.sin(y * 0.3 + k) * 3) % 32
+            a[y, x] = hx('5a8cff')
+    return a
+save(silk(), 'spider_silk')
+print('reine ok')
+
 print('ok', sorted(f for f in os.listdir(D) if f.endswith('.png')))
 
 # ================================================================== BOSS (Roi Citrouille) : citrouille 32x32, couronne, lame

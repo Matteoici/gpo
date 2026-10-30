@@ -180,6 +180,33 @@ made.append(write('boss/magic', mix((bell(2.0, 330, decay=1.5), 0, 0.5), (bell(2
 # ---------------------------------------------------------------- impact lourd (en plus pour Fûga / Violet Imaginaire)
 made.append(write('weapons/impact', mix((boom(3.2, 70, 20, 10), 0, 1.0), (boom(1.0, 160, 60, 11), 0, 0.4)), rev=(3.0, 0.4)))
 
+# ---------------------------------------------------------------- Reine Araignée
+# cri aigu (FM qui grince) + souffle
+d = 1.6; t = t_(d)
+car = 900 + 500 * np.sin(2 * np.pi * 7 * t) * np.exp(-t * 1.5)
+mod = np.sin(2 * np.pi * 1300 * t) * 3.5
+scr = np.sin(2 * np.pi * np.cumsum(car) / SR + mod)
+scr = np.tanh(bp(scr + 0.3 * rng.standard_normal(len(t)), 500, 6000) * 2.5) * env(d, 0.06, 1.0)
+made.append(write('spider/screech', mix((scr, 0, 1.0), (shaped_noise(d, lambda T: 3000 + 0 * T, lambda T: 1500 + 0 * T, 91) * env(d, 0.02, 0.8), 0, 0.4), (boom(0.8, 90, 40, 12), 0, 0.35)), rev=(1.8, 0.35)))
+# sifflement (bruit filtré haut, enveloppe en bosse)
+d = 1.0
+made.append(write('spider/hiss', shaped_noise(d, lambda T: 5200 - 1500 * T, lambda T: 1800 + 0 * T, 92) * np.sin(np.pi * t_(d) / d) ** 1.5, rev=(0.7, 0.2)))
+# toile : étirement collant (bruit grave modulé + craquements)
+d = 1.1; t = t_(d)
+stretch = lp(rng.standard_normal(len(t)), 900) * (0.5 + 0.5 * np.sin(2 * np.pi * 23 * t)) * env(d, 0.15, 0.7)
+creak = np.zeros(len(t))
+for k in range(30):
+    i = int(rng.uniform(0, 0.9) * SR); L = int(0.003 * SR)
+    creak[i:i + L] += rng.standard_normal(L)
+made.append(write('spider/web', mix((stretch / (np.abs(stretch).max() + 1e-9), 0, 0.8), (bp(creak, 1500, 5000), 0, 0.5), (sweep(0.6, 300, 180, 1) * np.exp(-t_(0.6) * 5), 0, 0.3)), rev=(1.0, 0.25)))
+# pas : cliquetis rapides
+d = 0.7
+clk = np.zeros(int(d * SR))
+for k in range(16):
+    i = int((k * 0.04 + rng.uniform(0, 0.01)) * SR); L = int(0.006 * SR)
+    clk[i:i + L] += hp(rng.standard_normal(L), 2000) * np.exp(-np.arange(L) / L * 5) * rng.uniform(0.4, 1)
+made.append(write('spider/skitter', clk, rev=(0.5, 0.15)))
+
 # sounds.json : on ajoute nos sons à ceux qui existent
 sj = os.path.join(OUT, 'assets/limitless/sounds.json')
 data = json.load(open(sj)) if os.path.exists(sj) else {}

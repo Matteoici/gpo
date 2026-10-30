@@ -1,0 +1,20 @@
+{
+ "model": {
+  "type": "minecraft:select",
+  "property": "minecraft:custom_model_data",
+  "index": 0,
+  "cases": [
+   {
+    "when": "spider_eggsac",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/spider_eggsac"
+    }
+   }
+  ],
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:block/white_wool"
+  }
+ }
+}

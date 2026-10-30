@@ -60,6 +60,7 @@ tinted={}
 for t in ['w_glow','w_ring','w_shock','w_spark','w_slash','w_spike']+['w_burst_%d'%i for i in range(12)]: tinted[t]=tquad(t)
 for t in ['w_puff_%d'%i for i in range(8)]: tinted[t]=tquad(t, core=False)
 for t in ['w_rune','w_crack']: tinted[t+'_flat']=tflat(t)
+tinted['w_web']=tquad('w_web'); tinted['w_web_flat']=tflat('w_web');
 tinted['w_ring_flat']=tflat('w_ring'); tinted['w_shock_flat']=tflat('w_shock'); tinted['w_slash_flat']=tflat('w_slash')
 for t in ['w_beam','w_spike']+['w_bolt_%d'%i for i in range(4)]: tinted[t+'_x']=tcross(t)
 tint=[{"type":"minecraft:custom_model_data","index":0,"default":-1}]
