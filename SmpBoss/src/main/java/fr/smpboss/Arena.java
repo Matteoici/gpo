@@ -44,7 +44,9 @@ import static fr.smpboss.SmpBoss.parse;
 public final class Arena {
 
     private final SmpBoss plugin;
-    private final File file, backupFile;
+    private final File file, backupFile, gateFile;
+    /** tourbillons du resource pack (plus de portails du Nether) */
+    private org.bukkit.entity.ItemDisplay spawnSwirl, exitSwirl;
     // zone
     private String worldName;
     private int cx, cy, cz;
@@ -124,6 +126,7 @@ public final class Arena {
         this.spider = spider;
         this.file = new File(plugin.getDataFolder(), spider ? "arena-spider.yml" : "arena.yml");
         this.backupFile = new File(plugin.getDataFolder(), spider ? "arena-spider-backup.dat" : "arena-backup.dat");
+        this.gateFile = new File(plugin.getDataFolder(), spider ? "arena-spider-gate.dat" : "arena-gate.dat");
         load();
     }
 
@@ -469,7 +472,8 @@ public final class Arena {
                 sender.sendMessage(parse("<aqua>" + cmd() + " tp [joueur]</aqua> <gray>- envoie dans l'arène (les joueurs : <white>/arene</white>)"));
                 sender.sendMessage(parse("<aqua>" + cmd() + " definir <rayon> [marge]</aqua> <gray>- protège une arène collée avec WorldEdit"));
                 sender.sendMessage(parse("<aqua>" + cmd() + " setspawn [reset]</aqua> <gray>- le point d'arrivée = là où tu es"));
-                sender.sendMessage(parse("<aqua>" + cmd() + " portail pos1|pos2|supprimer</aqua> <gray>- une zone (au spawn) où entrer = tp dans l'arène"));
+                sender.sendMessage(parse("<aqua>" + cmd() + " portail poser</aqua> <gray>- construit l'arche d'entrée devant toi (au spawn) · <aqua>portail retirer"));
+                sender.sendMessage(parse("<aqua>" + cmd() + " portail pos1|pos2|supprimer</aqua> <gray>- ou une zone à toi (au spawn) où entrer = tp dans l'arène"));
                 sender.sendMessage(parse("<aqua>" + cmd() + " sortie pos1|pos2|supprimer</aqua> <gray>- une zone (dans l'arène) où entrer = retour au spawn"));
                 sender.sendMessage(parse("<aqua>" + cmd() + " supprimer</aqua> <gray>- coupe la protection"));
                 sender.sendMessage(parse("<aqua>" + cmd() + " recuperer</aqua> <gray>- retrouve la zone de l'arène construite (après un /definir par erreur)"));
@@ -549,6 +553,14 @@ public final class Arena {
 
     private void portalCommand(CommandSender sender, String[] a) {
         String what = a.length >= 3 ? a[2].toLowerCase(java.util.Locale.ROOT) : "";
+        if (what.equals("poser") || what.equals("arche") || what.equals("construire")) {
+            if (sender instanceof Player p) buildGate(p);
+            return;
+        }
+        if (what.equals("retirer")) {
+            removeGate(sender);
+            return;
+        }
         if (what.equals("info") || what.equals("voir")) {
             if (portal == null) sender.sendMessage(parse("<red>Pas de zone portail. <gray>" + cmd() + " portail pos1 puis pos2"));
             else {
@@ -567,6 +579,7 @@ public final class Arena {
             return;
         }
         if (!(sender instanceof Player p) || !(what.equals("pos1") || what.equals("pos2"))) {
+            sender.sendMessage(parse("<gold>" + cmd() + " portail poser</gold> <gray>: construit l'arche d'entrée devant toi (le plus simple) · <gold>portail retirer"));
             sender.sendMessage(parse("<gold>" + cmd() + " portail pos1</gold> <gray>(un coin)</gray> <gold>puis pos2</gold> <gray>(le coin opposé) · "
                     + "<gold>" + cmd() + " portail supprimer"));
             return;
@@ -698,13 +711,24 @@ public final class Arena {
         return x >= box[0] && x <= box[3] && y >= box[1] && y <= box[4] && z >= box[2] && z <= box[5];
     }
 
+    /** Sortie automatique : le cadre au fond du crâne / de la tête d'araignée (arène construite par le plugin). */
+    int[] autoExit() {
+        if (!defined || !backupFile.exists()) return null;
+        int pz = spider ? cz - (floorRadius + 22) : cz - (floorRadius + 12);
+        return new int[]{cx - 1, cy + 1, pz, cx + 1, cy + 4, pz};
+    }
+
     private void exitTick() {
-        if (exitBox == null || exitWorld == null) return;
-        World w = Bukkit.getWorld(exitWorld);
-        if (w == null) return;
-        for (Player p : w.getPlayers()) {
+        int[] auto = autoExit();
+        if ((exitBox == null || exitWorld == null) && auto == null) return;
+        java.util.Set<World> worlds = new java.util.HashSet<>();
+        if (exitWorld != null && Bukkit.getWorld(exitWorld) != null) worlds.add(Bukkit.getWorld(exitWorld));
+        if (auto != null && world() != null) worlds.add(world());
+        for (World w : worlds) for (Player p : w.getPlayers()) {
             if (p.getGameMode() == org.bukkit.GameMode.SPECTATOR) continue;
-            if (!inBox(exitWorld, exitBox, p.getLocation()) && !inBox(exitWorld, exitBox, p.getLocation().add(0, 1, 0))) continue;
+            Location pl = p.getLocation(), ph = p.getLocation().add(0, 1, 0);
+            boolean in = inBox(exitWorld, exitBox, pl) || inBox(exitWorld, exitBox, ph) || inBox(worldName, auto, pl) || inBox(worldName, auto, ph);
+            if (!in) continue;
             long now = System.currentTimeMillis();
             Long last = portalCooldown.get(p.getUniqueId());
             if (last != null && now - last < 3000) continue;
@@ -713,6 +737,159 @@ public final class Arena {
             p.getWorld().spawnParticle(Particle.END_ROD, p.getLocation().add(0, 1, 0), 30, 0.3, 0.6, 0.3, 0.08);
             exit(p);
         }
+    }
+
+    // ================================================================= tourbillons (à la place des portails du Nether)
+
+    private Color swirlColor() {
+        return spider ? Color.fromRGB(70, 130, 255) : Color.fromRGB(255, 120, 25);
+    }
+
+    /** Toutes les 10 ticks : un tourbillon animé dans le portail du spawn et dans la sortie ; les vieux portails du Nether disparaissent. */
+    private void swirls() {
+        boolean on = plugin.getConfig().getBoolean("arena.portal-swirl", true);
+        spawnSwirl = swirl(spawnSwirl, on ? portalWorld : null, portal);
+        int[] auto = exitBox == null ? autoExit() : exitBox;
+        exitSwirl = swirl(exitSwirl, on ? (exitBox != null ? exitWorld : auto != null ? worldName : null) : null, auto);
+    }
+
+    private org.bukkit.entity.ItemDisplay swirl(org.bukkit.entity.ItemDisplay cur, String world, int[] b) {
+        World w = world == null ? null : Bukkit.getWorld(world);
+        if (w == null || b == null) {
+            if (cur != null) cur.remove();
+            return null;
+        }
+        double x = (b[0] + b[3] + 1) / 2.0, y = (b[1] + b[4] + 1) / 2.0, z = (b[2] + b[5] + 1) / 2.0;
+        if (!w.isChunkLoaded((int) Math.floor(x) >> 4, (int) Math.floor(z) >> 4)) return cur;
+        // plus de portail du Nether : on vide l'intérieur
+        for (int i = b[0]; i <= b[3]; i++) for (int j = b[1]; j <= b[4]; j++) for (int k = b[2]; k <= b[5]; k++) {
+            Block bl = w.getBlockAt(i, j, k);
+            if (bl.getType() == org.bukkit.Material.NETHER_PORTAL) bl.setType(org.bukkit.Material.AIR, false);
+        }
+        Location c = new Location(w, x, y, z);
+        boolean near = false;
+        for (Player p : w.getPlayers()) if (p.getLocation().distanceSquared(c) < 64 * 64) near = true;
+        if (!near) {
+            if (cur != null) cur.remove();
+            return null;
+        }
+        int dx = b[3] - b[0] + 1, dy = b[4] - b[1] + 1, dz = b[5] - b[2] + 1;
+        // particules pour tout le monde (sans pack aussi)
+        ThreadLocalRandom r = ThreadLocalRandom.current();
+        Particle.DustOptions dust = new Particle.DustOptions(swirlColor(), 1.2f);
+        for (int i = 0; i < 6; i++) {
+            Location l = new Location(w, b[0] + r.nextDouble() * dx, b[1] + r.nextDouble() * dy, b[2] + r.nextDouble() * dz);
+            w.spawnParticle(i % 2 == 0 ? Particle.DUST : Particle.REVERSE_PORTAL, l, 1, 0, 0, 0, i % 2 == 0 ? 0 : 0.02, i % 2 == 0 ? dust : null);
+        }
+        if (cur != null && cur.isValid()) return cur;
+        boolean alongX = dx >= dz;
+        float sw = (float) (alongX ? dx : dz), sh = (float) dy;
+        org.joml.Quaternionf rot = alongX ? new org.joml.Quaternionf() : new org.joml.Quaternionf().rotateY((float) (Math.PI / 2));
+        return w.spawn(c, org.bukkit.entity.ItemDisplay.class, e -> {
+            e.setPersistent(false);
+            e.setItemStack(PackFx.tmodel("w_portal", swirlColor()));
+            e.setItemDisplayTransform(org.bukkit.entity.ItemDisplay.ItemDisplayTransform.NONE);
+            e.setBrightness(new org.bukkit.entity.Display.Brightness(15, 15));
+            e.setViewRange(2f);
+            e.setShadowRadius(0);
+            e.setTransformation(new org.bukkit.util.Transformation(new org.joml.Vector3f(), rot, new org.joml.Vector3f(sw, sh, 1), new org.joml.Quaternionf()));
+        });
+    }
+
+    /** L'arche d'entrée (au spawn), posée devant l'admin : le portail de l'arène est réglé tout seul. */
+    private void buildGate(Player p) {
+        if (gateFile.exists()) {
+            p.sendMessage(parse("<red>Une arche est déjà posée. <gray>" + cmd() + " portail retirer d'abord."));
+            return;
+        }
+        org.bukkit.block.BlockFace face = p.getFacing();
+        if (face != org.bukkit.block.BlockFace.NORTH && face != org.bukkit.block.BlockFace.SOUTH && face != org.bukkit.block.BlockFace.EAST
+                && face != org.bukkit.block.BlockFace.WEST) face = org.bukkit.block.BlockFace.NORTH;
+        int fx = face.getModX(), fz = face.getModZ(), ux = -fz, uz = fx;
+        World w = p.getWorld();
+        int ox = p.getLocation().getBlockX() + fx * 3, oy = p.getLocation().getBlockY() - 1, oz = p.getLocation().getBlockZ() + fz * 3;
+        Map<int[], String> plan = new java.util.LinkedHashMap<>();
+        String pillar = spider ? "polished_deepslate" : "polished_blackstone_bricks", accent = spider ? "sea_lantern" : "jack_o_lantern",
+                top = spider ? "chiseled_deepslate" : "chiseled_polished_blackstone", inner = spider ? "black_concrete" : "obsidian",
+                lamp = spider ? "soul_lantern" : "lantern";
+        for (int u = -2; u <= 2; u++) {
+            for (int y = 0; y <= 5; y++) {
+                boolean inside = Math.abs(u) <= 1 && y >= 1 && y <= 4;
+                plan.put(new int[]{u, y, 0}, inside ? "air" : inner);
+            }
+        }
+        for (int s = -1; s <= 1; s += 2) {
+            for (int y = 0; y <= 6; y++) plan.put(new int[]{3 * s, y, 0}, y == 3 ? accent + (spider ? "" : "[facing=" + face.getOppositeFace().name().toLowerCase(java.util.Locale.ROOT) + "]") : y == 6 ? top : pillar);
+            plan.put(new int[]{3 * s, 7, 0}, lamp);
+            plan.put(new int[]{2 * s, 6, 0}, top);
+            if (spider) {
+                plan.put(new int[]{4 * s, 5, 0}, "cobweb");
+                plan.put(new int[]{4 * s, 1, 0}, "cobweb");
+            }
+        }
+        for (int u = -1; u <= 1; u++) plan.put(new int[]{u, 6, 0}, u == 0 ? accent + (spider ? "" : "[facing=" + face.getOppositeFace().name().toLowerCase(java.util.Locale.ROOT) + "]") : top);
+        if (spider) plan.put(new int[]{0, 7, 0}, "cobweb");
+        List<int[]> pos = new ArrayList<>();
+        List<String> old = new ArrayList<>();
+        int minX = Integer.MAX_VALUE, minZ = Integer.MAX_VALUE, maxX = Integer.MIN_VALUE, maxZ = Integer.MIN_VALUE;
+        for (var en : plan.entrySet()) {
+            int[] q = en.getKey();
+            int x = ox + q[0] * ux + q[2] * fx, y = oy + q[1], z = oz + q[0] * uz + q[2] * fz;
+            Block b = w.getBlockAt(x, y, z);
+            pos.add(new int[]{x, y, z});
+            old.add(b.getBlockData().getAsString());
+            b.setBlockData(data(en.getValue()), false);
+            if (Math.abs(q[0]) <= 1 && q[1] >= 1 && q[1] <= 4) {
+                minX = Math.min(minX, x);
+                maxX = Math.max(maxX, x);
+                minZ = Math.min(minZ, z);
+                maxZ = Math.max(maxZ, z);
+            }
+        }
+        writeBackup(gateFile, w, pos, old);
+        portalWorld = w.getName();
+        portal = new int[]{minX, oy + 1, minZ, maxX, oy + 4, maxZ};
+        save();
+        if (spawnSwirl != null) spawnSwirl.remove();
+        spawnSwirl = null;
+        w.playSound(new Location(w, ox, oy + 2, oz), org.bukkit.Sound.BLOCK_END_PORTAL_FRAME_FILL, 1f, spider ? 0.7f : 1f);
+        p.sendMessage(parse("<green>Arche posée devant toi : y entrer = téléporté dans " + (spider ? "le nid de la Reine" : "l'arène du Roi") + "."));
+        if (entrance() == null) p.sendMessage(parse("<yellow>L'arène n'est pas encore construite : <white>" + cmd() + " construire</white>."));
+    }
+
+    private void removeGate(CommandSender sender) {
+        if (!gateFile.exists()) {
+            sender.sendMessage(parse("<red>Aucune arche posée par le plugin. <gray>(" + cmd() + " portail supprimer pour juste retirer la zone)"));
+            return;
+        }
+        try (DataInputStream in = new DataInputStream(new GZIPInputStream(new FileInputStream(gateFile)))) {
+            if (in.readInt() != 0x534D4241) throw new IOException("fichier invalide");
+            World w = Bukkit.getWorld(in.readUTF());
+            if (w == null) throw new IOException("monde introuvable");
+            String[] pal = new String[in.readInt()];
+            for (int i = 0; i < pal.length; i++) pal[i] = in.readUTF();
+            int n = in.readInt();
+            for (int i = 0; i < n; i++) {
+                int x = in.readInt(), y = in.readInt(), z = in.readInt(), k = in.readInt();
+                BlockData d;
+                try {
+                    d = Bukkit.createBlockData(pal[k]);
+                } catch (IllegalArgumentException e) {
+                    d = Bukkit.createBlockData(org.bukkit.Material.AIR);
+                }
+                w.getBlockAt(x, y, z).setBlockData(d, false);
+            }
+        } catch (IOException e) {
+            sender.sendMessage(parse("<red>Lecture de la sauvegarde de l'arche impossible : " + e.getMessage()));
+            return;
+        }
+        if (!gateFile.delete()) plugin.getLogger().warning(gateFile.getName() + " non supprimé");
+        portal = null;
+        portalWorld = null;
+        save();
+        if (spawnSwirl != null) spawnSwirl.remove();
+        spawnSwirl = null;
+        sender.sendMessage(parse("<green>Arche retirée, le terrain est comme avant."));
     }
 
     /** Contour d'une zone (10 s), visible par l'admin. */
@@ -742,7 +919,10 @@ public final class Arena {
         double above = plugin.getConfig().getDouble("arena.portal-hologram-height", 0.6);
         portalHolo = holo(portalHolo, on ? portalWorld : null, portal, above,
                 plugin.msg(spider ? "spider.portal-hologram" : "portal.hologram").replace("<status>", spider ? plugin.spiderStatus() : plugin.bossStatus()));
-        exitHolo = holo(exitHolo, on ? exitWorld : null, exitBox, above, plugin.msg("portal.exit-hologram"));
+        int[] auto = exitBox == null ? autoExit() : null;
+        exitHolo = holo(exitHolo, on ? (exitBox != null ? exitWorld : auto != null ? worldName : null) : null, exitBox != null ? exitBox : auto, above,
+                plugin.msg("portal.exit-hologram"));
+        swirls();
         if (portalHolo == null) {
             if (portalClick != null) portalClick.remove();
             portalClick = null;
@@ -983,6 +1163,10 @@ public final class Arena {
     }
 
     private void writeBackup(World w, List<int[]> pos, List<String> old) {
+        writeBackup(backupFile, w, pos, old);
+    }
+
+    private void writeBackup(File backupFile, World w, List<int[]> pos, List<String> old) {
         Map<String, Integer> palette = new HashMap<>();
         List<String> pal = new ArrayList<>();
         try (DataOutputStream out = new DataOutputStream(new GZIPOutputStream(new FileOutputStream(backupFile)))) {
@@ -1077,6 +1261,8 @@ public final class Arena {
     }
 
     void shutdown() {
+        if (spawnSwirl != null) spawnSwirl.remove();
+        if (exitSwirl != null) exitSwirl.remove();
         if (portalHolo != null) portalHolo.remove();
         if (exitHolo != null) exitHolo.remove();
         if (portalClick != null) portalClick.remove();

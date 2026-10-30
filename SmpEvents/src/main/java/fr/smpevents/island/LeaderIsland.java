@@ -458,6 +458,72 @@ public final class LeaderIsland implements Listener {
         }
     }
 
+    // ================================================================= tourbillons (pas de portail du Nether)
+
+    private org.bukkit.entity.ItemDisplay retSwirl, gateSwirl;
+    private static final Color GOLD = Color.fromRGB(255, 200, 60);
+
+    /** Toutes les 10 ticks : tourbillon animé (resource pack) + particules dans les deux portails. */
+    public void swirls() {
+        retSwirl = swirl(retSwirl, built ? world : null, retBox);
+        gateSwirl = swirl(gateSwirl, gateWorld, gateBox);
+    }
+
+    private org.bukkit.entity.ItemDisplay swirl(org.bukkit.entity.ItemDisplay cur, String wn, int[] b) {
+        World w = wn == null ? null : Bukkit.getWorld(wn);
+        if (w == null || b == null) {
+            if (cur != null) cur.remove();
+            return null;
+        }
+        double x = (b[0] + b[3] + 1) / 2.0, y = (b[1] + b[4] + 1) / 2.0, z = (b[2] + b[5] + 1) / 2.0;
+        if (!w.isChunkLoaded((int) Math.floor(x) >> 4, (int) Math.floor(z) >> 4)) return cur;
+        // anciens portails du Nether : on vide l'intérieur
+        for (int i = b[0]; i <= b[3]; i++) for (int j = b[1]; j <= b[4]; j++) for (int k = b[2]; k <= b[5]; k++) {
+            Block bl = w.getBlockAt(i, j, k);
+            if (bl.getType() == org.bukkit.Material.NETHER_PORTAL) bl.setType(org.bukkit.Material.AIR, false);
+        }
+        Location c = new Location(w, x, y, z);
+        boolean near = false;
+        for (Player p : w.getPlayers()) if (p.getLocation().distanceSquared(c) < 64 * 64) near = true;
+        if (!near) {
+            if (cur != null) cur.remove();
+            return null;
+        }
+        int dx = b[3] - b[0] + 1, dy = b[4] - b[1] + 1, dz = b[5] - b[2] + 1;
+        java.util.concurrent.ThreadLocalRandom r = java.util.concurrent.ThreadLocalRandom.current();
+        Particle.DustOptions dust = new Particle.DustOptions(GOLD, 1.1f);
+        for (int i = 0; i < 6; i++) {
+            Location l = new Location(w, b[0] + r.nextDouble() * dx, b[1] + r.nextDouble() * dy, b[2] + r.nextDouble() * dz);
+            if (i % 2 == 0) w.spawnParticle(Particle.DUST, l, 1, 0, 0, 0, 0, dust);
+            else w.spawnParticle(Particle.END_ROD, l, 1, 0, 0, 0, 0.01);
+        }
+        if (cur != null && cur.isValid()) return cur;
+        boolean alongX = dx >= dz;
+        float sw = alongX ? dx : dz, sh = dy;
+        org.joml.Quaternionf rot = alongX ? new org.joml.Quaternionf() : new org.joml.Quaternionf().rotateY((float) (Math.PI / 2));
+        org.bukkit.inventory.ItemStack it = new org.bukkit.inventory.ItemStack(org.bukkit.Material.PAPER);
+        var meta = it.getItemMeta();
+        meta.setItemModel(new NamespacedKey("limitless", "fx/w_portal"));
+        try {
+            var cmd = meta.getCustomModelDataComponent();
+            cmd.setColors(List.of(GOLD));
+            meta.setCustomModelDataComponent(cmd);
+        } catch (RuntimeException | LinkageError ignored) {
+            // vieux serveur : pas de teinte
+        }
+        it.setItemMeta(meta);
+        return w.spawn(c, org.bukkit.entity.ItemDisplay.class, e -> {
+            e.setPersistent(false);
+            e.getPersistentDataContainer().set(labelKey, PersistentDataType.BYTE, (byte) 1);
+            e.setItemStack(it);
+            e.setItemDisplayTransform(org.bukkit.entity.ItemDisplay.ItemDisplayTransform.NONE);
+            e.setBrightness(new Display.Brightness(15, 15));
+            e.setViewRange(2f);
+            e.setShadowRadius(0);
+            e.setTransformation(new Transformation(new Vector3f(), rot, new Vector3f(sw, sh, 1), new org.joml.Quaternionf()));
+        });
+    }
+
     private TextDisplay label(TextDisplay cur, Location l, float scale, String text) {
         if (cur != null && cur.isValid()) {
             if (cur.getLocation().distanceSquared(l) > 0.01) cur.teleport(l);
@@ -485,6 +551,8 @@ public final class LeaderIsland implements Listener {
     }
 
     public void shutdown() {
+        if (retSwirl != null) retSwirl.remove();
+        if (gateSwirl != null) gateSwirl.remove();
         title = kill(title);
         retLabel = kill(retLabel);
         gateLabel = kill(gateLabel);
@@ -669,13 +737,13 @@ public final class LeaderIsland implements Listener {
                 maxZ = Integer.MIN_VALUE;
         // d'abord le cadre, puis le portail (sinon il casse)
         List<Map.Entry<int[], String>> parts = new ArrayList<>(IslandDesign.gate().entrySet());
-        parts.sort((x, y) -> Boolean.compare(x.getValue().equals("nether_portal"), y.getValue().equals("nether_portal")));
+        parts.sort((x, y) -> Boolean.compare(x.getValue().equals("portal"), y.getValue().equals("portal")));
         for (var en : parts) {
             int[] q = en.getKey();
             int x = ox + q[0] * ux + q[2] * fx, y = oy + q[1], z = oz + q[0] * uz + q[2] * fz;
             String id = en.getValue();
-            if (id.equals("nether_portal")) {
-                id = "nether_portal[axis=" + axis + "]";
+            if (id.equals("portal")) {
+                id = "air"; // l'intérieur reste vide : le tourbillon est un effet du resource pack
                 minX = Math.min(minX, x);
                 minY = Math.min(minY, y);
                 minZ = Math.min(minZ, z);

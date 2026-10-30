@@ -587,6 +587,142 @@ crown('relic_couronne_reine', [hx('3a4250'), hx('6a7488'), hx('a8b4cc'), hx('dce
 recolor('heart_of_the_sea', 'relic_coeur_abysse', [hx('04050c'), hx('0b1640'), hx('1e3fa8'), hx('3a6bff'), hx('8fd0ff')],
         frames=[tw([(7, 7), (8, 7)], hx('ff3248')), tw([(7, 7), (8, 7)], hx('ff7a8a')), tw([(7, 7), (8, 7)], hx('ffffff')), tw([(7, 7), (8, 7)], hx('ff7a8a'))], ft=4)
 
+# --- nouvelles armes de la Reine (légendaire / prestige)
+WEBSILVER = [hx('3a4250'), hx('6a7488'), hx('a8b4cc'), hx('dce3f5'), hx('ffffff')]
+def weaver_deco(b):
+    # fils de toile accrochés à la lame
+    px(b, [(9, 3), (10, 5), (11, 4)], hx('e1ebff'))
+    px(b, [(12, 6)], hx('5ac8ff'))
+tool('iron_hoe', 'faux_tisseuse', WEBSILVER, [hx('05060c'), hx('0b0f1f'), hx('141c38'), hx('22305e')], deco=weaver_deco,
+     frames=[tw([(12, 2)], hx('8fd0ff')), tw([(10, 3)], hx('ffffff')), tw([(13, 3)], hx('5ac8ff'))], ft=4)
+def sceptre_frames():
+    a = load('breeze_rod'); op = a[..., 3] > 0
+    b = remap(a, op, [hx('04050c'), hx('0b1640'), hx('1e3fa8'), hx('3a6bff'), hx('8fd0ff')])
+    fr = []
+    for k in range(4):
+        f = b.copy()
+        g = [hx('3a6bff'), hx('7fd3ff'), hx('ffffff'), hx('7fd3ff')][k]
+        ys, xs = np.nonzero(op)
+        i = np.argmin(ys - xs)  # bout en haut à droite
+        x0, y0 = xs[i], ys[i]
+        for dx, dy in ((0, 0), (-1, 0), (0, 1)):
+            if 0 <= x0 + dx < 16 and 0 <= y0 + dy < 16 and op[y0 + dy, x0 + dx]: f[y0 + dy, x0 + dx] = g
+        # œil rouge au milieu du sceptre
+        my, mx = int(np.median(ys)), int(np.median(xs))
+        f[my, mx] = hx('ff3248') if k % 2 == 0 else hx('ff7a8a')
+        fr.append(f)
+    save(None, 'sceptre_abysse', fr, ft=4)
+sceptre_frames()
+
+# --- nouvelles reliques de la Reine
+def moon_silk():
+    fr = []
+    for k in range(4):
+        m = disk(8, 9, 5.2)
+        a = shade(m, [hx('5a6488'), hx('8e98b8'), hx('c8d0ec'), hx('eef2ff')])
+        for y in range(4, 15):
+            for x in range(3, 14):
+                if m[y, x] and (y + x // 3) % 3 == 0: a[y, x] = hx('dce3f5')
+        cres = disk(11, 4, 3.0) & ~disk(12.4, 3.2, 2.6)
+        a = over(a, shade(cres, [hx('b8c2e0'), hx('e3e9ff'), hx('ffffff')]))
+        sp = [(3, 6), (13, 11), (5, 13), (9, 2)][k]
+        a[sp[1], sp[0]] = hx('ffffff')
+        fr.append(outline(a, hx('101428')))
+    save(None, 'relic_soie_lunaire', fr, ft=5)
+moon_silk()
+
+def venom_crystal():
+    m = spike(8, 1, 13, 2.2) | spike(4.5, 5, 13, 1.6) | spike(11.5, 4, 13, 1.7) | rect(3, 12, 13, 14)
+    a = shade(m, [hx('06260f'), hx('0f5a28'), hx('1fa04a'), hx('46eb82'), hx('c8ffd8')])
+    a = outline(a, hx('041208'))
+    fr = []
+    for k in range(4):
+        f = a.copy()
+        for x, y in [[(8, 3)], [(5, 7)], [(11, 6)], [(8, 8)]][k]: f[y, x] = hx('ffffff')
+        fr.append(f)
+    save(None, 'relic_venin_cristallise', fr, ft=4)
+venom_crystal()
+
+def eye_mask():
+    m = np.zeros((16, 16), bool)
+    yy, xx = np.mgrid[0:16, 0:16]
+    m |= ((xx - 7.5) / 7.2) ** 2 + ((yy - 8) / 5.2) ** 2 <= 1
+    m &= ~(((xx - 7.5) / 2.0) ** 2 + ((yy - 14) / 2.6) ** 2 <= 1)
+    a = shade(m, [hx('03040a'), hx('070a16'), hx('0d1430'), hx('16224c')])
+    eyes = [(3, 6), (5, 5), (7, 4), (9, 4), (11, 5), (13, 6), (4, 9), (6, 8), (9, 8), (11, 9), (8, 11), (6, 11), (10, 11)]
+    fr = []
+    for k in range(4):
+        f = a.copy()
+        for i, (x, y) in enumerate(eyes):
+            if (i + k * 3) % 7 == 0: f[y, x] = hx('16224c')
+            else: f[y, x] = hx('7fd3ff') if i % 3 else hx('3a6bff')
+        f[6, 7] = f[6, 8] = hx('ff3248') if k % 2 == 0 else hx('ff7a8a')
+        fr.append(outline(f, hx('000000')))
+    save(None, 'relic_masque_mille_yeux', fr, ft=5)
+eye_mask()
+
+def spindle_web():
+    a = np.zeros((16, 16, 4), np.int32)
+    ring = disk(8, 8, 7.2) & ~disk(8, 8, 6.2)
+    a[ring] = hx('8a5a2c')
+    for y, x in zip(*np.nonzero(disk(8, 8, 7.2) & ~disk(8, 8, 6.6))): a[y, x] = hx('5c3a1e')
+    fr = []
+    for k in range(4):
+        f = a.copy()
+        sp = k * math.pi / 16
+        for j in range(8):
+            ang = sp + j * math.pi / 4
+            for t in np.linspace(0.5, 6.0, 12):
+                x, y = round(8 + math.cos(ang) * t - 0.5), round(8 + math.sin(ang) * t - 0.5)
+                if 0 <= x < 16 and 0 <= y < 16: f[y, x] = hx('e1ebff')
+        for rr in (2.2, 3.8, 5.3):
+            for t in np.linspace(0, 2 * math.pi, 40):
+                x, y = round(8 + math.cos(t + sp) * rr - 0.5), round(8 + math.sin(t + sp) * rr - 0.5)
+                if 0 <= x < 16 and 0 <= y < 16 and f[y, x, 3] == 0: f[y, x] = hx('a8b4cc')
+        f[7, 7] = f[7, 8] = f[8, 7] = f[8, 8] = hx('3a6bff')
+        fr.append(outline(f, hx('0b0f1f')))
+    save(None, 'relic_fuseau_tisseuse', fr, ft=4)
+spindle_web()
+
+def web_wings():
+    fr = []
+    for k in range(4):
+        a = np.zeros((16, 16, 4), np.int32)
+        flap = [0, 1, 0, -1][k]
+        for s_ in (-1, 1):
+            ox, oy = 8 + s_ * 1, 8
+            for j in range(6):
+                ang = (-1.2 + 2.4 * j / 5)
+                for t in np.linspace(0.5, 6.6, 14):
+                    x = ox + s_ * math.cos(ang) * t; y = oy + math.sin(ang) * t - flap * (t / 6.6)
+                    xi, yi = int(round(x)), int(round(y))
+                    if 0 <= xi < 16 and 0 <= yi < 16: a[yi, xi] = hx('e1ebff')
+            for rr in (2.4, 4.3, 6.0):
+                for t in np.linspace(-1.2, 1.2, 20):
+                    x = ox + s_ * math.cos(t) * rr; y = oy + math.sin(t) * rr - flap * (rr / 6.6)
+                    xi, yi = int(round(x)), int(round(y))
+                    if 0 <= xi < 16 and 0 <= yi < 16 and a[yi, xi, 3] == 0: a[yi, xi] = hx('8fa0d0')
+        a[7, 7] = a[7, 8] = a[8, 7] = a[8, 8] = hx('3a6bff')
+        fr.append(outline(a, hx('0b0f1f')))
+    save(None, 'relic_ailes_toile', fr, ft=4)
+web_wings()
+
+def red_eye():
+    fr = []
+    for k in range(4):
+        m = np.zeros((16, 16), bool)
+        yy, xx = np.mgrid[0:16, 0:16]
+        m |= ((xx - 7.5) / 7.0) ** 2 + ((yy - 7.5) / 4.6) ** 2 <= 1
+        a = shade(m, [hx('3a0008'), hx('7a0012'), hx('c41c2c'), hx('ff3248'), hx('ff9aa8')])
+        iris = ((xx - 7.5 - [0, 1, 0, -1][k]) / 2.6) ** 2 + ((yy - 7.5) / 2.6) ** 2 <= 1
+        a[iris] = hx('ffd23f')
+        slit = (np.abs(xx - 7.5 - [0, 1, 0, -1][k]) <= 0.6) & (np.abs(yy - 7.5) <= 2.5)
+        a[slit] = hx('0a0002')
+        a[5, 5 + [0, 1, 0, -1][k]] = hx('ffffff')
+        fr.append(outline(a, hx('140004')))
+    save(None, 'relic_oeil_rouge_abysse', fr, ft=6)
+red_eye()
+
 # --- textures du corps de la Reine (32x32)
 def chitin():
     N2 = 32; yy, xx = np.mgrid[0:N2, 0:N2]

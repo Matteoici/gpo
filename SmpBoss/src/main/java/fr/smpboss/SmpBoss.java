@@ -1007,7 +1007,8 @@ public final class SmpBoss extends JavaPlugin {
         if (cmd.getName().equalsIgnoreCase("arenearaignee") || cmd.getName().equalsIgnoreCase("arenecitrouille")) {
             if (!sender.hasPermission("smpboss.admin")) return out;
             if (a.length == 1) out.addAll(List.of("tp", "construire", "annuler", "setspawn", "portail", "sortie", "recuperer", "definir", "supprimer"));
-            else if (a.length == 2 && (a[0].equalsIgnoreCase("portail") || a[0].equalsIgnoreCase("sortie"))) out.addAll(List.of("pos1", "pos2", "info", "supprimer"));
+            else if (a.length == 2 && a[0].equalsIgnoreCase("portail")) out.addAll(List.of("poser", "retirer", "pos1", "pos2", "info", "supprimer"));
+            else if (a.length == 2 && a[0].equalsIgnoreCase("sortie")) out.addAll(List.of("pos1", "pos2", "info", "supprimer"));
             else if (a.length == 2 && a[0].equalsIgnoreCase("construire")) out.addAll(List.of("20", "24", "28", "32", "36", "ciel", "ici"));
             else if (a.length == 3 && a[0].equalsIgnoreCase("construire")) out.addAll(List.of("ici", "ciel"));
             else if (a.length == 2 && a[0].equalsIgnoreCase("tp")) for (Player p : Bukkit.getOnlinePlayers()) out.add(p.getName());

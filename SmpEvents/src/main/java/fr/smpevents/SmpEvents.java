@@ -136,6 +136,7 @@ public final class SmpEvents extends JavaPlugin {
             koth.tickSecond();
             afk.tickSecond();
         }
+        if (ticks % 10 == 3) island.swirls();
         if (ticks % 100 == 5) {
             holograms.ensureAll();
             island.tick();

@@ -16,7 +16,7 @@ for d in (MOD, DEF):
 def w(path, obj):
     with open(path, 'w') as f: json.dump(obj, f, indent=1)
 
-HANDHELD = ['dague_venin', 'croc_reine', 'boss_blade', 'lame_citrouille', 'croc_de_givre', 'tranche_mace', 'brise_terre', 'hache_maudite', 'arbalete_spectrale', 'faucille', 'fuga']
+HANDHELD = ['dague_venin', 'croc_reine', 'faux_tisseuse', 'sceptre_abysse', 'boss_blade', 'lame_citrouille', 'croc_de_givre', 'tranche_mace', 'brise_terre', 'hache_maudite', 'arbalete_spectrale', 'faucille', 'fuga']
 RELICS = {'trainee_flammes': 'blaze_powder', 'amulette_recolte': 'golden_carrot', 'lanterne_mineure': 'lantern',
           'couronne': 'golden_helmet', 'lanterne_eternelle': 'soul_lantern', 'bottes_recolte': 'golden_boots',
           'sac_recolte': 'bundle', 'braises_ardentes': 'magma_cream', 'crane_maudit': 'wither_skeleton_skull',
@@ -25,7 +25,9 @@ RELICS = {'trainee_flammes': 'blaze_powder', 'amulette_recolte': 'golden_carrot'
           'couronne_roi_eternel': 'golden_helmet', 'ailes_eclipse': 'elytra',
           'fil_soie': 'string', 'oeil_araignee': 'spider_eye', 'crochets_venin': 'prismarine_shard', 'cocon_ancien': 'cobweb',
           'pattes_reine': 'black_candle', 'cape_toile': 'blue_banner', 'couronne_reine': 'netherite_helmet', 'coeur_abysse': 'heart_of_the_sea',
-          'black_flash': 'redstone', 'black_flash_consecutif': 'nether_star'}
+          'black_flash': 'redstone', 'black_flash_consecutif': 'nether_star',
+          'soie_lunaire': 'white_dye', 'venin_cristallise': 'lime_dye', 'masque_mille_yeux': 'black_dye', 'fuseau_tisseuse': 'lead',
+          'ailes_toile': 'phantom_membrane', 'oeil_rouge_abysse': 'ender_eye'}
 FLAT = ['oeil_maudit', 'cocon', 'hollow_purple', 'graine', 'egg_rare', 'egg_epique', 'egg_legendaire', 'egg_mythique'] + ['relic_' + r for r in RELICS]
 BOWS = ['sonic_bow', 'arc_tempete', 'arc_feux_follets', 'arc_toiles']
 
@@ -135,7 +137,8 @@ use('jack_o_lantern', ['boss_pumpkin'])
 use('golden_helmet', ['boss_crown'])
 use('netherite_axe', ['brise_terre'])
 use('diamond_axe', ['hache_maudite'])
-use('netherite_hoe', ['arbalete_spectrale', 'faucille'])
+use('netherite_hoe', ['arbalete_spectrale', 'faucille', 'faux_tisseuse'])
+use('breeze_rod', ['sceptre_abysse'])
 use('blaze_rod', ['fuga'])
 use('amethyst_shard', ['hollow_purple'])
 use('pumpkin_seeds', ['graine'])

@@ -566,7 +566,7 @@ final class ArenaDesign implements ArenaPlan {
         for (int u = -2; u <= 2; u++) {
             for (int v = 0; v <= 6; v++) {
                 boolean inside = Math.abs(u) <= 1 && v >= 1 && v <= 4;
-                set(u, v, pz, inside ? "nether_portal[axis=x]" : "obsidian");
+                set(u, v, pz, inside ? "air" : "obsidian");
             }
         }
         portal = new int[]{0, 1, pz};

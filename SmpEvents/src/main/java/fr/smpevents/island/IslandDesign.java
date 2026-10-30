@@ -302,7 +302,7 @@ public final class IslandDesign {
         for (int x = -2; x <= 2; x++) {
             for (int y = 0; y <= 4; y++) {
                 boolean inside = Math.abs(x) <= 1 && y >= 1 && y <= 3;
-                set(x, y, pz, inside ? "nether_portal[axis=x]" : "obsidian");
+                set(x, y, pz, inside ? "air" : "obsidian");
             }
         }
         for (int s = -1; s <= 1; s += 2) {
@@ -427,7 +427,7 @@ public final class IslandDesign {
     // ================================================================= porte du spawn
 
     /**
-     * Petite arche dorée posée au spawn : portail 3×3, piliers de quartz, clé d'or.
+     * Petite arche dorée posée au spawn : portail 3×3 (un tourbillon du resource pack, pas un portail du Nether), piliers de quartz, clé d'or.
      * Repère : (0,0,0) = bloc sous les pieds au centre de l'arche, la face avant regarde vers +w.
      * Renvoie les blocs en (u = côté, y, w = profondeur) ; l'appelant les tourne selon la direction.
      */
@@ -436,7 +436,7 @@ public final class IslandDesign {
         for (int u = -2; u <= 2; u++) {
             for (int y = 0; y <= 4; y++) {
                 boolean inside = Math.abs(u) <= 1 && y >= 1 && y <= 3;
-                out.put(new int[]{u, y, 0}, inside ? "nether_portal" : "obsidian");
+                out.put(new int[]{u, y, 0}, inside ? "portal" : "obsidian");
             }
         }
         for (int s = -1; s <= 1; s += 2) {

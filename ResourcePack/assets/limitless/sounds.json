@@ -187,5 +187,21 @@
     "name": "limitless:spider/skitter"
    }
   ]
+ },
+ "boss.music_pumpkin": {
+  "sounds": [
+   {
+    "name": "limitless:boss/music_pumpkin",
+    "stream": true
+   }
+  ]
+ },
+ "spider.music_queen": {
+  "sounds": [
+   {
+    "name": "limitless:spider/music_queen",
+    "stream": true
+   }
+  ]
  }
 }
