@@ -885,7 +885,7 @@ public final class SpiderQueen implements Boss {
             Location at = ground(from.clone().add(seg.clone().multiply(s / Math.max(0.1, L))));
             if (fx != null) fx.tpop(at.clone().add(0, 0.12, 0), "w_ring_flat", ABYSS, 2.6f, 1, 2.6f, 2, 18, 3, Display.Billboard.FIXED, null);
             Particle.DustOptions d = new Particle.DustOptions(ABYSS, 1.4f);
-            repeat(4, 6, i -> at.getWorld().spawnParticle(Particle.DUST, at.clone().add(0, 0.2, 0), 3, 0.6, 0, 0.6, 0, d, true));
+            repeat(4, 6, i -> at.getWorld().spawnParticle(Particle.DUST, at.clone().add(0, 0.2, 0), 3, 0.6, 0, 0.6, 0, d, true), null);
         }
         csound(from, "spider.hiss", 2f, 0.6f, "entity.spider.ambient");
         later(24, () -> {
