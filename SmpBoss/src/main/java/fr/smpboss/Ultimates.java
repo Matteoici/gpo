@@ -215,6 +215,80 @@ final class Ultimates {
         return r.normalize();
     }
 
+    // ================================================================= lanceur immobile pendant une attaque finale
+
+    private final Map<UUID, Location> rooted = new HashMap<>();
+    private BukkitTask rootTask;
+
+    /** Le lanceur ne peut plus bouger (ni sauter, ni tomber) : il peut juste regarder autour de lui. */
+    void root(Player p) {
+        rooted.put(p.getUniqueId(), p.getLocation().clone());
+        NamespacedKey sp = new NamespacedKey(plugin, "ult_root_speed"), jp = new NamespacedKey(plugin, "ult_root_jump"), gr = new NamespacedKey(plugin, "ult_root_gravity");
+        mod(p, Attribute.MOVEMENT_SPEED, sp, true);
+        mod(p, Attribute.JUMP_STRENGTH, jp, true);
+        mod(p, Attribute.GRAVITY, gr, true);
+        p.setVelocity(new Vector());
+        if (rootTask == null) rootTask = Bukkit.getScheduler().runTaskTimer(plugin, this::rootTick, 1L, 1L);
+    }
+
+    /** Fait monter doucement le lanceur (il reste immobile en l'air). */
+    void lift(Player p, double dy) {
+        Location a = rooted.get(p.getUniqueId());
+        if (a != null) a.add(0, dy, 0);
+    }
+
+    /** Libère le lanceur ; s'il est en l'air, il redescend doucement (chute lente, pas de dégâts). */
+    void unroot(Player p, boolean slowFall) {
+        rooted.remove(p.getUniqueId());
+        mod(p, Attribute.MOVEMENT_SPEED, new NamespacedKey(plugin, "ult_root_speed"), false);
+        mod(p, Attribute.JUMP_STRENGTH, new NamespacedKey(plugin, "ult_root_jump"), false);
+        mod(p, Attribute.GRAVITY, new NamespacedKey(plugin, "ult_root_gravity"), false);
+        p.setFallDistance(0);
+        if (slowFall && p.isOnline() && !p.isDead()) p.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, 20 * 8, 0, false, false, true));
+    }
+
+    private void rootTick() {
+        for (var it = rooted.entrySet().iterator(); it.hasNext(); ) {
+            var en = it.next();
+            Player p = Bukkit.getPlayer(en.getKey());
+            if (p == null || !p.isOnline() || p.isDead() || p.getWorld() != en.getValue().getWorld()) {
+                it.remove();
+                if (p != null) {
+                    mod(p, Attribute.MOVEMENT_SPEED, new NamespacedKey(plugin, "ult_root_speed"), false);
+                    mod(p, Attribute.JUMP_STRENGTH, new NamespacedKey(plugin, "ult_root_jump"), false);
+                    mod(p, Attribute.GRAVITY, new NamespacedKey(plugin, "ult_root_gravity"), false);
+                }
+                continue;
+            }
+            Location l = p.getLocation(), a = en.getValue();
+            Vector diff = a.toVector().subtract(l.toVector());
+            if (diff.lengthSquared() > 2.25) {
+                Location back = a.clone();
+                back.setYaw(l.getYaw());
+                back.setPitch(l.getPitch());
+                Arena.allowTeleport(p);
+                p.teleport(back);
+                p.setVelocity(new Vector());
+            } else {
+                p.setVelocity(diff.multiply(0.5));
+            }
+            p.setFallDistance(0);
+        }
+        if (rooted.isEmpty() && rootTask != null) {
+            rootTask.cancel();
+            rootTask = null;
+        }
+    }
+
+    /** Combien on peut monter au-dessus du joueur sans se cogner (max blocs). */
+    static double headroom(Player p, double max) {
+        Location l = p.getLocation();
+        for (int y = 2; y <= (int) max + 2; y++) {
+            if (!l.clone().add(0, y, 0).getBlock().isPassable()) return Math.max(0, y - 3);
+        }
+        return max;
+    }
+
     // ================================================================= figer
 
     private void freeze(LivingEntity e, int ticks, boolean frost) {
@@ -295,6 +369,10 @@ final class Ultimates {
     void shutdown() {
         fugaFx.removeAll();
         hollowFx.removeAll();
+        for (UUID id : new ArrayList<>(rooted.keySet())) {
+            Player p = Bukkit.getPlayer(id);
+            if (p != null) unroot(p, false);
+        }
         for (Frozen f : frozen.values()) release(f);
         frozen.clear();
         for (UUID id : night) {
@@ -361,6 +439,45 @@ final class Ultimates {
      * sans jamais toucher à la vue du joueur : pas d'effet de lag, la souris reste libre.
      * pulses = nombre de secousses, every = ticks entre deux.
      */
+    /**
+     * Vrai tremblement de caméra : l'écran est secoué dans tous les sens (de moins en moins fort), plus fort près du
+     * centre. On revient exactement à la visée de départ à la fin. Réglages : effects.screen-shake / screen-shake-power.
+     */
+    void quake(Location c, double radius, int ticks, float power) {
+        if (!plugin.getConfig().getBoolean("effects.screen-shake", true) || ticks <= 0) return;
+        float mul = (float) plugin.getConfig().getDouble("effects.screen-shake-power", 1.0);
+        World w = c.getWorld();
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        Map<UUID, float[]> off = new HashMap<>();
+        int[] n = {0};
+        BukkitTask[] task = new BukkitTask[1];
+        task[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            int k = n[0]++;
+            boolean last = k >= ticks;
+            double fade = Math.pow(1 - Math.min(1, (double) k / ticks), 1.3);
+            for (Player o : w.getPlayers()) {
+                float[] prev = off.get(o.getUniqueId());
+                double d = o.getLocation().distance(c);
+                if (d > radius && prev == null) continue;
+                float amp = d > radius ? 0 : (float) (power * mul * fade * (1 - 0.8 * d / radius));
+                float ny = last ? 0 : (float) ((k % 2 == 0 ? 1 : -1) * amp * rnd.nextDouble(0.5, 1));
+                float np = last ? 0 : (float) (rnd.nextDouble(-1, 1) * amp * 0.75);
+                float py = prev == null ? 0 : prev[0], pp = prev == null ? 0 : prev[1];
+                if (ny == py && np == pp) continue;
+                off.put(o.getUniqueId(), new float[]{ny, np});
+                Location eye = o.getEyeLocation();
+                eye.setYaw(eye.getYaw() + ny - py);
+                eye.setPitch(Math.max(-89.5f, Math.min(89.5f, eye.getPitch() + np - pp)));
+                Vector dir = eye.getDirection().multiply(10);
+                try {
+                    o.lookAt(eye.getX() + dir.getX(), eye.getY() + dir.getY(), eye.getZ() + dir.getZ(), io.papermc.paper.entity.LookAnchor.EYES);
+                } catch (RuntimeException | LinkageError ignored) {
+                }
+            }
+            if (last) task[0].cancel();
+        }, 0L, 1L);
+    }
+
     void shake(Location c, double radius, int pulses, int every) {
         World w = c.getWorld();
         ThreadLocalRandom rnd = ThreadLocalRandom.current();

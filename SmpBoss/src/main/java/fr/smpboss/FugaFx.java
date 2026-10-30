@@ -72,6 +72,7 @@ final class FugaFx extends PackFx {
         flash(base, 60, WHITE, 0, 1, 8);
         fallbackSound(base, org.bukkit.Sound.ENTITY_BLAZE_AMBIENT, 2f, 0.5f);
         int release = 124;
+        ult.root(p);
         int[] t = {0};
         BukkitTask[] task = new BukkitTask[1];
         task[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
@@ -79,6 +80,7 @@ final class FugaFx extends PackFx {
             if (!p.isOnline() || p.isDead() || p.getWorld() != w) {
                 task[0].cancel();
                 ult.casting.remove(p.getUniqueId());
+                ult.unroot(p, false);
                 stopSound(base, SND_CHARGE, 260);
                 dayAgain(dark);
                 return;
@@ -116,6 +118,7 @@ final class FugaFx extends PackFx {
             if (k >= release) {
                 task[0].cancel();
                 ult.casting.remove(p.getUniqueId());
+                later(10, () -> ult.unroot(p, false)); // libre une demi-seconde après le tir
                 // « Fûga ! » au moment où la flèche part
                 ult.chat(base, p, plugin.msg("weapons.fuga.final"));
                 fallback(p.getEyeLocation(), Particle.FLAME, 80, 0.4, 0.4, 0.4, 0.25, null);
@@ -230,6 +233,7 @@ final class FugaFx extends PackFx {
         ult.shards(gc, 40, 20, 170);
         ult.crater(p, gc, "fuga", new Material[]{Material.MAGMA_BLOCK, Material.BLACKSTONE, Material.NETHERRACK}, true);
         ult.shake(c, R + 30, 9, 3);
+        ult.quake(gc, R + 30, 34, 9f);
         Set<UUID> done = new HashSet<>();
         List<ItemDisplay> column = new ArrayList<>();
         int c0 = 64, cEnd = c0 + 86;
@@ -271,7 +275,7 @@ final class FugaFx extends PackFx {
                 dayAgain(dark);
                 pop(gc.clone().add(0, 10, 0), "glow_white", 60, 60, 60, 1, 2, 10, Display.Billboard.CENTER, null);
                 pop(gc.clone().add(0, 0.3, 0), "shock", 40, 1, 40, 8, 0, 5, Display.Billboard.FIXED, null);
-                int seg = 8;
+                int seg = 12;
                 float h = (float) (H / seg);
                 for (int i = 0; i < seg; i++) {
                     Location mid = gc.clone().add(0, -4 + h * i + h / 2, 0);
@@ -284,10 +288,6 @@ final class FugaFx extends PackFx {
                         tween(core, new Vector3f(), null, new Vector3f(2.4f, h, 2.4f), 4);
                     });
                 }
-                float hh = (float) H;
-                ItemDisplay glowCol = sprite(gc.clone().add(0, hh / 2 - 4, 0), "column_glow", 0.3f, hh, 0.3f, Display.Billboard.FIXED, null);
-                column.add(glowCol);
-                later(1, () -> tween(glowCol, new Vector3f(), null, new Vector3f(16, hh, 16), 5));
                 for (int i = 0; i < 8; i++) {
                     double a = Math.PI * 2 * i / 8;
                     ItemDisplay f = sprite(gc.clone().add(Math.cos(a) * 5.5, 2.2, Math.sin(a) * 5.5), "basefire", 0.3f, 0.3f, 0.3f, Display.Billboard.VERTICAL, null);
@@ -295,7 +295,9 @@ final class FugaFx extends PackFx {
                     later(2, () -> tween(f, new Vector3f(), null, new Vector3f(5.5f, 5.5f, 5.5f), 5));
                 }
                 ult.shake(gc, R, 3, 4);
+                ult.quake(gc, R, 26, 6f);
             }
+            if (k == c0 + 26) ult.quake(gc, R * 0.6, cEnd - c0 - 26, 1.4f); // la colonne gronde
             if (k > c0 + 3 && k < cEnd) {
                 // traits de lumière horizontaux qui traversent la colonne, étincelles
                 if (k % 2 == 0) {
