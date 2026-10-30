@@ -111,7 +111,13 @@ final class Ultimates {
      * (on y tape le Roi et ses monstres, pas ses coéquipiers).
      */
     private boolean shielded(Entity en) {
+        return shielded(en, false);
+    }
+
+    /** duelOk = le Black Flash : autorisé en duel et dans les arènes de duel. */
+    private boolean shielded(Entity en, boolean duelOk) {
         if (en instanceof Player && plugin.arenaAt(en.getLocation()) != null) return true;
+        if (duelOk) return false;
         if (en instanceof Player pl && duelCall("inDuel", java.util.UUID.class, pl.getUniqueId())) return true;
         return duelCall("isArena", Location.class, en.getLocation());
     }
@@ -195,13 +201,17 @@ final class Ultimates {
 
     /** Joueurs et monstres dans la zone (une seule recherche). */
     List<LivingEntity> targets(Player caster, Location c, double r) {
+        return targets(caster, c, r, false);
+    }
+
+    List<LivingEntity> targets(Player caster, Location c, double r, boolean duelOk) {
         List<LivingEntity> out = new ArrayList<>();
         Boss k = plugin.king();
         for (Entity en : c.getWorld().getNearbyEntities(c, r, r, r)) {
             if (!(en instanceof LivingEntity le) || en.equals(caster) || le.isDead()) continue;
             if (en.getScoreboardTags().contains("smp_pet")) continue; // familiers (SmpPets)
             if (en.getLocation().distanceSquared(c) > r * r) continue;
-            if (shielded(en)) continue;
+            if (shielded(en, duelOk)) continue;
             if (en instanceof Player t) {
                 if (t.getGameMode() == org.bukkit.GameMode.SPECTATOR || t.getGameMode() == org.bukkit.GameMode.CREATIVE || vanished(t)) continue;
             } else if (!(en instanceof Enemy) && (k == null || !k.isBoss(en))) continue;

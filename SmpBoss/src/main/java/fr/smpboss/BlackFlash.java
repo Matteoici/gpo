@@ -140,7 +140,8 @@ final class BlackFlash implements Listener {
             // cible sur ce bout de trajet
             LivingEntity hit = null;
             double best = Double.MAX_VALUE;
-            for (LivingEntity le : ult().targets(p, prev[0].clone().add(seg.clone().multiply(0.5)), seg.length() / 2 + 1.6)) {
+            for (LivingEntity le : ult().targets(p, prev[0].clone().add(seg.clone().multiply(0.5)), seg.length() / 2 + 1.6,
+                    plugin.getConfig().getBoolean("black-flash.in-duels", true))) {
                 double d = le.getLocation().add(0, le.getHeight() / 2, 0).distanceSquared(prev[0]);
                 if (d < best) {
                     best = d;

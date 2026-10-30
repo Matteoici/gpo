@@ -875,6 +875,7 @@ music:
 # ================================================================ ⚡ BLACK FLASH (reliques de la Reine) : accroupi + F
 black-flash:
   range: 24
+  in-duels: true           # utilisable en duel et dans les arènes de duel (contre l'adversaire)
   single:
     percent: 50            # % de la vie max de la cible
     boss-damage: 120       # contre un boss
