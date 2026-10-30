@@ -25,6 +25,7 @@ import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Slime;
 import org.bukkit.entity.Spider;
 import org.bukkit.entity.TextDisplay;
 import org.bukkit.inventory.ItemStack;
@@ -107,7 +108,66 @@ public final class SpiderQueen implements Boss {
     }
 
     public boolean isBoss(Entity e) {
-        return e != null && e == boss;
+        return e != null && (e == boss || hitboxes.contains(e));
+    }
+
+    @Override
+    public LivingEntity mainEntity() {
+        return boss;
+    }
+
+    // ================================================================= zones de coups (tête + abdomen)
+
+    /** Deux slimes invisibles collés à la tête et à l'abdomen : on touche la Reine là où on la voit (mêlée et flèches). */
+    private final List<Slime> hitboxes = new ArrayList<>();
+
+    private Slime hitbox(Location at) {
+        return at.getWorld().spawn(at, Slime.class, z -> {
+            z.setPersistent(false);
+            z.setSize(4);
+            z.setAI(false);
+            z.setSilent(true);
+            z.setGravity(false);
+            z.setCollidable(false);
+            z.setRemoveWhenFarAway(false);
+            z.addScoreboardTag("smp_boss_hitbox");
+            z.getPersistentDataContainer().set(bossKey, PersistentDataType.BYTE, (byte) 3);
+            z.customName(parse(msg("name")));
+            z.setCustomNameVisible(false);
+            base(z, Attribute.MAX_HEALTH, 1024);
+            z.setHealth(1024);
+            base(z, Attribute.KNOCKBACK_RESISTANCE, 1);
+            z.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0, false, false, false));
+        });
+    }
+
+    /** Chaque tick : les zones suivent la tête et l'abdomen, à leur taille. */
+    private void moveHitboxes() {
+        if (rig == null || rig.headAt == null || boss == null) return;
+        if (hitboxes.isEmpty()) {
+            hitboxes.add(hitbox(rig.abdAt));
+            hitboxes.add(hitbox(rig.headAt));
+        }
+        double S = size;
+        double[] widths = {1.25 * S, 0.9 * S};
+        Location[] at = {rig.abdAt, rig.headAt};
+        for (int i = 0; i < 2; i++) {
+            Slime z = hitboxes.get(i);
+            if (!z.isValid()) {
+                z = hitbox(at[i]);
+                hitboxes.set(i, z);
+            }
+            double scale = Math.min(16, widths[i] / 2.08);
+            AttributeInstance a = z.getAttribute(Attribute.SCALE);
+            if (a != null && Math.abs(a.getBaseValue() - scale) > 0.01) a.setBaseValue(scale);
+            double h = 2.08 * scale;
+            Location l = at[i].clone().add(0, -h / 2, 0);
+            if (rig.hidden) l.add(0, -200, 0); // éclipse : elle a disparu
+            l.setYaw(0);
+            l.setPitch(0);
+            z.teleport(l);
+            z.setFireTicks(0);
+        }
     }
 
     public boolean isMinion(Entity e) {
@@ -172,6 +232,8 @@ public final class SpiderQueen implements Boss {
         double pose;
         double poseTarget;
         Color eyeColor = EYE;
+        /** centres de la tête et de l'abdomen (pour les zones de coups) */
+        Location headAt, abdAt;
 
         Rig(Location at) {
             head = part(at, Material.BLACK_CONCRETE, "spider_head");
@@ -231,14 +293,16 @@ public final class SpiderQueen implements Boss {
             Location B = base.clone().add(0, 0.8 * S + crouch + Math.sin(clock * 2) * 0.03 * S, 0);
             // céphalothorax (penché vers le haut quand elle se cabre), abdomen qui respire
             Quaternionf headRot = new Quaternionf(facing).rotateX((float) (-0.5 * rear));
-            set(head, B.clone().add(f.clone().multiply(0.36 * S)).add(0, rear * 0.35 * S, 0), headRot,
-                    new Vector3f((float) (0.85 * S), (float) (0.62 * S), (float) (0.9 * S)));
+            // la tête est collée au corps (elle chevauche l'abdomen) : plus de trou entre les deux, même à grande taille
+            headAt = B.clone().add(f.clone().multiply(0.3 * S)).add(0, rear * 0.22 * S, 0);
+            set(head, headAt, headRot, new Vector3f((float) (0.9 * S), (float) (0.66 * S), (float) (0.95 * S)));
             double breathe = 1 + Math.sin(tick * 0.12) * 0.03;
-            set(abdomen, B.clone().add(f.clone().multiply(-0.9 * S)).add(0, 0.2 * S, 0), new Quaternionf(facing).rotateX(0.15f),
+            abdAt = B.clone().add(f.clone().multiply(-0.74 * S)).add(0, 0.18 * S, 0);
+            set(abdomen, abdAt, new Quaternionf(facing).rotateX(0.15f),
                     new Vector3f((float) (1.2 * S * breathe), (float) (1.0 * S * breathe), (float) (1.45 * S)));
             // yeux (sans pack : deux cubes lumineux devant)
             for (int s = 0; s < 2; s++) {
-                Location e = B.clone().add(f.clone().multiply(0.8 * S)).add(r.clone().multiply((s == 0 ? 0.18 : -0.18) * S)).add(0, 0.15 * S + rear * 0.45 * S, 0);
+                Location e = B.clone().add(f.clone().multiply(0.78 * S)).add(r.clone().multiply((s == 0 ? 0.18 : -0.18) * S)).add(0, 0.15 * S + rear * 0.3 * S, 0);
                 set(eyes[s], e, facing, new Vector3f((float) (0.16 * S), (float) (0.16 * S), (float) (0.08 * S)));
             }
             // pattes : 4 de chaque côté, marche en alternance
@@ -333,9 +397,9 @@ public final class SpiderQueen implements Boss {
             z.setGravity(false);
             base(z, Attribute.MAX_HEALTH, 1024);
             z.setHealth(1024);
-            base(z, Attribute.SCALE, size);
+            base(z, Attribute.SCALE, size * cfg("body-hitbox", 0.45));
             base(z, Attribute.MOVEMENT_SPEED, cfg("speed", 0.3));
-            base(z, Attribute.ATTACK_DAMAGE, cfg("melee-damage", 10));
+            base(z, Attribute.ATTACK_DAMAGE, cfg("melee-damage", 16));
             base(z, Attribute.KNOCKBACK_RESISTANCE, 1);
             base(z, Attribute.FOLLOW_RANGE, 48);
             z.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0, false, false, false));
@@ -393,6 +457,7 @@ public final class SpiderQueen implements Boss {
         if (stunned > 0) stunned--;
         float yaw = boss.getBodyYaw();
         rig.update(c, yaw, size);
+        moveHitboxes();
         if (tick % 10 == 0) {
             bar.name(parse(msg("bar-" + phase) + plugin.msg("boss.bar-hp").replace("<hp>", String.valueOf((long) Math.ceil(Math.max(0, hp))))
                     .replace("<max>", String.valueOf((long) maxHp))));
@@ -459,7 +524,7 @@ public final class SpiderQueen implements Boss {
         }
         if (invulnerable > 0 || airborne || !boss.hasAI()) return;
         if (--nextAttack <= 0) {
-            nextAttack = (int) cfg("attack-interval." + phase, phase == 1 ? 70 : phase == 2 ? 58 : 48);
+            nextAttack = (int) cfg("attack-interval." + phase, phase == 1 ? 55 : phase == 2 ? 45 : 36);
             if (enraged) nextAttack = (int) (nextAttack * 0.7);
             List<Attack> pool = switch (phase) {
                 case 1 -> List.of(Attack.WEB_SHOT, Attack.POUNCE, Attack.LEG_SWEEP, Attack.VENOM_RAIN, Attack.BROOD, Attack.SILK_PULL);
@@ -1452,7 +1517,7 @@ public final class SpiderQueen implements Boss {
     }
 
     private double perPlayer() {
-        return Math.max(1, cfg("health-per-player", 2400));
+        return Math.max(1, cfg("health-per-player", 4000));
     }
 
     private double minPct() {
@@ -1468,6 +1533,8 @@ public final class SpiderQueen implements Boss {
         tasks.clear();
         if (bar != null) for (Player p : Bukkit.getOnlinePlayers()) p.hideBossBar(bar);
         if (rig != null) rig.remove();
+        for (Slime z : hitboxes) z.remove();
+        hitboxes.clear();
         for (Entity e : props) e.remove();
         props.clear();
         for (Entity e : anchors.keySet()) e.remove();
@@ -1487,7 +1554,7 @@ public final class SpiderQueen implements Boss {
     }
 
     private double mult() {
-        return cfg("damage.multiplier", 1.3) * (enraged ? 1.25 : 1.0) * (phase == 3 ? cfg("damage.phase-3-multiplier", 1.3)
+        return cfg("damage.multiplier", 1.8) * (enraged ? 1.25 : 1.0) * (phase == 3 ? cfg("damage.phase-3-multiplier", 1.3)
                 : phase == 2 ? cfg("damage.phase-2-multiplier", 1.4) : cfg("damage.phase-1-multiplier", 1.25));
     }
 
@@ -1546,7 +1613,7 @@ public final class SpiderQueen implements Boss {
     private void setScale(float s) {
         if (boss == null) return;
         AttributeInstance i = boss.getAttribute(Attribute.SCALE);
-        if (i != null) i.setBaseValue(s);
+        if (i != null) i.setBaseValue(Math.min(16, s * cfg("body-hitbox", 0.45)));
     }
 
     private Location keepIn(Location l, double maxR) {
@@ -1652,7 +1719,8 @@ public final class SpiderQueen implements Boss {
     }
 
     private void shake(Location c, double r) {
-        for (Player p : nearby(c, r)) p.playHurtAnimation((float) ThreadLocalRandom.current().nextDouble(360));
+        if (plugin.getConfig().getBoolean("effects.screen-shake-everything", false))
+            for (Player p : nearby(c, r)) p.playHurtAnimation((float) ThreadLocalRandom.current().nextDouble(360));
         Weapons w = plugin.weapons();
         if (w != null) w.ultimates.quake(c, r, 12, 3.5f);
     }

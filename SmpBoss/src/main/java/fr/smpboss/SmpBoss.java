@@ -394,6 +394,17 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 36);
             saveConfig();
         }
+        if (getConfig().getInt("config-version", 1) < 37) {
+            // Reine plus forte (vie, dégâts, cadence)
+            harder("spider.health-per-player", 2400, 4000);
+            harder("spider.melee-damage", 10, 16);
+            harder("spider.damage.multiplier", 1.3, 1.8);
+            harder("spider.attack-interval.1", 70, 55);
+            harder("spider.attack-interval.2", 58, 45);
+            harder("spider.attack-interval.3", 48, 36);
+            getConfig().set("config-version", 37);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);

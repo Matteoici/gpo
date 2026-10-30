@@ -167,7 +167,7 @@ final class HollowFx extends PackFx {
                 pop(c.clone().add(0, 0.2, 0), "shock_purple", 14, 1, 14, 6, 0, 4, Display.Billboard.FIXED, null);
                 for (int i = 0; i < 8; i++) pop(c.clone().add(rnd(1.5), rnd.nextDouble(1, 10), rnd(1.5)), "star_red", 2.5f, 2.5f, 2.5f, 1, 1, 4, Display.Billboard.CENTER, null);
                 w.playSound(c, Sound.ENTITY_BLAZE_SHOOT, 2f, 0.6f);
-                ult.quake(c, 30, 8, 1.2f);
+                ult.ultQuake(c, 30, 8, 1.2f);
                 Location rp = c.clone().add(rt.clone().multiply(1.6)).add(0, 3.6, 0);
                 red[0] = sprite(rp, "glow_red", 0.5f, 0.5f, 0.5f, Display.Billboard.CENTER, null);
                 red[1] = sprite(rp, "orb_red", 0.5f, 0.5f, 0.5f, Display.Billboard.CENTER, null);
@@ -221,7 +221,7 @@ final class HollowFx extends PackFx {
                 pop(mid, "orb_purple", 3.6f, 3.6f, 3.6f, 2, 6, 2, Display.Billboard.CENTER, null);
                 for (int i = 0; i < 6; i++) pop(mid.clone().add(rnd(2), rnd(1.5), rnd(2)), i % 2 == 0 ? "star_pink" : "bolt_" + rnd.nextInt(4), 3, 3, 3, 1, 3, 3, Display.Billboard.CENTER, new Quaternionf().rotateZ((float) rnd.nextDouble(6.28)));
                 fallback(mid, Particle.DUST, 80, 1, 1, 1, 0, new Particle.DustOptions(Color.fromRGB(200, 40, 240), 3f));
-                ult.quake(mid, 60, 10, 1.5f);
+                ult.ultQuake(mid, 60, 10, 1.5f);
             }
             if (k > MERGE && k < BOOM) {
                 Location mid = front(c, fwd, rt, 0);
@@ -311,8 +311,8 @@ final class HollowFx extends PackFx {
         fallback(m, Particle.END_ROD, 300, 1, 1, 1, 1.5, null);
         ult.shards(gc, 44, 26, 180);
         ult.crater(p, gc, "hollow-purple", new Material[]{Material.CRYING_OBSIDIAN, Material.AMETHYST_BLOCK, Material.OBSIDIAN}, false);
-        ult.shake(m, R + 30, 8, 3);
-        ult.quake(m, R + 30, 46, 14f);
+        ult.ultShake(m, R + 30, 8, 3);
+        ult.ultQuake(m, R + 30, 46, 14f);
         // ---- le choc : énorme dôme violet qui s'étend, souffle qui projette tout le monde, explosions en anneaux
         ItemDisplay dome = sprite(m, "orb_purple", 3.6f, 3.6f, 3.6f, Display.Billboard.CENTER, null);
         later(1, () -> tween(dome, new Vector3f(), null, new Vector3f(70, 70, 70), 7));
@@ -384,7 +384,7 @@ final class HollowFx extends PackFx {
                 }
                 m.getWorld().spawnParticle(Particle.EXPLOSION, m, 4, 6, 4, 6, 0, null, true);
             }
-            if (k == WHITE_START) ult.quake(m, R * 0.7, len - WHITE_START, 2.2f); // ça tremble encore pendant l'écran blanc
+            if (k == WHITE_START) ult.ultQuake(m, R * 0.7, len - WHITE_START, 2.2f); // ça tremble encore pendant l'écran blanc
             // éclats violets et éclairs qui retombent autour
             if (k > 10 && k < len && k % 4 == 0) {
                 Location at = m.clone().add(rnd(18), rnd.nextDouble(-2, 10), rnd(18));

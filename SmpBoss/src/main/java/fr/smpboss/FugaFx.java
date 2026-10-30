@@ -233,8 +233,8 @@ final class FugaFx extends PackFx {
         fallbackSound(gc, org.bukkit.Sound.ENTITY_GENERIC_EXPLODE, 4f, 0.5f);
         ult.shards(gc, 40, 20, 170);
         ult.crater(p, gc, "fuga", new Material[]{Material.MAGMA_BLOCK, Material.BLACKSTONE, Material.NETHERRACK}, true);
-        ult.shake(c, R + 30, 9, 3);
-        ult.quake(gc, R + 30, 34, 9f);
+        ult.ultShake(c, R + 30, 9, 3);
+        ult.ultQuake(gc, R + 30, 34, 9f);
         Set<UUID> done = new HashSet<>();
         List<ItemDisplay> column = new ArrayList<>();
         int c0 = 64, cEnd = c0 + 86;
@@ -296,10 +296,10 @@ final class FugaFx extends PackFx {
                     column.add(f);
                     later(2, () -> tween(f, new Vector3f(), null, new Vector3f(5.5f, 5.5f, 5.5f), 5));
                 }
-                ult.shake(gc, R, 3, 4);
-                ult.quake(gc, R, 26, 6f);
+                ult.ultShake(gc, R, 3, 4);
+                ult.ultQuake(gc, R, 26, 6f);
             }
-            if (k == c0 + 26) ult.quake(gc, R * 0.6, cEnd - c0 - 26, 1.4f); // la colonne gronde
+            if (k == c0 + 26) ult.ultQuake(gc, R * 0.6, cEnd - c0 - 26, 1.4f); // la colonne gronde
             if (k > c0 + 3 && k < cEnd) {
                 // traits de lumière horizontaux qui traversent la colonne, étincelles
                 if (k % 2 == 0) {

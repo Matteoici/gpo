@@ -2484,10 +2484,12 @@ public final class PumpkinKing implements Boss {
         w.spawnParticle(Particle.BLOCK, c.clone().add(0, 1, 0), 900, radius * 0.5, 2, radius * 0.5, 0, Material.PUMPKIN.createBlockData(), true);
         // --- la caméra tremble 2 secondes
         repeat(3, 12, i -> {
-            for (Player p : nearby(c, 90)) p.playHurtAnimation((float) rnd.nextDouble(360));
+            if (plugin.getConfig().getBoolean("effects.screen-shake-everything", false))
+                for (Player p : nearby(c, 90)) p.playHurtAnimation((float) ThreadLocalRandom.current().nextDouble(360));
         }, null);
         for (Player p : nearby(c, 90)) {
-            p.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, 80, 0, false, false, false));
+            if (plugin.getConfig().getBoolean("effects.screen-shake-everything", false))
+                p.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, 80, 0, false, false, false));
             p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 30, 2, false, false, false)); // le souffle coupe les jambes
         }
         // retombées : cendres et braises qui tombent doucement, anneau de flammes d'âmes sur le bord du cratère
@@ -2914,7 +2916,8 @@ public final class PumpkinKing implements Boss {
         // l'abri résonne
         repeat(2, 20, i -> w.spawnParticle(Particle.SOUL, shelter.clone().add(0, 0.5, 0), 6, shelterR * 0.5, 0.3, shelterR * 0.5, 0.03, null, true), null);
         for (Player p : nearby(base, 90)) {
-            p.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, 100, 0, false, false, false));
+            if (plugin.getConfig().getBoolean("effects.screen-shake-everything", false))
+                p.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, 100, 0, false, false, false));
             p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 40, 2, false, false, false));
         }
         // dehors : mort instantanée (même sur le pont ou le muret) ; dans l'abri : on survit, blessé
@@ -3126,7 +3129,8 @@ public final class PumpkinKing implements Boss {
 
     /** Tremblement de caméra pour les joueurs proches. */
     private void shake(Location c, double r) {
-        for (Player p : nearby(c, r)) p.playHurtAnimation((float) ThreadLocalRandom.current().nextDouble(360));
+        if (plugin.getConfig().getBoolean("effects.screen-shake-everything", false))
+            for (Player p : nearby(c, r)) p.playHurtAnimation((float) ThreadLocalRandom.current().nextDouble(360));
         Weapons w = plugin.weapons();
         if (w != null) w.ultimates.quake(c, r, 12, 3.5f);
     }

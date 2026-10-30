@@ -210,12 +210,18 @@ final class Ultimates {
         for (Entity en : c.getWorld().getNearbyEntities(c, r, r, r)) {
             if (!(en instanceof LivingEntity le) || en.equals(caster) || le.isDead()) continue;
             if (en.getScoreboardTags().contains("smp_pet")) continue; // familiers (SmpPets)
-            if (en.getLocation().distanceSquared(c) > r * r) continue;
+            if (en.getLocation().distanceSquared(c) > r * r && !en.getScoreboardTags().contains("smp_boss_hitbox")) continue;
             if (shielded(en, duelOk)) continue;
+            if (en.getScoreboardTags().contains("smp_boss_hitbox")) {
+                // zone de coups de la Reine : on vise la Reine elle-même (une seule fois)
+                LivingEntity main = k == null ? null : k.mainEntity();
+                if (main != null && !out.contains(main)) out.add(main);
+                continue;
+            }
             if (en instanceof Player t) {
                 if (t.getGameMode() == org.bukkit.GameMode.SPECTATOR || t.getGameMode() == org.bukkit.GameMode.CREATIVE || vanished(t)) continue;
             } else if (!(en instanceof Enemy) && (k == null || !k.isBoss(en))) continue;
-            out.add(le);
+            if (!out.contains(le)) out.add(le);
         }
         return out;
     }
@@ -519,7 +525,19 @@ final class Ultimates {
      * Vrai tremblement de caméra : l'écran est secoué dans tous les sens (de moins en moins fort), plus fort près du
      * centre. On revient exactement à la visée de départ à la fin. Réglages : effects.screen-shake / screen-shake-power.
      */
+    /** Tremblement des autres effets (boss, armes) : coupé par défaut, seuls Fûga et Hollow Purple font trembler. */
     void quake(Location c, double radius, int ticks, float power) {
+        if (!plugin.getConfig().getBoolean("effects.screen-shake-everything", false)) return;
+        ultQuake(c, radius, ticks, power);
+    }
+
+    void shake(Location c, double radius, int pulses, int every) {
+        if (!plugin.getConfig().getBoolean("effects.screen-shake-everything", false)) return;
+        ultShake(c, radius, pulses, every);
+    }
+
+    /** Tremblement de Fûga et Hollow Purple. */
+    void ultQuake(Location c, double radius, int ticks, float power) {
         if (!plugin.getConfig().getBoolean("effects.screen-shake", true) || ticks <= 0) return;
         float mul = (float) plugin.getConfig().getDouble("effects.screen-shake-power", 1.0);
         if (!"camera".equalsIgnoreCase(plugin.getConfig().getString("effects.screen-shake-mode", "tilt"))) {
@@ -590,7 +608,8 @@ final class Ultimates {
         }, 0L, 1L);
     }
 
-    void shake(Location c, double radius, int pulses, int every) {
+    void ultShake(Location c, double radius, int pulses, int every) {
+        if (!plugin.getConfig().getBoolean("effects.screen-shake", true)) return;
         World w = c.getWorld();
         ThreadLocalRandom rnd = ThreadLocalRandom.current();
         int[] n = {0};

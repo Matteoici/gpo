@@ -138,6 +138,13 @@ final class BossListener implements Listener {
             e.setCancelled(true); // feu, chute, étouffement, lave, coups à 0... : rien (et ne compte pas comme combattant)
             return;
         }
+        // un même joueur ne touche le boss qu'une fois par tick (la Reine a plusieurs zones de coups)
+        int nowTick = org.bukkit.Bukkit.getCurrentTick();
+        Integer lastTick = hitTick.put(by.getUniqueId(), nowTick);
+        if (lastTick != null && lastTick == nowTick) {
+            e.setCancelled(true);
+            return;
+        }
         // anti-cheese : on ne frappe le Roi que depuis la piste (pas du pont du portail, du muret, de dehors...)
         Arena ar = k.bossArena();
         if (ar != null && ar.defined() && plugin.getConfig().getBoolean("arena.protection.floor-only-damage", true)
@@ -164,6 +171,8 @@ final class BossListener implements Listener {
         }
         e.setDamage(0);
     }
+
+    private final java.util.Map<java.util.UUID, Integer> hitTick = new java.util.HashMap<>();
 
     private final org.bukkit.NamespacedKey offFloorKey = new org.bukkit.NamespacedKey("smpboss", "off_floor");
 

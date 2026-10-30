@@ -9,6 +9,11 @@ public interface Boss {
 
     boolean isMinion(Entity e);
 
+    /** L'entité principale du boss (les zones de coups renvoient vers elle). */
+    default org.bukkit.entity.LivingEntity mainEntity() {
+        return null;
+    }
+
     boolean active();
 
     double hp();
