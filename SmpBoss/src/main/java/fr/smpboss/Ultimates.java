@@ -522,6 +522,10 @@ final class Ultimates {
     void quake(Location c, double radius, int ticks, float power) {
         if (!plugin.getConfig().getBoolean("effects.screen-shake", true) || ticks <= 0) return;
         float mul = (float) plugin.getConfig().getDouble("effects.screen-shake-power", 1.0);
+        if (!"camera".equalsIgnoreCase(plugin.getConfig().getString("effects.screen-shake-mode", "tilt"))) {
+            tiltQuake(c, radius, ticks, power * mul);
+            return;
+        }
         World w = c.getWorld();
         ThreadLocalRandom rnd = ThreadLocalRandom.current();
         Map<UUID, float[]> off = new HashMap<>();
@@ -551,6 +555,38 @@ final class Ultimates {
                 }
             }
             if (last) task[0].cancel();
+        }, 0L, 1L);
+    }
+
+    /**
+     * Tremblement « doux » : la caméra bascule comme quand on prend un coup (effet côté client, fluide),
+     * sans jamais bouger la visée. Plus on est près et plus c'est fort, plus les secousses sont rapprochées.
+     */
+    private void tiltQuake(Location c, double radius, int ticks, float power) {
+        World w = c.getWorld();
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        Map<UUID, Integer> next = new HashMap<>();
+        int[] n = {0};
+        BukkitTask[] task = new BukkitTask[1];
+        task[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            int k = n[0]++;
+            if (k >= ticks) {
+                task[0].cancel();
+                return;
+            }
+            double fade = 1 - (double) k / ticks;
+            for (Player o : w.getPlayers()) {
+                double d = o.getLocation().distance(c);
+                if (d > radius) continue;
+                double strength = power * fade * (1 - 0.7 * d / radius);   // ~0..4
+                if (strength < 0.35) continue;
+                int due = next.getOrDefault(o.getUniqueId(), 0);
+                if (k < due) continue;
+                // très fort : toutes les 2 ticks ; faible : toutes les 6 ticks
+                int gap = strength > 2.5 ? 2 : strength > 1.4 ? 3 : strength > 0.8 ? 4 : 6;
+                next.put(o.getUniqueId(), k + gap);
+                o.playHurtAnimation((float) rnd.nextDouble(360));
+            }
         }, 0L, 1L);
     }
 

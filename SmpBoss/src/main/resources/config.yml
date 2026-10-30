@@ -863,6 +863,15 @@ spider-loot:
                {relic: ailes_toile, title: "Ailes de la Toile"}, {relic: oeil_rouge_abysse, title: "L'Œil Rouge"}]
 
 
+# ================================================================ 📳 TREMBLEMENT DE L'ÉCRAN (Hollow, Fûga, boss...)
+effects:
+  screen-shake: true
+  # tilt = la caméra bascule comme quand on prend un coup (doux, la visée ne bouge pas)
+  # camera = l'ancien tremblement (la vue est secouée)
+  screen-shake-mode: tilt
+  screen-shake-power: 1.0
+
+
 # ================================================================ 🎵 MUSIQUES DES BOSS (resource pack)
 # Pendant le combat, ceux qui sont dans l'arène entendent la musique du boss (catégorie « Jukebox »).
 music:
