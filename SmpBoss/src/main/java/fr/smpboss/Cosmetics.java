@@ -177,7 +177,8 @@ final class Cosmetics {
             VIOLET = Color.fromRGB(150, 60, 220), CRIMSON = Color.fromRGB(200, 10, 40), ASH = Color.fromRGB(90, 85, 90),
             TEAL = Color.fromRGB(60, 220, 200), CREAM = Color.fromRGB(255, 240, 210),
             WEBC = Color.fromRGB(230, 238, 255), EYEC = Color.fromRGB(90, 200, 255), ABYSSC = Color.fromRGB(40, 90, 255),
-            VENOMC = Color.fromRGB(70, 235, 130), DEEPC = Color.fromRGB(14, 18, 40);
+            VENOMC = Color.fromRGB(70, 235, 130), DEEPC = Color.fromRGB(14, 18, 40),
+            BFRED = Color.fromRGB(255, 30, 45), BFBLACK = Color.fromRGB(14, 0, 4);
 
     private void draw(String visual, Draw d, Worn w, boolean moving) {
         ThreadLocalRandom r = ThreadLocalRandom.current();
@@ -472,6 +473,21 @@ final class Cosmetics {
                 draw("spiderlegs", d, w, moving);
                 draw("eyes", d, w, moving);
                 if (t % 4 == 0) d.dust(false, r.nextDouble(-0.6, 0.6), r.nextDouble(0.2, 1.8), r.nextDouble(-0.6, 0.6), ABYSSC, 1.2f);
+            }
+            // ---------------------------------------------------------- (Black Flash) éclairs rouges et noirs qui crépitent autour des poings
+            case "blackflash" -> {
+                if (t % 2 != 0) return;
+                for (int sd = -1; sd <= 1; sd += 2) {
+                    if (r.nextInt(3) != 0) continue;
+                    double x = sd * 0.42, y = 0.85, z = 0.15;
+                    for (int i = 0; i < 4; i++) {
+                        x += r.nextDouble(-0.12, 0.12);
+                        y += r.nextDouble(-0.05, 0.14);
+                        z += r.nextDouble(-0.1, 0.1);
+                        d.dust(false, x, y, z, i % 2 == 0 ? BFRED : BFBLACK, 0.55f);
+                    }
+                }
+                if (t % 40 == 0) d.part(Particle.ELECTRIC_SPARK, false, 0, 1.0, 0.2, 3, 0.3, 0.05);
             }
             case "eclipse" -> {
                 if (t % 2 == 0) {

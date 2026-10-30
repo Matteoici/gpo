@@ -39,6 +39,22 @@
    }
   ]
  },
+ "blackflash.single": {
+  "sounds": [
+   {
+    "name": "limitless:blackflash/single",
+    "stream": true
+   }
+  ]
+ },
+ "blackflash.consecutive": {
+  "sounds": [
+   {
+    "name": "limitless:blackflash/consecutive",
+    "stream": true
+   }
+  ]
+ },
  "weapons.sonic": {
   "sounds": [
    {

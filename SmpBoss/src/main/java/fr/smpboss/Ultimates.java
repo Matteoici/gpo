@@ -349,6 +349,11 @@ final class Ultimates {
 
     // ================================================================= figer
 
+    /** Figé sur place (Black Flash Consécutifs...). */
+    void freezeFor(LivingEntity e, int ticks) {
+        freeze(e, ticks, false);
+    }
+
     private void freeze(LivingEntity e, int ticks, boolean frost) {
         Boss k = plugin.king();
         if (k != null && k.isBoss(e)) return; // le Roi ne se fige pas

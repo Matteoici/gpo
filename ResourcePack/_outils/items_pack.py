@@ -24,7 +24,8 @@ RELICS = {'trainee_flammes': 'blaze_powder', 'amulette_recolte': 'golden_carrot'
           'oeil_jugement': 'ender_eye', 'couronne_enfers': 'netherite_helmet', 'cape_nuit': 'black_banner',
           'couronne_roi_eternel': 'golden_helmet', 'ailes_eclipse': 'elytra',
           'fil_soie': 'string', 'oeil_araignee': 'spider_eye', 'crochets_venin': 'prismarine_shard', 'cocon_ancien': 'cobweb',
-          'pattes_reine': 'black_candle', 'cape_toile': 'blue_banner', 'couronne_reine': 'netherite_helmet', 'coeur_abysse': 'heart_of_the_sea'}
+          'pattes_reine': 'black_candle', 'cape_toile': 'blue_banner', 'couronne_reine': 'netherite_helmet', 'coeur_abysse': 'heart_of_the_sea',
+          'black_flash': 'redstone', 'black_flash_consecutif': 'nether_star'}
 FLAT = ['oeil_maudit', 'cocon', 'hollow_purple', 'graine', 'egg_rare', 'egg_epique', 'egg_legendaire', 'egg_mythique'] + ['relic_' + r for r in RELICS]
 BOWS = ['sonic_bow', 'arc_tempete', 'arc_feux_follets', 'arc_toiles']
 

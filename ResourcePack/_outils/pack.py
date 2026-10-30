@@ -60,6 +60,10 @@ tinted={}
 for t in ['w_glow','w_ring','w_shock','w_spark','w_slash','w_spike']+['w_burst_%d'%i for i in range(12)]: tinted[t]=tquad(t)
 for t in ['w_puff_%d'%i for i in range(8)]: tinted[t]=tquad(t, core=False)
 for t in ['w_rune','w_crack']: tinted[t+'_flat']=tflat(t)
+for t in ['bf_bolt_%d'%i for i in range(4)]+['bf_star','bf_spikes']: models[t]=quad(t)
+for i in range(4): models['bf_bolt_%d_x'%i]={"textures":tex('bf_bolt_%d'%i),"elements":[
+    {"from":[8,0,0],"to":[8,16,16],"shade":False,"faces":{"east":face(),"west":face()}},
+    {"from":[0,0,8],"to":[16,16,8],"shade":False,"faces":{"north":face(),"south":face()}}]}
 tinted['w_web']=tquad('w_web'); tinted['w_web_flat']=tflat('w_web');
 tinted['w_ring_flat']=tflat('w_ring'); tinted['w_shock_flat']=tflat('w_shock'); tinted['w_slash_flat']=tflat('w_slash')
 for t in ['w_beam','w_spike']+['w_bolt_%d'%i for i in range(4)]: tinted[t+'_x']=tcross(t)
@@ -77,7 +81,9 @@ json.dump({
   "fuga.shot":{"sounds":[{"name":f"{NS}:fuga/shot","stream":True}]},
   "fuga.impact":{"sounds":[{"name":f"{NS}:fuga/impact","stream":True}]},
   "hollow.charge":{"sounds":[{"name":f"{NS}:hollow/charge","stream":True}]},
-  "hollow.burst":{"sounds":[{"name":f"{NS}:hollow/burst","stream":True}]}
+  "hollow.burst":{"sounds":[{"name":f"{NS}:hollow/burst","stream":True}]},
+  "blackflash.single":{"sounds":[{"name":f"{NS}:blackflash/single","stream":True}]},
+  "blackflash.consecutive":{"sounds":[{"name":f"{NS}:blackflash/consecutive","stream":True}]}
 }, open(os.path.join(S,'sounds.json'),'w'), indent=1)
 # police : flash plein écran
 os.makedirs(os.path.join(S,'font'),exist_ok=True)
@@ -85,6 +91,7 @@ prov=[{"type":"bitmap","file":f"{NS}:font/white.png","ascent":140,"height":256,"
       {"type":"bitmap","file":f"{NS}:font/orange.png","ascent":140,"height":256,"chars":["\ue002"]}]
 prov+=[{"type":"bitmap","file":f"{NS}:font/whiteout_%d.png"%i,"ascent":140,"height":256,"chars":[chr(0xe010+i)]} for i in range(8)]
 prov+=[{"type":"bitmap","file":f"{NS}:font/impact_%d.png"%i,"ascent":140,"height":256,"chars":[chr(0xe020+i)]} for i in range(4)]
+prov+=[{"type":"bitmap","file":f"{NS}:font/bf_impact_%d.png"%i,"ascent":140,"height":256,"chars":[chr(0xe030+i)]} for i in range(2)]
 json.dump({"providers":prov}, open(os.path.join(S,'font','fx.json'),'w'))
 json.dump({"pack":{"description":"Limitless : effets et sons du serveur","pack_format":88,"min_format":88,"max_format":99}},open(os.path.join(OUT,'pack.mcmeta'),'w'),indent=1)
 print(len(models),'modeles')

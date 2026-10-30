@@ -1,0 +1,20 @@
+{
+ "model": {
+  "type": "minecraft:select",
+  "property": "minecraft:custom_model_data",
+  "index": 0,
+  "cases": [
+   {
+    "when": "relic_black_flash_consecutif",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/relic_black_flash_consecutif"
+    }
+   }
+  ],
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:item/nether_star"
+  }
+ }
+}

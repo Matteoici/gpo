@@ -93,3 +93,68 @@ impact((255, 255, 255, 255), (0, 0, 0, 255), (20, 0, 40, 255), 110, 1, 34)
 impact((150, 30, 230, 255), (255, 210, 255, 255), (255, 255, 255, 255), 100, 2, 40)
 impact((25, 0, 45, 255), (200, 80, 255, 255), (255, 255, 255, 255), 120, 3, 18)
 print('impact ok')
+
+# ================================================================ BLACK FLASH (éclairs rouges à cœur noir, comme dans la vidéo)
+from PIL import ImageFilter
+def jag_bolt(dr, rng, x0, y0, x1, y1, segs, amp, widths, cols, depth):
+    pts = [(x0, y0)]
+    for i in range(1, segs):
+        t = i / segs
+        pts.append((x0 + (x1 - x0) * t + rng.uniform(-amp, amp), y0 + (y1 - y0) * t + rng.uniform(-amp * 0.4, amp * 0.4)))
+    pts.append((x1, y1))
+    for wdt, col in zip(widths, cols):
+        dr.line(pts, fill=col, width=wdt, joint='curve')
+    if depth > 0:
+        for _ in range(2):
+            i = int(rng.integers(1, segs - 1)); bx, by = pts[i]
+            ang = math.atan2(y1 - y0, x1 - x0) + rng.choice([-1, 1]) * rng.uniform(0.4, 1.1)
+            L = math.hypot(x1 - x0, y1 - y0) * rng.uniform(0.25, 0.45)
+            jag_bolt(dr, rng, bx, by, bx + math.cos(ang) * L, by + math.sin(ang) * L, max(3, segs // 2), amp * 0.7,
+                     [max(1, w // 2 + 1) for w in widths], cols, depth - 1)
+
+RED_GLOW, RED, DARK, BLACK_ = (255, 20, 40, 150), (255, 35, 45, 255), (120, 0, 10, 255), (8, 0, 2, 255)
+for k in range(4):
+    rng = np.random.default_rng(1200 + k)
+    img = Image.new('RGBA', (64, 256), (0, 0, 0, 0)); dr = ImageDraw.Draw(img)
+    jag_bolt(dr, rng, 32, 2, 32 + rng.uniform(-6, 6), 254, 12, 11, [16, 9, 5, 2], [RED_GLOW, RED, DARK, BLACK_], 2)
+    img = Image.alpha_composite(img.filter(ImageFilter.GaussianBlur(2.5)), img)
+    a = np.array(img); a[..., 3] = np.where(a[..., 3] > 30, np.maximum(a[..., 3], 200), 0); img = Image.fromarray(a)
+    img.save(os.path.join(T, 'bf_bolt_%d.png' % k))
+
+# étoile à 4 branches rouge, cœur noir, liseré blanc
+n = 256; x, y = grid(n)
+def star4(scale):
+    return np.clip(1 - (np.abs(x / scale) ** 0.45 + np.abs(y / scale) ** 0.45) / 1.0, 0, 1)
+s_out, s_mid, s_in = star4(1.0), star4(0.82), star4(0.5)
+col = np.zeros((n, n, 3)); a = np.zeros((n, n))
+m = s_out > 0.02; col[m] = (255, 255, 255); a[m] = 1
+m = s_mid > 0.02; col[m] = (255, 30, 45)
+m = s_in > 0.02; col[m] = (10, 0, 4)
+save('bf_star', rgba(col, a))
+
+# pointes blanches déchiquetées qui jaillissent (le "blanc" du black flash)
+rng = np.random.default_rng(1300)
+img = Image.new('RGBA', (256, 256), (0, 0, 0, 0)); dr = ImageDraw.Draw(img)
+for i in range(16):
+    a0 = i * math.pi * 2 / 16 + rng.uniform(-0.15, 0.15); L = rng.uniform(80, 126); W = rng.uniform(0.16, 0.28)
+    tip = (128 + math.cos(a0) * L, 128 + math.sin(a0) * L)
+    b1 = (128 + math.cos(a0 + W) * 22, 128 + math.sin(a0 + W) * 22)
+    b2 = (128 + math.cos(a0 - W) * 22, 128 + math.sin(a0 - W) * 22)
+    mid = (128 + math.cos(a0 + W * 0.3) * L * 0.55 + rng.uniform(-6, 6), 128 + math.sin(a0 + W * 0.3) * L * 0.55 + rng.uniform(-6, 6))
+    dr.polygon([b1, mid, tip, b2], fill=(255, 255, 255, 255), outline=(10, 0, 4, 255))
+    dr.line([b1, tip], fill=(255, 60, 70, 255), width=1)
+save_img = img
+save_img.save(os.path.join(T, 'bf_spikes.png'))
+
+# images d'impact plein écran (police) : noir fissuré de rouge / rouge fissuré de noir
+FF = os.path.join(OUT, 'assets/limitless/textures/font')
+for k, (bg, cols) in enumerate([((4, 0, 2, 255), [(255, 30, 45, 160), (255, 35, 45, 255), (255, 200, 200, 255)]),
+                                ((170, 0, 18, 255), [(60, 0, 6, 200), (10, 0, 2, 255), (255, 255, 255, 255)])]):
+    rng = np.random.default_rng(1400 + k)
+    img = Image.new('RGBA', (512, 256), bg); dr = ImageDraw.Draw(img)
+    for i in range(18):
+        a0 = rng.uniform(0, math.pi * 2)
+        jag_bolt(dr, rng, 256, 128, 256 + math.cos(a0) * 420, 128 + math.sin(a0) * 260, 10, 22, [7, 3, 1], cols, 1)
+    dr.ellipse([236, 108, 276, 148], fill=cols[2])
+    img.save(os.path.join(FF, 'bf_impact_%d.png' % k))
+print('black flash ok')

@@ -1,4 +1,4 @@
-config-version: 34
+config-version: 35
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -642,6 +642,26 @@ relics:
       armor: 4
       speed: 15
       regen: 2
+    black_flash:
+      name: "Black Flash"
+      rarity: legendary
+      icon: REDSTONE
+      visual: blackflash
+      lore: ["<gray>L'impact parfait : l'énergie se plie en noir.", "<red>⚡ <white>Accroupi + touche main secondaire (F)", "<gray>Un black flash part devant toi :", "<gray>la cible perd <white>50 %</white> de sa vie. <dark_gray>(45 s)"]
+      damage: 6
+      speed: 4
+      health: 1
+    black_flash_consecutif:
+      name: "Black Flash Consécutifs"
+      rarity: prestige
+      icon: NETHER_STAR
+      visual: blackflash
+      lore: ["<gray>Le record : des dizaines de black flashs d'affilée.", "<red>⚡ <white>Accroupi + touche main secondaire (F)", "<gray>La cible touchée est <white>figée</white> et encaisse", "<gray>une rafale de black flashs : <white>95 %</white> de sa vie. <dark_gray>(2 min)"]
+      damage: 15
+      speed: 10
+      health: 4
+      armor: 3
+      regen: 1
 
 # ---------------------------------------------------------------- Sac (relique secrète)
 backpack:
@@ -762,9 +782,23 @@ spider-loot:
   pools:
     rare: [{relic: fil_soie}, {relic: oeil_araignee}]
     epic: [{relic: crochets_venin}, {relic: cocon_ancien}]
-    legendary: [{relic: pattes_reine}, {relic: cape_toile}]
+    legendary: [{relic: pattes_reine}, {relic: cape_toile}, {relic: black_flash}]
     secret: [{relic: couronne_reine, title: "Héritier de la Toile"}]
-    prestige: [{relic: coeur_abysse, title: "Cœur de l'Abysse"}]
+    prestige: [{relic: coeur_abysse, title: "Cœur de l'Abysse"}, {relic: black_flash_consecutif, title: "Black Flash"}]
+
+
+# ================================================================ ⚡ BLACK FLASH (reliques de la Reine) : accroupi + F
+black-flash:
+  range: 24
+  single:
+    percent: 50            # % de la vie max de la cible
+    boss-damage: 120       # contre un boss
+    cooldown-seconds: 45
+  consecutive:
+    percent: 95            # % de la vie max, réparti sur toute la rafale
+    boss-damage: 400
+    duration-ticks: 270    # la rafale suit le son (13 s)
+    cooldown-seconds: 120
 
 messages:
   pack:
@@ -1229,6 +1263,7 @@ messages:
       webcape: "<white>✧ Visuel : <#e1ebff>cape tissée de toile"
       silkcrown: "<white>✧ Visuel : <#e1ebff>couronne de soie et saphir"
       abyss: "<white>✧ Visuel : <gradient:#3a6bff:#e1ebff:#3a6bff>pattes, yeux et brume de l'Abysse"
+      blackflash: "<white>✧ Visuel : <#ff1e2d>éclairs rouges et noirs autour des poings"
       eternalcrown: "<white>✧ Visuel : <gradient:#ff1a1a:#ffd700:#ff1a1a>grande couronne d'or + cercle de runes au sol"
       eclipse: "<white>✧ Visuel : <gradient:#ff1a1a:#ffd700:#ff1a1a>grandes ailes de feu + éclipse au-dessus de la tête"
       backpack: "<white>✧ Visuel : <gold>sac à dos de la Récolte"
@@ -1305,3 +1340,7 @@ messages:
       shadow-dash: "<#3a6bff>🕷 <b>Ruée de l'ombre</b> <gray>· quitte la ligne"
       ceiling-drop: "<#3a6bff>🕸 <b>Chute du plafond</b> <gray>· sors du cercle !"
       fang-nova: "<#46eb82>☠ <b>Crocs de l'Abysse</b> <gray>· saute par-dessus les vagues"
+  black-flash:
+    stunned: "<#ff1e2d><b>⚡ BLACK FLASH</b> <gray>· tu es figé !"
+    combo: "<#ff1e2d><b>⚡ BLACK FLASH CONSÉCUTIFS"
+    counter: "<#ff1e2d><b>⚡ BLACK FLASH</b> <white>x<n>"

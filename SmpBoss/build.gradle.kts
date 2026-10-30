@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "fr.smpboss"
-version = "1.45.0"
+version = "1.46.0"
 
 repositories {
     mavenCentral()

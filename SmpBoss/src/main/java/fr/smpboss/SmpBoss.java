@@ -379,12 +379,19 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 34);
             saveConfig();
         }
+        if (getConfig().getInt("config-version", 1) < 35) {
+            // reliques Black Flash (Reine Araignée)
+            addDefaultRelics();
+            getConfig().set("config-version", 35);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);
         loot = new Loot(this);
         weapons = new Weapons(this);
         getServer().getPluginManager().registerEvents(weapons, this);
+        getServer().getPluginManager().registerEvents(new BlackFlash(this), this);
         PackStatus packStatus = new PackStatus(this);
         getServer().getPluginManager().registerEvents(packStatus, this);
         var packCmd = getCommand("pack");

@@ -659,6 +659,32 @@ def silk():
 save(silk(), 'spider_silk')
 print('reine ok')
 
+
+# ================================================================== BLACK FLASH (reliques)
+def bf_icon(name, ring):
+    fr = []
+    for k in range(4):
+        a = np.zeros((16, 16, 4), np.int32)
+        if ring:
+            for t in range(0, 360, 20):
+                x = int(round(7.5 + math.cos(math.radians(t + k * 15)) * 6.5)); y = int(round(7.5 + math.sin(math.radians(t + k * 15)) * 6.5))
+                a[y, x] = hx('ff1e2d') if (t // 20 + k) % 3 else hx('400008')
+        # éclair en zigzag : halo rouge, cœur noir
+        pts = [(10, 1), (6, 6), (9, 7), (4, 14)] if k % 2 == 0 else [(10, 1), (5, 7), (9, 8), (5, 14)]
+        for (x0, y0), (x1, y1) in zip(pts, pts[1:]):
+            for t in np.linspace(0, 1, 20):
+                x = int(round(x0 + (x1 - x0) * t)); y = int(round(y0 + (y1 - y0) * t))
+                for dx, dy in [(0, 0), (1, 0), (-1, 0), (0, 1)]:
+                    if 0 <= x + dx < 16 and 0 <= y + dy < 16 and a[y + dy, x + dx, 3] == 0: a[y + dy, x + dx] = hx('ff1e2d')
+                a[y, x] = hx('0a0002')
+        if ring:
+            for (x, y) in [(2, 3), (13, 12), (12, 3)]: a[y, x] = hx('ffffff') if k % 2 == 0 else hx('ff8a90')
+        a[1, 10] = hx('ffffff')
+        fr.append(outline(a, hx('2a0004')))
+    save(None, name, fr, ft=2)
+bf_icon('relic_black_flash', False)
+bf_icon('relic_black_flash_consecutif', True)
+
 print('ok', sorted(f for f in os.listdir(D) if f.endswith('.png')))
 
 # ================================================================== BOSS (Roi Citrouille) : citrouille 32x32, couronne, lame
