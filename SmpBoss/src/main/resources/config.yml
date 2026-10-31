@@ -525,6 +525,10 @@ weapons:
     knock-up: 0.9
     cooldown-seconds: 25
 
+# armurerie (/reliques) : armes et tenues rangées par joueur
+armory:
+  max-items: 90
+
 relics:
   max-equipped: 2
   list:
@@ -1585,6 +1589,23 @@ messages:
       lore: ["<gray>Équipe tes reliques, admire-les en 3D", "<gray>et récupère ton butin.", "", "<yellow>▶ Clic : ouvrir"]
     cosmetics-count: "<dark_gray>Collection : <white><n></white>/<total>"
     stash-waiting: "<gold>✦ <n> objet(s) t'attendent dans le coffre de butin !"
+  armory:
+    title: "<dark_gray>⚔ Armurerie · armes & tenues"
+    back:
+      name: "<gold>← Retour aux reliques"
+    info:
+      name: "<gold><b>⚔ Armurerie"
+      lore:
+        - "<gray>Rangés : <white><n></white>/<max>"
+        - ""
+        - "<yellow>▶ Clic sur un objet de ton inventaire : <white>le ranger"
+        - "<yellow>▶ Clic sur un objet rangé : <white>le reprendre"
+        - "<dark_gray>Armes de boss et tenues seulement."
+        - "<dark_gray>Une relique va direct dans ta collection."
+    stored: "<green>⚔ Rangé dans ton armurerie."
+    not-storable: "<red>Seules les armes de boss, les tenues et les reliques se rangent ici."
+    full: "<red>Ton armurerie est pleine (<max> objets)."
+    full-inventory: "<red>Ton inventaire est plein."
   menu:
     title: "<dark_gray>Reliques"
     info-name: "<gold><b>Mes reliques"
@@ -1606,6 +1627,15 @@ messages:
       lore: ["<gray>27 cases · aussi en haut de ton inventaire", "<dark_gray>/sac"]
     close:
       name: "<red>Fermer"
+    armory:
+      name: "<gold><b>⚔ Armurerie</b> <gray>(<n>)"
+      lore:
+        - "<gray>Range tes armes de boss et tes tenues ici,"
+        - "<gray>elles ne risquent plus rien."
+        - ""
+        - "<yellow>▶ Clic : ouvrir"
+        - "<dark_gray>Astuce : clique un objet de ton inventaire"
+        - "<dark_gray>pendant que ce menu est ouvert pour le ranger."
     title-v2: "<dark_gray>✦ Cosmétiques & Reliques"
     equipped-tag: "ÉQUIPÉE"
     collection-label: "<gold><b>▼ COLLECTION ▼</b> <gray>(<white><n></white>/<total>)"

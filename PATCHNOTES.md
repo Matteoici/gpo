@@ -1,5 +1,11 @@
 # Patch notes Limitless (textes Discord)
 
+## 31/10/2026 — Armurerie
+
+⚔️ **ARMURERIE**
+> Dans **/reliques**, un nouveau bouton **Armurerie** : range tes **armes de boss** et tes **tenues** à l'abri (90 places).
+> Menu ouvert, **clique un objet de ton inventaire** pour le ranger ; une **relique** va directement dans ta collection. Clique un objet rangé pour le reprendre.
+
 ## 31/10/2026 — Historique des ventes
 
 📜 **HISTORIQUE DES VENTES**

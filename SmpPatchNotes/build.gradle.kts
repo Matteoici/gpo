@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "fr.smppatch"
-version = "1.0.12"
+version = "1.0.13"
 
 repositories {
     mavenCentral()

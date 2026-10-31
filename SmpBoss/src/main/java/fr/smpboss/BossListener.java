@@ -329,12 +329,19 @@ final class BossListener implements Listener {
         if (top.getHolder(false) instanceof RelicMenu m) {
             e.setCancelled(true);
             if (e.getClickedInventory() == top) m.click(e.getSlot(), e.getClick());
+            else if (e.getClickedInventory() != null && e.getClickedInventory() == e.getView().getBottomInventory()) m.clickBottom(e.getSlot());
+        }
+        if (top.getHolder(false) instanceof ArmoryMenu am) {
+            e.setCancelled(true);
+            if (e.getClickedInventory() == top) am.clickTop(e.getSlot());
+            else if (e.getClickedInventory() != null && e.getClickedInventory() == e.getView().getBottomInventory()) am.clickBottom(e.getSlot());
         }
     }
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onDrag(InventoryDragEvent e) {
-        if (e.getView().getTopInventory().getHolder(false) instanceof RelicMenu) e.setCancelled(true);
+        if (e.getView().getTopInventory().getHolder(false) instanceof RelicMenu || e.getView().getTopInventory().getHolder(false) instanceof ArmoryMenu)
+            e.setCancelled(true);
     }
 
     @EventHandler

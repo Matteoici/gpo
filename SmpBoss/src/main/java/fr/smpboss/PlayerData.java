@@ -25,6 +25,8 @@ public final class PlayerData {
     public ItemStack[] backpack = new ItemStack[27];
     /** butin gagné qui n'a pas pu entrer dans l'inventaire (récupérable dans /reliques) */
     public final List<ItemStack> stash = new ArrayList<>();
+    /** armurerie (/reliques) : armes et tenues rangées */
+    public final List<ItemStack> armory = new ArrayList<>();
 
     public PlayerData(UUID id) {
         this.id = id;

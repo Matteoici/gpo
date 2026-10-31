@@ -33,7 +33,7 @@ import static fr.smpboss.SmpBoss.parse;
  */
 public final class RelicMenu implements InventoryHolder {
 
-    private static final int INFO = 4, BAG = 13, LABEL = 22, PREV = 45, TOGGLE = 47, EFFECTS = 48, CLOSE = 49, STASH = 51, NEXT = 53;
+    private static final int INFO = 4, BAG = 13, LABEL = 22, PREV = 45, TOGGLE = 47, EFFECTS = 48, CLOSE = 49, ARMORY = 50, STASH = 51, NEXT = 53;
     private static final int[] COLLECTION = {28, 29, 30, 31, 32, 33, 34, 37, 38, 39, 40, 41, 42, 43};
     private static final Material BAND = Material.ORANGE_STAINED_GLASS_PANE;
     private static final Material[] RAINBOW = {Material.RED_STAINED_GLASS_PANE, Material.ORANGE_STAINED_GLASS_PANE,
@@ -135,6 +135,7 @@ public final class RelicMenu implements InventoryHolder {
         inv.setItem(TOGGLE, named(d.hideCosmetics ? Material.ENDER_EYE : Material.ENDER_PEARL,
                 d.hideCosmetics ? "menu.cosmetics-off" : "menu.cosmetics-on", null));
         inv.setItem(CLOSE, named(Material.BARRIER, "menu.close", null));
+        inv.setItem(ARMORY, named(Material.ARMOR_STAND, "menu.armory", String.valueOf(d.armory.size())));
         ItemStack stash = named(d.stash.isEmpty() ? Material.BARREL : Material.CHEST, d.stash.isEmpty() ? "menu.stash-empty" : "menu.stash",
                 String.valueOf(d.stash.stream().mapToInt(ItemStack::getAmount).sum()));
         if (!d.stash.isEmpty()) {
@@ -332,6 +333,10 @@ public final class RelicMenu implements InventoryHolder {
                 draw();
                 return;
             }
+            case ARMORY -> {
+                new ArmoryMenu(plugin, viewer).open();
+                return;
+            }
             case STASH -> {
                 if (d.stash.isEmpty()) return;
                 int got = plugin.loot().takeStash(viewer);
@@ -383,6 +388,11 @@ public final class RelicMenu implements InventoryHolder {
         viewer.playSound(Sound.sound(Key.key("minecraft", key.equals("relics.equipped")
                 ? "item.armor.equip_netherite" : "ui.button.click"), Sound.Source.MASTER, 1f, 1.2f));
         draw();
+    }
+
+    /** Clic sur un objet de son inventaire pendant que /reliques est ouvert : on le range. */
+    public void clickBottom(int slot) {
+        if (ArmoryMenu.store(plugin, viewer, slot)) draw();
     }
 
     private String pendingExtract;

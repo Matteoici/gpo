@@ -63,6 +63,10 @@ public final class Store {
                 ItemStack it = decode(st);
                 if (it != null) d.stash.add(it);
             }
+            for (String st : s.getStringList("armory")) {
+                ItemStack it = decode(st);
+                if (it != null) d.armory.add(it);
+            }
             data.put(d.id, d);
         }
     }
@@ -89,6 +93,7 @@ public final class Store {
             }
             if (any) y.set(k + ".backpack", List.of(bp));
             if (!d.stash.isEmpty()) y.set(k + ".stash", d.stash.stream().map(Store::encode).filter(x -> !x.isEmpty()).toList());
+            if (!d.armory.isEmpty()) y.set(k + ".armory", d.armory.stream().map(Store::encode).filter(x -> !x.isEmpty()).toList());
         }
         String text = y.saveToString();
         Runnable w = () -> write(text);
