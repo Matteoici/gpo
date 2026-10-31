@@ -451,7 +451,10 @@ final class TojiSpear implements Listener {
     }
 
     /** Toutes les 2 ticks : images rémanentes quand on file accroupi, double saut prêt quand on touche le sol. */
+    private int fastCount;
+
     private void fastTick() {
+        int fc = fastCount++;
         for (UUID id : active) {
             Player p = Bukkit.getPlayer(id);
             if (p == null) continue;
@@ -460,9 +463,10 @@ final class TojiSpear implements Listener {
             // accroupi = pas éclair : très vite, des images rémanentes restent derrière
             if (p.isSneaking() && !p.isFlying()) {
                 p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 8, (int) cfg("flash-step.speed-level", 3) - 1, false, false, false));
-                if (prev != null && prev.getWorld() == now.getWorld() && prev.distanceSquared(now) > 0.04 && Bukkit.getCurrentTick() % 4 == 0) {
+                // (compteur à nous : la tâche tourne toutes les 2 ticks, le numéro de tick du serveur peut être toujours impair)
+                if (prev != null && prev.getWorld() == now.getWorld() && prev.distanceSquared(now) > 0.01) {
                     afterimage(prev);
-                    if (Bukkit.getCurrentTick() % 8 == 0) p.getWorld().playSound(now, Sound.ENTITY_PHANTOM_FLAP, 0.25f, 1.8f);
+                    if (fc % 4 == 0) p.getWorld().playSound(now, Sound.ENTITY_PHANTOM_FLAP, 0.3f, 1.8f);
                 }
             }
             // double saut
@@ -488,14 +492,18 @@ final class TojiSpear implements Listener {
         World w = l.getWorld();
         double yaw = Math.toRadians(l.getYaw());
         Vector right = new Vector(Math.cos(yaw), 0, Math.sin(yaw));
-        Particle.DustTransition dt = new Particle.DustTransition(Color.fromRGB(20, 20, 26), Color.fromRGB(150, 155, 170), 0.9f);
+        Particle.DustTransition dt = new Particle.DustTransition(Color.fromRGB(16, 16, 22), Color.fromRGB(170, 176, 192), 1.25f);
         java.util.List<double[]> pts = new java.util.ArrayList<>();
         for (int k = 0; k < 8; k++) {
             double a = Math.PI * 2 * k / 8;
             pts.add(new double[]{Math.cos(a) * 0.22, 1.72 + Math.sin(a) * 0.22});
         }
-        for (double y = 0.75; y <= 1.45; y += 0.14) pts.add(new double[]{0, y});
-        for (double t = 0; t <= 1; t += 0.2) {
+        for (double y = 0.75; y <= 1.45; y += 0.1) {
+            pts.add(new double[]{-0.18, y});
+            pts.add(new double[]{0, y});
+            pts.add(new double[]{0.18, y});
+        }
+        for (double t = 0; t <= 1; t += 0.12) {
             pts.add(new double[]{-0.18 - 0.22 * t, 1.42 - 0.55 * t});
             pts.add(new double[]{0.18 + 0.22 * t, 1.42 - 0.55 * t});
             pts.add(new double[]{-0.12 - 0.05 * t, 0.75 - 0.72 * t});
