@@ -381,11 +381,18 @@ final class TojiSpear implements Listener {
     public void heavenlyUse(PlayerInteractEvent e) {
         Player p = e.getPlayer();
         if (!heavenly(p) || e.getItem() == null || isSpear(e.getItem())) return;
+        // s'habiller reste permis (Tenue de Toji, armures) : ce n'est pas "utiliser" un objet
+        if (isWearable(e.getItem())) return;
         if (e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK) {
             e.setUseItemInHand(org.bukkit.event.Event.Result.DENY);
             if (e.getAction() == Action.RIGHT_CLICK_AIR) e.setCancelled(true);
             lockMsg(p);
         }
+    }
+
+    private static boolean isWearable(org.bukkit.inventory.ItemStack it) {
+        String n = it.getType().name();
+        return n.endsWith("_HELMET") || n.endsWith("_CHESTPLATE") || n.endsWith("_LEGGINGS") || n.endsWith("_BOOTS") || n.equals("TURTLE_HELMET");
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
