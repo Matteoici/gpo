@@ -81,7 +81,7 @@ final class ArenaGuard implements Listener {
     }
 
     private void deny(Player p) {
-        p.sendActionBar(parse("<red>Arène du boss : zone protégée."));
+        SmpBoss.hud(p, parse("<red>Arène du boss : zone protégée."));
     }
 
     // ================================================================= blocs
@@ -261,7 +261,7 @@ final class ArenaGuard implements Listener {
     public void onGlide(org.bukkit.event.entity.EntityToggleGlideEvent e) {
         if (e.isGliding() && e.getEntity() instanceof Player p && on("no-elytra") && arena.contains(p.getLocation())) {
             e.setCancelled(true);
-            p.sendActionBar(parse("<red>Pas d'élytres dans l'arène."));
+            SmpBoss.hud(p, parse("<red>Pas d'élytres dans l'arène."));
         }
     }
 
@@ -273,7 +273,7 @@ final class ArenaGuard implements Listener {
     public void onWindUse(PlayerInteractEvent e) {
         if (!on("no-wind-charge") || !windCharge(e.getItem()) || !arena.contains(e.getPlayer().getLocation())) return;
         e.setUseItemInHand(Event.Result.DENY);
-        e.getPlayer().sendActionBar(parse("<red>Pas de charges de vent dans l'arène."));
+        SmpBoss.hud(e.getPlayer(), parse("<red>Pas de charges de vent dans l'arène."));
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
@@ -291,7 +291,7 @@ final class ArenaGuard implements Listener {
     }
 
     private void spearDenied(Player p) {
-        p.sendActionBar(parse("<red>Pas de lances dans l'arène."));
+        SmpBoss.hud(p, parse("<red>Pas de lances dans l'arène."));
     }
 
     /** Si le joueur tient une lance, on passe sur un autre emplacement de sa barre. */
@@ -357,7 +357,7 @@ final class ArenaGuard implements Listener {
         if (!on("no-ender-pearl") || e.getItem() == null || e.getItem().getType() != Material.ENDER_PEARL
                 || !arena.contains(e.getPlayer().getLocation())) return;
         e.setUseItemInHand(Event.Result.DENY);
-        e.getPlayer().sendActionBar(parse("<red>Pas d'ender pearls dans l'arène."));
+        SmpBoss.hud(e.getPlayer(), parse("<red>Pas d'ender pearls dans l'arène."));
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
@@ -374,7 +374,7 @@ final class ArenaGuard implements Listener {
         if (e.getCause() != org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.ENDER_PEARL || !on("no-ender-pearl")) return;
         if (arena.contains(e.getTo()) || arena.contains(e.getFrom())) {
             e.setCancelled(true);
-            e.getPlayer().sendActionBar(parse("<red>Pas d'ender pearls dans l'arène."));
+            SmpBoss.hud(e.getPlayer(), parse("<red>Pas d'ender pearls dans l'arène."));
         }
     }
 
@@ -398,7 +398,7 @@ final class ArenaGuard implements Listener {
                 any = true;
             }
         }
-        if (any) p.sendActionBar(parse("<red>Les potions de saut ne marchent pas dans l'arène."));
+        if (any) SmpBoss.hud(p, parse("<red>Les potions de saut ne marchent pas dans l'arène."));
     }
 
     /** Pas de lévitation venue de flèches / potions dans l'arène (ni sur les joueurs, ni sur le boss, ni sur ses monstres). */
@@ -442,7 +442,7 @@ final class ArenaGuard implements Listener {
                 && e.getAction() != org.bukkit.event.entity.EntityPotionEffectEvent.Action.CHANGED) return;
         if (!arena.contains(p.getLocation())) return;
         e.setCancelled(true);
-        p.sendActionBar(parse("<red>Les potions de saut ne marchent pas dans l'arène."));
+        SmpBoss.hud(p, parse("<red>Les potions de saut ne marchent pas dans l'arène."));
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)

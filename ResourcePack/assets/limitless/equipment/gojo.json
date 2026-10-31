@@ -1,0 +1,14 @@
+{
+ "layers": {
+  "humanoid": [
+   {
+    "texture": "limitless:gojo"
+   }
+  ],
+  "humanoid_leggings": [
+   {
+    "texture": "limitless:gojo"
+   }
+  ]
+ }
+}

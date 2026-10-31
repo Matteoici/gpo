@@ -72,7 +72,7 @@ final class Outfits implements Listener {
             boolean s = !p.isDead() && w.wearsOutfit(p, Weapons.TENUE_SUKUNA);
             if (g && gojo.add(id)) {
                 set(p, Attribute.KNOCKBACK_RESISTANCE, gKb, cfg("tenue-gojo.set.knockback-resistance", 0.6));
-                p.sendActionBar(parse(plugin.msg("outfits.gojo-on")));
+                SmpBoss.hud(p, parse(plugin.msg("outfits.gojo-on")));
                 p.playSound(p.getLocation(), Sound.BLOCK_BEACON_POWER_SELECT, 0.8f, 1.8f);
             } else if (!g && gojo.remove(id)) {
                 unset(p, Attribute.KNOCKBACK_RESISTANCE, gKb);
@@ -85,7 +85,7 @@ final class Outfits implements Listener {
             }
             if (s && sukuna.add(id)) {
                 set(p, Attribute.ATTACK_DAMAGE, sDmg, cfg("tenue-sukuna.set.damage", 0.2));
-                p.sendActionBar(parse(plugin.msg("outfits.sukuna-on")));
+                SmpBoss.hud(p, parse(plugin.msg("outfits.sukuna-on")));
                 p.playSound(p.getLocation(), Sound.ENTITY_WITHER_AMBIENT, 0.5f, 0.6f);
             } else if (!s && sukuna.remove(id)) {
                 unset(p, Attribute.ATTACK_DAMAGE, sDmg);

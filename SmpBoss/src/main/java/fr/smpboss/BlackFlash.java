@@ -81,7 +81,7 @@ final class BlackFlash implements Listener {
         if (instance == null || instance.armed.remove(p.getUniqueId()) == null) return;
         BukkitTask t = instance.armTask.remove(p.getUniqueId());
         if (t != null) t.cancel();
-        p.sendActionBar(parse(instance.plugin.msg("lance-ciel.nullified")));
+        SmpBoss.hud(p, parse(instance.plugin.msg("lance-ciel.nullified")));
     }
 
     private boolean isStunned(org.bukkit.entity.Entity e) {
@@ -172,7 +172,7 @@ final class BlackFlash implements Listener {
     public void stunCommand(org.bukkit.event.player.PlayerCommandPreprocessEvent e) {
         if (isStunned(e.getPlayer()) && !e.getPlayer().hasPermission("smpboss.admin")) {
             e.setCancelled(true);
-            e.getPlayer().sendActionBar(parse(plugin.msg("black-flash.stunned")));
+            SmpBoss.hud(e.getPlayer(), parse(plugin.msg("black-flash.stunned")));
         }
     }
 
@@ -219,7 +219,7 @@ final class BlackFlash implements Listener {
         long now = System.currentTimeMillis();
         Long until = cooldown.get(key);
         if (until != null && until > now) {
-            p.sendActionBar(parse(plugin.msg("weapons.cooldown").replace("<seconds>", String.valueOf((until - now) / 1000 + 1))));
+            SmpBoss.hud(p, parse(plugin.msg("weapons.cooldown").replace("<seconds>", String.valueOf((until - now) / 1000 + 1))));
             return;
         }
         armed.put(id, consec);
@@ -227,7 +227,7 @@ final class BlackFlash implements Listener {
         World w = p.getWorld();
         w.playSound(p.getLocation(), Sound.ENTITY_WARDEN_SONIC_CHARGE, 0.9f, 2f);
         w.playSound(p.getLocation(), Sound.BLOCK_RESPAWN_ANCHOR_CHARGE, 0.8f, 1.6f);
-        p.sendActionBar(parse(plugin.msg("black-flash.armed")));
+        SmpBoss.hud(p, parse(plugin.msg("black-flash.armed")));
         int[] k = {0};
         BukkitTask[] t = new BukkitTask[1];
         t[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
@@ -242,7 +242,7 @@ final class BlackFlash implements Listener {
                 armed.remove(id);
                 armTask.remove(id);
                 cooldown.put(key, System.currentTimeMillis() + (long) (cfg("miss-cooldown-seconds", 10) * 1000));
-                p.sendActionBar(parse(plugin.msg("black-flash.missed")));
+                SmpBoss.hud(p, parse(plugin.msg("black-flash.missed")));
                 p.getWorld().playSound(p.getLocation(), Sound.BLOCK_FIRE_EXTINGUISH, 0.6f, 1.6f);
                 return;
             }
@@ -301,7 +301,7 @@ final class BlackFlash implements Listener {
         long now = System.currentTimeMillis();
         Long until = cooldown.get(key);
         if (until != null && until > now) {
-            p.sendActionBar(parse(plugin.msg("weapons.cooldown").replace("<seconds>", String.valueOf((until - now) / 1000 + 1))));
+            SmpBoss.hud(p, parse(plugin.msg("weapons.cooldown").replace("<seconds>", String.valueOf((until - now) / 1000 + 1))));
             return;
         }
         cooldown.put(key, now + (long) (cfg(consec ? "consecutive.cooldown-seconds" : "single.cooldown-seconds", consec ? 120 : 45) * 1000));
@@ -398,13 +398,13 @@ final class BlackFlash implements Listener {
             o.playSound(c0, Sound.ENTITY_WARDEN_SONIC_CHARGE, 2f, 0.6f);
         }
         if (t instanceof Player tp) {
-            tp.sendActionBar(parse(plugin.msg("black-flash.stunned")));
+            SmpBoss.hud(tp, parse(plugin.msg("black-flash.stunned")));
             // figé pour de vrai : il arrête de manger / boire / bloquer, et ne peut plus rien utiliser
             stunned.put(tp.getUniqueId(), System.currentTimeMillis() + total * 50L + 600);
             tp.clearActiveItem();
             tp.closeInventory();
         }
-        caster.sendActionBar(parse(plugin.msg("black-flash.combo")));
+        SmpBoss.hud(caster, parse(plugin.msg("black-flash.combo")));
         double max = maxHealth(t);
         double perHit = max * cfg("consecutive.percent", 95) / 100.0 / HITS.length;
         double bossHit = cfg("consecutive.boss-damage", 400) / HITS.length;
@@ -461,8 +461,8 @@ final class BlackFlash implements Listener {
                 } else {
                     applyDamage(caster, t, perHit);
                 }
-                if (t instanceof Player tp && i % 4 == 0) tp.sendActionBar(parse(plugin.msg("black-flash.counter").replace("<n>", String.valueOf(i + 1))));
-                caster.sendActionBar(parse(plugin.msg("black-flash.counter").replace("<n>", String.valueOf(i + 1))));
+                if (t instanceof Player tp && i % 4 == 0) SmpBoss.hud(tp, parse(plugin.msg("black-flash.counter").replace("<n>", String.valueOf(i + 1))));
+                SmpBoss.hud(caster, parse(plugin.msg("black-flash.counter").replace("<n>", String.valueOf(i + 1))));
             }
         }, 1L, 1L);
     }

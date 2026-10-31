@@ -476,6 +476,32 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 42);
             saveConfig();
         }
+        if (getConfig().getInt("config-version", 1) < 43) {
+            // Lance du Ciel Inversé : pas éclair, double saut, Chute du Ciel, Chaîne aux Mille Lieues
+            var def = getConfig().getDefaults();
+            if (def != null) {
+                for (String k : new String[]{"weapons.lance-ciel.flash-step", "weapons.lance-ciel.double-jump", "weapons.lance-ciel.dive",
+                        "weapons.lance-ciel.chain"}) {
+                    var sec = def.getConfigurationSection(k);
+                    if (sec != null) for (String sub : sec.getKeys(true)) if (!sec.isConfigurationSection(sub)) getConfig().set(k + "." + sub, sec.get(sub));
+                }
+                getConfig().set("messages.weapons.lance-ciel.lore", def.get("messages.weapons.lance-ciel.lore"));
+                getConfig().set("messages.lance-ciel.dive", def.get("messages.lance-ciel.dive"));
+            }
+            getConfig().set("config-version", 43);
+            saveConfig();
+        }
+        if (getConfig().getInt("config-version", 1) < 44) {
+            // relique MYTHICAL "Restriction Céleste" (butin de la Reine)
+            addDefaultRelics();
+            var def = getConfig().getDefaults();
+            if (def != null) {
+                getConfig().set("messages.lance-ciel.heavenly-lock", def.get("messages.lance-ciel.heavenly-lock"));
+                if (!getConfig().isSet("restriction-celeste.multiplier")) getConfig().set("restriction-celeste.multiplier", 3);
+            }
+            getConfig().set("config-version", 44);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);
@@ -616,6 +642,20 @@ public final class SmpBoss extends JavaPlugin {
         } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
             return 1;
         }
+    }
+
+    /** Messages de capacités (recharges...) envoyés en barre d'action : SmpCombat ne les écrase pas tant qu'ils sont récents. */
+    private static final java.util.Map<java.util.UUID, Long> HUD = new java.util.concurrent.ConcurrentHashMap<>();
+
+    public static void hud(net.kyori.adventure.audience.Audience a, net.kyori.adventure.text.Component c) {
+        a.sendActionBar(c);
+        if (a instanceof Player p) HUD.put(p.getUniqueId(), System.currentTimeMillis());
+    }
+
+    /** Pour SmpCombat (par réflexion) : un message de capacité est-il affiché en ce moment ? */
+    public static boolean hudBusy(java.util.UUID id) {
+        Long t = HUD.get(id);
+        return t != null && System.currentTimeMillis() - t < 1800;
     }
 
     public String msg(String key) {

@@ -83,7 +83,7 @@ public final class Arena {
         if (until == null) return false;
         if (until < System.currentTimeMillis()) {
             shield.remove(p.getUniqueId());
-            p.sendActionBar(parse(plugin.getConfig().getString("arena.spawn-protection-end", "<gray>Ta protection d'arrivée est terminée.")));
+            SmpBoss.hud(p, parse(plugin.getConfig().getString("arena.spawn-protection-end", "<gray>Ta protection d'arrivée est terminée.")));
             return false;
         }
         return true;
@@ -94,11 +94,11 @@ public final class Arena {
         int secs = plugin.getConfig().getInt("arena.spawn-protection-seconds", 6);
         if (secs <= 0) return;
         shield.put(p.getUniqueId(), System.currentTimeMillis() + secs * 1000L);
-        p.sendActionBar(parse("<aqua>🛡 Protection d'arrivée : <white>" + secs + " s"));
+        SmpBoss.hud(p, parse("<aqua>🛡 Protection d'arrivée : <white>" + secs + " s"));
     }
 
     public void unprotect(Player p) {
-        if (shield.remove(p.getUniqueId()) != null) p.sendActionBar(parse("<gray>Tu as attaqué : ta protection d'arrivée s'arrête."));
+        if (shield.remove(p.getUniqueId()) != null) SmpBoss.hud(p, parse("<gray>Tu as attaqué : ta protection d'arrivée s'arrête."));
     }
 
     /** Petites particules autour des joueurs protégés (toutes les 10 ticks). */
@@ -285,7 +285,7 @@ public final class Arena {
         Bukkit.getScheduler().runTaskLater(plugin, () -> p.setFireTicks(0), 1L);
         Bukkit.getScheduler().runTaskLater(plugin, () -> p.setFireTicks(0), 5L);
         p.getWorld().playSound(to, org.bukkit.Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 0.6f);
-        p.sendActionBar(parse(spider ? "<aqua>Les toiles te remontent du gouffre…" : "<gold>La lave te recrache dans l'arène…"));
+        SmpBoss.hud(p, parse(spider ? "<aqua>Les toiles te remontent du gouffre…" : "<gold>La lave te recrache dans l'arène…"));
     }
 
     /** Tombé dans le gouffre du nid (sous le niveau du sol, hors du sol de combat). */
@@ -648,7 +648,7 @@ public final class Arena {
         portalCooldown.put(p.getUniqueId(), now);
         Location e = entrance();
         if (e == null) {
-            p.sendActionBar(parse("<red>L'arène n'est pas encore construite."));
+            SmpBoss.hud(p, parse("<red>L'arène n'est pas encore construite."));
             return;
         }
         Bukkit.getScheduler().runTask(plugin, () -> {
@@ -658,7 +658,7 @@ public final class Arena {
             p.setFireTicks(0);
             Bukkit.getScheduler().runTaskLater(plugin, () -> p.setFireTicks(0), 1L);
             p.getWorld().playSound(e, org.bukkit.Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 0.6f);
-            p.sendActionBar(parse(spider ? "<#5aa0ff><b>🕷 Le Nid de la Reine Araignée</b>" : "<dark_red><b>☠ L'arène du Roi Citrouille</b>"));
+            SmpBoss.hud(p, parse(spider ? "<#5aa0ff><b>🕷 Le Nid de la Reine Araignée</b>" : "<dark_red><b>☠ L'arène du Roi Citrouille</b>"));
         });
     }
 
@@ -1133,7 +1133,7 @@ public final class Arena {
             }
             if (idx[0] % (perTick * 5) < perTick || idx[0] >= total) {
                 int pct = (int) (idx[0] * 100L / total);
-                if (p.isOnline()) p.sendActionBar(parse("<gold>Arène : <white>" + pct + "%"));
+                if (p.isOnline()) SmpBoss.hud(p, parse("<gold>Arène : <white>" + pct + "%"));
             }
             if (idx[0] >= total) {
                 job.cancel();

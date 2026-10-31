@@ -1,0 +1,14 @@
+{
+ "layers": {
+  "humanoid": [
+   {
+    "texture": "limitless:sukuna"
+   }
+  ],
+  "humanoid_leggings": [
+   {
+    "texture": "limitless:sukuna"
+   }
+  ]
+ }
+}

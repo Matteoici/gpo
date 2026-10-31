@@ -1,5 +1,26 @@
 # Patch notes Limitless (textes Discord)
 
+## 31/10/2026 — Restriction Céleste
+
+✦ **RESTRICTION CÉLESTE** ✦
+
+⛓️ **Nouvelle relique MYTHICAL : Restriction Céleste** (Reine Araignée)
+> La **Lance du Ciel Inversé** frappe **3 fois plus fort** (coups, Percée, Chute du Ciel, Chaîne)…
+> …mais tu ne peux **plus utiliser AUCUN objet** : ni bloc, ni nourriture, ni potion, ni totem, ni arc, ni autre arme, ni pouvoir de relique.
+
+⚪ **La Lance du Ciel Inversé gagne 4 techniques**
+> • **Pas éclair** : accroupi, tu files à toute vitesse en laissant des **images rémanentes**
+> • **Double saut**
+> • **Chute du Ciel** (accroupi + clic droit en l'air) : tu plonges et t'écrases au sol, tout vole autour
+> • **Chaîne aux Mille Lieues** (accroupi + clic gauche) : la lance part au bout de sa chaîne et **ramène ta cible**
+
+👕 **Les tenues ont leur vrai look**
+> Toji, Gojo (cheveux blancs + bandeau) et Sukuna (kimono croisé, obi rouge) ont leurs tenues dessinées sur le corps et leurs icônes.
+
+🛠️ **Corrections**
+> • Capricorne : la Foudre du Black Wall se lance aussi avec **accroupi + F**
+> • Les recharges ne sont plus cachées par la phrase « en danger »
+
 ## 31/10/2026 — Boogie & Tenues
 
 🪩 **BOOGIE & TENUES** 🪩

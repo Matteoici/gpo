@@ -128,7 +128,7 @@ final class BossListener implements Listener {
                 // tirée depuis l'extérieur de la piste : ne compte pas, même si le tireur est descendu depuis
                 if (pr.getPersistentDataContainer().has(offFloorKey, org.bukkit.persistence.PersistentDataType.BYTE)) {
                     e.setCancelled(true);
-                    p.sendActionBar(SmpBoss.parse("<red>☠ Tir depuis l'extérieur de l'arène : le boss ne sent rien."));
+                    SmpBoss.hud(p, SmpBoss.parse("<red>☠ Tir depuis l'extérieur de l'arène : le boss ne sent rien."));
                     return;
                 }
                 by = p;
@@ -153,7 +153,7 @@ final class BossListener implements Listener {
             Long last = cheeseWarn.get(by.getUniqueId());
             if (last == null || System.currentTimeMillis() - last > 2000) {
                 cheeseWarn.put(by.getUniqueId(), System.currentTimeMillis());
-                by.sendActionBar(SmpBoss.parse("<red>☠ Le boss ne sent rien d'ici... <gold>descends dans l'arène</gold> pour le frapper."));
+                SmpBoss.hud(by, SmpBoss.parse("<red>☠ Le boss ne sent rien d'ici... <gold>descends dans l'arène</gold> pour le frapper."));
             }
             return;
         }
@@ -258,7 +258,7 @@ final class BossListener implements Listener {
         if (plugin.items().isCocoon(hand)) {
             e.setCancelled(true); // le cocon ne se pose jamais comme une toile
             if (a == Action.RIGHT_CLICK_BLOCK && plugin.isSpiderAltar(e.getClickedBlock())) plugin.trySummonSpider(p);
-            else if (a == Action.RIGHT_CLICK_BLOCK) p.sendActionBar(parse(plugin.msg("spider.cocoon-hint")));
+            else if (a == Action.RIGHT_CLICK_BLOCK) SmpBoss.hud(p, parse(plugin.msg("spider.cocoon-hint")));
             return;
         }
         // relique : l'ajouter à sa collection
@@ -289,7 +289,7 @@ final class BossListener implements Listener {
         long now = System.currentTimeMillis();
         Long last = sickleCooldown.get(p.getUniqueId());
         if (last != null && now - last < cd) {
-            p.sendActionBar(parse(plugin.msg("sickle.cooldown").replace("<s>", String.valueOf((cd - (now - last)) / 1000 + 1))));
+            SmpBoss.hud(p, parse(plugin.msg("sickle.cooldown").replace("<s>", String.valueOf((cd - (now - last)) / 1000 + 1))));
             return;
         }
         sickleCooldown.put(p.getUniqueId(), now);

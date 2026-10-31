@@ -105,7 +105,7 @@ final class Capricorne implements Listener {
     public void onClick(PlayerInteractEvent e) {
         if (e.getAction() != Action.LEFT_CLICK_AIR || e.getHand() != EquipmentSlot.HAND) return;
         Player p = e.getPlayer();
-        if (!p.isSneaking() || !wears(p)) return;
+        if (!p.isSneaking() || !wears(p) || TojiSpear.restricted(p)) return;
         Long dt = dropTick.get(p.getUniqueId());
         if (dt != null && Bukkit.getCurrentTick() - dt <= 1) return;
         breach(p);
@@ -114,15 +114,31 @@ final class Capricorne implements Listener {
     /** Accroupi + clic droit dans le vide : la Foudre du Black Wall tombe sur la cible visée. */
     @EventHandler(priority = EventPriority.HIGH)
     public void onRightClick(PlayerInteractEvent e) {
-        if (e.getAction() != Action.RIGHT_CLICK_AIR || e.getHand() != EquipmentSlot.HAND) return;
+        if (e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        if (e.getHand() != EquipmentSlot.HAND) return;
         Player p = e.getPlayer();
-        if (!p.isSneaking() || !wears(p)) return;
+        if (!p.isSneaking() || !wears(p) || TojiSpear.restricted(p)) return;
+        if (e.getAction() == Action.RIGHT_CLICK_BLOCK && e.getClickedBlock() != null && e.getClickedBlock().getType().isInteractable()) return;
         org.bukkit.inventory.ItemStack it = p.getInventory().getItemInMainHand();
         // pas avec un objet qui sert déjà au clic droit (nourriture, arc, bouclier, armes du serveur...)
         if (!it.getType().isAir()) {
             org.bukkit.Material m = it.getType();
             if (m.isEdible() || plugin.weapons().id(it) != null || RIGHT_USE.contains(m)) return;
         }
+        strike(p);
+    }
+
+    /**
+     * Accroupi + F : la Foudre aussi (le clic droit à main vide n'est pas envoyé au serveur par le jeu).
+     * Si le Black Flash est équipé, accroupi + F reste au Black Flash.
+     */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onSwap(org.bukkit.event.player.PlayerSwapHandItemsEvent e) {
+        Player p = e.getPlayer();
+        if (!p.isSneaking() || !wears(p) || TojiSpear.restricted(p)) return;
+        var eq = plugin.store().of(p.getUniqueId()).equipped;
+        if (eq.contains(BlackFlash.SINGLE) || eq.contains(BlackFlash.CONSEC)) return;
+        e.setCancelled(true);
         strike(p);
     }
 
@@ -136,7 +152,7 @@ final class Capricorne implements Listener {
         long now = System.currentTimeMillis();
         Long until = strikeCd.get(p.getUniqueId());
         if (until != null && until > now) {
-            p.sendActionBar(parse(plugin.msg("weapons.cooldown").replace("<seconds>", String.valueOf((until - now) / 1000 + 1))));
+            SmpBoss.hud(p, parse(plugin.msg("weapons.cooldown").replace("<seconds>", String.valueOf((until - now) / 1000 + 1))));
             return;
         }
         World w = p.getWorld();
@@ -157,11 +173,11 @@ final class Capricorne implements Listener {
         if (target != null) spot = target.getLocation();
         else if (hit != null) spot = hit.getHitPosition().toLocation(w);
         else {
-            p.sendActionBar(parse(plugin.msg("capricorne.no-target")));
+            SmpBoss.hud(p, parse(plugin.msg("capricorne.no-target")));
             return;
         }
         strikeCd.put(p.getUniqueId(), now + (long) (cfg("strike.cooldown-seconds", 60) * 1000));
-        p.sendActionBar(parse(plugin.msg("capricorne.strike")));
+        SmpBoss.hud(p, parse(plugin.msg("capricorne.strike")));
         // avertissement : ça crépite au sol sous la cible, le ciel rougit
         WeaponFx fx = fx();
         LivingEntity tg = target;
@@ -183,7 +199,7 @@ final class Capricorne implements Listener {
                 arc(at.clone().add(r.nextDouble(-1, 1), 0.3, r.nextDouble(-1, 1)), new Vector(r.nextDouble(-1, 1), r.nextDouble(-0.2, 0.6), r.nextDouble(-1, 1)),
                         r.nextDouble(1, 2.5), 0.7f, 3);
                 at.getWorld().spawnParticle(Particle.DUST, at.clone().add(0, 0.2, 0), 10, 1.2, 0.1, 1.2, 0, new Particle.DustOptions(RED, 1.2f), true);
-                if (ii == 0 && tg instanceof Player tp) tp.sendActionBar(parse(plugin.msg("capricorne.strike-warn")));
+                if (ii == 0 && tg instanceof Player tp) SmpBoss.hud(tp, parse(plugin.msg("capricorne.strike-warn")));
             });
         }
         fx.later(1 + delay, () -> {
@@ -299,7 +315,7 @@ final class Capricorne implements Listener {
             ap.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, t + 20, 0, false, true, true));
             screen(ap, SCREEN_DARK, 0, 2, 4);
         }
-        p.sendActionBar(parse(plugin.msg("capricorne.ghost")));
+        SmpBoss.hud(p, parse(plugin.msg("capricorne.ghost")));
     }
 
     /** Un endroit libre à 4-5 blocs, sur le côté par rapport à celui qui frappe. */
@@ -373,14 +389,14 @@ final class Capricorne implements Listener {
         long now = System.currentTimeMillis();
         Long until = cooldown.get(p.getUniqueId());
         if (until != null && until > now) {
-            p.sendActionBar(parse(plugin.msg("weapons.cooldown").replace("<seconds>", String.valueOf((until - now) / 1000 + 1))));
+            SmpBoss.hud(p, parse(plugin.msg("weapons.cooldown").replace("<seconds>", String.valueOf((until - now) / 1000 + 1))));
             return;
         }
         Location center = aim(p);
         if (center == null) return;
         cooldown.put(p.getUniqueId(), now + (long) (cfg("cooldown-seconds", 150) * 1000));
         casting.add(p.getUniqueId());
-        p.sendActionBar(parse(plugin.msg("capricorne.cast")));
+        SmpBoss.hud(p, parse(plugin.msg("capricorne.cast")));
         new Breach(p, center).start();
     }
 
@@ -473,7 +489,7 @@ final class Capricorne implements Listener {
                 w.spawnParticle(Particle.DUST, c.clone().add(0, 0.2, 0), 14, R * 0.45, 0.1, R * 0.45, 0, new Particle.DustOptions(RED, 1.0f), true);
                 if (k % 3 == 0) w.spawnParticle(Particle.ELECTRIC_SPARK, c.clone().add(0, 0.3, 0), 10, R * 0.4, 0.1, R * 0.4, 0.05, null, true);
                 // ceux qui sont dedans sont prévenus
-                if (k == 2) for (LivingEntity le : inside(R + 1.5)) if (le instanceof Player o) o.sendActionBar(parse(plugin.msg("capricorne.warn")));
+                if (k == 2) for (LivingEntity le : inside(R + 1.5)) if (le instanceof Player o) SmpBoss.hud(o, parse(plugin.msg("capricorne.warn")));
             }
             // --- les murs jaillissent l'un après l'autre
             if (k >= RISE && k < RISE + walls) {
@@ -585,7 +601,7 @@ final class Capricorne implements Listener {
                 le.setVelocity(in.setY(0.18));
                 if (le instanceof Player o && ThreadLocalRandom.current().nextInt(3) == 0) {
                     fx().snd(o.getLocation(), "capricorn.glitch", 0.6f, 1.4f);
-                    o.sendActionBar(parse(plugin.msg("capricorne.trapped")));
+                    SmpBoss.hud(o, parse(plugin.msg("capricorne.trapped")));
                 }
                 w.spawnParticle(Particle.DUST, le.getLocation().add(off.normalize().multiply(0.6)).add(0, 1, 0), 12, 0.2, 0.6, 0.2, 0,
                         new Particle.DustOptions(RED, 1.2f), true);
@@ -761,7 +777,7 @@ final class Capricorne implements Listener {
                     le.setVelocity(kb.normalize().multiply(0.9).setY(1.1));
                 }
             }
-            if (caster.isOnline()) caster.sendActionBar(parse(plugin.msg("capricorne.collapse")));
+            if (caster.isOnline()) SmpBoss.hud(caster, parse(plugin.msg("capricorne.collapse")));
         }
 
         // -------------------------------------------------------------- outils

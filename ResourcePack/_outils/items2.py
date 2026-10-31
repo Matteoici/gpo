@@ -1007,3 +1007,69 @@ def bpulse(k):
 sword('netherite_sword', 'boss_blade', [hx('0a0608'), hx('1c1216'), hx('2e2026'), hx('47343c'), hx('ff6a00')],
       [hx('1a0d05'), hx('331c0c'), hx('4d2c14'), hx('6b421f')], frames=[bpulse(0), bpulse(1), bpulse(2)])
 print('boss ok')
+
+def outfit_icons():
+    """icônes des tenues d'animé : forme du cuir vanilla, recolorée + détails"""
+    def piece(base, ramp, name, deco=None):
+        a = load(base); o = load(base + '_overlay') if os.path.exists(os.path.join(VAN, base + '_overlay.png')) else None
+        m = a[..., 3] > 0
+        if o is not None: m |= o[..., 3] > 0
+        out = remap(np.where(m[..., None], np.maximum(a, o if o is not None else a), a), m, ramp)
+        if deco: out = deco(out, m)
+        save(outline(out, hx('0c0a10')) if False else out, name)
+    BLACK = [hx('0a0a0e'), hx('17171c'), hx('26262e'), hx('3a3a44')]
+    CREAM = [hx('8a8476'), hx('b0aa9c'), hx('d6d0c2'), hx('f0ebe0')]
+    NAVY = [hx('0c0f1a'), hx('1a2034'), hx('2a3250'), hx('3e4870')]
+    WHITE = [hx('a8a49a'), hx('d2cabc'), hx('eee8dc'), hx('ffffff')]
+    HAK = [hx('0e0c0e'), hx('1e1a1e'), hx('2e2a2e'), hx('44404a')]
+    BROWN = [hx('2a1a12'), hx('4a3020'), hx('6a4430'), hx('8a5c40')]
+    piece('leather_chestplate', BLACK, 'toji_haut')
+    piece('leather_leggings', CREAM, 'toji_pantalon', lambda a, m: (a.__setitem__((slice(1, 3), slice(None)), np.where(m[1:3, :, None], hx('1c1a1c'), a[1:3])) or a))
+    piece('leather_boots', BLACK, 'toji_bottes')
+    def gold_button(a, m):
+        a[2, 7] = hx('d6b04a'); a[2, 8] = hx('d6b04a'); return a
+    piece('leather_chestplate', NAVY, 'gojo_haut', gold_button)
+    piece('leather_leggings', [hx('0a0a10'), hx('15161e'), hx('20222e'), hx('30324a')], 'gojo_pantalon')
+    piece('leather_boots', BLACK, 'gojo_bottes')
+    # bandeau : cheveux blancs en pointes + bande noire
+    b = np.zeros((16, 16, 4), np.int32)
+    hair = np.zeros((16, 16), bool)
+    yy, xx = np.mgrid[0:16, 0:16]
+    hair |= ((xx - 7.5) / 6.5) ** 2 + ((yy - 9) / 6) ** 2 <= 1
+    hair &= yy <= 10
+    for (cx, top) in [(3, 2), (6, 1), (9, 1), (12, 2), (2, 5), (13, 5)]:
+        hair |= (np.abs(xx - cx) <= (yy - top) * 0.45) & (yy >= top) & (yy <= 6)
+    b = over(b, shade(hair, [hx('a8b4cc'), hx('cfd8ea'), hx('eef2fa'), hx('ffffff')]))
+    band = (yy >= 9) & (yy <= 11) & (xx >= 1) & (xx <= 14)
+    b[band] = hx('101014'); b[9, 1:15] = hx('22222a')
+    save(outline(b, hx('0c0a10')), 'gojo_bandeau')
+    def obi(a, m):
+        for x in range(16):
+            for y in (9, 10):
+                if m[y, x]: a[y, x] = hx('19141a') if y == 9 else hx('8c1020')
+        for k in range(5):
+            if m[3 + k, 6 + k]: a[3 + k, 6 + k] = hx('2a2024')
+        return a
+    piece('leather_chestplate', WHITE, 'sukuna_haut', obi)
+    piece('leather_leggings', HAK, 'sukuna_pantalon')
+    piece('leather_boots', BROWN, 'sukuna_bottes')
+outfit_icons()
+
+def heavenly_icon():
+    """Restriction Céleste : maillons de chaîne sombres, un maillon brisé, cicatrice blanche"""
+    a = np.zeros((16, 16, 4), np.int32)
+    yy, xx = np.mgrid[0:16, 0:16]
+    STEEL = [hx('1e2028'), hx('3a3e4a'), hx('6a7080'), hx('a8b0c0')]
+    def link(cx, cy, horiz):
+        rx, ry = (2.6, 1.6) if horiz else (1.6, 2.6)
+        m = ((xx - cx) / rx) ** 2 + ((yy - cy) / ry) ** 2
+        return (m <= 1) & (m >= 0.35)
+    m = link(3.5, 12.5, True) | link(6.0, 10.0, False) | link(9.5, 6.5, True) | link(12.0, 4.0, False)
+    a = over(a, shade(m, STEEL))
+    # cassure + entaille blanche (la cicatrice)
+    for (x, y) in [(7, 8), (8, 8), (8, 7)]:
+        a[y, x] = 0
+    for k in range(5):
+        a[2 + k, 3 + k] = hx('f0f4fa') if k % 2 == 0 else hx('c8d2e6')
+    save(outline(a, hx('0c0a10')), 'relic_restriction_celeste')
+heavenly_icon()

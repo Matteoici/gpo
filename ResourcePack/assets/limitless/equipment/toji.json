@@ -1,0 +1,14 @@
+{
+ "layers": {
+  "humanoid": [
+   {
+    "texture": "limitless:toji"
+   }
+  ],
+  "humanoid_leggings": [
+   {
+    "texture": "limitless:toji"
+   }
+  ]
+ }
+}

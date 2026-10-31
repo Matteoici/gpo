@@ -68,7 +68,7 @@ final class BoogieBomb implements Listener {
     public void onSneak(PlayerToggleSneakEvent e) {
         if (!e.isSneaking()) return;
         Player p = e.getPlayer();
-        if (!wears(p) || dancing.contains(p.getUniqueId())) return;
+        if (!wears(p) || dancing.contains(p.getUniqueId()) || TojiSpear.restricted(p)) return; // avec la lance : accroupi = pas éclair
         long now = System.currentTimeMillis();
         Long last = lastSneak.put(p.getUniqueId(), now);
         if (last == null || now - last > cfg("double-sneak-ms", 350)) return;
@@ -79,7 +79,7 @@ final class BoogieBomb implements Listener {
         }
         Long until = cooldown.get(p.getUniqueId());
         if (until != null && until > now) {
-            p.sendActionBar(parse(plugin.msg("weapons.cooldown").replace("<seconds>", String.valueOf((until - now) / 1000 + 1))));
+            SmpBoss.hud(p, parse(plugin.msg("weapons.cooldown").replace("<seconds>", String.valueOf((until - now) / 1000 + 1))));
             return;
         }
         cooldown.put(p.getUniqueId(), now + (long) (cfg("cooldown-seconds", 60) * 1000));
@@ -100,7 +100,7 @@ final class BoogieBomb implements Listener {
         s.getPersistentDataContainer().set(bombKey, PersistentDataType.BYTE, (byte) 1);
         p.getWorld().playSound(p.getLocation(), Sound.ENTITY_SNOWBALL_THROW, 1f, 0.6f);
         sound(p.getLocation(), "boogie.throw", 20, 1f);
-        p.sendActionBar(parse(plugin.msg("boogie-bombe.thrown")));
+        SmpBoss.hud(p, parse(plugin.msg("boogie-bombe.thrown")));
         // la boule laisse des paillettes
         BukkitTask[] t = new BukkitTask[1];
         int[] k = {0};
@@ -157,7 +157,7 @@ final class BoogieBomb implements Listener {
         boolean ai = le.hasAI();
         if (le instanceof Player p) {
             BlackFlash.stun(p, dur);
-            p.sendActionBar(parse(plugin.msg("boogie-bombe.dancing")));
+            SmpBoss.hud(p, parse(plugin.msg("boogie-bombe.dancing")));
             p.playSound(p, "limitless:boogie.dance", SoundCategory.PLAYERS, 1f, 1f);
         } else {
             le.setAI(false);

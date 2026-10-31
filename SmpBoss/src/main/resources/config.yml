@@ -1,4 +1,4 @@
-config-version: 42
+config-version: 44
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -446,6 +446,26 @@ weapons:
       jump: 0.18
       step: 0.5
       regen: 1             # PV rendus toutes les 2 s
+    flash-step:            # accroupi : très vite, images rémanentes
+      sneak-speed: 0.7     # ajouté à la vitesse accroupi (0.3 de base, max 1)
+      speed-level: 3       # Vitesse III tant que tu es accroupi
+    double-jump:
+      enabled: true
+      power: 0.95
+      forward: 0.55
+    dive:                  # Chute du Ciel (accroupi + clic droit en l'air)
+      cooldown-seconds: 25
+      speed: 2.6
+      radius: 5.5
+      percent: 25          # % de la vie max d'un joueur
+      damage: 40
+      boss-damage: 150
+    chain:                 # Chaîne aux Mille Lieues (accroupi + clic gauche dans le vide)
+      range: 24
+      cooldown-seconds: 15
+      percent: 10
+      damage: 20
+      boss-damage: 60
     special:               # Percée du Ciel Inversé (accroupi + clic droit)
       range: 18
       cooldown-seconds: 90
@@ -833,6 +853,15 @@ relics:
       armor: 4
       speed: 15
       regen: 2
+    restriction_celeste:
+      name: "Restriction Céleste"
+      rarity: secret
+      icon: IRON_CHAIN
+      lore: ["<gray>Zéro énergie occulte. Un corps qui n'a besoin de rien.",
+             "<#c8d2e6>✦ <white>La Lance du Ciel Inversé frappe <b>3 fois plus fort</b>",
+             "<gray>(coups, Percée, Chute du Ciel, Chaîne).",
+             "<red>✖ Mais plus AUCUN objet : <gray>ni bloc, ni nourriture, ni potion,",
+             "<gray>ni totem, ni arc, ni autre arme, ni pouvoir de relique."]
 
 # ---------------------------------------------------------------- Sac (relique secrète)
 backpack:
@@ -955,7 +984,7 @@ spider-loot:
     rare: [{relic: fil_soie}, {relic: oeil_araignee}]
     epic: [{relic: crochets_venin}, {relic: cocon_ancien}, {relic: soie_lunaire}, {relic: venin_cristallise}]
     legendary: [{relic: pattes_reine}, {relic: cape_toile}, {relic: black_flash}, {relic: masque_mille_yeux}, {relic: fuseau_tisseuse}, {relic: boogie_bombe}]
-    secret: [{relic: couronne_reine, title: "Héritier de la Toile"}]
+    secret: [{relic: couronne_reine, title: "Héritier de la Toile"}, {relic: restriction_celeste, title: "Zéro Énergie Occulte"}]
     prestige: [{relic: coeur_abysse, title: "Cœur de l'Abysse"}, {relic: black_flash_consecutif, title: "Black Flash"},
                {relic: ailes_toile, title: "Ailes de la Toile"}, {relic: oeil_rouge_abysse, title: "L'Œil Rouge"},
                {relic: projet_capricorne, title: "Au-delà du Black Wall"}]
@@ -983,6 +1012,10 @@ music:
 
 
 # ================================================================ ⚡ BLACK FLASH (reliques de la Reine) : accroupi + F
+# ================================================================ ✦ RESTRICTION CÉLESTE (relique MYTHICAL)
+restriction-celeste:
+  multiplier: 3            # dégâts de la Lance du Ciel Inversé
+
 black-flash:
   range: 24
   arm-seconds: 4           # accroupi + F : le poing reste chargé X secondes, il faut toucher la cible
@@ -1262,6 +1295,12 @@ messages:
         - "<#aa0814>✦ <b>PERCÉE DU CIEL INVERSÉ</b> <gray>(accroupi + clic droit)"
         - "<gray>Tu te jettes sur ta cible : la lame la traverse,"
         - "<gray>cinq entailles, puis le coup final. <white>70 %</white> de sa vie."
+        - "<#aa0814>✦ <b>CHUTE DU CIEL</b> <gray>(accroupi + clic droit en l'air)"
+        - "<gray>Tu plonges et t'écrases au sol : tout vole autour."
+        - "<#aa0814>✦ <b>CHAÎNE AUX MILLE LIEUES</b> <gray>(accroupi + clic gauche)"
+        - "<gray>La lance part au bout de sa chaîne et ramène la cible."
+        - "<#c8d2e6>✦ <b>PAS ÉCLAIR</b> <gray>(accroupi) : tu files, images rémanentes"
+        - "<#c8d2e6>✦ <b>DOUBLE SAUT</b> <gray>(espace en l'air)"
         - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
         - "<white>⚔ 16</white> <gray>au corps à corps   <dark_gray>|</dark_gray>   <white>⏳ <cooldown> s"
         - "<dark_gray>✧ Ne tombe pas à la mort · incassable"
@@ -1712,6 +1751,8 @@ messages:
     no-item: "<#c8d2e6>✦ <gray>Sous Restriction Céleste : <white>rien d'autre que la lance"
     nullified: "<#aa0814>✦ <gray>La Lance du Ciel Inversé a coupé ta technique !"
     no-target: "<#c8d2e6>✦ <gray>Vise quelqu'un (18 blocs)."
+    dive: "<#aa0814><b>✦ CHUTE DU CIEL"
+    heavenly-lock: "<#c8d2e6>✦ <gray>Restriction Céleste : <white>plus aucun objet, seulement la lance"
     special: "<#aa0814><b>✦ PERCÉE DU CIEL INVERSÉ"
     stunned: "<#aa0814><b>✦ CIEL INVERSÉ</b> <gray>· tu ne peux plus bouger"
     set-on: "<#c8d2e6><b>CORPS CÉLESTE</b> <gray>· Tenue de Toji complète"

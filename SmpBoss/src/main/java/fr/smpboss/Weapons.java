@@ -377,8 +377,35 @@ final class Weapons implements Listener {
         m.setEnchantmentGlintOverride(false);
         m.addItemFlags(ItemFlag.HIDE_UNBREAKABLE, ItemFlag.HIDE_DYE);
         m.getPersistentDataContainer().set(key, PersistentDataType.STRING, pid);
+        SmpBoss.modelData(m, pid); // icône du pack
+        equipModel(m, set.replace("tenue_", "")); // tenue dessinée sur le corps (pack)
         it.setItemMeta(m);
         return it;
+    }
+
+    /** Texture portée sur le corps : composant "equippable" -> limitless:<tenue> (assets/limitless/equipment/<tenue>.json). */
+    private static void equipModel(ItemMeta m, String name) {
+        try {
+            Object eq = m.getClass().getMethod("getEquippable").invoke(m);
+            NamespacedKey k = new NamespacedKey("limitless", name);
+            java.lang.reflect.Method set = null;
+            for (String n : new String[]{"setAssetId", "setModel"}) {
+                try {
+                    set = eq.getClass().getMethod(n, NamespacedKey.class);
+                    break;
+                } catch (NoSuchMethodException ignored) {
+                }
+            }
+            if (set == null) return;
+            set.invoke(eq, k);
+            for (java.lang.reflect.Method mm : m.getClass().getMethods()) {
+                if (mm.getName().equals("setEquippable") && mm.getParameterCount() == 1) {
+                    mm.invoke(m, eq);
+                    break;
+                }
+            }
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError ignored) {
+        }
     }
 
     /** Toutes les pièces de cette tenue sont portées ? */
@@ -407,11 +434,16 @@ final class Weapons implements Listener {
     }
 
     private boolean ready(Player p, String id, double seconds) {
+        // relique "Restriction Céleste" : aucune arme à part la Lance du Ciel Inversé
+        if (TojiSpear.itemLocked(p) && !TojiSpear.ID.equals(id)) {
+            SmpBoss.hud(p, parse(plugin.msg("lance-ciel.heavenly-lock")));
+            return false;
+        }
         String k = p.getUniqueId() + ":" + id;
         long now = System.currentTimeMillis();
         Long until = cooldown.get(k);
         if (until != null && until > now) {
-            p.sendActionBar(parse(plugin.msg("weapons.cooldown").replace("<seconds>", fmt(Math.ceil((until - now) / 100.0) / 10.0))));
+            SmpBoss.hud(p, parse(plugin.msg("weapons.cooldown").replace("<seconds>", fmt(Math.ceil((until - now) / 100.0) / 10.0))));
             return false;
         }
         cooldown.put(k, now + (long) (seconds * 1000));
@@ -470,7 +502,7 @@ final class Weapons implements Listener {
         long held = start == null ? 0 : System.currentTimeMillis() - start;
         // l'arc doit être tendu au maximum (1 s)
         if (held < cfg("sonic-bow.full-charge-ms", 950) || e.getForce() < 0.95f) {
-            p.sendActionBar(parse(plugin.msg("weapons.sonic-bow.not-charged")));
+            SmpBoss.hud(p, parse(plugin.msg("weapons.sonic-bow.not-charged")));
             p.playSound(p.getLocation(), org.bukkit.Sound.BLOCK_SCULK_SENSOR_CLICKING_STOP, 1f, 0.6f);
             return;
         }
@@ -819,7 +851,7 @@ final class Weapons implements Listener {
                 le.setVelocity(kb.normalize().multiply(0.8).setY(0.6));
             }
         });
-        p.sendActionBar(parse("<gold><b>⚡ SÉISME"));
+        SmpBoss.hud(p, parse("<gold><b>⚡ SÉISME"));
     }
 
     // ================================================================= Faux des Âmes : LANCE D'ÂMES + MARQUE + PLUIE
@@ -950,7 +982,7 @@ final class Weapons implements Listener {
         }
         var max = p.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
         p.setHealth(Math.min(max == null ? 20 : max.getValue(), p.getHealth() + heal));
-        p.sendActionBar(parse("<aqua><b>☠ ÂME BRISÉE</b> <gray>+" + fmt(heal / 2) + " ❤"));
+        SmpBoss.hud(p, parse("<aqua><b>☠ ÂME BRISÉE</b> <gray>+" + fmt(heal / 2) + " ❤"));
     }
 
     /** +50 % de dégâts sur une cible marquée, quelle que soit la source. */

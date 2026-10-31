@@ -79,6 +79,11 @@ final class TojiSpear implements Listener {
     /** techniques coupées par la lance (jusqu'à quand) */
     private final Map<UUID, Long> nullified = new HashMap<>();
     private final Set<UUID> busy = new HashSet<>();
+    /** double saut : vol autorisé par nous (pour le détecter), saut déjà utilisé, joueurs en piqué */
+    private final Set<UUID> djGranted = new HashSet<>(), djUsed = new HashSet<>(), diving = new HashSet<>();
+    private final Map<UUID, Location> lastPos = new HashMap<>();
+    private final Map<UUID, Long> diveCd = new HashMap<>(), chainCd = new HashMap<>(), dropTick = new HashMap<>();
+    private NamespacedKey sneakKey;
     private final NamespacedKey hp, speed, dmg, kb, fall, jump, step, atkSpeed, setSpeed, setJump, setFall, setDmg;
     /** Tenue de Toji complète (3 pièces) : Corps Céleste */
     private final Set<UUID> fullSet = new HashSet<>();
@@ -99,6 +104,8 @@ final class TojiSpear implements Listener {
         setFall = new NamespacedKey(plugin, "tojiset_fall");
         setDmg = new NamespacedKey(plugin, "tojiset_dmg");
         Bukkit.getScheduler().runTaskTimer(plugin, this::tick, 20L, 5L);
+        sneakKey = new NamespacedKey(plugin, "toji_sneak");
+        Bukkit.getScheduler().runTaskTimer(plugin, this::fastTick, 20L, 2L);
     }
 
     private double cfg2(String path, double def) {
@@ -133,7 +140,7 @@ final class TojiSpear implements Listener {
     /** Techniques bloquées : sous Restriction Céleste, ou coupées par un coup de la lance. */
     static boolean blocked(Player p) {
         if (instance == null) return false;
-        if (instance.active.contains(p.getUniqueId())) return true;
+        if (instance.active.contains(p.getUniqueId()) || instance.heavenly(p)) return true;
         Long u = instance.nullified.get(p.getUniqueId());
         return u != null && u > System.currentTimeMillis();
     }
@@ -141,7 +148,7 @@ final class TojiSpear implements Listener {
     /** Message quand un pouvoir est refusé. */
     static void deny(Player p) {
         if (instance == null) return;
-        p.sendActionBar(parse(instance.plugin.msg(instance.active.contains(p.getUniqueId()) ? "lance-ciel.no-power" : "lance-ciel.nullified")));
+        SmpBoss.hud(p, parse(instance.plugin.msg(instance.active.contains(p.getUniqueId()) ? "lance-ciel.no-power" : "lance-ciel.nullified")));
         p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.7f, 0.5f);
     }
 
@@ -162,7 +169,7 @@ final class TojiSpear implements Listener {
                 set(p, Attribute.JUMP_STRENGTH, setJump, cfg2("set.jump", 0.1), AttributeModifier.Operation.ADD_NUMBER);
                 set(p, Attribute.SAFE_FALL_DISTANCE, setFall, cfg2("set.safe-fall", 6), AttributeModifier.Operation.ADD_NUMBER);
                 set(p, Attribute.ATTACK_DAMAGE, setDmg, cfg2("set.damage", 0.15), AttributeModifier.Operation.ADD_SCALAR);
-                p.sendActionBar(parse(plugin.msg("lance-ciel.set-on")));
+                SmpBoss.hud(p, parse(plugin.msg("lance-ciel.set-on")));
                 p.playSound(p.getLocation(), Sound.ITEM_ARMOR_EQUIP_LEATHER, 1f, 0.6f);
             } else if (!set && fullSet.remove(id)) {
                 for (Attribute a : new Attribute[]{Attribute.MOVEMENT_SPEED, Attribute.JUMP_STRENGTH, Attribute.SAFE_FALL_DISTANCE, Attribute.ATTACK_DAMAGE}) {
@@ -196,13 +203,14 @@ final class TojiSpear implements Listener {
         set(p, Attribute.SAFE_FALL_DISTANCE, fall, cfg("restriction.safe-fall", 10), AttributeModifier.Operation.ADD_NUMBER);
         set(p, Attribute.JUMP_STRENGTH, jump, cfg("restriction.jump", 0.18), AttributeModifier.Operation.ADD_NUMBER);
         set(p, Attribute.STEP_HEIGHT, step, cfg("restriction.step", 0.5), AttributeModifier.Operation.ADD_NUMBER);
+        set(p, Attribute.SNEAKING_SPEED, sneakKey, cfg("flash-step.sneak-speed", 0.7), AttributeModifier.Operation.ADD_NUMBER);
         // plus aucune relique (bonus retirés)
         plugin.relics().apply(p);
         // plus de bonus de potions (sauf ceux des balises)
         for (PotionEffect pe : p.getActivePotionEffects()) {
             if (pe.getType().getCategory() == PotionEffectTypeCategory.BENEFICIAL && !pe.isAmbient() && !pe.isInfinite()) p.removePotionEffect(pe.getType());
         }
-        p.sendActionBar(parse(plugin.msg("lance-ciel.restriction-on")));
+        SmpBoss.hud(p, parse(plugin.msg("lance-ciel.restriction-on")));
         p.playSound(p, "limitless:toji.equip", SoundCategory.PLAYERS, 1f, 1f);
         p.playSound(p.getLocation(), Sound.ITEM_ARMOR_EQUIP_NETHERITE, 0.8f, 0.6f);
         p.getWorld().spawnParticle(Particle.DUST, p.getLocation().add(0, 1, 0), 25, 0.4, 0.8, 0.4, 0, new Particle.DustOptions(DARK, 1.2f), true);
@@ -211,15 +219,21 @@ final class TojiSpear implements Listener {
     private void leave(Player p) {
         active.remove(p.getUniqueId());
         for (Attribute a : new Attribute[]{Attribute.MAX_HEALTH, Attribute.MOVEMENT_SPEED, Attribute.ATTACK_DAMAGE, Attribute.ATTACK_SPEED,
-                Attribute.KNOCKBACK_RESISTANCE, Attribute.SAFE_FALL_DISTANCE, Attribute.JUMP_STRENGTH, Attribute.STEP_HEIGHT}) {
+                Attribute.KNOCKBACK_RESISTANCE, Attribute.SAFE_FALL_DISTANCE, Attribute.JUMP_STRENGTH, Attribute.STEP_HEIGHT, Attribute.SNEAKING_SPEED}) {
             AttributeInstance inst = p.getAttribute(a);
             if (inst == null) continue;
-            for (NamespacedKey k : new NamespacedKey[]{hp, speed, dmg, atkSpeed, kb, fall, jump, step}) inst.removeModifier(k);
+            for (NamespacedKey k : new NamespacedKey[]{hp, speed, dmg, atkSpeed, kb, fall, jump, step, sneakKey}) inst.removeModifier(k);
         }
+        // plus de double saut
+        if (djGranted.remove(p.getUniqueId()) && survival(p)) {
+            p.setFlying(false);
+            p.setAllowFlight(false);
+        }
+        djUsed.remove(p.getUniqueId());
         plugin.relics().apply(p);
         var max = p.getAttribute(Attribute.MAX_HEALTH);
         if (max != null && p.getHealth() > max.getValue()) p.setHealth(max.getValue());
-        if (p.isOnline()) p.sendActionBar(parse(plugin.msg("lance-ciel.restriction-off")));
+        if (p.isOnline()) SmpBoss.hud(p, parse(plugin.msg("lance-ciel.restriction-off")));
     }
 
     private static void set(Player p, Attribute a, NamespacedKey key, double amount, AttributeModifier.Operation op) {
@@ -245,7 +259,7 @@ final class TojiSpear implements Listener {
     public void noConsume(PlayerItemConsumeEvent e) {
         if (restricted(e.getPlayer())) {
             e.setCancelled(true);
-            e.getPlayer().sendActionBar(parse(plugin.msg("lance-ciel.no-item")));
+            SmpBoss.hud(e.getPlayer(), parse(plugin.msg("lance-ciel.no-item")));
         }
     }
 
@@ -302,6 +316,328 @@ final class TojiSpear implements Listener {
         return damager instanceof Player p && instance != null && instance.holds(p);
     }
 
+    // ================================================================= relique MYTHICAL "Restriction Céleste" : la lance x3, plus aucun objet
+
+    static final String HEAVEN = "restriction_celeste";
+
+    boolean heavenly(Player p) {
+        return plugin.store().of(p.getUniqueId()).equipped.contains(HEAVEN);
+    }
+
+    /** Multiplicateur de la lance (x3 avec la relique). */
+    double mult(Player p) {
+        return heavenly(p) ? plugin.getConfig().getDouble("restriction-celeste.multiplier", 3) : 1;
+    }
+
+    /** Pour les armes (Weapons.ready) : la relique interdit tout objet sauf la lance. */
+    static boolean itemLocked(Player p) {
+        return instance != null && instance.heavenly(p);
+    }
+
+    private boolean isSpear(org.bukkit.inventory.ItemStack it) {
+        return it != null && ID.equals(plugin.weapons().id(it));
+    }
+
+    private void lockMsg(Player p) {
+        SmpBoss.hud(p, parse(plugin.msg("lance-ciel.heavenly-lock")));
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void heavenlyMelee(EntityDamageByEntityEvent e) {
+        if (!(e.getDamager() instanceof Player p) || !heavenly(p)) return;
+        var main = p.getInventory().getItemInMainHand();
+        if (isSpear(main)) {
+            if (e.getCause() == EntityDamageEvent.DamageCause.ENTITY_ATTACK || e.getCause() == EntityDamageEvent.DamageCause.ENTITY_SWEEP_ATTACK)
+                e.setDamage(e.getDamage() * mult(p));
+        } else if (!main.getType().isAir()) {
+            e.setCancelled(true); // aucune autre arme
+            lockMsg(p);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void heavenlyUse(PlayerInteractEvent e) {
+        Player p = e.getPlayer();
+        if (!heavenly(p) || e.getItem() == null || isSpear(e.getItem())) return;
+        if (e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK) {
+            e.setUseItemInHand(org.bukkit.event.Event.Result.DENY);
+            if (e.getAction() == Action.RIGHT_CLICK_AIR) e.setCancelled(true);
+            lockMsg(p);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void heavenlyPlace(org.bukkit.event.block.BlockPlaceEvent e) {
+        if (heavenly(e.getPlayer())) {
+            e.setCancelled(true);
+            lockMsg(e.getPlayer());
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void heavenlyBreak(org.bukkit.event.block.BlockBreakEvent e) {
+        Player p = e.getPlayer();
+        var main = p.getInventory().getItemInMainHand();
+        if (heavenly(p) && !main.getType().isAir() && !isSpear(main)) {
+            e.setCancelled(true);
+            lockMsg(p);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void heavenlyConsume(PlayerItemConsumeEvent e) {
+        if (heavenly(e.getPlayer())) {
+            e.setCancelled(true);
+            lockMsg(e.getPlayer());
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void heavenlyShoot(ProjectileLaunchEvent e) {
+        if (e.getEntity().getShooter() instanceof Player p && heavenly(p)) e.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void heavenlyBow(org.bukkit.event.entity.EntityShootBowEvent e) {
+        if (e.getEntity() instanceof Player p && heavenly(p)) e.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void heavenlyTotem(EntityResurrectEvent e) {
+        if (e.getEntity() instanceof Player p && heavenly(p)) e.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void heavenlyGlide(EntityToggleGlideEvent e) {
+        if (e.isGliding() && e.getEntity() instanceof Player p && heavenly(p)) e.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void heavenlyBucket(org.bukkit.event.player.PlayerBucketEmptyEvent e) {
+        if (heavenly(e.getPlayer())) e.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void heavenlyBucketFill(org.bukkit.event.player.PlayerBucketFillEvent e) {
+        if (heavenly(e.getPlayer())) e.setCancelled(true);
+    }
+
+    // ================================================================= pas éclair, double saut
+
+    private static boolean survival(Player p) {
+        return p.getGameMode() == org.bukkit.GameMode.SURVIVAL || p.getGameMode() == org.bukkit.GameMode.ADVENTURE;
+    }
+
+    /** Toutes les 2 ticks : images rémanentes quand on file accroupi, double saut prêt quand on touche le sol. */
+    private void fastTick() {
+        for (UUID id : active) {
+            Player p = Bukkit.getPlayer(id);
+            if (p == null) continue;
+            Location now = p.getLocation();
+            Location prev = lastPos.put(id, now.clone());
+            // accroupi = pas éclair : très vite, des images rémanentes restent derrière
+            if (p.isSneaking() && !p.isFlying()) {
+                p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 8, (int) cfg("flash-step.speed-level", 3) - 1, false, false, false));
+                if (prev != null && prev.getWorld() == now.getWorld() && prev.distanceSquared(now) > 0.04 && Bukkit.getCurrentTick() % 4 == 0) {
+                    afterimage(prev);
+                    if (Bukkit.getCurrentTick() % 8 == 0) p.getWorld().playSound(now, Sound.ENTITY_PHANTOM_FLAP, 0.25f, 1.8f);
+                }
+            }
+            // double saut
+            if (!survival(p) || !cfg("double-jump.enabled", 1, true)) continue;
+            if (p.isOnGround()) {
+                djUsed.remove(id);
+                if (!p.getAllowFlight()) {
+                    p.setAllowFlight(true);
+                    djGranted.add(id);
+                }
+            }
+            if (p.isFlying() && djGranted.contains(id)) p.setFlying(false);
+        }
+        lastPos.keySet().removeIf(u -> !active.contains(u));
+    }
+
+    private boolean cfg(String path, int unused, boolean def) {
+        return plugin.getConfig().getBoolean("weapons.lance-ciel." + path, def);
+    }
+
+    /** Silhouette sombre qui reste un instant là où tu étais. */
+    private void afterimage(Location l) {
+        World w = l.getWorld();
+        double yaw = Math.toRadians(l.getYaw());
+        Vector right = new Vector(Math.cos(yaw), 0, Math.sin(yaw));
+        Particle.DustTransition dt = new Particle.DustTransition(Color.fromRGB(20, 20, 26), Color.fromRGB(150, 155, 170), 0.9f);
+        java.util.List<double[]> pts = new java.util.ArrayList<>();
+        for (int k = 0; k < 8; k++) {
+            double a = Math.PI * 2 * k / 8;
+            pts.add(new double[]{Math.cos(a) * 0.22, 1.72 + Math.sin(a) * 0.22});
+        }
+        for (double y = 0.75; y <= 1.45; y += 0.14) pts.add(new double[]{0, y});
+        for (double t = 0; t <= 1; t += 0.2) {
+            pts.add(new double[]{-0.18 - 0.22 * t, 1.42 - 0.55 * t});
+            pts.add(new double[]{0.18 + 0.22 * t, 1.42 - 0.55 * t});
+            pts.add(new double[]{-0.12 - 0.05 * t, 0.75 - 0.72 * t});
+            pts.add(new double[]{0.12 + 0.05 * t, 0.75 - 0.72 * t});
+        }
+        for (double[] q : pts) {
+            Location at = l.clone().add(right.clone().multiply(q[0])).add(0, q[1], 0);
+            w.spawnParticle(Particle.DUST_COLOR_TRANSITION, at, 1, 0.02, 0.02, 0.02, 0, dt, true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onDoubleJump(org.bukkit.event.player.PlayerToggleFlightEvent e) {
+        Player p = e.getPlayer();
+        if (!e.isFlying() || !djGranted.contains(p.getUniqueId()) || !restricted(p) || !survival(p)) return;
+        e.setCancelled(true);
+        p.setFlying(false);
+        if (!djUsed.add(p.getUniqueId())) return;
+        p.setAllowFlight(false);
+        djGranted.remove(p.getUniqueId());
+        Vector look = p.getLocation().getDirection().setY(0);
+        if (look.lengthSquared() > 0.01) look.normalize().multiply(cfg("double-jump.forward", 0.55));
+        p.setVelocity(look.setY(cfg("double-jump.power", 0.95)));
+        afterimage(p.getLocation());
+        p.getWorld().playSound(p.getLocation(), Sound.ENTITY_BREEZE_JUMP, 0.9f, 1.3f);
+        p.getWorld().spawnParticle(Particle.CLOUD, p.getLocation(), 10, 0.3, 0.05, 0.3, 0.02, null, true);
+    }
+
+    /** Pas de dégâts de chute après un piqué. */
+    @EventHandler(ignoreCancelled = true)
+    public void noDiveFall(EntityDamageEvent e) {
+        if (e.getCause() == EntityDamageEvent.DamageCause.FALL && (diving.contains(e.getEntity().getUniqueId())
+                || e.getEntity() instanceof Player p && restricted(p) && djUsed.contains(p.getUniqueId()))) e.setCancelled(true);
+    }
+
+    // ================================================================= Chute du Ciel (accroupi + clic droit en l'air)
+
+    private boolean dive(Player p) {
+        long now = System.currentTimeMillis();
+        Long until = diveCd.get(p.getUniqueId());
+        if (until != null && until > now) {
+            SmpBoss.hud(p, parse(plugin.msg("weapons.cooldown").replace("<seconds>", String.valueOf((until - now) / 1000 + 1))));
+            return true;
+        }
+        diveCd.put(p.getUniqueId(), now + (long) (cfg("dive.cooldown-seconds", 25) * 1000));
+        UUID id = p.getUniqueId();
+        diving.add(id);
+        Vector look = p.getLocation().getDirection();
+        p.setVelocity(new Vector(look.getX() * 0.6, -cfg("dive.speed", 2.6), look.getZ() * 0.6));
+        p.getWorld().playSound(p.getLocation(), Sound.ITEM_TRIDENT_RIPTIDE_3, 1.2f, 0.7f);
+        SmpBoss.hud(p, parse(plugin.msg("lance-ciel.dive")));
+        int[] k = {0};
+        BukkitTask[] task = new BukkitTask[1];
+        task[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            int i = k[0]++;
+            if (!p.isOnline() || p.isDead() || i > 60) {
+                task[0].cancel();
+                diving.remove(id);
+                return;
+            }
+            afterimage(p.getLocation());
+            if (!p.isOnGround() && i > 0) return;
+            task[0].cancel();
+            slam(p);
+            Bukkit.getScheduler().runTaskLater(plugin, () -> diving.remove(id), 10L);
+        }, 1L, 1L);
+        return true;
+    }
+
+    private void slam(Player p) {
+        Location c = p.getLocation();
+        World w = c.getWorld();
+        double r = cfg("dive.radius", 5.5);
+        boolean duels = plugin.getConfig().getBoolean("weapons.lance-ciel.in-duels", true);
+        WeaponFx fx = fx();
+        fx.wave(c.clone().add(0, 0.1, 0), "w_shock_flat", STEEL, 1, (float) r * 2.6f, 9, null, Display.Billboard.FIXED);
+        for (int i = 0; i < 3; i++) fx.tpop(c.clone().add(0, 0.08, 0), "w_crack_flat", DARK, (float) r * 1.6f, 1, (float) r * 1.6f, 1, 30, 10,
+                Display.Billboard.FIXED, new Quaternionf().rotateY((float) ThreadLocalRandom.current().nextDouble(6.28)));
+        var below = c.clone().add(0, -0.5, 0).getBlock().getBlockData();
+        w.spawnParticle(Particle.BLOCK, c, 120, r * 0.4, 0.3, r * 0.4, 0.2, below, true);
+        w.spawnParticle(Particle.EXPLOSION, c, 3, 1, 0.2, 1, 0, null, true);
+        w.spawnParticle(Particle.SWEEP_ATTACK, c.clone().add(0, 0.6, 0), 8, r * 0.4, 0.1, r * 0.4, 0, null, true);
+        w.playSound(c, Sound.ENTITY_GENERIC_EXPLODE, 1.6f, 0.6f);
+        w.playSound(c, Sound.ITEM_MACE_SMASH_GROUND_HEAVY, 1.6f, 0.7f);
+        sound(c, "toji.slash", 32);
+        for (LivingEntity le : ult().targets(p, c.clone().add(0, 1, 0), r, duels)) {
+            if (!isBoss(le) && !allowed(p, le)) continue;
+            if (isBoss(le)) {
+                Boss b = plugin.king();
+                if (b != null) b.hurt(p, cfg("dive.boss-damage", 150) * mult(p));
+                continue;
+            }
+            if (le instanceof Player) applyDamage(p, le, maxHealth(le) * cfg("dive.percent", 25) / 100.0 * mult(p));
+            else applyDamage(p, le, cfg("dive.damage", 40) * mult(p));
+            Vector out = le.getLocation().toVector().subtract(c.toVector()).setY(0);
+            if (out.lengthSquared() < 0.01) out = new Vector(0.1, 0, 0);
+            le.setVelocity(out.normalize().multiply(0.8).setY(0.9));
+            if (le instanceof Player t) nullified.put(t.getUniqueId(), System.currentTimeMillis() + (long) (cfg("nullify-seconds", 4) * 1000));
+        }
+    }
+
+    // ================================================================= Chaîne aux Mille Lieues (accroupi + clic gauche dans le vide)
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onDropTick(org.bukkit.event.player.PlayerDropItemEvent e) {
+        dropTick.put(e.getPlayer().getUniqueId(), (long) Bukkit.getCurrentTick());
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onChain(PlayerInteractEvent e) {
+        if (e.getAction() != Action.LEFT_CLICK_AIR || e.getHand() != EquipmentSlot.HAND) return;
+        Player p = e.getPlayer();
+        if (!p.isSneaking() || !holds(p)) return;
+        Long dt = dropTick.get(p.getUniqueId());
+        if (dt != null && Bukkit.getCurrentTick() - dt <= 1) return;
+        long now = System.currentTimeMillis();
+        Long until = chainCd.get(p.getUniqueId());
+        if (until != null && until > now) {
+            SmpBoss.hud(p, parse(plugin.msg("weapons.cooldown").replace("<seconds>", String.valueOf((until - now) / 1000 + 1))));
+            return;
+        }
+        World w = p.getWorld();
+        Location eye = p.getEyeLocation();
+        double range = cfg("chain.range", 24);
+        RayTraceResult hit = w.rayTrace(eye, eye.getDirection(), range, FluidCollisionMode.NEVER, true, 0.8,
+                en -> en instanceof LivingEntity && !en.equals(p) && !(en instanceof Player o && o.getGameMode() == org.bukkit.GameMode.SPECTATOR));
+        Location end = hit == null ? eye.clone().add(eye.getDirection().multiply(range)) : hit.getHitPosition().toLocation(w);
+        chainCd.put(p.getUniqueId(), now + (long) (cfg("chain.cooldown-seconds", 15) * 1000));
+        // la chaîne file vers la cible (maillons gris + la lame au bout)
+        Vector seg = end.toVector().subtract(eye.toVector());
+        double len = seg.length();
+        Vector dir = seg.clone().normalize();
+        Location start = eye.clone().add(dir.clone().multiply(0.6)).add(0, -0.3, 0);
+        w.playSound(eye, Sound.BLOCK_CHAIN_PLACE, 1.4f, 0.7f);
+        w.playSound(eye, Sound.ITEM_TRIDENT_THROW, 1.2f, 0.8f);
+        for (double d = 0; d < len; d += 0.45) {
+            Location at = start.clone().add(dir.clone().multiply(d));
+            w.spawnParticle(Particle.DUST, at, 1, 0, 0, 0, 0, new Particle.DustOptions((int) (d / 0.45) % 2 == 0 ? Color.fromRGB(120, 124, 134) : Color.fromRGB(70, 72, 80), 0.8f), true);
+        }
+        fx().tpop(end, "w_spike_x", STEEL, 0.5f, 2.2f, 0.5f, 1, 2, 3, Display.Billboard.FIXED, WeaponFx.alongY(dir));
+        if (hit == null || !(hit.getHitEntity() instanceof LivingEntity t0)) return;
+        LivingEntity t = t0;
+        Boss b = plugin.king();
+        if (b != null && b.isBoss(t0) && b.mainEntity() != null) t = b.mainEntity();
+        boolean duels = plugin.getConfig().getBoolean("weapons.lance-ciel.in-duels", true);
+        if (!isBoss(t) && (!ult().targets(p, t.getLocation(), 0.5, duels).contains(t) || !allowed(p, t))) return;
+        w.playSound(t.getLocation(), Sound.BLOCK_CHAIN_BREAK, 1.4f, 0.6f);
+        w.spawnParticle(Particle.DUST, t.getLocation().add(0, 1, 0), 20, 0.3, 0.5, 0.3, 0, new Particle.DustOptions(BLOOD, 1.3f), true);
+        if (isBoss(t)) {
+            b = plugin.king();
+            if (b != null) b.hurt(p, cfg("chain.boss-damage", 60) * mult(p));
+            return;
+        }
+        if (t instanceof Player tp) {
+            applyDamage(p, t, maxHealth(t) * cfg("chain.percent", 10) / 100.0 * mult(p));
+            nullified.put(tp.getUniqueId(), System.currentTimeMillis() + (long) (cfg("nullify-seconds", 4) * 1000));
+            BlackFlash.disarm(tp);
+        } else applyDamage(p, t, cfg("chain.damage", 20) * mult(p));
+        // tirée vers toi
+        Vector pull = p.getLocation().toVector().subtract(t.getLocation().toVector());
+        double dist = pull.length();
+        if (dist > 1.5) t.setVelocity(pull.normalize().multiply(Math.min(2.6, 0.35 + dist * 0.11)).setY(0.45));
+    }
+
     // ================================================================= Percée du Ciel Inversé
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -312,10 +648,15 @@ final class TojiSpear implements Listener {
         if (!p.isSneaking() || !holds(p)) return;
         e.setCancelled(true);
         if (busy.contains(p.getUniqueId())) return;
+        // en l'air : Chute du Ciel
+        if (!p.isOnGround() && !p.isFlying() && p.getLocation().clone().add(0, -1.2, 0).getBlock().isPassable()) {
+            dive(p);
+            return;
+        }
         long now = System.currentTimeMillis();
         Long until = specialCd.get(p.getUniqueId());
         if (until != null && until > now) {
-            p.sendActionBar(parse(plugin.msg("weapons.cooldown").replace("<seconds>", String.valueOf((until - now) / 1000 + 1))));
+            SmpBoss.hud(p, parse(plugin.msg("weapons.cooldown").replace("<seconds>", String.valueOf((until - now) / 1000 + 1))));
             return;
         }
         World w = p.getWorld();
@@ -323,7 +664,7 @@ final class TojiSpear implements Listener {
         RayTraceResult hit = w.rayTrace(eye, eye.getDirection(), cfg("special.range", 18), FluidCollisionMode.NEVER, true, 1.0,
                 en -> en instanceof LivingEntity && !en.equals(p) && !(en instanceof Player o && o.getGameMode() == org.bukkit.GameMode.SPECTATOR));
         if (hit == null || !(hit.getHitEntity() instanceof LivingEntity target0)) {
-            p.sendActionBar(parse(plugin.msg("lance-ciel.no-target")));
+            SmpBoss.hud(p, parse(plugin.msg("lance-ciel.no-target")));
             return;
         }
         LivingEntity target = target0;
@@ -331,7 +672,7 @@ final class TojiSpear implements Listener {
         if (b != null && b.isBoss(target0) && b.mainEntity() != null) target = b.mainEntity();
         boolean duels = plugin.getConfig().getBoolean("weapons.lance-ciel.in-duels", true);
         if (!isBoss(target) && !ult().targets(p, target.getLocation(), 0.5, duels).contains(target)) {
-            p.sendActionBar(parse(plugin.msg("lance-ciel.no-target")));
+            SmpBoss.hud(p, parse(plugin.msg("lance-ciel.no-target")));
             return;
         }
         if (!isBoss(target) && !allowed(p, target)) return;
@@ -362,10 +703,10 @@ final class TojiSpear implements Listener {
         int total = 50;
         if (t instanceof Player tp) {
             BlackFlash.stun(tp, total + 4);
-            tp.sendActionBar(parse(plugin.msg("lance-ciel.stunned")));
+            SmpBoss.hud(tp, parse(plugin.msg("lance-ciel.stunned")));
         }
         if (!boss) ult().freezeFor(t, total + 4);
-        p.sendActionBar(parse(plugin.msg("lance-ciel.special")));
+        SmpBoss.hud(p, parse(plugin.msg("lance-ciel.special")));
         double max = maxHealth(t);
         double pct = cfg("special.percent", 70) / 100.0;
         // part de chaque coup : percée 20 %, 5 entailles 10 % chacune, coup final 30 %
@@ -406,11 +747,11 @@ final class TojiSpear implements Listener {
                 strikeFx(p, t, c, i);
                 if (boss) {
                     Boss bb = plugin.king();
-                    if (bb != null) bb.hurt(p, cfg("special.boss-damage", 700) * share[i]);
+                    if (bb != null) bb.hurt(p, cfg("special.boss-damage", 700) * share[i] * mult(p));
                 } else if (t instanceof Player) {
-                    applyDamage(p, t, max * pct * share[i]);
+                    applyDamage(p, t, max * pct * share[i] * mult(p));
                 } else {
-                    applyDamage(p, t, cfg("special.damage", 160) * share[i]);
+                    applyDamage(p, t, cfg("special.damage", 160) * share[i] * mult(p));
                 }
             }
         }, 1L, 1L);
@@ -493,10 +834,14 @@ final class TojiSpear implements Listener {
         if (bl != null && bl.getType().isInteractable() && !e.getPlayer().isSneaking()) return;
         e.setCancelled(true); // pas de chemin de terre avec la pelle
         Player p = e.getPlayer();
+        if (heavenly(p)) {
+            lockMsg(p);
+            return;
+        }
         long now = System.currentTimeMillis();
         Long until = tribCd.get(p.getUniqueId());
         if (until != null && until > now) {
-            p.sendActionBar(parse(plugin.msg("weapons.cooldown").replace("<seconds>", String.valueOf((until - now) / 1000 + 1))));
+            SmpBoss.hud(p, parse(plugin.msg("weapons.cooldown").replace("<seconds>", String.valueOf((until - now) / 1000 + 1))));
             return;
         }
         tribCd.put(p.getUniqueId(), now + (long) (plugin.getConfig().getDouble("weapons.tribaton.cooldown-seconds", 10) * 1000));

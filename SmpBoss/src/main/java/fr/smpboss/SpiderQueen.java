@@ -575,7 +575,7 @@ public final class SpiderQueen implements Boss {
     public boolean hurt(Player by, double amount) {
         if (ended || invulnerable > 0 || boss == null) return false;
         if (shielded) {
-            if (by != null && tick % 8 == 0) by.sendActionBar(parse(msg("shielded")));
+            if (by != null && tick % 8 == 0) SmpBoss.hud(by, parse(msg("shielded")));
             return false;
         }
         if (by != null) damage.merge(by.getUniqueId(), amount, Double::sum);
@@ -585,7 +585,7 @@ public final class SpiderQueen implements Boss {
             maxHp = hpFor(fighters);
             hp = hp * maxHp / old;
             for (Player p : nearby(boss.getLocation(), 60)) {
-                p.sendActionBar(parse(plugin.msg("boss.new-fighter").replace("<player>", SmpBoss.MM.escapeTags(by.getName()))
+                SmpBoss.hud(p, parse(plugin.msg("boss.new-fighter").replace("<player>", SmpBoss.MM.escapeTags(by.getName()))
                         .replace("<hp>", String.valueOf((long) (perPlayer() * extraShare())))));
             }
         }
@@ -1163,7 +1163,7 @@ public final class SpiderQueen implements Boss {
             }
             // compte à rebours
             int left = secs - k / 20;
-            if (k % 20 == 0) for (Player p : nearby(center, 60)) p.sendActionBar(parse(msg("web-timer").replace("<s>", String.valueOf(left))
+            if (k % 20 == 0) for (Player p : nearby(center, 60)) SmpBoss.hud(p, parse(msg("web-timer").replace("<s>", String.valueOf(left))
                     .replace("<n>", String.valueOf(anchors.size()))));
             // gouttes de venin sur les joueurs
             if (k % 40 == 20) {
@@ -1224,7 +1224,7 @@ public final class SpiderQueen implements Boss {
             csound(l, "spider.web", 2.5f, 1.4f, "block.wool.break");
             WeaponFx fx = fx();
             if (fx != null) fx.boom(l, WEB, 4);
-            for (Player p : nearby(l, 60)) p.sendActionBar(parse(msg("web-anchor-broken").replace("<player>", SmpBoss.MM.escapeTags(by.getName()))
+            for (Player p : nearby(l, 60)) SmpBoss.hud(p, parse(msg("web-anchor-broken").replace("<player>", SmpBoss.MM.escapeTags(by.getName()))
                     .replace("<n>", String.valueOf(anchors.size()))));
         }
     }
@@ -1240,7 +1240,7 @@ public final class SpiderQueen implements Boss {
             stunned = (int) (cfg("stun-seconds", 8) * 20);
             rig.poseTarget = -1;
             boss.setAI(false);
-            for (Player p : nearby(center, 60)) p.sendActionBar(parse(msg("stunned")));
+            for (Player p : nearby(center, 60)) SmpBoss.hud(p, parse(msg("stunned")));
             later(stunned, () -> {
                 rig.poseTarget = 0;
                 if (boss != null && boss.isValid()) boss.setAI(true);
@@ -1388,7 +1388,7 @@ public final class SpiderQueen implements Boss {
             rig.poseTarget = 1;
             double rr = cfg("bite-radius", 9) * zs() / 1.4;
             ring(center, rr, RED_EYE, 40);
-            for (Player p : nearby(center, 60)) p.sendActionBar(parse(msg("bite-warning")));
+            for (Player p : nearby(center, 60)) SmpBoss.hud(p, parse(msg("bite-warning")));
             csound(center, "spider.screech", 4f, 0.7f, "entity.spider.ambient");
             later(40, () -> {
                 rig.poseTarget = 0;
@@ -1602,7 +1602,7 @@ public final class SpiderQueen implements Boss {
         if (boss == null) return;
         String m = msg("attack." + key);
         if (m.startsWith("<red>[")) return;
-        for (Player p : nearby(boss.getLocation(), 50)) p.sendActionBar(parse(m));
+        for (Player p : nearby(boss.getLocation(), 50)) SmpBoss.hud(p, parse(m));
     }
 
     private static void base(LivingEntity z, Attribute a, double v) {

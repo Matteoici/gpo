@@ -267,13 +267,31 @@ public final class SmpCombat extends JavaPlugin implements Listener, TabExecutor
             }
             if (getConfig().getBoolean("flavor", true) && d.flavor != null && tick % 2 == 0) {
                 if (++d.flavorTicks > 80) newFlavor(d);
-                if (d.flavor != null) p.sendActionBar(mm(d.flavor));
+                // un message de capacité (recharge, Black Flash...) de SmpBoss reste affiché : on ne l'écrase pas
+                if (d.flavor != null && !abilityHud(p)) p.sendActionBar(mm(d.flavor));
             }
             if (getConfig().getBoolean("heartbeat", true) && tick % 20 == 0) {
                 var max = p.getAttribute(Attribute.MAX_HEALTH);
                 double ratio = p.getHealth() / (max == null ? 20 : max.getValue());
                 if (ratio < 0.4) sound(p, "entity.warden.heartbeat", 1f, ratio < 0.2 ? 1.4f : 1f);
             }
+        }
+    }
+
+    private java.lang.reflect.Method hudBusy;
+    private boolean hudTried;
+
+    /** SmpBoss vient-il d'afficher un message de capacité à ce joueur ? */
+    private boolean abilityHud(Player p) {
+        try {
+            if (!hudTried) {
+                hudTried = true;
+                var sb = Bukkit.getPluginManager().getPlugin("SmpBoss");
+                if (sb != null) hudBusy = sb.getClass().getMethod("hudBusy", java.util.UUID.class);
+            }
+            return hudBusy != null && (boolean) hudBusy.invoke(null, p.getUniqueId());
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            return false;
         }
     }
 

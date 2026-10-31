@@ -1,6 +1,41 @@
 # Patch notes (la plus récente EN PREMIER). Chaque page = une page du livre (MiniMessage, ~13 lignes max).
 # Couleurs lisibles sur le papier : black, dark_gray, dark_red, dark_blue, dark_green, dark_aqua, dark_purple, gold.
 notes:
+  - id: "2026-10-31-ciel"
+    title: "Restriction Céleste"
+    date: "31/10/2026"
+    pages:
+      - |
+        <dark_gray><b>   LIMITLESS</b>
+        <dark_gray>     Patch note
+        <black>━━━━━━━━━━
+        <black><b>Restriction</b>
+        <black><b>Céleste</b>
+        <dark_gray>31 octobre 2026
+        <black>Au programme :
+        <dark_gray>✦ Relique MYTHICAL
+        <dark_red>✦ 4 techniques de Toji
+        <dark_blue>✦ Tenues dessinées
+        <dark_purple>✦ Corrections
+      - |
+        <black><b>✦ Relique</b>
+        <black><b>Restriction Céleste</b> <dark_gray>(MYTHICAL, Reine)
+        <black>La Lance du Ciel Inversé frappe <dark_red>3 fois plus fort</dark_red>...
+
+        <dark_red>Mais plus AUCUN objet<black> : ni bloc, ni nourriture, ni potion, ni totem, ni autre arme, ni relique.
+      - |
+        <dark_red><b>✦ La Lance</b>
+        <black>• <b>Pas éclair</b> : accroupi, tu files avec des images rémanentes
+        • <b>Double saut</b>
+        • <b>Chute du Ciel</b> : accroupi + clic droit en l'air
+        • <b>Chaîne aux Mille Lieues</b> : accroupi + clic gauche, ramène la cible
+      - |
+        <dark_blue><b>✦ Tenues</b>
+        <black>Toji, Gojo et Sukuna ont maintenant leur vraie tenue sur le corps (cheveux et bandeau de Gojo, kimono de Sukuna...) et leurs icônes.
+      - |
+        <dark_purple><b>✦ Corrections</b>
+        <black>• Capricorne : la Foudre marche aussi avec <b>accroupi + F</b>
+        • Les recharges ne sont plus cachées par la phrase « en danger »
   - id: "2026-10-31-boogie"
     title: "Boogie & Tenues"
     date: "31/10/2026"

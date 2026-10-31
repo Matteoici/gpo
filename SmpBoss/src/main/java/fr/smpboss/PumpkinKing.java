@@ -331,7 +331,7 @@ public final class PumpkinKing implements Boss {
         if (boss == null) return;
         String m = plugin.msg("boss.attack." + key);
         if (m.startsWith("<red>[")) return;
-        for (Player p : nearby(boss.getLocation(), 50)) p.sendActionBar(parse(m));
+        for (Player p : nearby(boss.getLocation(), 50)) SmpBoss.hud(p, parse(m));
     }
 
     private static void base(LivingEntity z, Attribute a, double v) {
@@ -548,7 +548,7 @@ public final class PumpkinKing implements Boss {
             maxHp = hpFor(fighters);
             hp = hp * maxHp / old;
             for (Player p : nearby(boss.getLocation(), 60)) {
-                p.sendActionBar(parse(plugin.msg("boss.new-fighter").replace("<player>", SmpBoss.MM.escapeTags(by.getName()))
+                SmpBoss.hud(p, parse(plugin.msg("boss.new-fighter").replace("<player>", SmpBoss.MM.escapeTags(by.getName()))
                         .replace("<hp>", String.valueOf((long) (perPlayer() * extraShare())))));
             }
         }
@@ -556,7 +556,7 @@ public final class PumpkinKing implements Boss {
         if (!guards.isEmpty()) {
             // bouclier des gardes : il encaisse beaucoup moins
             amount *= cfg("guard-shield", 0.3);
-            if (by != null && tick % 10 == 0) by.sendActionBar(parse(plugin.msg("boss.shield")));
+            if (by != null && tick % 10 == 0) SmpBoss.hud(by, parse(plugin.msg("boss.shield")));
         }
         hp -= amount;
         damageNumber(amount);
@@ -1036,7 +1036,7 @@ public final class PumpkinKing implements Boss {
                 h.getWorld().spawnParticle(Particle.CRIT, h.clone().add(Math.cos(a) * 0.7, 0, Math.sin(a) * 0.7), 1, 0, 0, 0, 0, null, true);
             }
         }, null);
-        for (Player p : nearby(at, 25)) p.sendActionBar(parse(plugin.msg("boss.stunned")));
+        for (Player p : nearby(at, 25)) SmpBoss.hud(p, parse(plugin.msg("boss.stunned")));
     }
 
     /** Une citrouille géante tombe du ciel sur le joueur qui fait le plus de dégâts. */
@@ -1077,7 +1077,7 @@ public final class PumpkinKing implements Boss {
         sound(boss.getLocation(), "entity.ghast.warn", 3f, 0.4f);
         sound(dest, "entity.wither.ambient", 2f, 0.5f);
         ring(dest, r, Color.fromRGB(140, 0, 0), 40);
-        target.sendActionBar(parse(plugin.msg("boss.meteor-warning")));
+        SmpBoss.hud(target, parse(plugin.msg("boss.meteor-warning")));
         float sz = 4f;
         Location sky = dest.clone().add(0, 32, 0);
         BlockDisplay rock = dest.getWorld().spawn(sky, BlockDisplay.class, e -> {
@@ -1621,7 +1621,7 @@ public final class PumpkinKing implements Boss {
         Set<UUID> linked = new HashSet<>();
         for (Player p : near) {
             linked.add(p.getUniqueId());
-            p.sendActionBar(parse(plugin.msg("boss.feast-warning")));
+            SmpBoss.hud(p, parse(plugin.msg("boss.feast-warning")));
         }
         repeat(2, 45, i -> {
             if (boss == null || !boss.isValid()) return;
@@ -1727,7 +1727,7 @@ public final class PumpkinKing implements Boss {
                 c.getWorld().spawnParticle(Particle.FLAME, c.clone().add(0, y, 0), 3, 0.5, 0.1, 0.5, 0.02, null, true);
             }
             sound(c, "block.note_block.basedrum", 3f, 0.5f + i * 0.08f);
-            if (i % 4 == 0) for (Player p : nearby(c, arena + 8)) p.sendActionBar(parse(plugin.msg("boss.nova-warning")));
+            if (i % 4 == 0) for (Player p : nearby(c, arena + 8)) SmpBoss.hud(p, parse(plugin.msg("boss.nova-warning")));
         }, () -> {
             if (apocalypseActive) return;
             Set<UUID> spared = new HashSet<>();
@@ -1827,7 +1827,7 @@ public final class PumpkinKing implements Boss {
         double r0 = 6.5 * zs();
         int count = 22, gap = 3, dur = 75;
         double gapStart = ThreadLocalRandom.current().nextDouble(Math.PI * 2);
-        target.sendActionBar(parse(plugin.msg("boss.cage-warning")));
+        SmpBoss.hud(target, parse(plugin.msg("boss.cage-warning")));
         sound(c, "block.chain.place", 2f, 0.5f);
         List<BlockDisplay> lan = new ArrayList<>();
         for (int k = 0; k < count - gap; k++) {
@@ -2026,7 +2026,7 @@ public final class PumpkinKing implements Boss {
             });
         }
         later(22, () -> {
-            for (Player p : nearby(c, 60)) p.sendActionBar(parse(plugin.msg("boss.shield")));
+            for (Player p : nearby(c, 60)) SmpBoss.hud(p, parse(plugin.msg("boss.shield")));
         });
     }
 
@@ -2332,7 +2332,7 @@ public final class PumpkinKing implements Boss {
                     int left = (fall - i) / 20 + 1;
                     for (Player p : nearby(lock, radius + 15)) {
                         boolean inside = horizontalDist(p.getLocation(), lock) <= radius;
-                        p.sendActionBar(parse(plugin.msg(inside ? "boss.judgment-inside" : "boss.judgment-outside")
+                        SmpBoss.hud(p, parse(plugin.msg(inside ? "boss.judgment-inside" : "boss.judgment-outside")
                                 .replace("<seconds>", String.valueOf(left))));
                         if (inside) p.playSound(p.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_BELL, 2f, 0.5f + 0.12f * (7 - left));
                     }
@@ -2769,7 +2769,7 @@ public final class PumpkinKing implements Boss {
                 int left = (countdown - i) / 20 + 1;
                 for (Player p : nearby(base, arena + 20)) {
                     boolean in = horizontalDist(p.getLocation(), s) <= sr;
-                    p.sendActionBar(parse(plugin.msg(in ? "boss.apocalypse-inside" : "boss.apocalypse-outside").replace("<seconds>", String.valueOf(left))));
+                    SmpBoss.hud(p, parse(plugin.msg(in ? "boss.apocalypse-inside" : "boss.apocalypse-outside").replace("<seconds>", String.valueOf(left))));
                     p.playSound(p.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_BELL, 2f, in ? 1.5f : 0.5f + 0.1f * (6 - left));
                 }
                 sound(base, "entity.warden.heartbeat", 8f, 0.6f + 0.1f * i / 20f);

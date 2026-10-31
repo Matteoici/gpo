@@ -27,7 +27,7 @@ RELICS = {'trainee_flammes': 'blaze_powder', 'amulette_recolte': 'golden_carrot'
           'pattes_reine': 'black_candle', 'cape_toile': 'blue_banner', 'couronne_reine': 'netherite_helmet', 'coeur_abysse': 'heart_of_the_sea',
           'black_flash': 'redstone', 'black_flash_consecutif': 'nether_star',
           'soie_lunaire': 'white_dye', 'venin_cristallise': 'lime_dye', 'masque_mille_yeux': 'black_dye', 'fuseau_tisseuse': 'lead',
-          'ailes_toile': 'phantom_membrane', 'oeil_rouge_abysse': 'ender_eye', 'projet_capricorne': 'echo_shard', 'boogie_bombe': 'firework_star'}
+          'ailes_toile': 'phantom_membrane', 'oeil_rouge_abysse': 'ender_eye', 'projet_capricorne': 'echo_shard', 'restriction_celeste': 'iron_chain', 'boogie_bombe': 'firework_star'}
 FLAT = ['oeil_maudit', 'cocon', 'hollow_purple', 'graine', 'egg_rare', 'egg_epique', 'egg_legendaire', 'egg_mythique'] + ['relic_' + r for r in RELICS]
 BOWS = ['sonic_bow', 'arc_tempete', 'arc_feux_follets', 'arc_toiles']
 
@@ -140,6 +140,12 @@ use('diamond_axe', ['hache_maudite'])
 use('netherite_hoe', ['arbalete_spectrale', 'faucille', 'faux_tisseuse'])
 use('breeze_rod', ['sceptre_abysse'])
 use('netherite_shovel', ['tribaton'])
+OUTFIT_ICONS = {'leather_chestplate': ['toji_haut', 'gojo_haut', 'sukuna_haut'], 'leather_leggings': ['toji_pantalon', 'gojo_pantalon', 'sukuna_pantalon'],
+                'leather_boots': ['toji_bottes', 'gojo_bottes', 'sukuna_bottes'], 'leather_helmet': ['gojo_bandeau']}
+for _m, _ids in OUTFIT_ICONS.items():
+    use(_m, _ids)
+    for _n in _ids:
+        w(f'{MOD}/{_n}.json', {'parent': 'minecraft:item/generated', 'textures': {'layer0': f'limitless:item/items/{_n}'}})
 use('blaze_rod', ['fuga'])
 use('amethyst_shard', ['hollow_purple'])
 use('pumpkin_seeds', ['graine'])
