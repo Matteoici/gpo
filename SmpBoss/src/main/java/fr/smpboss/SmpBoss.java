@@ -502,6 +502,19 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 44);
             saveConfig();
         }
+        if (getConfig().getInt("config-version", 1) < 45) {
+            // Restriction Céleste plus équitable en PvP
+            var def = getConfig().getDefaults();
+            if (def != null) {
+                getConfig().set("restriction-celeste.pvp-multiplier", 1.5);
+                getConfig().set("restriction-celeste.pvp-cap.special", 85);
+                getConfig().set("restriction-celeste.pvp-cap.dive", 35);
+                getConfig().set("restriction-celeste.pvp-cap.chain", 18);
+                getConfig().set("relics.list.restriction_celeste.lore", def.get("relics.list.restriction_celeste.lore"));
+            }
+            getConfig().set("config-version", 45);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);

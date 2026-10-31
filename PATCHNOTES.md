@@ -5,7 +5,7 @@
 ✦ **RESTRICTION CÉLESTE** ✦
 
 ⛓️ **Nouvelle relique MYTHICAL : Restriction Céleste** (Reine Araignée)
-> La **Lance du Ciel Inversé** frappe **3 fois plus fort** (coups, Percée, Chute du Ciel, Chaîne)…
+> La **Lance du Ciel Inversé** frappe **3 fois plus fort** sur les monstres et les boss (**x1,5** sur les joueurs, et la Percée ne peut pas tuer d'un coup quelqu'un qui a toute sa vie)…
 > …mais tu ne peux **plus utiliser AUCUN objet** : ni bloc, ni nourriture, ni potion, ni totem, ni arc, ni autre arme, ni pouvoir de relique.
 
 ⚪ **La Lance du Ciel Inversé gagne 4 techniques**

@@ -1,4 +1,4 @@
-config-version: 44
+config-version: 45
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -859,6 +859,7 @@ relics:
       icon: IRON_CHAIN
       lore: ["<gray>Zéro énergie occulte. Un corps qui n'a besoin de rien.",
              "<#c8d2e6>✦ <white>La Lance du Ciel Inversé frappe <b>3 fois plus fort</b>",
+             "<gray>sur les monstres et les boss <white>(x1,5 sur les joueurs)",
              "<gray>(coups, Percée, Chute du Ciel, Chaîne).",
              "<red>✖ Mais plus AUCUN objet : <gray>ni bloc, ni nourriture, ni potion,",
              "<gray>ni totem, ni arc, ni autre arme, ni pouvoir de relique."]
@@ -1014,7 +1015,12 @@ music:
 # ================================================================ ⚡ BLACK FLASH (reliques de la Reine) : accroupi + F
 # ================================================================ ✦ RESTRICTION CÉLESTE (relique MYTHICAL)
 restriction-celeste:
-  multiplier: 3            # dégâts de la Lance du Ciel Inversé
+  multiplier: 3            # dégâts de la Lance du Ciel Inversé contre les monstres et les boss
+  pvp-multiplier: 1.5      # contre les joueurs (équitable)
+  pvp-cap:                 # plafond en % de la vie max d'un joueur, par technique
+    special: 85            # Percée : jamais un coup qui tue quelqu'un qui a toute sa vie
+    dive: 35
+    chain: 18
 
 black-flash:
   range: 24

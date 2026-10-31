@@ -329,6 +329,28 @@ final class TojiSpear implements Listener {
         return heavenly(p) ? plugin.getConfig().getDouble("restriction-celeste.multiplier", 3) : 1;
     }
 
+    /**
+     * Contre les joueurs, c'est plus doux pour rester équitable : x1,5 au lieu de x3, et chaque technique a un plafond
+     * (la Percée ne tue jamais d'un coup quelqu'un qui a toute sa vie).
+     */
+    double pvpMult(Player p) {
+        return heavenly(p) ? plugin.getConfig().getDouble("restriction-celeste.pvp-multiplier", 1.5) : 1;
+    }
+
+    /** Part de la vie max (0..1) retirée à un joueur par une technique, plafonnée avec la relique. */
+    double pvpPercent(Player p, double basePercent, String tech) {
+        double v = basePercent * pvpMult(p);
+        if (heavenly(p)) {
+            double def = switch (tech) {
+                case "special" -> 85;
+                case "dive" -> 35;
+                default -> 18;
+            };
+            v = Math.min(v, plugin.getConfig().getDouble("restriction-celeste.pvp-cap." + tech, def));
+        }
+        return v / 100.0;
+    }
+
     /** Pour les armes (Weapons.ready) : la relique interdit tout objet sauf la lance. */
     static boolean itemLocked(Player p) {
         return instance != null && instance.heavenly(p);
@@ -348,7 +370,7 @@ final class TojiSpear implements Listener {
         var main = p.getInventory().getItemInMainHand();
         if (isSpear(main)) {
             if (e.getCause() == EntityDamageEvent.DamageCause.ENTITY_ATTACK || e.getCause() == EntityDamageEvent.DamageCause.ENTITY_SWEEP_ATTACK)
-                e.setDamage(e.getDamage() * mult(p));
+                e.setDamage(e.getDamage() * (e.getEntity() instanceof Player ? pvpMult(p) : mult(p)));
         } else if (!main.getType().isAir()) {
             e.setCancelled(true); // aucune autre arme
             lockMsg(p);
@@ -566,7 +588,7 @@ final class TojiSpear implements Listener {
                 if (b != null) b.hurt(p, cfg("dive.boss-damage", 150) * mult(p));
                 continue;
             }
-            if (le instanceof Player) applyDamage(p, le, maxHealth(le) * cfg("dive.percent", 25) / 100.0 * mult(p));
+            if (le instanceof Player) applyDamage(p, le, maxHealth(le) * pvpPercent(p, cfg("dive.percent", 25), "dive"));
             else applyDamage(p, le, cfg("dive.damage", 40) * mult(p));
             Vector out = le.getLocation().toVector().subtract(c.toVector()).setY(0);
             if (out.lengthSquared() < 0.01) out = new Vector(0.1, 0, 0);
@@ -628,7 +650,7 @@ final class TojiSpear implements Listener {
             return;
         }
         if (t instanceof Player tp) {
-            applyDamage(p, t, maxHealth(t) * cfg("chain.percent", 10) / 100.0 * mult(p));
+            applyDamage(p, t, maxHealth(t) * pvpPercent(p, cfg("chain.percent", 10), "chain"));
             nullified.put(tp.getUniqueId(), System.currentTimeMillis() + (long) (cfg("nullify-seconds", 4) * 1000));
             BlackFlash.disarm(tp);
         } else applyDamage(p, t, cfg("chain.damage", 20) * mult(p));
@@ -749,7 +771,7 @@ final class TojiSpear implements Listener {
                     Boss bb = plugin.king();
                     if (bb != null) bb.hurt(p, cfg("special.boss-damage", 700) * share[i] * mult(p));
                 } else if (t instanceof Player) {
-                    applyDamage(p, t, max * pct * share[i] * mult(p));
+                    applyDamage(p, t, max * pvpPercent(p, pct * 100, "special") * share[i]);
                 } else {
                     applyDamage(p, t, cfg("special.damage", 160) * share[i] * mult(p));
                 }
