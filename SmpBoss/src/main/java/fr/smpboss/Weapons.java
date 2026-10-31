@@ -378,15 +378,20 @@ final class Weapons implements Listener {
         m.addItemFlags(ItemFlag.HIDE_UNBREAKABLE, ItemFlag.HIDE_DYE);
         m.getPersistentDataContainer().set(key, PersistentDataType.STRING, pid);
         SmpBoss.modelData(m, pid); // icône du pack
-        equipModel(m, set.replace("tenue_", "")); // tenue dessinée sur le corps (pack)
+        org.bukkit.inventory.EquipmentSlot es = slot == org.bukkit.inventory.EquipmentSlotGroup.HEAD ? org.bukkit.inventory.EquipmentSlot.HEAD
+                : slot == org.bukkit.inventory.EquipmentSlotGroup.LEGS ? org.bukkit.inventory.EquipmentSlot.LEGS
+                : slot == org.bukkit.inventory.EquipmentSlotGroup.FEET ? org.bukkit.inventory.EquipmentSlot.FEET : org.bukkit.inventory.EquipmentSlot.CHEST;
+        equipModel(m, set.replace("tenue_", ""), es); // tenue dessinée sur le corps (pack), sur le bon emplacement
         it.setItemMeta(m);
         return it;
     }
 
     /** Texture portée sur le corps : composant "equippable" -> limitless:<tenue> (assets/limitless/equipment/<tenue>.json). */
-    private static void equipModel(ItemMeta m, String name) {
+    private static void equipModel(ItemMeta m, String name, org.bukkit.inventory.EquipmentSlot slot) {
         try {
             Object eq = m.getClass().getMethod("getEquippable").invoke(m);
+            // sans ça, le composant créé de zéro a un emplacement par défaut (la tête) : le plastron allait sur la tête
+            eq.getClass().getMethod("setSlot", org.bukkit.inventory.EquipmentSlot.class).invoke(eq, slot);
             NamespacedKey k = new NamespacedKey("limitless", name);
             java.lang.reflect.Method set = null;
             for (String n : new String[]{"setAssetId", "setModel"}) {

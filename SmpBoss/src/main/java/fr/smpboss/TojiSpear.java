@@ -203,7 +203,6 @@ final class TojiSpear implements Listener {
         set(p, Attribute.SAFE_FALL_DISTANCE, fall, cfg("restriction.safe-fall", 10), AttributeModifier.Operation.ADD_NUMBER);
         set(p, Attribute.JUMP_STRENGTH, jump, cfg("restriction.jump", 0.18), AttributeModifier.Operation.ADD_NUMBER);
         set(p, Attribute.STEP_HEIGHT, step, cfg("restriction.step", 0.5), AttributeModifier.Operation.ADD_NUMBER);
-        set(p, Attribute.SNEAKING_SPEED, sneakKey, cfg("flash-step.sneak-speed", 0.7), AttributeModifier.Operation.ADD_NUMBER);
         // plus aucune relique (bonus retirés)
         plugin.relics().apply(p);
         // plus de bonus de potions (sauf ceux des balises)
@@ -457,7 +456,7 @@ final class TojiSpear implements Listener {
         return p.getGameMode() == org.bukkit.GameMode.SURVIVAL || p.getGameMode() == org.bukkit.GameMode.ADVENTURE;
     }
 
-    /** Toutes les 2 ticks : images rémanentes quand on file accroupi, double saut prêt quand on touche le sol. */
+    /** Toutes les 2 ticks : double saut prêt quand on touche le sol. */
     private int fastCount;
 
     private void fastTick() {
@@ -467,15 +466,6 @@ final class TojiSpear implements Listener {
             if (p == null) continue;
             Location now = p.getLocation();
             Location prev = lastPos.put(id, now.clone());
-            // accroupi = pas éclair : très vite, des images rémanentes restent derrière
-            if (p.isSneaking() && !p.isFlying()) {
-                p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 8, (int) cfg("flash-step.speed-level", 3) - 1, false, false, false));
-                // (compteur à nous : la tâche tourne toutes les 2 ticks, le numéro de tick du serveur peut être toujours impair)
-                if (prev != null && prev.getWorld() == now.getWorld() && prev.distanceSquared(now) > 0.01) {
-                    afterimage(prev);
-                    if (fc % 4 == 0) p.getWorld().playSound(now, Sound.ENTITY_PHANTOM_FLAP, 0.3f, 1.8f);
-                }
-            }
             // double saut
             if (!survival(p) || !cfg("double-jump.enabled", 1, true)) continue;
             if (p.isOnGround()) {
@@ -544,6 +534,69 @@ final class TojiSpear implements Listener {
     public void noDiveFall(EntityDamageEvent e) {
         if (e.getCause() == EntityDamageEvent.DamageCause.FALL && (diving.contains(e.getEntity().getUniqueId())
                 || e.getEntity() instanceof Player p && restricted(p) && djUsed.contains(p.getUniqueId()))) e.setCancelled(true);
+    }
+
+    // ================================================================= Pas éclair (clic droit) : 10 blocs devant en un éclair
+
+    private final Map<UUID, Long> flashCd = new HashMap<>();
+
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onFlashStep(PlayerInteractEvent e) {
+        if (e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        if (e.getHand() != EquipmentSlot.HAND) return;
+        Player p = e.getPlayer();
+        if (p.isSneaking() || !holds(p)) return;
+        if (e.getAction() == Action.RIGHT_CLICK_BLOCK && e.getClickedBlock() != null && e.getClickedBlock().getType().isInteractable()) return;
+        e.setCancelled(true);
+        if (busy.contains(p.getUniqueId())) return;
+        long now = System.currentTimeMillis();
+        Long until = flashCd.get(p.getUniqueId());
+        if (until != null && until > now) return; // pas de message : on spamme souvent le clic droit
+        flashCd.put(p.getUniqueId(), now + (long) (cfg("flash-step.cooldown-seconds", 2.5) * 1000));
+        flashStep(p);
+    }
+
+    private void flashStep(Player p) {
+        World w = p.getWorld();
+        Location start = p.getLocation();
+        Vector dir = start.getDirection();
+        // on reste à peu près à l'horizontale (on ne s'enfonce pas dans le sol en visant en bas)
+        if (dir.getY() < -0.25) dir.setY(-0.25);
+        if (dir.getY() > 0.5) dir.setY(0.5);
+        dir.normalize();
+        double max = cfg("flash-step.distance", 10);
+        Location dest = start.clone();
+        for (double d = 0.5; d <= max; d += 0.5) {
+            Location c = start.clone().add(dir.clone().multiply(d));
+            org.bukkit.block.Block feet = c.getBlock(), head = feet.getRelative(0, 1, 0);
+            if (!feet.isPassable() || !head.isPassable() || feet.isLiquid()) break;
+            dest = c;
+        }
+        if (dest.distanceSquared(start) < 1) return;
+        dest.setYaw(start.getYaw());
+        dest.setPitch(start.getPitch());
+        // images rémanentes le long du trajet
+        Vector path = dest.toVector().subtract(start.toVector());
+        double len = path.length();
+        Vector u = path.clone().normalize();
+        for (double d = 0; d < len; d += 1.6) {
+            Location a = start.clone().add(u.clone().multiply(d));
+            a.setYaw(start.getYaw());
+            afterimage(a);
+        }
+        for (double d = 0; d < len; d += 0.3) {
+            Location a = start.clone().add(u.clone().multiply(d)).add(0, 1, 0);
+            w.spawnParticle(Particle.DUST, a, 1, 0.05, 0.25, 0.05, 0, new Particle.DustOptions(Color.fromRGB(235, 240, 250), 0.7f), true);
+        }
+        w.spawnParticle(Particle.SWEEP_ATTACK, start.clone().add(0, 1, 0), 1, 0, 0, 0, 0, null, true);
+        w.playSound(start, Sound.ITEM_TRIDENT_RIPTIDE_1, 0.8f, 1.6f);
+        w.playSound(start, Sound.ENTITY_BREEZE_WIND_BURST, 0.6f, 1.8f);
+        Vector vel = p.getVelocity();
+        Arena.allowTeleport(p);
+        p.teleport(dest);
+        p.setVelocity(new Vector(u.getX() * 0.35, Math.max(0, vel.getY()), u.getZ() * 0.35)); // garde un peu d'élan
+        p.setFallDistance(0);
+        w.spawnParticle(Particle.CLOUD, dest.clone().add(0, 0.2, 0), 6, 0.2, 0.05, 0.2, 0.02, null, true);
     }
 
     // ================================================================= Chute du Ciel (accroupi + clic droit en l'air)

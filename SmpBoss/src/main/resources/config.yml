@@ -1,4 +1,4 @@
-config-version: 45
+config-version: 46
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -446,9 +446,9 @@ weapons:
       jump: 0.18
       step: 0.5
       regen: 1             # PV rendus toutes les 2 s
-    flash-step:            # accroupi : très vite, images rémanentes
-      sneak-speed: 0.7     # ajouté à la vitesse accroupi (0.3 de base, max 1)
-      speed-level: 3       # Vitesse III tant que tu es accroupi
+    flash-step:            # Pas éclair (clic droit) : téléporté devant toi, images rémanentes
+      distance: 10
+      cooldown-seconds: 2.5
     double-jump:
       enabled: true
       power: 0.95
@@ -1305,7 +1305,7 @@ messages:
         - "<gray>Tu plonges et t'écrases au sol : tout vole autour."
         - "<#aa0814>✦ <b>CHAÎNE AUX MILLE LIEUES</b> <gray>(accroupi + clic gauche)"
         - "<gray>La lance part au bout de sa chaîne et ramène la cible."
-        - "<#c8d2e6>✦ <b>PAS ÉCLAIR</b> <gray>(accroupi) : tu files, images rémanentes"
+        - "<#c8d2e6>✦ <b>PAS ÉCLAIR</b> <gray>(clic droit) : 10 blocs devant, images rémanentes"
         - "<#c8d2e6>✦ <b>DOUBLE SAUT</b> <gray>(espace en l'air)"
         - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
         - "<white>⚔ 16</white> <gray>au corps à corps   <dark_gray>|</dark_gray>   <white>⏳ <cooldown> s"

@@ -15,7 +15,7 @@
 > …mais tu ne peux **plus utiliser AUCUN objet** : ni bloc, ni nourriture, ni potion, ni totem, ni arc, ni autre arme, ni pouvoir de relique.
 
 ⚪ **La Lance du Ciel Inversé gagne 4 techniques**
-> • **Pas éclair** : accroupi, tu files à toute vitesse en laissant des **images rémanentes**
+> • **Pas éclair** (clic droit) : tu es projeté **10 blocs devant en un éclair**, en laissant des **images rémanentes**
 > • **Double saut**
 > • **Chute du Ciel** (accroupi + clic droit en l'air) : tu plonges et t'écrases au sol, tout vole autour
 > • **Chaîne aux Mille Lieues** (accroupi + clic gauche) : la lance part au bout de sa chaîne et **ramène ta cible**

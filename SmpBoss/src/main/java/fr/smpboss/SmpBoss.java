@@ -515,6 +515,16 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 45);
             saveConfig();
         }
+        if (getConfig().getInt("config-version", 1) < 46) {
+            // pas éclair au clic droit (10 blocs)
+            var def = getConfig().getDefaults();
+            getConfig().set("weapons.lance-ciel.flash-step", null);
+            getConfig().set("weapons.lance-ciel.flash-step.distance", 10);
+            getConfig().set("weapons.lance-ciel.flash-step.cooldown-seconds", 2.5);
+            if (def != null) getConfig().set("messages.weapons.lance-ciel.lore", def.get("messages.weapons.lance-ciel.lore"));
+            getConfig().set("config-version", 46);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);
