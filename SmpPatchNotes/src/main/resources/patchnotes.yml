@@ -1,6 +1,31 @@
 # Patch notes (la plus récente EN PREMIER). Chaque page = une page du livre (MiniMessage, ~13 lignes max).
 # Couleurs lisibles sur le papier : black, dark_gray, dark_red, dark_blue, dark_green, dark_aqua, dark_purple, gold.
 notes:
+  - id: "2026-10-31-nerf-toji"
+    title: "Équilibrage de Toji"
+    date: "31/10/2026"
+    pages:
+      - |
+        <dark_gray><b>   LIMITLESS</b>
+        <dark_gray>     Patch note
+        <black>━━━━━━━━━━
+        <black><b>⚖ Équilibrage</b>
+        <black><b>de Toji</b>
+        <dark_gray>31 octobre 2026
+
+        <black>Seuls les <dark_red>dégâts</dark_red> de la Lance du Ciel Inversé baissent :
+        • Coup : 16 → 11
+        • Restriction : +60 % → +25 %
+        • Percée : 70 % → 40 %
+        • Chute : 25 % → 14 %
+        • Chaîne : 10 % → 6 %
+      - |
+        <black><b>⚖ Relique</b>
+        <black><b>Restriction Céleste</b>
+        <black>x3 → <dark_red>x2</dark_red> (monstres et boss)
+        x1,5 → <dark_red>x1,25</dark_red> (joueurs)
+
+        <dark_gray>Vitesse, vie, double saut, pas éclair : rien ne change.
   - id: "2026-10-31-armurerie"
     title: "Armurerie"
     date: "31/10/2026"

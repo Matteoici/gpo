@@ -525,6 +525,33 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 46);
             saveConfig();
         }
+        if (getConfig().getInt("config-version", 1) < 47) {
+            // nerf des dégâts de Toji (lance + relique), le reste ne bouge pas
+            var c = getConfig();
+            c.set("weapons.lance-ciel.attack-damage", 11);
+            c.set("weapons.lance-ciel.restriction.damage", 0.25);
+            c.set("weapons.lance-ciel.special.percent", 40);
+            c.set("weapons.lance-ciel.special.damage", 90);
+            c.set("weapons.lance-ciel.special.boss-damage", 400);
+            c.set("weapons.lance-ciel.dive.percent", 14);
+            c.set("weapons.lance-ciel.dive.damage", 22);
+            c.set("weapons.lance-ciel.dive.boss-damage", 90);
+            c.set("weapons.lance-ciel.chain.percent", 6);
+            c.set("weapons.lance-ciel.chain.damage", 12);
+            c.set("weapons.lance-ciel.chain.boss-damage", 35);
+            c.set("restriction-celeste.multiplier", 2);
+            c.set("restriction-celeste.pvp-multiplier", 1.25);
+            c.set("restriction-celeste.pvp-cap.special", 55);
+            c.set("restriction-celeste.pvp-cap.dive", 20);
+            c.set("restriction-celeste.pvp-cap.chain", 9);
+            var def = c.getDefaults();
+            if (def != null) {
+                c.set("messages.weapons.lance-ciel.lore", def.get("messages.weapons.lance-ciel.lore"));
+                c.set("relics.list.restriction_celeste.lore", def.get("relics.list.restriction_celeste.lore"));
+            }
+            c.set("config-version", 47);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);

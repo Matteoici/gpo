@@ -271,7 +271,7 @@ final class Weapons implements Listener {
         if (LANCE.equals(id) || TRIBATON.equals(id)) {
             boolean lance = LANCE.equals(id);
             m.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_DAMAGE, new org.bukkit.attribute.AttributeModifier(
-                    new NamespacedKey(plugin, id + "_damage"), cfg(path(id) + ".attack-damage", lance ? 16 : 12) - 1,
+                    new NamespacedKey(plugin, id + "_damage"), cfg(path(id) + ".attack-damage", lance ? 11 : 12) - 1,
                     org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND));
             m.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_SPEED, new org.bukkit.attribute.AttributeModifier(
                     new NamespacedKey(plugin, id + "_speed"), cfg(path(id) + ".attack-speed", lance ? 1.8 : 1.5) - 4,

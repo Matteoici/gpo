@@ -197,7 +197,7 @@ final class TojiSpear implements Listener {
         active.add(p.getUniqueId());
         set(p, Attribute.MAX_HEALTH, hp, cfg("restriction.health", 20), AttributeModifier.Operation.ADD_NUMBER);
         set(p, Attribute.MOVEMENT_SPEED, speed, cfg("restriction.speed", 0.45), AttributeModifier.Operation.ADD_SCALAR);
-        set(p, Attribute.ATTACK_DAMAGE, dmg, cfg("restriction.damage", 0.6), AttributeModifier.Operation.ADD_SCALAR);
+        set(p, Attribute.ATTACK_DAMAGE, dmg, cfg("restriction.damage", 0.25), AttributeModifier.Operation.ADD_SCALAR);
         set(p, Attribute.ATTACK_SPEED, atkSpeed, cfg("restriction.attack-speed", 0.6), AttributeModifier.Operation.ADD_NUMBER);
         set(p, Attribute.KNOCKBACK_RESISTANCE, kb, cfg("restriction.knockback-resistance", 0.6), AttributeModifier.Operation.ADD_NUMBER);
         set(p, Attribute.SAFE_FALL_DISTANCE, fall, cfg("restriction.safe-fall", 10), AttributeModifier.Operation.ADD_NUMBER);
@@ -325,7 +325,7 @@ final class TojiSpear implements Listener {
 
     /** Multiplicateur de la lance (x3 avec la relique). */
     double mult(Player p) {
-        return heavenly(p) ? plugin.getConfig().getDouble("restriction-celeste.multiplier", 3) : 1;
+        return heavenly(p) ? plugin.getConfig().getDouble("restriction-celeste.multiplier", 2) : 1;
     }
 
     /**
@@ -333,7 +333,7 @@ final class TojiSpear implements Listener {
      * (la Percée ne tue jamais d'un coup quelqu'un qui a toute sa vie).
      */
     double pvpMult(Player p) {
-        return heavenly(p) ? plugin.getConfig().getDouble("restriction-celeste.pvp-multiplier", 1.5) : 1;
+        return heavenly(p) ? plugin.getConfig().getDouble("restriction-celeste.pvp-multiplier", 1.25) : 1;
     }
 
     /** Part de la vie max (0..1) retirée à un joueur par une technique, plafonnée avec la relique. */
@@ -341,9 +341,9 @@ final class TojiSpear implements Listener {
         double v = basePercent * pvpMult(p);
         if (heavenly(p)) {
             double def = switch (tech) {
-                case "special" -> 85;
-                case "dive" -> 35;
-                default -> 18;
+                case "special" -> 55;
+                case "dive" -> 20;
+                default -> 9;
             };
             v = Math.min(v, plugin.getConfig().getDouble("restriction-celeste.pvp-cap." + tech, def));
         }
@@ -653,11 +653,11 @@ final class TojiSpear implements Listener {
             if (!isBoss(le) && !allowed(p, le)) continue;
             if (isBoss(le)) {
                 Boss b = plugin.king();
-                if (b != null) b.hurt(p, cfg("dive.boss-damage", 150) * mult(p));
+                if (b != null) b.hurt(p, cfg("dive.boss-damage", 90) * mult(p));
                 continue;
             }
-            if (le instanceof Player) applyDamage(p, le, maxHealth(le) * pvpPercent(p, cfg("dive.percent", 25), "dive"));
-            else applyDamage(p, le, cfg("dive.damage", 40) * mult(p));
+            if (le instanceof Player) applyDamage(p, le, maxHealth(le) * pvpPercent(p, cfg("dive.percent", 14), "dive"));
+            else applyDamage(p, le, cfg("dive.damage", 22) * mult(p));
             Vector out = le.getLocation().toVector().subtract(c.toVector()).setY(0);
             if (out.lengthSquared() < 0.01) out = new Vector(0.1, 0, 0);
             le.setVelocity(out.normalize().multiply(0.8).setY(0.9));
@@ -714,14 +714,14 @@ final class TojiSpear implements Listener {
         w.spawnParticle(Particle.DUST, t.getLocation().add(0, 1, 0), 20, 0.3, 0.5, 0.3, 0, new Particle.DustOptions(BLOOD, 1.3f), true);
         if (isBoss(t)) {
             b = plugin.king();
-            if (b != null) b.hurt(p, cfg("chain.boss-damage", 60) * mult(p));
+            if (b != null) b.hurt(p, cfg("chain.boss-damage", 35) * mult(p));
             return;
         }
         if (t instanceof Player tp) {
-            applyDamage(p, t, maxHealth(t) * pvpPercent(p, cfg("chain.percent", 10), "chain"));
+            applyDamage(p, t, maxHealth(t) * pvpPercent(p, cfg("chain.percent", 6), "chain"));
             nullified.put(tp.getUniqueId(), System.currentTimeMillis() + (long) (cfg("nullify-seconds", 4) * 1000));
             BlackFlash.disarm(tp);
-        } else applyDamage(p, t, cfg("chain.damage", 20) * mult(p));
+        } else applyDamage(p, t, cfg("chain.damage", 12) * mult(p));
         // tirée vers toi
         Vector pull = p.getLocation().toVector().subtract(t.getLocation().toVector());
         double dist = pull.length();
@@ -798,7 +798,7 @@ final class TojiSpear implements Listener {
         if (!boss) ult().freezeFor(t, total + 4);
         SmpBoss.hud(p, parse(plugin.msg("lance-ciel.special")));
         double max = maxHealth(t);
-        double pct = cfg("special.percent", 70) / 100.0;
+        double pct = cfg("special.percent", 40) / 100.0;
         // part de chaque coup : percée 20 %, 5 entailles 10 % chacune, coup final 30 %
         double[] share = {0.2, 0.1, 0.1, 0.1, 0.1, 0.1, 0.3};
         int[] at = {4, 10, 15, 20, 25, 30, 44};
@@ -837,11 +837,11 @@ final class TojiSpear implements Listener {
                 strikeFx(p, t, c, i);
                 if (boss) {
                     Boss bb = plugin.king();
-                    if (bb != null) bb.hurt(p, cfg("special.boss-damage", 700) * share[i] * mult(p));
+                    if (bb != null) bb.hurt(p, cfg("special.boss-damage", 400) * share[i] * mult(p));
                 } else if (t instanceof Player) {
                     applyDamage(p, t, max * pvpPercent(p, pct * 100, "special") * share[i]);
                 } else {
-                    applyDamage(p, t, cfg("special.damage", 160) * share[i] * mult(p));
+                    applyDamage(p, t, cfg("special.damage", 90) * share[i] * mult(p));
                 }
             }
         }, 1L, 1L);

@@ -1,4 +1,4 @@
-config-version: 46
+config-version: 47
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -432,14 +432,14 @@ weapons:
     cooldown-seconds: 12
   lance-ciel:             # 🕷 MYTHICAL — l'arme de Toji
     chance: 0.5
-    attack-damage: 16
+    attack-damage: 11
     attack-speed: 1.8
     in-duels: true
     nullify-seconds: 4     # chaque coup bloque les pouvoirs de la cible (Black Flash, Capricorne, Hollow...)
     restriction:           # Restriction Céleste (lance en main) : rien d'autre, mais le corps au maximum
       health: 20           # +10 cœurs
       speed: 0.45          # +45 % de vitesse
-      damage: 0.6          # +60 % de dégâts
+      damage: 0.25         # +25 % de dégâts
       attack-speed: 0.6
       knockback-resistance: 0.6
       safe-fall: 10
@@ -457,21 +457,21 @@ weapons:
       cooldown-seconds: 25
       speed: 2.6
       radius: 5.5
-      percent: 25          # % de la vie max d'un joueur
-      damage: 40
-      boss-damage: 150
+      percent: 14          # % de la vie max d'un joueur
+      damage: 22
+      boss-damage: 90
     chain:                 # Chaîne aux Mille Lieues (accroupi + clic gauche dans le vide)
       range: 24
       cooldown-seconds: 15
-      percent: 10
-      damage: 20
-      boss-damage: 60
+      percent: 6
+      damage: 12
+      boss-damage: 35
     special:               # Percée du Ciel Inversé (accroupi + clic droit)
       range: 18
       cooldown-seconds: 90
-      percent: 70          # % de la vie max d'un joueur, sur toute la combo
-      damage: 160          # contre un monstre
-      boss-damage: 700
+      percent: 40          # % de la vie max d'un joueur, sur toute la combo
+      damage: 90           # contre un monstre
+      boss-damage: 400
   tribaton:               # 🕷 légendaire — Nuage Joueur
     chance: 0.4
     attack-damage: 12
@@ -862,8 +862,8 @@ relics:
       rarity: secret
       icon: IRON_CHAIN
       lore: ["<gray>Zéro énergie occulte. Un corps qui n'a besoin de rien.",
-             "<#c8d2e6>✦ <white>La Lance du Ciel Inversé frappe <b>3 fois plus fort</b>",
-             "<gray>sur les monstres et les boss <white>(x1,5 sur les joueurs)",
+             "<#c8d2e6>✦ <white>La Lance du Ciel Inversé frappe <b>2 fois plus fort</b>",
+             "<gray>sur les monstres et les boss <white>(x1,25 sur les joueurs)",
              "<gray>(coups, Percée, Chute du Ciel, Chaîne).",
              "<red>✖ Mais plus AUCUN objet : <gray>ni bloc, ni nourriture, ni potion,",
              "<gray>ni totem, ni arc, ni autre arme, ni pouvoir de relique."]
@@ -1019,12 +1019,12 @@ music:
 # ================================================================ ⚡ BLACK FLASH (reliques de la Reine) : accroupi + F
 # ================================================================ ✦ RESTRICTION CÉLESTE (relique MYTHICAL)
 restriction-celeste:
-  multiplier: 3            # dégâts de la Lance du Ciel Inversé contre les monstres et les boss
-  pvp-multiplier: 1.5      # contre les joueurs (équitable)
+  multiplier: 2            # dégâts de la Lance du Ciel Inversé contre les monstres et les boss
+  pvp-multiplier: 1.25     # contre les joueurs (équitable)
   pvp-cap:                 # plafond en % de la vie max d'un joueur, par technique
-    special: 85            # Percée : jamais un coup qui tue quelqu'un qui a toute sa vie
-    dive: 35
-    chain: 18
+    special: 55            # Percée : jamais un coup qui tue quelqu'un qui a toute sa vie
+    dive: 20
+    chain: 9
 
 black-flash:
   range: 24
@@ -1296,7 +1296,7 @@ messages:
         - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
         - "<#c8d2e6>✦ <b>RESTRICTION CÉLESTE</b> <gray>(en main)"
         - "<gray>Ton corps est poussé au maximum :"
-        - "<white>+10 ❤ <gray>· <white>+45 % vitesse <gray>· <white>+60 % dégâts"
+        - "<white>+10 ❤ <gray>· <white>+45 % vitesse <gray>· <white>+25 % dégâts"
         - "<red>Mais plus RIEN d'autre : <gray>ni totem, ni potion,"
         - "<gray>ni pomme, ni perle, ni élytres, ni relique."
         - "<#c8d2e6>✦ <b>ANNULE LES TECHNIQUES</b>"
@@ -1304,7 +1304,7 @@ messages:
         - "<gray>et traverse le Fantôme du Net."
         - "<#aa0814>✦ <b>PERCÉE DU CIEL INVERSÉ</b> <gray>(accroupi + clic droit)"
         - "<gray>Tu te jettes sur ta cible : la lame la traverse,"
-        - "<gray>cinq entailles, puis le coup final. <white>70 %</white> de sa vie."
+        - "<gray>cinq entailles, puis le coup final. <white>40 %</white> de sa vie."
         - "<#aa0814>✦ <b>CHUTE DU CIEL</b> <gray>(accroupi + clic droit en l'air)"
         - "<gray>Tu plonges et t'écrases au sol : tout vole autour."
         - "<#aa0814>✦ <b>CHAÎNE AUX MILLE LIEUES</b> <gray>(accroupi + clic gauche)"
@@ -1312,7 +1312,7 @@ messages:
         - "<#c8d2e6>✦ <b>PAS ÉCLAIR</b> <gray>(clic droit) : 10 blocs devant, images rémanentes"
         - "<#c8d2e6>✦ <b>DOUBLE SAUT</b> <gray>(espace en l'air)"
         - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
-        - "<white>⚔ 16</white> <gray>au corps à corps   <dark_gray>|</dark_gray>   <white>⏳ <cooldown> s"
+        - "<white>⚔ 11</white> <gray>au corps à corps   <dark_gray>|</dark_gray>   <white>⏳ <cooldown> s"
         - "<dark_gray>✧ Ne tombe pas à la mort · incassable"
     tribaton:
       name: "Tribâton · Nuage Joueur"

@@ -1,5 +1,12 @@
 # Patch notes Limitless (textes Discord)
 
+## 31/10/2026 — Équilibrage de Toji
+
+⚖️ **ÉQUILIBRAGE DE TOJI** (seulement les dégâts)
+> **Lance du Ciel Inversé** : coup 16 → **11**, Restriction Céleste +60 % → **+25 %** de dégâts, Percée 70 % → **40 %**, Chute du Ciel 25 % → **14 %**, Chaîne 10 % → **6 %** (dégâts sur les boss baissés pareil).
+> **Relique Restriction Céleste** : x3 → **x2** sur les monstres et boss, x1,5 → **x1,25** sur les joueurs.
+> Vitesse, vie, double saut, pas éclair, Chaîne et le reste : **rien ne change**.
+
 ## 31/10/2026 — Armurerie
 
 ⚔️ **ARMURERIE**
