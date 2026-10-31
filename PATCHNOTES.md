@@ -1,5 +1,11 @@
 # Patch notes Limitless (textes Discord)
 
+## 31/10/2026 — Historique des ventes
+
+📜 **HISTORIQUE DES VENTES**
+> Chaque vente avec **/sell** est maintenant gardée : la date, l'argent gagné et le détail de chaque objet vendu. En haut : ton total gagné, tes ventes du jour et ton objet le plus rentable.
+> ➤ **/historique** (ou /sell historique)
+
 ## 31/10/2026 — Restriction Céleste
 
 ✦ **RESTRICTION CÉLESTE** ✦

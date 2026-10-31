@@ -42,6 +42,7 @@ public final class SmpShop extends JavaPlugin {
         texts = new Texts(this);
         worth = new Worth(this);
         seller = new Seller(this);
+        history = new SellHistory(this);
         shop = new Shop(this);
         tokens = new Tokens(this);
         cleaner = new Cleaner(this);
@@ -52,7 +53,7 @@ public final class SmpShop extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new ShopListener(this), this);
         Commands c = new Commands(this);
-        for (String n : new String[]{"shop", "sell", "worth", "tokens", "shopadmin"}) {
+        for (String n : new String[]{"shop", "sell", "worth", "tokens", "shopadmin", "historique"}) {
             PluginCommand pc = getCommand(n);
             if (pc != null) {
                 pc.setExecutor(c);
@@ -214,6 +215,12 @@ public final class SmpShop extends JavaPlugin {
 
     public Worth worth() {
         return worth;
+    }
+
+    private SellHistory history;
+
+    public SellHistory history() {
+        return history;
     }
 
     public Seller seller() {

@@ -53,6 +53,31 @@ shop:
   no-tokens: "<red>Il te faut <white><price></white>. <gray>(/tokens)"
   no-space: "<red>Pas assez de place dans ton inventaire."
 
+history:
+  title: "<dark_gray>Ventes de <player>"
+  no-permission: "<red>Tu ne peux voir que ton propre historique."
+  unknown: "<red>Joueur inconnu : <white><player>"
+  empty:
+    name: "<gray>Aucune vente pour l'instant"
+    lore:
+      - "<dark_gray>Vends avec /sell : chaque vente apparaîtra ici."
+  summary:
+    name: "<gold><b>Historique de <player>"
+    lore:
+      - "<gray>Ventes : <white><sales>"
+      - "<gray>Objets vendus : <white><items>"
+      - "<gray>Total gagné : <gold><total>"
+      - "<gray>Aujourd'hui : <gold><today>"
+    top: "<gray>Le plus rentable : <gold><money></gold> <dark_gray>(<count>×)</dark_gray>"
+  sale:
+    name: "<gold><b>+<money></b> <dark_gray>· <gray><date>"
+    lore:
+      - "<gray>Le <white><date>"
+      - "<gray><white><count></white> objet(s) vendu(s)"
+      - "<dark_gray>Bonus : +<bonus>%"
+      - ""
+    more: "<dark_gray>... et <n> autre(s) objet(s)"
+
 sell:
   title: "<dark_gray>Vendre - dépose tes objets"
   nothing: "<red>Rien à vendre ici. <gray>(/worth pour voir le prix d'un objet)"

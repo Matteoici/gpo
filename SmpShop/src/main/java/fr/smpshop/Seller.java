@@ -35,6 +35,8 @@ public final class Seller {
         long count = 0;
         double total = 0;
         List<ItemStack> unsold = new ArrayList<>();
+        java.util.Map<String, double[]> detail = new java.util.LinkedHashMap<>();
+        java.util.Map<String, ItemStack> sample = new java.util.HashMap<>();
         for (int i = from; i < to; i++) {
             ItemStack it = inv.getItem(i);
             if (it == null || it.getType().isAir()) continue;
@@ -45,9 +47,10 @@ public final class Seller {
             }
             count += it.getAmount();
             total += unit * it.getAmount();
+            note(detail, sample, it, unit);
             inv.setItem(i, null);
         }
-        return pay(p, count, total, unsold);
+        return pay(p, count, total, unsold, detail, sample);
     }
 
     public Result sellHand(Player p) {
@@ -55,14 +58,42 @@ public final class Seller {
         double unit = plugin.worth().unitPrice(it);
         if (unit <= 0) return new Result(0, 0, List.of());
         int n = it.getAmount();
+        java.util.Map<String, double[]> detail = new java.util.LinkedHashMap<>();
+        java.util.Map<String, ItemStack> sample = new java.util.HashMap<>();
+        note(detail, sample, it, unit);
         p.getInventory().setItemInMainHand(null);
-        return pay(p, n, unit * n, List.of());
+        return pay(p, n, unit * n, List.of(), detail, sample);
     }
 
-    private Result pay(Player p, long count, double total, List<ItemStack> unsold) {
+    /** Regroupe les objets vendus par type (et nom perso) pour l'historique. */
+    private static void note(java.util.Map<String, double[]> detail, java.util.Map<String, ItemStack> sample, ItemStack it, double unit) {
+        String name = "";
+        var meta = it.getItemMeta();
+        if (meta != null && meta.hasDisplayName() && meta.displayName() != null) {
+            name = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(meta.displayName());
+        }
+        String k = it.getType().name() + ";" + name;
+        double[] d = detail.computeIfAbsent(k, x -> new double[2]);
+        d[0] += it.getAmount();
+        d[1] += unit * it.getAmount();
+        sample.putIfAbsent(k, it);
+    }
+
+    private Result pay(Player p, long count, double total, List<ItemStack> unsold, java.util.Map<String, double[]> detail,
+                       java.util.Map<String, ItemStack> sample) {
         if (count == 0) return new Result(0, 0, unsold);
-        double money = Math.floor(total * plugin.worth().multiplier(p) * 100) / 100.0;
+        double mult = plugin.worth().multiplier(p);
+        double money = Math.floor(total * mult * 100) / 100.0;
         plugin.giveMoney(p, money);
+        // historique
+        List<SellHistory.Line> lines = new ArrayList<>();
+        for (var e : detail.entrySet()) {
+            String[] k = e.getKey().split(";", 2);
+            lines.add(new SellHistory.Line(sample.get(e.getKey()).getType(), k.length > 1 ? k[1] : "", (long) e.getValue()[0],
+                    Math.floor(e.getValue()[1] * mult * 100) / 100.0));
+        }
+        lines.sort((a, b) -> Double.compare(b.money(), a.money()));
+        plugin.history().add(p.getUniqueId(), new SellHistory.Sale(System.currentTimeMillis(), count, money, mult, lines));
         return new Result(count, money, unsold);
     }
 

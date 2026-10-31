@@ -1,6 +1,22 @@
 # Patch notes (la plus récente EN PREMIER). Chaque page = une page du livre (MiniMessage, ~13 lignes max).
 # Couleurs lisibles sur le papier : black, dark_gray, dark_red, dark_blue, dark_green, dark_aqua, dark_purple, gold.
 notes:
+  - id: "2026-10-31-historique"
+    title: "Historique des ventes"
+    date: "31/10/2026"
+    pages:
+      - |
+        <gold><b>   LIMITLESS</b>
+        <dark_gray>     Patch note
+        <black>━━━━━━━━━━
+        <gold><b>Historique</b>
+        <gold><b>des ventes</b>
+        <dark_gray>31 octobre 2026
+
+        <black>Chaque vente avec /sell est gardée : date, argent gagné et le détail de chaque objet.
+
+        <dark_gray>➤ /historique
+        ➤ ou /sell historique
   - id: "2026-10-31-ciel"
     title: "Restriction Céleste"
     date: "31/10/2026"

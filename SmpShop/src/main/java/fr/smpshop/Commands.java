@@ -49,6 +49,10 @@ final class Commands implements CommandExecutor, TabCompleter {
             t().send(sender, "players-only");
             return true;
         }
+        if (name.equals("historique")) {
+            history(p, a.length > 0 ? a[0] : null);
+            return true;
+        }
         switch (name) {
             case "shop" -> {
                 int fight = plugin.combatLeft(p);
@@ -68,6 +72,7 @@ final class Commands implements CommandExecutor, TabCompleter {
             case "sell" -> {
                 String sub = a.length == 0 ? "" : a[0].toLowerCase(Locale.ROOT);
                 switch (sub) {
+                    case "historique", "history", "histo" -> history(p, a.length > 1 ? a[1] : null);
                     case "main", "hand" -> plugin.seller().report(p, plugin.seller().sellHand(p));
                     case "tout", "all", "inventaire", "inventory" ->
                             plugin.seller().report(p, plugin.seller().sellSlots(p, p.getInventory(), 0, 36));
@@ -209,8 +214,12 @@ final class Commands implements CommandExecutor, TabCompleter {
                 case "shop" -> {
                     for (Shop.Category c : plugin.shop().categories()) out.add(c.id());
                 }
-                case "sell" -> out.addAll(List.of("main", "tout"));
+                case "sell" -> out.addAll(List.of("main", "tout", "historique"));
                 case "shopadmin" -> out.addAll(List.of("reload", "inspect", "clean"));
+                case "historique" -> {
+                    if (sender.hasPermission("smpshop.history.others") || sender.hasPermission("smpshop.admin"))
+                        for (Player p : Bukkit.getOnlinePlayers()) out.add(p.getName());
+                }
                 case "tokens" -> {
                     if (sender.hasPermission("smpshop.admin")) out.addAll(List.of("give", "take", "set"));
                     for (Player p : Bukkit.getOnlinePlayers()) out.add(p.getName());
@@ -218,11 +227,33 @@ final class Commands implements CommandExecutor, TabCompleter {
                 default -> {
                 }
             }
+        } else if (a.length == 2 && name.equals("sell") && a[0].toLowerCase(Locale.ROOT).startsWith("histo")
+                && (sender.hasPermission("smpshop.history.others") || sender.hasPermission("smpshop.admin"))) {
+            for (Player p : Bukkit.getOnlinePlayers()) out.add(p.getName());
         } else if (a.length == 2 && name.equals("tokens") && sender.hasPermission("smpshop.admin")) {
             for (Player p : Bukkit.getOnlinePlayers()) out.add(p.getName());
         }
         String last = a.length == 0 ? "" : a[a.length - 1].toLowerCase(Locale.ROOT);
         out.removeIf(s -> !s.toLowerCase(Locale.ROOT).startsWith(last));
         return out;
+    }
+
+    /** Historique des ventes : le sien, ou celui d'un autre joueur pour le staff. */
+    @SuppressWarnings("deprecation")
+    private void history(Player p, String other) {
+        OfflinePlayer target = p;
+        if (other != null && !other.equalsIgnoreCase(p.getName())) {
+            if (!p.hasPermission("smpshop.history.others") && !p.hasPermission("smpshop.admin")) {
+                t().send(p, "history.no-permission");
+                return;
+            }
+            Player on = Bukkit.getPlayerExact(other);
+            target = on != null ? on : Bukkit.getOfflinePlayer(other);
+            if (on == null && !target.hasPlayedBefore()) {
+                t().send(p, "history.unknown", ph("player", other));
+                return;
+            }
+        }
+        new fr.smpshop.gui.HistoryMenu(plugin, p, target, 0).open();
     }
 }

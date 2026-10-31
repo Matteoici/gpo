@@ -23,6 +23,10 @@ commands:
     description: Tes jetons d'événement
     usage: /tokens [joueur]
     aliases: [jetons, token]
+  historique:
+    description: Historique de tes ventes (/historique <joueur> pour le staff)
+    usage: /historique [joueur]
+    aliases: [sellhistory, ventes, historiquevente]
   shopadmin:
     description: Administration de la boutique
     usage: /shopadmin <reload|inspect|clean>
@@ -31,6 +35,9 @@ permissions:
   smpshop.combat.bypass:
     description: Ouvrir la boutique même en combat
     default: false
+  smpshop.history.others:
+    description: Voir l'historique de vente des autres joueurs
+    default: op
   smpshop.admin:
     description: Recharger, inspecter, donner des jetons
     default: op
