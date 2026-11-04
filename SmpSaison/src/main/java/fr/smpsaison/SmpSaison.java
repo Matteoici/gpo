@@ -78,6 +78,17 @@ public final class SmpSaison extends JavaPlugin implements Listener {
             getConfig().set("config-version", 2);
             saveConfig();
         }
+        if (getConfig().getInt("config-version", 1) < 3) {
+            // ligne premium : elle rapporte plus que son prix (5,59 M $ d'argent au total + clés + pioches)
+            var def = getConfig().getDefaults();
+            if (def != null && def.isConfigurationSection("season.tiers")) {
+                getConfig().set("season.tiers", null);
+                var ts = def.getConfigurationSection("season.tiers");
+                for (String k : ts.getKeys(true)) if (!ts.isConfigurationSection(k)) getConfig().set("season.tiers." + k, ts.get(k));
+            }
+            getConfig().set("config-version", 3);
+            saveConfig();
+        }
         data = new Data(getDataFolder(), getLogger());
         data.load();
         jobs = new Jobs(this);
