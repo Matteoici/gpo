@@ -44,6 +44,8 @@ public final class Settings {
     public final long leaveGraceMs, offlineGraceMs;
     public final boolean claimBuilding, offlineBuy;
     public final long quitDelayMs;
+    /** off | owners (ceux qui ont déjà un marché) | everyone */
+    public final String autoDeploy;
 
     Settings(FileConfiguration c) {
         currency = c.getString("currency-symbol", "$");
@@ -54,6 +56,8 @@ public final class Settings {
         claimBuilding = c.getBoolean("claim.building", true);
         quitDelayMs = Math.max(0, (long) (c.getDouble("claim.quit-delay-seconds", 0) * 1000));
         offlineBuy = c.getBoolean("claim.offline-buy", true);
+        String ad = String.valueOf(c.get("claim.auto-deploy", "owners")).toLowerCase(java.util.Locale.ROOT);
+        autoDeploy = ad.equals("false") || ad.equals("off") ? "off" : ad.equals("everyone") || ad.equals("tous") ? "everyone" : "owners";
         leaseMs = Math.max(1, (long) (c.getDouble("lease.days", 7) * 24 * H));
         renewWindowMs = Math.max(H, (long) (c.getDouble("lease.renew-window-hours", 24) * H));
         maxPerPlayer = Math.max(1, c.getInt("lease.max-per-player", 1));

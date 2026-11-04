@@ -381,6 +381,7 @@ final class MarketListener implements Listener {
             }
             int parcels = plugin.store().parcels(p.getUniqueId()).size();
             if (parcels > 0) plugin.texts().send(p, "join.parcels", ph("count", parcels));
+            plugin.claims().autoDeploy(p);
         }, 60L);
     }
 
@@ -388,6 +389,7 @@ final class MarketListener implements Listener {
     public void onQuit(PlayerQuitEvent e) {
         plugin.input().forget(e.getPlayer().getUniqueId());
         plugin.claims().onQuit(e.getPlayer());
+        plugin.claims().forgetSession(e.getPlayer().getUniqueId());
     }
 
     // ================================================================= chat (saisie de prix, nom...)

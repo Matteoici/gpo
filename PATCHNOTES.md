@@ -1,5 +1,16 @@
 # Patch notes Limitless (textes Discord)
 
+## 04/11/2026 — Recharges partagées, marché automatique
+
+⏳ **RECHARGES PARTAGÉES**
+> Utiliser le pouvoir d'une arme de boss met aussi tes **autres armes du même type** en recharge : les épées / haches / masses / faux entre elles, les arcs entre eux. Fini d'enchaîner les pouvoirs en changeant d'arme dans la barre.
+
+🏪 **MARCHÉ AUTOMATIQUE**
+> Quand tu te connectes, s'il reste un emplacement libre au marché, **ton marché s'installe tout seul**. Tout est pris ? Il s'installe dès qu'une place se libère. (**/marche ranger** pour le retirer)
+
+🚶 **PLUS DE COLLISIONS**
+> Les joueurs ne se poussent plus entre eux : impossible de déplacer quelqu'un au spawn.
+
 ## 04/11/2026 — L'Éveil de Toji
 
 ✦ **L'ÉVEIL DE TOJI**

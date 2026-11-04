@@ -569,6 +569,9 @@ mannequin:
 
 # ---------------------------------------------------------------- Emplacements à claim (nouveau marché)
 claim:
+  auto:
+    placed: "<gold>🏪 Ton marché s'est installé tout seul sur l'emplacement <white><stall></white>.</gold> <gray>/marche ranger pour le retirer, /marche tp pour y aller."
+    full: "<yellow>🏪 Tous les emplacements du marché sont pris : ton marché s'installera tout seul dès qu'une place se libère."
   help:
     - ""
     - "<gradient:#ffd36b:#ff8a3d><b>🏪 Le marché</b></gradient>"

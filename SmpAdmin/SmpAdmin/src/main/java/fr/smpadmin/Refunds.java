@@ -69,7 +69,7 @@ final class Refunds implements Listener, TabExecutor {
         Player p = e.getEntity();
         if (e.getKeepInventory()) return;
         PlayerInventory inv = p.getInventory();
-        ItemStack[] contents = inv.getContents();
+        ItemStack[] contents = lostOnly(inv.getContents(), e.getDrops());
         boolean empty = true;
         for (ItemStack it : contents) if (it != null && !it.getType().isAir()) empty = false;
         if (empty && p.getLevel() == 0) return;
@@ -98,6 +98,50 @@ final class Refunds implements Listener, TabExecutor {
         data.set(k + ".items", items);
         data.set("names." + p.getName().toLowerCase(Locale.ROOT), p.getUniqueId().toString());
         save();
+    }
+
+    private static final org.bukkit.NamespacedKey[] NEVER = {
+            org.bukkit.NamespacedKey.fromString("smpboss:relic"), org.bukkit.NamespacedKey.fromString("smpboss:weapon")};
+
+    /** Reliques et armes de boss : jamais remboursées (elles restent déjà avec le joueur ou dans /reliques). */
+    private static boolean never(ItemStack it) {
+        if (it == null || !it.hasItemMeta()) return false;
+        var pdc = it.getItemMeta().getPersistentDataContainer();
+        for (org.bukkit.NamespacedKey k : NEVER) if (k != null && pdc.getKeys().contains(k)) return true;
+        return false;
+    }
+
+    /**
+     * Seulement ce qui a VRAIMENT été perdu : les objets que les plugins ont gardés au joueur (armes gardées à la mort...)
+     * ne sont pas dans les objets lâchés, donc pas remboursés (sinon : objet en double).
+     * Les cases gardent leur place ; ce qui est tombé en plus (sac à dos) est ajouté à la fin.
+     */
+    private static ItemStack[] lostOnly(ItemStack[] contents, List<ItemStack> drops) {
+        List<ItemStack> pool = new ArrayList<>();
+        for (ItemStack d : drops) if (d != null && !d.getType().isAir() && !never(d)) pool.add(d.clone());
+        List<ItemStack> out = new ArrayList<>();
+        for (ItemStack it : contents) {
+            ItemStack keep = null;
+            if (it != null && !it.getType().isAir() && !never(it)) {
+                int want = it.getAmount();
+                for (java.util.Iterator<ItemStack> i = pool.iterator(); i.hasNext() && want > 0; ) {
+                    ItemStack d = i.next();
+                    if (!d.isSimilar(it)) continue;
+                    int take = Math.min(want, d.getAmount());
+                    want -= take;
+                    d.setAmount(d.getAmount() - take);
+                    if (d.getAmount() <= 0) i.remove();
+                }
+                int got = it.getAmount() - want;
+                if (got > 0) {
+                    keep = it.clone();
+                    keep.setAmount(got);
+                }
+            }
+            out.add(keep);
+        }
+        out.addAll(pool);
+        return out.toArray(new ItemStack[0]);
     }
 
     // ================================================================= commande
@@ -184,6 +228,7 @@ final class Refunds implements Listener, TabExecutor {
             } catch (RuntimeException ex) {
                 continue;
             }
+            if (never(it)) continue; // anciennes morts enregistrées avant la correction
             n++;
             ItemStack cur = i < inv.getSize() ? inv.getItem(i) : null;
             if (i < inv.getSize() && (cur == null || cur.getType().isAir())) inv.setItem(i, it);

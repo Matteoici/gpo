@@ -1,4 +1,4 @@
-config-version: 48
+config-version: 49
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -243,6 +243,13 @@ loot:
 
 # ---------------------------------------------------------------- Armes du Roi (butin rare, gardées à la mort)
 weapons:
+  # recharge PARTAGÉE : utiliser le pouvoir d'une arme met aussi les autres armes du même type en recharge
+  # (épées / haches / masses / faux entre elles, arcs entre eux) : impossible d'enchaîner les pouvoirs en changeant d'arme.
+  # durée = la recharge de l'arme utilisée, au plus X secondes
+  shared-cooldown:
+    enabled: true
+    melee-max-seconds: 10
+    bow-max-seconds: 8
   sonic-bow:
     # chance (%) de la gagner à chaque victoire (MYTHICAL : 0.5 = 1 chance sur 200 · PRESTIGE : 0.01 = 1 chance sur 10 000)
     chance: 0.01
@@ -1266,6 +1273,7 @@ messages:
     status-cooldown: "<red>⏳ Le Roi se repose encore <white><minutes> min"
   weapons:
     cooldown: "<gray>⏳ Encore <white><seconds> s"
+    shared-cooldown: "<gray>⏳ Tes armes de ce type rechargent : encore <white><seconds> s"
     kept: "<aqua>✦ Tes armes du Roi sont restées avec toi."
     ult-forbidden: "<dark_gray>[<#6d8cff>❂</#6d8cff>]</dark_gray> <red>Impossible d'utiliser <item> <red>en duel."
     ult-cooldown: "<dark_gray>[<#6d8cff>❂</#6d8cff>]</dark_gray> <gray><item> <gray>se recharge encore <white><time></white>."

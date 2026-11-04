@@ -398,6 +398,11 @@ public final class SmpTitles extends JavaPlugin implements Listener, TabExecutor
             return;
         }
         org.bukkit.scoreboard.Team other = sb.getEntryTeam(p.getName());
+        // équipe neutre « sans collisions » de SmpIle : ce n'est pas un grade, le titre peut prendre sa place
+        if (other != null && other.getName().equals("zz_nocollide")) {
+            other.removeEntry(p.getName());
+            other = null;
+        }
         if (other != null && !other.getName().equals(name)) {
             // déjà dans l'équipe d'un autre plugin (grade au-dessus de la tête) : on ne la lui vole pas
             if (team != null) team.unregister();

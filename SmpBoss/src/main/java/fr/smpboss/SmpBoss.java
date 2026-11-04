@@ -563,6 +563,17 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 48);
             saveConfig();
         }
+        if (getConfig().getInt("config-version", 1) < 49) {
+            // recharge partagée entre les armes du même type (épées entre elles, arcs entre eux)
+            var def = getConfig().getDefaults();
+            if (def != null) {
+                var sec = def.getConfigurationSection("weapons.shared-cooldown");
+                if (sec != null) for (String k : sec.getKeys(false)) getConfig().set("weapons.shared-cooldown." + k, sec.get(k));
+                getConfig().set("messages.weapons.shared-cooldown", def.get("messages.weapons.shared-cooldown"));
+            }
+            getConfig().set("config-version", 49);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);

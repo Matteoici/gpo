@@ -16,6 +16,12 @@ claim:
   quit-delay-seconds: 0
   # marché rangé (joueur déconnecté) : ses objets restent achetables à distance (recherche / liste des boutiques)
   offline-buy: true
+  # à la connexion, s'il reste un emplacement libre, le marché du joueur s'y installe tout seul
+  # (et quand un emplacement se libère, il va à un joueur connecté dont le marché attend)
+  #   owners   = seulement ceux qui ont déjà un marché (rangé)
+  #   everyone = tout le monde (même un nouveau joueur reçoit un marché vide)
+  #   off      = désactivé (il faut cliquer sur le panneau ou /marche installer)
+  auto-deploy: owners
   # construire sur son emplacement : la construction part avec le marché quand il est rangé,
   # et réapparaît là où le joueur le réinstalle (seulement l'intérieur, au-dessus du sol)
   building: true

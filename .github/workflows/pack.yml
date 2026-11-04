@@ -1,0 +1,95 @@
+name: Pack de ressources
+# Dès qu'un fichier du dossier ResourcePack change (un son ajouté depuis le site GitHub par exemple),
+# le pack est refait tout seul, rangé dans packs/, et les 3 lignes pour server.properties sont affichées
+# dans le résumé de cette action (onglet Actions -> "Pack de ressources" -> la dernière).
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['ResourcePack/**']
+permissions:
+  contents: write
+concurrency:
+  group: pack
+  cancel-in-progress: false
+jobs:
+  pack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Vérifier les sons
+        run: |
+          python3 - <<'PY'
+          import json, os, sys
+          base = 'ResourcePack/assets'
+          bad = []
+          for ns in os.listdir(base):
+              sj = os.path.join(base, ns, 'sounds.json')
+              if not os.path.exists(sj):
+                  continue
+              try:
+                  d = json.load(open(sj))
+              except Exception as e:
+                  print(f'::error::{sj} est cassé (JSON) : {e}'); sys.exit(1)
+              for ev, v in d.items():
+                  for s in v.get('sounds', []):
+                      name = s if isinstance(s, str) else s.get('name')
+                      if isinstance(s, dict) and s.get('type') == 'event':
+                          continue
+                      n2, path = (name.split(':', 1) + [''])[:2] if ':' in name else (ns, name)
+                      f = os.path.join(base, n2, 'sounds', path + '.ogg')
+                      if not os.path.exists(f):
+                          bad.append(f'{ev} -> {f}')
+          for b in bad:
+              print(f'::warning::son manquant : {b}')
+          for root, _, names in os.walk(base):
+              for n in names:
+                  if n.lower().endswith(('.mp3', '.wav', '.m4a')):
+                      print(f'::error::{os.path.join(root, n)} : Minecraft ne lit que les .ogg. Convertis-le en .ogg (Audacity : Fichier > Exporter > OGG).')
+                      sys.exit(1)
+          PY
+      - name: Construire le zip
+        id: z
+        run: |
+          sha=$(python3 .github/scripts/build_pack.py ResourcePack /tmp/pack.zip)
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "short=${sha:0:8}" >> "$GITHUB_OUTPUT"
+          uuid=$(python3 -c "import uuid,sys;print(uuid.uuid3(uuid.NAMESPACE_URL,'limitless-'+sys.argv[1]))" "$sha")
+          echo "uuid=$uuid" >> "$GITHUB_OUTPUT"
+          ls -la /tmp/pack.zip
+      - name: Ranger dans packs/ et publier
+        run: |
+          name="limitless-${{ steps.z.outputs.short }}.zip"
+          if [ -f "packs/$name" ]; then echo "Pack inchangé : $name"; exit 0; fi
+          mkdir -p packs && cp /tmp/pack.zip "packs/$name"
+          # on garde les 3 derniers packs : le lien déjà mis dans server.properties marche encore le temps de le changer
+          touch packs/ORDER.txt
+          for f in packs/*.zip; do b=$(basename "$f"); grep -qx "$b" packs/ORDER.txt || echo "$b" >> packs/ORDER.txt; done
+          grep -vx "$name" packs/ORDER.txt > /tmp/o || true; echo "$name" >> /tmp/o; mv /tmp/o packs/ORDER.txt
+          n=$(wc -l < packs/ORDER.txt)
+          if [ "$n" -gt 3 ]; then
+            head -n $((n - 3)) packs/ORDER.txt | while read -r old; do git rm -q --ignore-unmatch "packs/$old"; done
+            tail -n 3 packs/ORDER.txt > /tmp/o && mv /tmp/o packs/ORDER.txt
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packs
+          git commit -qm "Pack de ressources $name"
+          for i in 1 2 3; do git pull -q --rebase && git push -q && break; sleep 5; done
+      - name: Lignes pour server.properties
+        run: |
+          name="limitless-${{ steps.z.outputs.short }}.zip"
+          {
+            echo "## ✅ Pack prêt : \`$name\`"
+            echo ""
+            echo "Remplace ces 3 lignes dans **server.properties** puis redémarre le serveur :"
+            echo ""
+            echo '```properties'
+            echo "resource-pack=https\://raw.githubusercontent.com/${GITHUB_REPOSITORY}/main/packs/$name"
+            echo "resource-pack-id=${{ steps.z.outputs.uuid }}"
+            echo "resource-pack-sha1=${{ steps.z.outputs.sha }}"
+            echo '```'
+            echo ""
+            echo "(garde \`require-resource-pack=true\` et ta ligne \`resource-pack-prompt\`)"
+          } >> "$GITHUB_STEP_SUMMARY"
+          cat "$GITHUB_STEP_SUMMARY"

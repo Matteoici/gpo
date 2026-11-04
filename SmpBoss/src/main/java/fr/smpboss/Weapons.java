@@ -451,8 +451,38 @@ final class Weapons implements Listener {
             SmpBoss.hud(p, parse(plugin.msg("weapons.cooldown").replace("<seconds>", fmt(Math.ceil((until - now) / 100.0) / 10.0))));
             return false;
         }
+        // recharge PARTAGÉE : après le pouvoir d'une arme, les autres armes du même type attendent aussi
+        String g = group(id);
+        String gk = p.getUniqueId() + ":group:" + g;
+        Long gUntil = cooldown.get(gk);
+        String gLast = cooldown.containsKey(gk) ? lastOfGroup.get(gk) : null;
+        if (gUntil != null && gUntil > now && !id.equals(gLast)) {
+            SmpBoss.hud(p, parse(plugin.msg("weapons.shared-cooldown").replace("<seconds>", fmt(Math.ceil((gUntil - now) / 100.0) / 10.0))));
+            return false;
+        }
         cooldown.put(k, now + (long) (seconds * 1000));
+        startGroup(p, id, seconds, now);
         return true;
+    }
+
+    /** "bow" (arcs, arbalètes) ou "melee" (épées, haches, masses, faux...) */
+    private static String group(String id) {
+        Material m = material(id);
+        return m == Material.BOW || m == Material.CROSSBOW ? "bow" : "melee";
+    }
+
+    private final Map<String, String> lastOfGroup = new HashMap<>();
+
+    /** lance la recharge commune du groupe : la recharge de l'arme utilisée, au plus N s (réglable) */
+    private void startGroup(Player p, String id, double seconds, long now) {
+        if (!plugin.getConfig().getBoolean("weapons.shared-cooldown.enabled", true)) return;
+        String g = group(id);
+        double max = cfg("shared-cooldown." + (g.equals("bow") ? "bow" : "melee") + "-max-seconds", g.equals("bow") ? 8 : 10);
+        double s = Math.min(seconds, max);
+        if (s <= 0) return;
+        String gk = p.getUniqueId() + ":group:" + g;
+        cooldown.put(gk, now + (long) (s * 1000));
+        lastOfGroup.put(gk, id);
     }
 
     // ================================================================= Sonic Bow
@@ -1107,7 +1137,10 @@ final class Weapons implements Listener {
         Long until = cooldown.get(k);
         long now = System.currentTimeMillis();
         if (until != null && until > now) return; // la flèche normale part quand même
+        Long gUntil = cooldown.get(p.getUniqueId() + ":group:bow");
+        if (gUntil != null && gUntil > now && !FOLLETS.equals(lastOfGroup.get(p.getUniqueId() + ":group:bow"))) return; // un autre arc vient de tirer
         cooldown.put(k, now + (long) (cfg("arc-feux-follets.cooldown-seconds", 6) * 1000));
+        startGroup(p, FOLLETS, cfg("arc-feux-follets.cooldown-seconds", 6), now);
         double ratio = cfg("arc-feux-follets.damage", 70) / 100.0;
         Vector v = main.getVelocity();
         List<Entity> wisps = new ArrayList<>(List.of(main));

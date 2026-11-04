@@ -1,6 +1,31 @@
 # Patch notes (la plus récente EN PREMIER). Chaque page = une page du livre (MiniMessage, ~13 lignes max).
 # Couleurs lisibles sur le papier : black, dark_gray, dark_red, dark_blue, dark_green, dark_aqua, dark_purple, gold.
 notes:
+  - id: "2026-11-04-recharges"
+    title: "Recharges partagées & marché"
+    date: "04/11/2026"
+    pages:
+      - |
+        <dark_blue><b>   LIMITLESS</b>
+        <dark_gray>     Patch note
+        <black>━━━━━━━━━━
+        <dark_blue><b>⏳ Recharges</b>
+        <dark_blue><b>partagées</b>
+        <dark_gray>4 novembre 2026
+
+        <black>Utiliser le pouvoir d'une arme de boss met aussi tes <b>autres armes du même type</b> en recharge :
+        • épées, haches, masses, faux entre elles
+        • arcs entre eux
+        <dark_gray>Fini d'enchaîner les pouvoirs en changeant d'arme.
+      - |
+        <dark_green><b>🏪 Marché</b>
+
+        <black>À la connexion, s'il reste un emplacement libre, <b>ton marché s'installe tout seul</b>.
+        Plus de place ? Il s'installera dès qu'un emplacement se libère.
+        <dark_gray>/marche ranger pour le retirer.
+
+        <dark_aqua><b>🚶 Collisions</b>
+        <black>Les joueurs ne se poussent plus entre eux : impossible de déplacer quelqu'un au spawn.
   - id: "2026-11-04-eveil"
     title: "L'Éveil de Toji"
     date: "04/11/2026"

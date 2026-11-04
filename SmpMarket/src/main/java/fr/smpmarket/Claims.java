@@ -25,6 +25,8 @@ public final class Claims {
     private final SmpMarket plugin;
     /** propriétaire -> depuis quand il est loin / déconnecté */
     private final Map<UUID, Long> away = new HashMap<>();
+    /** a rangé son marché lui-même : on ne le réinstalle pas tout seul avant sa prochaine connexion */
+    private final java.util.Set<UUID> keptPacked = new java.util.HashSet<>();
 
     Claims(SmpMarket plugin) {
         this.plugin = plugin;
@@ -96,6 +98,60 @@ public final class Claims {
         return true;
     }
 
+    // ================================================================= installation automatique
+
+    /** true si ce joueur doit voir son marché s'installer tout seul (réglage claim.auto-deploy). */
+    private boolean wantsAuto(Player p) {
+        String mode = plugin.settings().autoDeploy;
+        if ("off".equals(mode) || keptPacked.contains(p.getUniqueId())) return false;
+        if (!p.hasPermission("smpmarket.use")) return false;
+        for (Stall s : plugin.store().stalls()) if (s.isOwner(p.getUniqueId())) return false; // déjà installé
+        return "everyone".equals(mode) || plugin.store().market(p.getUniqueId()) != null;
+    }
+
+    /** Premier emplacement libre (monde chargé). */
+    private Stall freeSpot() {
+        for (Stall st : plugin.store().stalls()) {
+            if (st.isPacked() || st.isRented() || st.auction != null) continue;
+            if (Bukkit.getWorld(st.region.world()) == null) continue;
+            return st;
+        }
+        return null;
+    }
+
+    /** À la connexion : s'il reste un emplacement libre, son marché s'y installe tout seul. */
+    public void autoDeploy(Player p) {
+        if (!p.isOnline() || !wantsAuto(p)) return;
+        Stall spot = freeSpot();
+        if (spot == null) {
+            if (plugin.store().market(p.getUniqueId()) != null) t().send(p, "claim.auto.full");
+            return;
+        }
+        if (deploy(p, spot)) t().send(p, "claim.auto.placed", plugin.auctions().stallTags(spot));
+    }
+
+    /** Un emplacement vient de se libérer : on le donne à un joueur connecté dont le marché attend. */
+    private void fillFreed() {
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                if (freeSpot() == null) return;
+                if (plugin.store().market(p.getUniqueId()) == null || !wantsAuto(p)) continue;
+                Stall spot = freeSpot();
+                if (deploy(p, spot)) t().send(p, "claim.auto.placed", plugin.auctions().stallTags(spot));
+            }
+        }, 40L);
+    }
+
+    void forgetSession(UUID id) {
+        keptPacked.remove(id);
+    }
+
+    /** /marche ranger : il ne veut pas de son marché, on ne le remet pas tout seul cette session. */
+    public void packManual(Stall spot) {
+        if (spot.owner != null) keptPacked.add(spot.owner);
+        pack(spot, "claim.packed-manual");
+    }
+
     // ================================================================= ranger
 
     /** Range le marché de cet emplacement (sauvegardé avec son propriétaire) et libère l'emplacement. */
@@ -138,6 +194,7 @@ public final class Claims {
         spot.tracksContainers = true;
         away.remove(owner);
         plugin.store().save();
+        if (!"off".equals(plugin.settings().autoDeploy)) fillFreed();
         plugin.visuals().rebuild(spot);
         plugin.mannequins().refresh(spot);
         if (reasonKey != null) plugin.notify(owner, t().get(reasonKey, plugin.auctions().stallTags(spot)));

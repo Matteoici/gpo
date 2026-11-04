@@ -127,7 +127,7 @@ public final class MarketCommand implements TabExecutor {
             case "ranger", "pack", "fermer" -> {
                 Stall st = plugin.store().marketOf(p.getUniqueId());
                 if (st == null || st.isPacked()) t().send(p, "claim.nothing-to-pack");
-                else plugin.claims().pack(st, "claim.packed-manual");
+                else plugin.claims().packManual(st);
             }
             case "mannequin", "pnj" -> {
                 Stall st = myStall(p);

@@ -67,6 +67,7 @@ public final class SmpIle extends JavaPlugin {
         undoFile = new File(getDataFolder(), "annuler.txt.gz");
         loadUndo();
         music = new SpawnMusic(this, () -> lastCenter);
+        new NoCollide(this);
     }
 
     @Override

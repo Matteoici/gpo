@@ -24,6 +24,11 @@ decor:
   # copier aussi les cadres, tableaux et porte-armures
 copy-entities: true
 
+# ================================================================ 🚶 COLLISIONS
+# true = les joueurs ne se poussent plus entre eux (impossible de déplacer quelqu'un au spawn ou ailleurs)
+player-collisions:
+  disabled: true
+
 # ================================================================ 🎵 MUSIQUE DU SPAWN (resource pack)
 # Musique médiévale en boucle pour ceux qui sont au spawn (catégorie « Jukebox / blocs musicaux »).
 # Centre : /ile musique centre (sinon le centre de l'île, sinon le spawn du monde).
