@@ -572,7 +572,7 @@ public final class SmpCrates extends JavaPlugin implements Listener {
 
     void openList(Player p) {
         Menu m = new Menu("list", null, null);
-        m.inv = Bukkit.createInventory(m, 27, parse("<dark_gray>✦ Caisses"));
+        m.inv = Bukkit.createInventory(m, 27, PackUi.title(parse("<dark_gray>✦ Caisses"), 27));
         ItemStack bg = named(Material.BLACK_STAINED_GLASS_PANE, " ", List.of());
         for (int i = 0; i < 27; i++) m.inv.setItem(i, bg);
         int[] slots = listSlots();
@@ -605,7 +605,7 @@ public final class SmpCrates extends JavaPlugin implements Listener {
 
     void openPreview(Player p, Crate c, Location at) {
         Menu m = new Menu("preview", c, at);
-        m.inv = Bukkit.createInventory(m, 54, parse(c.name));
+        m.inv = Bukkit.createInventory(m, 54, PackUi.title(parse(c.name), 54));
         ItemStack bg = named(c.pane, " ", List.of());
         for (int i = 45; i < 54; i++) m.inv.setItem(i, bg);
         List<Reward> list = new ArrayList<>(c.rewards);
@@ -727,7 +727,7 @@ public final class SmpCrates extends JavaPlugin implements Listener {
         List<Reward> strip = new ArrayList<>();
         for (int i = 0; i < len; i++) strip.add(i == winAt ? win : c.roll());
         Menu m = new Menu("spin", c, at);
-        m.inv = Bukkit.createInventory(m, 27, parse(c.name + " <dark_gray>· ouverture..."));
+        m.inv = Bukkit.createInventory(m, 27, PackUi.title(parse(c.name + " <dark_gray>· ouverture..."), 27));
         ItemStack arrowDown = named(Material.LIME_STAINED_GLASS_PANE, "<green><b>▼", List.of());
         ItemStack arrowUp = named(Material.LIME_STAINED_GLASS_PANE, "<green><b>▲", List.of());
         boolean[] done = {false};
@@ -876,7 +876,7 @@ public final class SmpCrates extends JavaPlugin implements Listener {
 
     void openEditor(Player p, Crate c) {
         Menu m = new Menu("edit", c, null);
-        m.inv = Bukkit.createInventory(m, 27, parse("<dark_gray>✎ Modifier : " + c.id));
+        m.inv = Bukkit.createInventory(m, 27, PackUi.title(parse("<dark_gray>✎ Modifier : " + c.id), 27));
         ItemStack bg = named(Material.BLACK_STAINED_GLASS_PANE, " ", List.of());
         for (int i = 0; i < 27; i++) m.inv.setItem(i, bg);
         m.inv.setItem(10, named(Material.NAME_TAG, "<white><b>Nom", List.of("<gray>Actuel : " + c.name, "", "<yellow>▶ Clic : écrire le nouveau nom",
@@ -959,7 +959,7 @@ public final class SmpCrates extends JavaPlugin implements Listener {
 
     void openLots(Player p, Crate c) {
         Menu m = new Menu("lots", c, null);
-        m.inv = Bukkit.createInventory(m, 54, parse("<dark_gray>✎ Lots : " + c.id));
+        m.inv = Bukkit.createInventory(m, 54, PackUi.title(parse("<dark_gray>✎ Lots : " + c.id), 54));
         for (int i = 0; i < Math.min(45, c.rewards.size()); i++) {
             Reward r = c.rewards.get(i);
             ItemStack it = display(c, r, true);

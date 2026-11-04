@@ -37,7 +37,7 @@ final class SpawnerMenu implements InventoryHolder {
         Mob m = plugin.mob(s.type);
         String title = (m == null ? "<white>" : m.rarity().color()) + "Spawner à " + (m == null ? s.type.name() : m.name())
                 + (s.stack > 1 ? " <dark_gray>×" + s.stack : "");
-        this.inv = Bukkit.createInventory(this, 54, SmpSpawners.MM.deserialize(title));
+        this.inv = Bukkit.createInventory(this, 54, PackUi.title(SmpSpawners.MM.deserialize(title), 54));
     }
 
     VSpawner spawner() {

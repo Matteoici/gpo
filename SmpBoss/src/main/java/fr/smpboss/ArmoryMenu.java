@@ -34,7 +34,7 @@ public final class ArmoryMenu implements InventoryHolder {
     public ArmoryMenu(SmpBoss plugin, Player viewer) {
         this.plugin = plugin;
         this.viewer = viewer;
-        this.inv = Bukkit.createInventory(this, 54, parse(plugin.msg("armory.title")));
+        this.inv = Bukkit.createInventory(this, 54, PackUi.title(parse(plugin.msg("armory.title")), 54));
         draw();
     }
 

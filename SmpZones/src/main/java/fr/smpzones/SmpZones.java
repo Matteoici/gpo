@@ -330,7 +330,7 @@ public final class SmpZones extends JavaPlugin implements Listener {
 
     private void openFlags(Player p, Zone z) {
         FlagMenu m = new FlagMenu(z);
-        m.inv = Bukkit.createInventory(m, 54, parse("<dark_green>Zone <white>" + MM.escapeTags(z.name)));
+        m.inv = Bukkit.createInventory(m, 54, PackUi.title(parse("<dark_green>Zone <white>" + MM.escapeTags(z.name)), 54));
         fillFlags(m);
         p.openInventory(m.inv);
     }

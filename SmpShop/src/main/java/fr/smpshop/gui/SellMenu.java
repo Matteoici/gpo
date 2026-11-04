@@ -34,7 +34,7 @@ public final class SellMenu implements InventoryHolder {
     public SellMenu(SmpShop plugin, Player viewer) {
         this.plugin = plugin;
         this.viewer = viewer;
-        this.inv = Bukkit.createInventory(this, 54, plugin.texts().get("sell.title"));
+        this.inv = Bukkit.createInventory(this, 54, PackUi.title(plugin.texts().get("sell.title"), 54));
         for (int i = AREA; i < 54; i++) inv.setItem(i, tag(Items.filler(Material.BLACK_STAINED_GLASS_PANE)));
         refresh();
     }

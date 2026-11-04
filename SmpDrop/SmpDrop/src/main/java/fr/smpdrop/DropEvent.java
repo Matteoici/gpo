@@ -816,7 +816,7 @@ public final class DropEvent {
 
         LootHolder(Component title, List<ItemStack> items, Random r) {
             int size = items.size() > 27 ? 54 : 27;
-            inv = Bukkit.createInventory(this, size, title);
+            inv = Bukkit.createInventory(this, size, PackUi.title(title, size));
             List<Integer> slots = new ArrayList<>();
             for (int i = 0; i < size; i++) slots.add(i);
             Collections.shuffle(slots, r);

@@ -21,7 +21,7 @@ public abstract class Menu implements InventoryHolder {
     protected Menu(FriendsPlugin plugin, Player viewer, int rows, Component title) {
         this.plugin = plugin;
         this.viewer = viewer;
-        this.inv = Bukkit.createInventory(this, rows * 9, title);
+        this.inv = Bukkit.createInventory(this, rows * 9, PackUi.title(title, rows * 9));
     }
 
     @Override

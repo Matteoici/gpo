@@ -49,7 +49,7 @@ public final class RelicMenu implements InventoryHolder {
     public RelicMenu(SmpBoss plugin, Player viewer) {
         this.plugin = plugin;
         this.viewer = viewer;
-        this.inv = Bukkit.createInventory(this, 54, parse(plugin.msg("menu.title-v2")));
+        this.inv = Bukkit.createInventory(this, 54, PackUi.title(parse(plugin.msg("menu.title-v2")), 54));
         draw();
     }
 

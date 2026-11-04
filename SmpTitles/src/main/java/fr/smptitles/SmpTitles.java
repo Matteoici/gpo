@@ -300,7 +300,7 @@ public final class SmpTitles extends JavaPlugin implements Listener, TabExecutor
 
         TagMenu(Player viewer) {
             this.viewer = viewer;
-            this.inv = Bukkit.createInventory(this, 27, mm("<dark_gray>Au-dessus de ta tête"));
+            this.inv = Bukkit.createInventory(this, 27, PackUi.title(mm("<dark_gray>Au-dessus de ta tête"), 27));
             draw();
         }
 
@@ -486,7 +486,7 @@ public final class SmpTitles extends JavaPlugin implements Listener, TabExecutor
 
         Menu(Player viewer) {
             this.viewer = viewer;
-            this.inv = Bukkit.createInventory(this, 54, mm(msg("menu-title")));
+            this.inv = Bukkit.createInventory(this, 54, PackUi.title(mm(msg("menu-title")), 54));
             draw();
         }
 

@@ -764,7 +764,7 @@ public final class SmpDuel extends JavaPlugin implements Listener {
 
         Menu(Player p) {
             this.p = p;
-            this.inv = Bukkit.createInventory(this, 27, mm(msg("menu-title")));
+            this.inv = Bukkit.createInventory(this, 27, PackUi.title(mm(msg("menu-title")), 27));
             ItemStack pane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
             ItemMeta pm = pane.getItemMeta();
             pm.setHideTooltip(true);

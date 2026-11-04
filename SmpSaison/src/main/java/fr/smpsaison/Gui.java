@@ -77,7 +77,11 @@ final class Gui implements InventoryHolder {
 
     /** Titre = le fond en parchemin (police du pack), décalé pour couvrir tout le coffre. */
     static Component packTitle() {
-        return Component.text("\uf801\ue100").font(net.kyori.adventure.key.Key.key("limitless", "gui"))
+        return packTitle('\ue100');
+    }
+
+    static Component packTitle(char glyph) {
+        return Component.text("\uf801" + glyph).font(net.kyori.adventure.key.Key.key("limitless", "gui"))
                 .color(net.kyori.adventure.text.format.NamedTextColor.WHITE);
     }
 
@@ -95,7 +99,7 @@ final class Gui implements InventoryHolder {
 
     static void jobs(SmpSaison pl, Player p) {
         Gui g = new Gui("jobs", 0);
-        g.inv = Bukkit.createInventory(g, 27, mm("<dark_gray>🛠 Tes métiers"));
+        g.inv = Bukkit.createInventory(g, 27, packTitle('\ue110'));
         Jobs j = pl.jobs();
         Data.P d = pl.data().of(p.getUniqueId());
         int[] slots = {11, 12, 13, 14, 15};
@@ -115,12 +119,28 @@ final class Gui implements InventoryHolder {
             lore.add("");
             lore.add("<dark_gray>Chaque action rapporte de l'XP de métier,");
             lore.add("<dark_gray>de l'argent et de l'XP de saison.");
-            g.inv.setItem(slots[i++], item(j.icon(id), j.name(id), lore, max));
+            ItemStack icon = item(j.icon(id), j.name(id), lore, max);
+            ItemMeta im = icon.getItemMeta();
+            try {
+                var cmd = im.getCustomModelDataComponent();
+                cmd.setStrings(List.of("job_" + id));
+                im.setCustomModelDataComponent(cmd);
+            } catch (RuntimeException | LinkageError ignored) {
+            }
+            // la barre de « durabilité » sous l'icône = la progression vers le niveau suivant
+            if (im instanceof org.bukkit.inventory.meta.Damageable dm) {
+                dm.setMaxDamage(1000);
+                dm.setDamage(max ? 0 : (int) Math.round((1 - Math.max(0.001, Math.min(1, ratio))) * 999));
+            }
+            icon.setItemMeta(im);
+            g.inv.setItem(slots[i], icon);
+            g.inv.setItem(slots[i] + 9, pitem("ui_level", j.name(id) + " <white>niveau " + lvl, lore, lvl));
+            i++;
         }
         Data.P s = pl.season(p.getUniqueId());
-        g.inv.setItem(22, item(Material.NETHER_STAR, "<gold>🎫 Passe de saison", List.of("<gray>Palier <white>" + pl.tierOf(s) + "</white> / " + pl.maxTier(),
-                "", "<yellow>Clic : ouvrir le passe"), false));
-        fill(g.inv);
+        g.inv.setItem(26, pitem("pass_season", "<gold>🎫 Passe de saison", List.of("<gray>Palier <white>" + pl.tierOf(s) + "</white> / " + pl.maxTier(),
+                "", "<yellow>Clic : ouvrir le passe"), 1));
+        fillBlank(g.inv);
         p.openInventory(g.inv);
     }
 
@@ -182,11 +202,11 @@ final class Gui implements InventoryHolder {
 
     static void weekly(SmpSaison pl, Player p) {
         Gui g = new Gui("weekly", 0);
-        g.inv = Bukkit.createInventory(g, 27, mm("<dark_gray>🏆 Classements de la semaine"));
+        g.inv = Bukkit.createInventory(g, 27, packTitle('\ue111'));
         ConfigurationSection boards = pl.getConfig().getConfigurationSection("weekly.boards");
         Duration left = Duration.between(ZonedDateTime.now(pl.zone()), pl.nextReset());
         String time = left.toDays() + " j " + left.toHoursPart() + " h " + left.toMinutesPart() + " min";
-        int[] slots = {10, 11, 12, 14, 15, 16, 13};
+        int[] slots = {13, 10, 11, 12, 14, 15, 16}; // le premier (XP de saison) sur le podium doré
         int i = 0;
         if (boards != null) for (String b : boards.getKeys(false)) {
             if (i >= slots.length) break;
@@ -212,8 +232,8 @@ final class Gui implements InventoryHolder {
             lore.add("<dark_gray>Fin dans " + time);
             g.inv.setItem(slots[i++], item(Material.matchMaterial(boards.getString(b + ".icon", "PAPER")), boards.getString(b + ".name", b), lore, false));
         }
-        g.inv.setItem(22, item(Material.NETHER_STAR, "<gold>🎫 Passe de saison", List.of("<yellow>Clic : /passe"), false));
-        fill(g.inv);
+        g.inv.setItem(22, pitem("pass_season", "<gold>🎫 Passe de saison", List.of("<yellow>Clic : /passe"), 1));
+        fillBlank(g.inv);
         p.openInventory(g.inv);
     }
 
@@ -251,7 +271,7 @@ final class Gui implements InventoryHolder {
             int s = e.getRawSlot();
             switch (g.kind) {
                 case "jobs" -> {
-                    if (s == 22) pass(pl, p, -1);
+                    if (s == 26) pass(pl, p, -1);
                 }
                 case "weekly" -> {
                     if (s == 22) pass(pl, p, -1);

@@ -16,6 +16,78 @@
    "chars": [
     ""
    ]
+  },
+  {
+   "type": "bitmap",
+   "file": "limitless:gui/menu_1.png",
+   "ascent": 13,
+   "height": 35,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "limitless:gui/menu_2.png",
+   "ascent": 13,
+   "height": 53,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "limitless:gui/menu_3.png",
+   "ascent": 13,
+   "height": 71,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "limitless:gui/menu_4.png",
+   "ascent": 13,
+   "height": 89,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "limitless:gui/menu_5.png",
+   "ascent": 13,
+   "height": 107,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "limitless:gui/menu_6.png",
+   "ascent": 13,
+   "height": 125,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "limitless:gui/jobs.png",
+   "ascent": 13,
+   "height": 71,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "limitless:gui/weekly.png",
+   "ascent": 13,
+   "height": 71,
+   "chars": [
+    ""
+   ]
   }
  ]
 }

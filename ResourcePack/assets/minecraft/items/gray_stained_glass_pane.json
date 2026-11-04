@@ -1,0 +1,50 @@
+{
+ "model": {
+  "type": "minecraft:condition",
+  "property": "minecraft:has_component",
+  "component": "minecraft:custom_name",
+  "on_true": {
+   "type": "minecraft:select",
+   "property": "minecraft:display_context",
+   "cases": [
+    {
+     "when": "gui",
+     "model": {
+      "type": "minecraft:model",
+      "model": "limitless:item/pass/ui_patch"
+     }
+    }
+   ],
+   "fallback": {
+    "type": "minecraft:model",
+    "model": "minecraft:item/gray_stained_glass_pane"
+   }
+  },
+  "on_false": {
+   "type": "minecraft:condition",
+   "property": "minecraft:has_component",
+   "component": "minecraft:tooltip_display",
+   "on_true": {
+    "type": "minecraft:select",
+    "property": "minecraft:display_context",
+    "cases": [
+     {
+      "when": "gui",
+      "model": {
+       "type": "minecraft:model",
+       "model": "limitless:item/pass/ui_patch"
+      }
+     }
+    ],
+    "fallback": {
+     "type": "minecraft:model",
+     "model": "minecraft:item/gray_stained_glass_pane"
+    }
+   },
+   "on_false": {
+    "type": "minecraft:model",
+    "model": "minecraft:item/gray_stained_glass_pane"
+   }
+  }
+ }
+}

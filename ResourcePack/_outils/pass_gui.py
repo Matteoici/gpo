@@ -175,3 +175,99 @@ def scroll():
 save(scroll(), 'pass_season')
 save(Image.new('RGBA', (16, 16)), 'pass_blank')
 print('passe ok')
+
+# ============================================================ TOUS LES MENUS : fonds parchemin génériques (1 à 6 lignes)
+def parchment(h, seed):
+    r = np.random.default_rng(seed)
+    a = np.zeros((h, W, 4), np.float32); a[..., :3] = PAPER[:3]; a[..., 3] = 255
+    yy, xx = np.mgrid[0:h, 0:W]
+    a[..., :3] += r.normal(0, 4, (h, W, 1))
+    e = np.minimum.reduce([xx, yy, W - 1 - xx, h - 1 - yy + 6]).astype(np.float32)
+    b = np.clip(1 - e / 9, 0, 1) ** 2
+    a[..., 0] -= b * 70; a[..., 1] -= b * 85; a[..., 2] -= b * 80
+    for _ in range(h): a[r.integers(4, h - 2), r.integers(4, W - 4), :3] -= r.integers(6, 16)
+    im = Image.fromarray(np.clip(a, 0, 255).astype(np.uint8)); d = ImageDraw.Draw(im)
+    for (x, y) in [(0, 0), (1, 0), (0, 1), (W - 1, 0), (W - 2, 0), (W - 1, 1)]: im.putpixel((x, y), (0, 0, 0, 0))
+    d.rectangle([2, 2, W - 3, h - 1], outline=INK); d.rectangle([4, 4, W - 5, h - 1], outline=INK2)
+    return im, d
+
+providers = json.load(open(os.path.join(A, 'font/gui.json')))['providers']
+for rows in range(1, 7):
+    h = 17 + rows * 18
+    im, d = parchment(h, 100 + rows)
+    d.line([8, 15, W - 9, 15], fill=hx('#c9ad7a'))  # filet sous le titre
+    for i in range(rows * 9): well(d, i, WELL, WELL_L, WELL_D)
+    im.save(os.path.join(GUI, f'menu_{rows}.png'))
+    providers.append({'type': 'bitmap', 'file': f'limitless:gui/menu_{rows}.png', 'ascent': 13, 'height': h, 'chars': [chr(0xe100 + rows)]})
+
+# ---- métiers (3 lignes) : médaillons pour les 5 métiers, rubans de niveau dessous
+h = 17 + 3 * 18
+im, d = parchment(h, 210)
+t = 'TES METIERS'; text(im, (W - tw(t)) // 2, 6, t, INK, shadow=hx('#c9ad7a'))
+for x0 in ((W - tw(t)) // 2 - 14, (W + tw(t)) // 2 + 4):
+    d.line([x0, 9, x0 + 9, 9], fill=WAX)
+for i in range(11, 16):  # médaillon rond autour de la case du métier
+    x, y = slot_xy(i)
+    d.ellipse([x - 2, y - 2, x + 17, y + 17], fill=hx('#dcc597'), outline=INK2)
+    d.ellipse([x - 1, y - 1, x + 16, y + 16], outline=hx('#f5e8c8'))
+for i in range(20, 25):
+    x, y = slot_xy(i)
+    d.polygon([(x - 1, y + 3), (x + 16, y + 3), (x + 14, y + 8), (x + 16, y + 13), (x - 1, y + 13), (x + 1, y + 8)], fill=hx('#b0201c'), outline=hx('#5a0a08'))
+well(d, 22 - 9 + 9, WELL, WELL_L, WELL_D) if False else None
+# case du passe (en bas à droite)
+well(d, 26, WELL, WELL_L, WELL_D)
+im.save(os.path.join(GUI, 'jobs.png'))
+providers.append({'type': 'bitmap', 'file': 'limitless:gui/jobs.png', 'ascent': 13, 'height': h, 'chars': ['']})
+
+# ---- classements de la semaine (3 lignes) : podium au milieu
+im, d = parchment(h, 220)
+t = 'CLASSEMENTS DE LA SEMAINE'; text(im, (W - tw(t)) // 2, 6, t, INK, shadow=hx('#c9ad7a'))
+for i in (10, 11, 12, 14, 15, 16, 22):
+    well(d, i, WELL, WELL_L, WELL_D)
+x, y = slot_xy(13)  # le podium doré au centre (classement XP de saison)
+d.rectangle([x - 2, y - 2, x + 17, y + 17], fill=GOLD, outline=GOLD_D); d.rectangle([x - 1, y - 1, x + 16, y + 16], outline=GOLD_L)
+for k, (dx, hh) in enumerate([(-1, 4), (6, 7), (13, 3)]):
+    pass
+# lauriers de chaque côté du podium
+for s in (-1, 1):
+    cx = x + 7 + s * 14
+    for k in range(5):
+        d.ellipse([cx - 1 + s * (k % 2), y + 1 + k * 3, cx + 1 + s * (k % 2), y + 3 + k * 3], fill=hx('#5a7a2a'))
+im.save(os.path.join(GUI, 'weekly.png'))
+providers.append({'type': 'bitmap', 'file': 'limitless:gui/weekly.png', 'ascent': 13, 'height': h, 'chars': ['']})
+json.dump({'providers': providers}, open(os.path.join(A, 'font/gui.json'), 'w'), ensure_ascii=False, indent=1)
+
+# ---- morceau de parchemin qui recouvre une case (les vitres de remplissage des menus)
+patch = np.zeros((16, 16, 4), np.float32); patch[..., :3] = PAPER[:3]; patch[..., 3] = 255
+patch[..., :3] += rng.normal(0, 4, (16, 16, 1))
+Image.fromarray(np.clip(patch, 0, 255).astype(np.uint8)).save(os.path.join(TEX, 'ui_patch.png'))
+json.dump({'parent': 'minecraft:item/generated', 'textures': {'layer0': 'limitless:item/pass/ui_patch'},
+           'display': {'gui': {'rotation': [0, 0, 0], 'translation': [0, 0, 0], 'scale': [1.13, 1.13, 1]}}},
+          open(os.path.join(MOD, 'ui_patch.json'), 'w'))
+
+# ---- ruban de niveau (métiers) et icônes de métiers en médaillon
+save(Image.new('RGBA', (16, 16)), 'ui_level')  # le ruban est dans le fond ; seul le nombre (quantité) s'affiche
+def job_icon(kind):
+    im = Image.new('RGBA', (16, 16)); d = ImageDraw.Draw(im)
+    wood = hx('#7a4a22'); wood_d = hx('#4a2c12'); steel = hx('#c8ccd4'); steel_d = hx('#6a707c')
+    if kind == 'mineur':
+        d.line([3, 13, 11, 5], fill=wood_d, width=3); d.line([3, 13, 11, 5], fill=wood, width=1)
+        d.arc([4, 1, 15, 12], 200, 340, fill=steel_d, width=3); d.arc([4, 1, 15, 12], 205, 335, fill=steel, width=1)
+        d.point([(12, 3)], fill=hx('#8fd3ff'))
+    elif kind == 'bucheron':
+        d.line([3, 14, 10, 4], fill=wood_d, width=3); d.line([3, 14, 10, 4], fill=wood, width=1)
+        d.polygon([(8, 2), (14, 3), (14, 9), (10, 7)], fill=steel_d); d.polygon([(9, 3), (13, 4), (13, 8), (10, 6)], fill=steel)
+    elif kind == 'fermier':
+        for k, x in enumerate((4, 7, 10)):
+            d.line([x, 14, x + 1, 5], fill=hx('#9a7a2a')); d.ellipse([x - 1, 2 + k % 2, x + 3, 7 + k % 2], fill=hx('#e8c15a'), outline=hx('#9a7416'))
+        d.line([3, 11, 13, 11], fill=hx('#b0201c'), width=2)
+    elif kind == 'chasseur':
+        d.line([3, 13, 12, 4], fill=steel_d, width=3); d.line([3, 13, 12, 4], fill=steel, width=1)
+        d.line([2, 10, 6, 14], fill=hx('#e8c15a'), width=2); d.point([(13, 3)], fill=hx('#ffffff'))
+        d.ellipse([10, 10, 14, 14], fill=hx('#b0201c'))
+    else:  # pêcheur
+        d.line([2, 14, 12, 2], fill=wood_d, width=2); d.line([12, 2, 13, 10], fill=hx('#e0e0e0'))
+        d.polygon([(9, 10), (14, 12), (9, 14)], fill=hx('#5ec8ff')); d.point([(10, 12)], fill=hx('#0a2a4a'))
+    return im
+for k in ('mineur', 'bucheron', 'fermier', 'chasseur', 'pecheur'): save(job_icon(k), 'job_' + k)
+print('menus ok')

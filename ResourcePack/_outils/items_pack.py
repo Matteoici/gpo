@@ -117,7 +117,7 @@ def bow_tree(prefix):
                         'fallback': m(prefix + '_pulling_0')}}
 
 def custom(n):
-    if n.startswith('pass_'): return m(f'limitless:item/pass/{n}')
+    if n.startswith(('pass_', 'ui_', 'job_')): return m(f'limitless:item/pass/{n}')
     if n in ('boss_pumpkin', 'boss_crown') or n in SPIDER3D: return m(f'limitless:item/items/{n}')
     return bow_tree(f'limitless:item/items/{n}') if n in BOWS else m(f'limitless:item/items/{n}')
 
@@ -144,7 +144,12 @@ use('netherite_shovel', ['tribaton'])
 use('diamond_pickaxe', ['pioche_3x3'])
 use('netherite_pickaxe', ['pioche_5x5'])
 # menu du passe de saison (pass_gui.py)
-use('paper', ['pass_node_on', 'pass_node_cur', 'pass_node_off', 'pass_check', 'pass_prev', 'pass_next', 'pass_claim', 'pass_premium', 'pass_premium_on', 'pass_week', 'pass_season', 'pass_blank'])
+use('paper', ['pass_node_on', 'pass_node_cur', 'pass_node_off', 'pass_check', 'pass_prev', 'pass_next', 'pass_claim', 'pass_premium', 'pass_premium_on', 'pass_week', 'pass_season', 'pass_blank', 'ui_level'])
+use('iron_pickaxe', ['job_mineur'])
+use('iron_axe', ['job_bucheron'])
+use('iron_hoe', ['job_fermier'])
+use('iron_sword', ['job_chasseur'])
+use('fishing_rod', ['job_pecheur'])
 OUTFIT_ICONS = {'leather_chestplate': ['toji_haut', 'gojo_haut', 'sukuna_haut'], 'leather_leggings': ['toji_pantalon', 'gojo_pantalon', 'sukuna_pantalon'],
                 'leather_boots': ['toji_bottes', 'gojo_bottes', 'sukuna_bottes'], 'leather_helmet': ['gojo_bandeau']}
 for _m, _ids in OUTFIT_ICONS.items():
@@ -169,3 +174,16 @@ for mat, ids in USE.items():
                     'cases': [{'when': n, 'model': custom(n)} for n in ids], 'fallback': v['model']}
     w(f'{DEF}/{mat}.json', out)
 print('modèles', len(os.listdir(MOD)), 'définitions', len(os.listdir(DEF)))
+
+# ---- vitres de remplissage des menus : dans un menu (gui) et avec un nom (" "), elles deviennent un morceau de parchemin
+PATCH = {'type': 'minecraft:model', 'model': 'limitless:item/pass/ui_patch'}
+for pane in ('gray_stained_glass_pane', 'black_stained_glass_pane', 'light_gray_stained_glass_pane'):
+    v = json.load(open(os.path.join(VDEF, pane + '.json')))
+    van = v['model']
+    in_gui = {'type': 'minecraft:select', 'property': 'minecraft:display_context', 'cases': [{'when': 'gui', 'model': PATCH}], 'fallback': van}
+    v['model'] = {'type': 'minecraft:condition', 'property': 'minecraft:has_component', 'component': 'minecraft:custom_name',
+                  'on_true': in_gui,
+                  'on_false': {'type': 'minecraft:condition', 'property': 'minecraft:has_component', 'component': 'minecraft:tooltip_display',
+                               'on_true': in_gui, 'on_false': van}}
+    w(f'{DEF}/{pane}.json', v)
+print('vitres de menu ok')

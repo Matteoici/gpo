@@ -38,7 +38,7 @@ public final class GuideMenu implements InventoryHolder {
     public GuideMenu(SmpStart plugin, Player viewer) {
         this.plugin = plugin;
         this.viewer = viewer;
-        this.inventory = Bukkit.createInventory(this, 54, plugin.texts().get("gui.title"));
+        this.inventory = Bukkit.createInventory(this, 54, PackUi.title(plugin.texts().get("gui.title"), 54));
     }
 
     public Player viewer() {

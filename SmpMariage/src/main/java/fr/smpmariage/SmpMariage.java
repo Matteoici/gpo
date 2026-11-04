@@ -391,7 +391,7 @@ public final class SmpMariage extends JavaPlugin implements Listener {
             }
         }
         ChestHolder h = new ChestHolder(c);
-        h.inv = Bukkit.createInventory(h, 27, mm("<light_purple>💞 Coffre de " + esc(c.nameA) + " & " + esc(c.nameB)));
+        h.inv = Bukkit.createInventory(h, 27, PackUi.title(mm("<light_purple>💞 Coffre de " + esc(c.nameA) + " & " + esc(c.nameB)), 27));
         h.inv.setContents(c.chest);
         p.openInventory(h.inv);
     }

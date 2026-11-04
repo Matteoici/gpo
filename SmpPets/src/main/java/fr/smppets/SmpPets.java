@@ -1056,7 +1056,7 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
         List<PetDef> strip = new ArrayList<>();
         for (int i = 0; i < len; i++) strip.add(i == winAt ? win : g.roll());
         PetMenu m = new PetMenu("spin");
-        m.inv = Bukkit.createInventory(m, 27, parse(g.name + " <dark_gray>· éclosion..."));
+        m.inv = Bukkit.createInventory(m, 27, PackUi.title(parse(g.name + " <dark_gray>· éclosion..."), 27));
         Rarity er = rarities.getOrDefault(g.rarity, rarities.values().iterator().next());
         boolean[] done = {false};
         Runnable give = () -> {
@@ -1177,7 +1177,7 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
         page = Math.max(0, Math.min(page, pages - 1));
         PetMenu m = new PetMenu("main");
         m.page = page;
-        m.inv = Bukkit.createInventory(m, 54, parse("<dark_gray>Tes familiers <gray>(" + d.equipped.size() + "/" + slots(p) + ")"));
+        m.inv = Bukkit.createInventory(m, 54, PackUi.title(parse("<dark_gray>Tes familiers <gray>(" + d.equipped.size() + "/" + slots(p) + ")"), 54));
         for (int i = 0; i < 45 && page * 45 + i < owned.size(); i++) {
             PetDef def = owned.get(page * 45 + i);
             boolean on = d.equipped.contains(def.id);
@@ -1218,7 +1218,7 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
 
     void openEggs(Player p) {
         PetMenu m = new PetMenu("eggs");
-        m.inv = Bukkit.createInventory(m, 27, parse("<dark_gray>Œufs de familiers"));
+        m.inv = Bukkit.createInventory(m, 27, PackUi.title(parse("<dark_gray>Œufs de familiers"), 27));
         ItemStack pane = named(Material.BLACK_STAINED_GLASS_PANE, " ", List.of());
         for (int i = 0; i < 27; i++) m.inv.setItem(i, pane);
         List<Egg> list = new ArrayList<>(eggs.values());
@@ -1246,7 +1246,7 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
     void openEgg(Player p, Egg g) {
         PetMenu m = new PetMenu("egg");
         m.egg = g;
-        m.inv = Bukkit.createInventory(m, 54, parse(g.name + " <dark_gray>· contenu"));
+        m.inv = Bukkit.createInventory(m, 54, PackUi.title(parse(g.name + " <dark_gray>· contenu"), 54));
         PData d = data(p.getUniqueId());
         int i = 0;
         for (Map.Entry<PetDef, Double> e : g.chances.entrySet()) {
@@ -1572,7 +1572,7 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
     void openTrade(Player p, Trade t) {
         Player o = Bukkit.getPlayer(t.other(p.getUniqueId()));
         PetMenu m = new PetMenu("trade");
-        m.inv = Bukkit.createInventory(m, 54, parse("<dark_gray>Échange avec " + (o == null ? "?" : o.getName())));
+        m.inv = Bukkit.createInventory(m, 54, PackUi.title(parse("<dark_gray>Échange avec " + (o == null ? "?" : o.getName())), 54));
         drawTrade(p, m, t);
         tradeSwitch.add(p.getUniqueId());
         p.openInventory(m.inv);
@@ -1628,7 +1628,7 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
 
     void openTradePicker(Player p, Trade t) {
         PetMenu m = new PetMenu("tradepick");
-        m.inv = Bukkit.createInventory(m, 54, parse("<dark_gray>Quel familier proposer ?"));
+        m.inv = Bukkit.createInventory(m, 54, PackUi.title(parse("<dark_gray>Quel familier proposer ?"), 54));
         PData d = data(p.getUniqueId());
         List<String> offered = t.offer(p.getUniqueId());
         int i = 0;
@@ -2354,7 +2354,7 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
         String base = "oeufs." + id + ".";
         PetMenu m = new PetMenu("edit");
         m.editId = id;
-        m.inv = Bukkit.createInventory(m, 27, parse("<dark_gray>✎ Œuf : " + id));
+        m.inv = Bukkit.createInventory(m, 27, PackUi.title(parse("<dark_gray>✎ Œuf : " + id), 27));
         ItemStack pane = named(Material.BLACK_STAINED_GLASS_PANE, " ", List.of());
         for (int i = 0; i < 27; i++) m.inv.setItem(i, pane);
         String name = getConfig().getString(base + "nom", id);
@@ -2398,7 +2398,7 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
         String base = "oeufs." + id + ".";
         PetMenu m = new PetMenu("editch");
         m.editId = id;
-        m.inv = Bukkit.createInventory(m, 27, parse("<dark_gray>✎ Chances : " + id));
+        m.inv = Bukkit.createInventory(m, 27, PackUi.title(parse("<dark_gray>✎ Chances : " + id), 27));
         ItemStack pane = named(Material.BLACK_STAINED_GLASS_PANE, " ", List.of());
         for (int i = 0; i < 27; i++) m.inv.setItem(i, pane);
         double total = 0;
@@ -2433,7 +2433,7 @@ public final class SmpPets extends JavaPlugin implements Listener, TabExecutor {
         page = Math.max(0, Math.min(page, pages - 1));
         PetMenu m = new PetMenu("editpets");
         m.page = page;
-        m.inv = Bukkit.createInventory(m, 54, parse("<dark_gray>✎ Familiers (poids)"));
+        m.inv = Bukkit.createInventory(m, 54, PackUi.title(parse("<dark_gray>✎ Familiers (poids)"), 54));
         for (int i = 0; i < 45 && page * 45 + i < list.size(); i++) {
             PetDef d = list.get(page * 45 + i);
             List<String> extra = new ArrayList<>(List.of("", "<gray>Poids : <white>" + num(d.weight) + (d.weight <= 0 ? " <red>(dans aucun œuf)" : ""),

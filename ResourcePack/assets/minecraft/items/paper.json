@@ -87,6 +87,13 @@
      "type": "minecraft:model",
      "model": "limitless:item/pass/pass_blank"
     }
+   },
+   {
+    "when": "ui_level",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/pass/ui_level"
+    }
    }
   ],
   "fallback": {

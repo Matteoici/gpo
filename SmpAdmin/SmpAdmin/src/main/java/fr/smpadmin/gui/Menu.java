@@ -32,7 +32,7 @@ public abstract class Menu implements InventoryHolder {
     protected Menu(SmpAdmin plugin, Player viewer, int rows, Component title) {
         this.plugin = plugin;
         this.viewer = viewer;
-        this.inventory = Bukkit.createInventory(this, rows * 9, title);
+        this.inventory = Bukkit.createInventory(this, rows * 9, PackUi.title(title, rows * 9));
     }
 
     protected abstract void build();

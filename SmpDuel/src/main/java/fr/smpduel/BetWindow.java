@@ -51,7 +51,7 @@ final class BetWindow implements InventoryHolder {
         this.nb = b.getName();
         this.onStart = onStart;
         this.onCancel = onCancel;
-        this.inv = Bukkit.createInventory(this, 54, mm(plugin.msg("bet-title").replace("<a>", na).replace("<b>", nb)));
+        this.inv = Bukkit.createInventory(this, 54, PackUi.title(mm(plugin.msg("bet-title").replace("<a>", na).replace("<b>", nb)), 54));
         ItemStack bars = pane(Material.IRON_BARS), black = pane(Material.BLACK_STAINED_GLASS_PANE);
         for (int r = 0; r < 5; r++) inv.setItem(r * 9 + 4, bars);
         for (int i = 45; i < 54; i++) inv.setItem(i, black);

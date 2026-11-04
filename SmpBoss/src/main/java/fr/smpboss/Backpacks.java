@@ -43,7 +43,7 @@ public final class Backpacks {
             return;
         }
         Holder h = new Holder(p);
-        h.inv = Bukkit.createInventory(h, 27, parse(plugin.msg("backpack.title")));
+        h.inv = Bukkit.createInventory(h, 27, PackUi.title(parse(plugin.msg("backpack.title")), 27));
         h.inv.setContents(plugin.store().of(p.getUniqueId()).backpack.clone());
         p.openInventory(h.inv);
     }

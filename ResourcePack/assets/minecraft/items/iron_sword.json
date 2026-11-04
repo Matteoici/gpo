@@ -10,6 +10,13 @@
      "type": "minecraft:model",
      "model": "limitless:item/items/dague_venin"
     }
+   },
+   {
+    "when": "job_chasseur",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/pass/job_chasseur"
+    }
    }
   ],
   "fallback": {

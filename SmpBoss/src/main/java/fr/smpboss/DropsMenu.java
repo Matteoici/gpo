@@ -57,7 +57,7 @@ final class DropsMenu implements InventoryHolder {
         List<Entry> all = entries();
         int pages = Math.max(1, (all.size() + PER_PAGE - 1) / PER_PAGE);
         this.page = Math.max(0, Math.min(page, pages - 1));
-        this.inv = Bukkit.createInventory(this, 54, parse(plugin.msg(spider ? "spider.drops-title" : "drops.title")));
+        this.inv = Bukkit.createInventory(this, 54, PackUi.title(parse(plugin.msg(spider ? "spider.drops-title" : "drops.title")), 54));
         // bandes
         ItemStack band = pane(spider ? Material.LIGHT_BLUE_STAINED_GLASS_PANE : Material.ORANGE_STAINED_GLASS_PANE), dark = pane(Material.BLACK_STAINED_GLASS_PANE);
         for (int i = 0; i < 9; i++) inv.setItem(i, i % 2 == 0 ? band : dark);

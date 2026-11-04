@@ -47,7 +47,7 @@ public final class GuildVaults {
         }
         if (inv == null) {
             Holder h = new Holder(g.id);
-            inv = Bukkit.createInventory(h, rows * 9, plugin.messages().get("gui.vault.title", guild(g)));
+            inv = Bukkit.createInventory(h, rows * 9, PackUi.title(plugin.messages().get("gui.vault.title", guild(g)), rows * 9));
             h.inventory = inv;
             for (int i = 0; i < inv.getSize(); i++) inv.setItem(i, g.vault[i]);
             open.put(g.id, inv);

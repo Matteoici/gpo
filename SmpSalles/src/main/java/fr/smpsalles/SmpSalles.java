@@ -407,7 +407,7 @@ public final class SmpSalles extends JavaPlugin implements Listener {
 
     private void openKeypad(Player p, Room r, Block door) {
         Keypad k = new Keypad(r, door);
-        k.inv = Bukkit.createInventory(k, 45, parse(msg("keypad-title").replace("<room>", MM.escapeTags(r.name))));
+        k.inv = Bukkit.createInventory(k, 45, PackUi.title(parse(msg("keypad-title").replace("<room>", MM.escapeTags(r.name))), 45));
         ItemStack bg = item(Material.BLACK_STAINED_GLASS_PANE, 1, " ");
         for (int i = 0; i < 45; i++) k.inv.setItem(i, bg);
         for (int d = 0; d <= 9; d++) {

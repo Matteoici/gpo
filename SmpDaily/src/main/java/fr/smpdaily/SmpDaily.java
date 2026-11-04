@@ -254,7 +254,7 @@ public final class SmpDaily extends JavaPlugin implements Listener, TabExecutor 
             this.p = p;
             int n = rewards.size();
             int size = n <= 7 ? 27 : Math.min(54, 9 * ((n + 8) / 9 + 2));
-            inv = Bukkit.createInventory(this, size, mm("<dark_gray>Récompense du jour"));
+            inv = Bukkit.createInventory(this, size, PackUi.title(mm("<dark_gray>Récompense du jour"), size));
             draw();
         }
 
