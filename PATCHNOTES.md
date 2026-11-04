@@ -1,5 +1,13 @@
 # Patch notes Limitless (textes Discord)
 
+## 04/11/2026 — Pioches de zone
+
+⛏️ **PIOCHES DE ZONE**
+> **Pioche Brise-Roc** (épique) : chaque bloc miné casse aussi les 8 autour → **3x3**.
+> **Pioche du Titan** (légendaire) : **5x5**, un peu plus lente.
+> Elles creusent dans le sens où tu mines, ne cassent jamais coffres, fours ou spawners, et **accroupi = un seul bloc**. Incassables, gardées à la mort.
+> À gagner sur le **Roi Citrouille**, la **Reine Araignée** et dans les **caisses**.
+
 ## 04/11/2026 — Recharges partagées, marché automatique
 
 ⏳ **RECHARGES PARTAGÉES**
