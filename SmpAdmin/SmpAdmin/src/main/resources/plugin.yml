@@ -92,6 +92,11 @@ commands:
     description: Rendre le stuff d'un joueur après sa mort
     usage: /refund <joueur> [liste|1-5] [force]
     permission: smpadmin.refund
+  traire:
+    description: "Staff : traire un joueur avec un seau (lait certifié)"
+    usage: /traire [on|off]
+    aliases: [traite, milk]
+    permission: smpadmin.traire
 permissions:
   smpadmin.*:
     description: Tout SmpAdmin
@@ -119,6 +124,7 @@ permissions:
       smpadmin.exempt: true
       smpadmin.reload: true
       smpadmin.refund: true
+      smpadmin.traire: true
   smpadmin.panel: {default: op, description: "Ouvrir /admin"}
   smpadmin.vanish: {default: op, description: "Se mettre en vanish"}
   smpadmin.vanish.see: {default: op, description: "Voir les joueurs en vanish"}
@@ -142,4 +148,5 @@ permissions:
   smpadmin.alerts: {default: op, description: "Recevoir les alertes staff"}
   smpadmin.exempt: {default: op, description: "Ne peut pas être sanctionné"}
   smpadmin.reload: {default: op, description: "Recharger la config"}
+  smpadmin.traire: {default: op, description: "Traire les joueurs (seau de lait certifié)"}
   smpadmin.refund: {default: op, description: "Rendre le stuff après une mort"}

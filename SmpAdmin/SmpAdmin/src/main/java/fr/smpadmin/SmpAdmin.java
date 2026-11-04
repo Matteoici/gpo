@@ -46,6 +46,10 @@ public final class SmpAdmin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(refunds, this);
         PluginCommand rc = getCommand("refund");
         if (rc != null) { rc.setExecutor(refunds); rc.setTabCompleter(refunds); }
+        Traite traite = new Traite(this);
+        getServer().getPluginManager().registerEvents(traite, this);
+        PluginCommand tc = getCommand("traire");
+        if (tc != null) { tc.setExecutor(traite); tc.setTabCompleter(traite); }
 
         AdminCommand cmd = new AdminCommand(this);
         for (String name : COMMANDS) {
