@@ -164,19 +164,21 @@ final class Meteors implements Listener {
             int s = ++k[0];
             double f = s / (double) steps;
             Location at = from.clone().add(target.toVector().subtract(from.toVector()).multiply(f));
-            if (!rock.isValid()) {
-                t[0].cancel();
-                return;
-            }
-            rock.teleport(at);
+            // même si la boule de feu n'est pas visible (personne autour), la météorite tombe quand même
+            if (rock.isValid()) rock.teleport(at);
             w.spawnParticle(Particle.FLAME, at, 25, 1, 1, 1, 0.05, null, true);
             w.spawnParticle(Particle.LARGE_SMOKE, at, 12, 1.2, 1.2, 1.2, 0.02, null, true);
             w.spawnParticle(Particle.LAVA, at, 4, 0.8, 0.8, 0.8, 0, null, true);
             if (s % 10 == 0) w.playSound(at, Sound.ENTITY_BLAZE_SHOOT, 6f, 0.4f);
             if (s >= steps) {
                 t[0].cancel();
-                rock.remove();
-                impact(target);
+                if (rock.isValid()) rock.remove();
+                try {
+                    impact(target);
+                    plugin.getLogger().info("Météorite tombée en " + target.getBlockX() + " " + target.getBlockY() + " " + target.getBlockZ());
+                } catch (RuntimeException ex) {
+                    plugin.getLogger().warning("Météorite : " + ex);
+                }
                 Bukkit.getScheduler().runTaskLater(plugin, () -> fall(spots, i + 1), 60L);
             }
         }, 1L, 2L);

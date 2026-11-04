@@ -5,6 +5,9 @@ on:
       plugins:
         description: "dossiers à tester, séparés par des espaces"
         default: "SmpSaison SmpMonde SmpMariage"
+      wait:
+        description: "secondes d'attente après les commandes"
+        default: "70"
       commands:
         description: "commandes console à lancer (séparées par ;)"
         default: "evenements;lune start;meteores start;saison info Steve;saison hebdo-reset;saison xp Steve 5000"
@@ -39,10 +42,10 @@ jobs:
           grep -q 'Done (' log.txt || { cat log.txt; exit 1; }
           IFS=';' read -ra CMDS <<< "${{ inputs.commands }}"
           for c in "${CMDS[@]}"; do echo "$c" > in; sleep 4; done
-          sleep 70
+          sleep ${{ inputs.wait }}
           echo stop > in; sleep 10
       - name: Résultat
         if: always()
         run: |
-          grep -E "SmpSaison|SmpMonde|SmpMariage|Lune|météor|Météor|Exception|ERROR|WARN.*fr\.smp|at fr\.smp" srv/log.txt | head -80
+          grep -E "SmpSaison|SmpMonde|SmpMariage|Lune|météor|Météor|Golem|Exception|ERROR|WARN.*fr\.smp|at fr\.smp" srv/log.txt | head -80
           if grep -qE "at fr\.smp" srv/log.txt; then echo "::error::exception dans un plugin"; exit 1; fi
