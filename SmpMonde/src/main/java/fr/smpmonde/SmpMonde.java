@@ -46,6 +46,16 @@ public final class SmpMonde extends JavaPlugin {
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        if (getConfig().getInt("config-version", 1) < 2) {
+            // Lune de sang : monstres x10, butin normal
+            getConfig().set("blood-moon.health", 10);
+            getConfig().set("blood-moon.damage", 10);
+            getConfig().set("blood-moon.speed", 1.25);
+            getConfig().set("blood-moon.drops", 1);
+            getConfig().set("blood-moon.xp", 1);
+            getConfig().set("config-version", 2);
+            saveConfig();
+        }
         moon = new BloodMoon(this);
         meteors = new Meteors(this);
         raid = new Raid(this);

@@ -6,7 +6,7 @@
 #  /evenements (joueurs) · admin : /lune start|stop · /meteores start · /raid lieu|start|stop · /monde reload
 #  Récompenses : commandes console (%player%), "money:5000" = argent (Vault), "saison:100" = XP de saison (SmpSaison)
 # =====================================================================
-config-version: 1
+config-version: 2
 timezone: "Europe/Paris"
 world: world
 # zone des météores et des monstres en plus (autour de ce centre, jamais dans un territoire de guilde)
@@ -24,11 +24,11 @@ blood-moon:
   minute: 0
   duration-minutes: 20
   # monstres pendant la lune
-  health: 2.0              # vie x2
-  damage: 1.5              # dégâts x1.5
-  speed: 1.15
-  drops: 2                 # butin x2
-  xp: 2                    # XP x2
+  health: 10               # vie x10
+  damage: 10               # dégâts x10 (ça fait très mal, même en netherite)
+  speed: 1.25
+  drops: 1                 # butin normal (pas de duplication)
+  xp: 1
   # monstres en plus autour des joueurs (pas au spawn, pas dans les territoires de guilde)
   extra-every-seconds: 20
   extra-per-player: 2

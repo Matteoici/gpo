@@ -13,7 +13,7 @@
 > **Mineur, Bûcheron, Fermier, Chasseur, Pêcheur** : 50 niveaux, de l'argent à chaque action (+2 % par niveau) et un bonus d'objets en double (jusqu'à 30 %). Les blocs posés ne comptent pas.
 
 🌑 **LUNE DE SANG** — samedi 21 h
-> 20 min de nuit : monstres plus forts, **butin et XP x2**, monstres en plus autour de toi et des **Champions de sang**. Les meilleurs chasseurs sont récompensés.
+> 20 min de nuit : les monstres sont **10 fois plus forts** (vie et dégâts), il en sort de partout autour de toi et des **Champions de sang** rôdent. Les meilleurs chasseurs sont récompensés.
 
 ☄️ **PLUIE DE MÉTÉORES** — toutes les 4 h
 > Des météorites s'écrasent loin du spawn : **cratère plein de minerais** (diamant, débris antiques…) gardé par un **Golem de météorite**.

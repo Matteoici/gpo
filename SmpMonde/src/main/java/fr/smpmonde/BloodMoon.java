@@ -83,12 +83,12 @@ final class BloodMoon implements Listener {
         bar = BossBar.bossBar(mm("<dark_red><b>🌑 LUNE DE SANG"), 1f, BossBar.Color.RED, BossBar.Overlay.NOTCHED_10);
         for (Player p : Bukkit.getOnlinePlayers()) {
             p.showBossBar(bar);
-            p.showTitle(Title.title(mm("<dark_red><b>🌑 LUNE DE SANG"), mm("<red>Les monstres sont plus forts... et leur butin double"),
+            p.showTitle(Title.title(mm("<dark_red><b>🌑 LUNE DE SANG"), mm("<red>Les monstres sont x" + (int) c("health", 10) + " plus forts... survis."),
                     Title.Times.times(Duration.ofMillis(500), Duration.ofSeconds(4), Duration.ofSeconds(1))));
             p.playSound(p.getLocation(), Sound.ENTITY_WITHER_SPAWN, 0.6f, 0.5f);
         }
         Bukkit.broadcast(mm("<dark_red><b>🌑 La Lune de sang se lève !</b> <gray>Pendant <white>" + (int) c("duration-minutes", 20)
-                + " min</white> : monstres renforcés, <red>butin et XP x" + (int) c("drops", 2) + "</red>, Champions de sang. Les meilleurs chasseurs gagnent gros."));
+                + " min</white> : les monstres sont <red><b>x" + (int) c("health", 10) + " plus forts</b></red>, il en sort de partout et des Champions de sang rôdent. Les meilleurs chasseurs gagnent gros."));
         for (LivingEntity e : w.getLivingEntities()) if (e instanceof Enemy && !(e instanceof Player)) buff(e);
         task = Bukkit.getScheduler().runTaskTimer(plugin, this::loop, 20L, 20L);
     }
@@ -130,7 +130,7 @@ final class BloodMoon implements Listener {
         double total = c("duration-minutes", 20) * 60_000;
         bar.progress((float) Math.max(0, Math.min(1, left / total)));
         bar.name(mm("<dark_red><b>🌑 LUNE DE SANG</b> <gray>— <white>" + (left / 60000) + ":" + String.format("%02d", left / 1000 % 60)
-                + " <dark_gray>· <red>butin x" + (int) c("drops", 2)));
+                + " <dark_gray>· <red>monstres x" + (int) c("health", 10)));
         for (Player p : Bukkit.getOnlinePlayers()) {
             p.showBossBar(bar);
             if (p.getWorld().equals(w) && tick % 4 == 0)
@@ -181,7 +181,7 @@ final class BloodMoon implements Listener {
             if (mh != null) mh.setBaseValue(Math.min(1024, c("champion-health", 300)));
             e.setHealth(Math.min(1024, c("champion-health", 300)));
             AttributeInstance ad = e.getAttribute(Attribute.ATTACK_DAMAGE);
-            if (ad != null) ad.setBaseValue(14);
+            if (ad != null) ad.setBaseValue(4); // x10 avec la lune = 40
             AttributeInstance kb = e.getAttribute(Attribute.KNOCKBACK_RESISTANCE);
             if (kb != null) kb.setBaseValue(0.8);
             e.getEquipment().setItem(EquipmentSlot.HAND, new ItemStack(Material.NETHERITE_SWORD));
@@ -209,9 +209,9 @@ final class BloodMoon implements Listener {
     private void buff(LivingEntity e) {
         if (e.getPersistentDataContainer().has(tag) && !e.getPersistentDataContainer().has(champ)) return;
         e.getPersistentDataContainer().set(tag, PersistentDataType.BYTE, (byte) 1);
-        mod(e, Attribute.MAX_HEALTH, hp, c("health", 2) - 1);
-        mod(e, Attribute.ATTACK_DAMAGE, dmg, c("damage", 1.5) - 1);
-        mod(e, Attribute.MOVEMENT_SPEED, spd, c("speed", 1.15) - 1);
+        mod(e, Attribute.MAX_HEALTH, hp, c("health", 10) - 1);
+        mod(e, Attribute.ATTACK_DAMAGE, dmg, c("damage", 10) - 1);
+        mod(e, Attribute.MOVEMENT_SPEED, spd, c("speed", 1.25) - 1);
         AttributeInstance mh = e.getAttribute(Attribute.MAX_HEALTH);
         if (mh != null) e.setHealth(mh.getValue());
     }
@@ -231,6 +231,18 @@ final class BloodMoon implements Listener {
         i.addModifier(new AttributeModifier(k, v, AttributeModifier.Operation.MULTIPLY_SCALAR_1, EquipmentSlotGroup.ANY));
     }
 
+    /** Flèches, boules de feu et explosions des monstres de la lune : x10 aussi (le corps à corps passe déjà par l'attribut). */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onHurt(org.bukkit.event.entity.EntityDamageByEntityEvent e) {
+        if (!running() || !(e.getEntity() instanceof Player)) return;
+        org.bukkit.entity.Entity d = e.getDamager();
+        LivingEntity src = null;
+        if (d instanceof org.bukkit.entity.Projectile pr && pr.getShooter() instanceof LivingEntity le) src = le;
+        else if (d instanceof org.bukkit.entity.Creeper cr) src = cr;
+        if (src == null || !src.getPersistentDataContainer().has(tag)) return;
+        e.setDamage(e.getDamage() * c("damage", 10));
+    }
+
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onSpawn(CreatureSpawnEvent e) {
         if (!running() || !(e.getEntity() instanceof Enemy) || !e.getEntity().getWorld().equals(plugin.world())) return;
@@ -245,11 +257,11 @@ final class BloodMoon implements Listener {
         boolean isChamp = d.getPersistentDataContainer().has(champ);
         champions.remove(d.getUniqueId());
         if (!running()) return;
-        int mult = (int) Math.max(1, c("drops", 2));
+        int mult = (int) Math.max(1, c("drops", 1));
         List<ItemStack> extra = new ArrayList<>();
         for (int i = 1; i < mult; i++) for (ItemStack it : e.getDrops()) if (it != null) extra.add(it.clone());
         e.getDrops().addAll(extra);
-        e.setDroppedExp((int) (e.getDroppedExp() * c("xp", 2)));
+        e.setDroppedExp((int) (e.getDroppedExp() * c("xp", 1)));
         Player k = d.getKiller();
         if (k == null) return;
         kills.merge(k.getUniqueId(), isChamp ? 10 : 1, Integer::sum);
