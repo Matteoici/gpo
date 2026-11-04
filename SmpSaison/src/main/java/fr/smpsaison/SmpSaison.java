@@ -72,6 +72,12 @@ public final class SmpSaison extends JavaPlugin implements Listener {
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        if (getConfig().getInt("config-version", 1) < 2) {
+            // passe premium : 5 000 000
+            getConfig().set("season.premium-price", 5000000);
+            getConfig().set("config-version", 2);
+            saveConfig();
+        }
         data = new Data(getDataFolder(), getLogger());
         data.load();
         jobs = new Jobs(this);
@@ -219,7 +225,7 @@ public final class SmpSaison extends JavaPlugin implements Listener {
             pl.sendMessage(mm("<green>Tu as déjà le passe premium."));
             return;
         }
-        double price = getConfig().getDouble("season.premium-price", 250000);
+        double price = getConfig().getDouble("season.premium-price", 5000000);
         if (!Bank.take(pl, price)) {
             pl.sendMessage(mm("<red>Il te faut <white>" + fmt(price) + " " + money() + "</white> pour le passe premium."));
             return;

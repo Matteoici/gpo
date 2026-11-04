@@ -7,7 +7,7 @@
 #    "boss give %player% pioche3x3"         -> objet de boss (SmpBoss)
 #  Un joueur hors ligne reçoit ses récompenses à sa prochaine connexion.
 # =====================================================================
-config-version: 1
+config-version: 2
 money-symbol: "$"
 timezone: "Europe/Paris"
 
@@ -146,7 +146,7 @@ season:
   ends: "2026-12-31"
   xp-per-tier: 1000
   # le premium s'achète avec l'argent du jeu (/passe premium) ; permission smpsaison.premium = offert
-  premium-price: 250000
+  premium-price: 5000000
   # d'où vient l'XP de saison
   xp:
     job-ratio: 0.5          # 50 % de l'XP de métier

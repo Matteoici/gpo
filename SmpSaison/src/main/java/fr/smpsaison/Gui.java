@@ -145,7 +145,7 @@ final class Gui implements InventoryHolder {
         g.inv.setItem(49, item(Material.CHEST, "<green>Tout récupérer", List.of("<gray>Récupère tous les paliers atteints"), false));
         g.inv.setItem(47, prem ? item(Material.GOLD_BLOCK, "<gold><b>★ Passe premium actif", List.of("<gray>La ligne du bas est à toi"), true)
                 : item(Material.GOLD_INGOT, "<gold><b>★ Passe premium", List.of("<gray>Débloque la ligne du bas (récompenses en plus)",
-                "<gray>Prix : <gold>" + fmt(pl.getConfig().getDouble("season.premium-price", 250000)) + " " + pl.money(), "", "<yellow>Clic pour l'acheter"), false));
+                "<gray>Prix : <gold>" + fmt(pl.getConfig().getDouble("season.premium-price", 5000000)) + " " + pl.money(), "", "<yellow>Clic pour l'acheter"), false));
         g.inv.setItem(51, item(Material.CLOCK, "<aqua>🏆 Classements de la semaine", List.of("<yellow>Clic : /hebdo"), false));
         fill(g.inv);
         p.openInventory(g.inv);
