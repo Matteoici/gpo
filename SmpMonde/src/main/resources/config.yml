@@ -28,6 +28,9 @@ blood-moon:
   damage: 10               # dégâts x10 (ça fait très mal, même en netherite)
   speed: 1.25
   drops: 1                 # butin normal (pas de duplication)
+  # tailles variées (x0.6 à x2) ; plus il est grand, plus il a de vie
+  size-min: 0.6
+  size-max: 2.0
   xp: 1
   # monstres en plus autour des joueurs (pas au spawn, pas dans les territoires de guilde)
   extra-every-seconds: 20

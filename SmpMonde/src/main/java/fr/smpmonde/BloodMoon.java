@@ -49,7 +49,7 @@ import static fr.smpmonde.SmpMonde.mm;
 final class BloodMoon implements Listener {
 
     private final SmpMonde plugin;
-    private final NamespacedKey tag, champ, hp, dmg, spd;
+    private final NamespacedKey tag, champ, hp, dmg, spd, size;
     private BukkitTask task;
     private BossBar bar;
     private long end;
@@ -64,6 +64,7 @@ final class BloodMoon implements Listener {
         hp = new NamespacedKey(plugin, "blood_hp");
         dmg = new NamespacedKey(plugin, "blood_dmg");
         spd = new NamespacedKey(plugin, "blood_speed");
+        size = new NamespacedKey(plugin, "blood_size");
     }
 
     boolean running() {
@@ -212,14 +213,20 @@ final class BloodMoon implements Listener {
         mod(e, Attribute.MAX_HEALTH, hp, c("health", 10) - 1);
         mod(e, Attribute.ATTACK_DAMAGE, dmg, c("damage", 10) - 1);
         mod(e, Attribute.MOVEMENT_SPEED, spd, c("speed", 1.25) - 1);
+        // tailles variées : du petit nerveux au géant (plus il est grand, plus il a de vie)
+        double lo = c("size-min", 0.6), hi = c("size-max", 2.0);
+        double sc = e.getPersistentDataContainer().has(champ) ? hi : lo + ThreadLocalRandom.current().nextDouble() * Math.max(0, hi - lo);
+        mod(e, Attribute.SCALE, size, sc - 1);
+        if (sc > 1) mod(e, Attribute.MAX_HEALTH, new NamespacedKey(plugin, "blood_size_hp"), sc - 1);
         AttributeInstance mh = e.getAttribute(Attribute.MAX_HEALTH);
         if (mh != null) e.setHealth(mh.getValue());
     }
 
     private void unbuff(LivingEntity e) {
-        for (Attribute a : new Attribute[]{Attribute.MAX_HEALTH, Attribute.ATTACK_DAMAGE, Attribute.MOVEMENT_SPEED}) {
+        NamespacedKey sizeHp = new NamespacedKey(plugin, "blood_size_hp");
+        for (Attribute a : new Attribute[]{Attribute.MAX_HEALTH, Attribute.ATTACK_DAMAGE, Attribute.MOVEMENT_SPEED, Attribute.SCALE}) {
             AttributeInstance i = e.getAttribute(a);
-            if (i != null) for (NamespacedKey k : new NamespacedKey[]{hp, dmg, spd}) i.removeModifier(k);
+            if (i != null) for (NamespacedKey k : new NamespacedKey[]{hp, dmg, spd, size, sizeHp}) i.removeModifier(k);
         }
         e.getPersistentDataContainer().remove(tag);
     }
