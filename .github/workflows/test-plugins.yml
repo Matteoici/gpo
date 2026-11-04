@@ -1,0 +1,48 @@
+name: Test plugins (vrai serveur)
+on:
+  workflow_dispatch:
+    inputs:
+      plugins:
+        description: "dossiers à tester, séparés par des espaces"
+        default: "SmpSaison SmpMonde SmpMariage"
+      commands:
+        description: "commandes console à lancer (séparées par ;)"
+        default: "evenements;lune start;meteores start;saison info Steve;saison hebdo-reset;saison xp Steve 5000"
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build
+        run: |
+          for d in ${{ inputs.plugins }}; do (cd "$d" && gradle build -q) || exit 1; done
+      - name: Préparer Paper 26.2
+        run: |
+          mkdir -p srv/plugins
+          url=$(curl -fsSL -H 'User-Agent: gpo-ci-test' https://fill.papermc.io/v3/projects/paper/versions/26.2/builds/latest | jq -r '.downloads."server:default".url')
+          curl -fsSL -H 'User-Agent: gpo-ci-test' -o srv/paper.jar "$url"
+          for d in ${{ inputs.plugins }}; do cp $d/build/libs/*.jar srv/plugins/; done
+          echo "eula=true" > srv/eula.txt
+          printf 'online-mode=false\nserver-port=25565\nlevel-type=minecraft\\:flat\ngenerate-structures=false\n' > srv/server.properties
+      - name: Démarrer et lancer les commandes
+        working-directory: srv
+        run: |
+          mkfifo in
+          (tail -f in | java -Xmx2G -jar paper.jar --nogui > log.txt 2>&1) &
+          for i in $(seq 1 240); do grep -q 'Done (' log.txt && break; sleep 1; done
+          grep -q 'Done (' log.txt || { cat log.txt; exit 1; }
+          IFS=';' read -ra CMDS <<< "${{ inputs.commands }}"
+          for c in "${CMDS[@]}"; do echo "$c" > in; sleep 4; done
+          sleep 70
+          echo stop > in; sleep 10
+      - name: Résultat
+        if: always()
+        run: |
+          grep -E "SmpSaison|SmpMonde|SmpMariage|Lune|météor|Météor|Exception|ERROR|WARN.*fr\.smp|at fr\.smp" srv/log.txt | head -80
+          if grep -qE "at fr\.smp" srv/log.txt; then echo "::error::exception dans un plugin"; exit 1; fi
