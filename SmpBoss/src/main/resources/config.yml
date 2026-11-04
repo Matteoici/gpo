@@ -1,4 +1,4 @@
-config-version: 47
+config-version: 48
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -865,6 +865,8 @@ relics:
              "<#c8d2e6>✦ <white>La Lance du Ciel Inversé frappe <b>2 fois plus fort</b>",
              "<gray>sur les monstres et les boss <white>(x1,25 sur les joueurs)",
              "<gray>(coups, Percée, Chute du Ciel, Chaîne).",
+             "<#aa0814>✦ <white>Éveil <gray>(lance en main, accroupi + F) : mode adrénaline",
+             "<gray>tant que la musique joue. <dark_gray>(10 min)",
              "<red>✖ Mais plus AUCUN objet : <gray>ni bloc, ni nourriture, ni potion,",
              "<gray>ni totem, ni arc, ni autre arme, ni pouvoir de relique."]
 
@@ -1025,6 +1027,14 @@ restriction-celeste:
     special: 55            # Percée : jamais un coup qui tue quelqu'un qui a toute sa vie
     dive: 20
     chain: 9
+  eveil:                   # ÉVEIL (lance en main + relique) : accroupi + F, mode adrénaline le temps de la musique
+    duration-seconds: 135.5  # = durée de sounds/toji/eveil.ogg dans le pack (change les deux ensemble)
+    cooldown-minutes: 10     # compté à partir de la fin du mode
+    volume: 1.0
+    speed: 0.3             # +30 % de vitesse
+    damage: 0.25           # +25 % de dégâts
+    attack-speed: 1.0
+    regen: 1               # PV rendus chaque seconde
 
 black-flash:
   range: 24
@@ -1789,6 +1799,11 @@ messages:
     no-target: "<#c8d2e6>✦ <gray>Vise quelqu'un (18 blocs)."
     dive: "<#aa0814><b>✦ CHUTE DU CIEL"
     heavenly-lock: "<#c8d2e6>✦ <gray>Restriction Céleste : <white>plus aucun objet, seulement la lance"
+    awaken-need-relic: "<#c8d2e6>✦ <gray>L'Éveil demande la relique <white>Restriction Céleste"
+    awaken-cooldown: "<#c8d2e6>✦ <gray>Éveil prêt dans <white><time>"
+    awaken-broadcast: "<#aa0814><b>✦ ÉVEIL</b> <white><player></white> <gray>libère tout ce que son corps a."
+    awaken-timer: "<#aa0814><b>✦ ÉVEIL</b> <gray>· <white><time>"
+    awaken-end: "<dark_gray>✦ L'adrénaline retombe... <gray>(Éveil : 10 min)"
     special: "<#aa0814><b>✦ PERCÉE DU CIEL INVERSÉ"
     stunned: "<#aa0814><b>✦ CIEL INVERSÉ</b> <gray>· tu ne peux plus bouger"
     set-on: "<#c8d2e6><b>CORPS CÉLESTE</b> <gray>· Tenue de Toji complète"

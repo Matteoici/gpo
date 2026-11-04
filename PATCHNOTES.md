@@ -1,5 +1,11 @@
 # Patch notes Limitless (textes Discord)
 
+## 04/11/2026 — L'Éveil de Toji
+
+✦ **L'ÉVEIL DE TOJI**
+> Avec la relique **Restriction Céleste** et la **Lance du Ciel Inversé** en main : **accroupi + F**.
+> Une musique se lance et tu passes en **mode adrénaline** tant qu'elle joue (2 min 15) : **+30 % vitesse**, **+25 % dégâts**, attaque plus rapide, presque plus de recul, ta vie remonte toute seule. Dès que la musique s'arrête, c'est fini. Recharge **10 min**.
+
 ## 31/10/2026 — Équilibrage de Toji
 
 ⚖️ **ÉQUILIBRAGE DE TOJI** (seulement les dégâts)

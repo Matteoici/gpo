@@ -296,5 +296,13 @@
     "name": "limitless:boogie/burst"
    }
   ]
+ },
+ "toji.eveil": {
+  "sounds": [
+   {
+    "name": "limitless:toji/eveil",
+    "stream": true
+   }
+  ]
  }
 }

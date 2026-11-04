@@ -552,6 +552,17 @@ public final class SmpBoss extends JavaPlugin {
             c.set("config-version", 47);
             saveConfig();
         }
+        if (getConfig().getInt("config-version", 1) < 48) {
+            // Éveil de la Restriction Céleste
+            var def = getConfig().getDefaults();
+            if (def != null) {
+                var sec = def.getConfigurationSection("restriction-celeste.eveil");
+                if (sec != null) for (String k : sec.getKeys(false)) getConfig().set("restriction-celeste.eveil." + k, sec.get(k));
+                getConfig().set("relics.list.restriction_celeste.lore", def.get("relics.list.restriction_celeste.lore"));
+            }
+            getConfig().set("config-version", 48);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);
@@ -685,13 +696,27 @@ public final class SmpBoss extends JavaPlugin {
                 var pl = getServer().getPluginManager().getPlugin("SmpPets");
                 if (pl != null) petBonus = pl.getClass().getMethod("bonus", java.util.UUID.class, String.class);
             }
-            if (petBonus == null) return 1;
+            double admin = adminLuck(p.getUniqueId());
+            if (petBonus == null) return admin;
             Object v = petBonus.invoke(null, p.getUniqueId(), "chance-boss");
             double max = getConfig().getDouble("loot.pets-luck-max", 0.15);
-            return v instanceof Double d ? 1 + Math.max(0, Math.min(max, d)) : 1;
+            return admin * (v instanceof Double d ? 1 + Math.max(0, Math.min(max, d)) : 1);
         } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
+            return adminLuck(p.getUniqueId());
+        }
+    }
+
+    /** Chance en plus donnée par un admin (/boss chance) : multiplicateur, 1 = normal. */
+    public double adminLuck(java.util.UUID id) {
+        String k = "luck-boosts." + id;
+        if (!getConfig().isSet(k + ".x")) return 1;
+        long until = getConfig().getLong(k + ".until", 0);
+        if (until > 0 && until < System.currentTimeMillis()) {
+            getConfig().set(k, null);
+            saveConfig();
             return 1;
         }
+        return Math.max(0, getConfig().getDouble(k + ".x", 1));
     }
 
     /** Messages de capacités (recharges...) envoyés en barre d'action : SmpCombat ne les écrase pas tant qu'ils sont récents. */
@@ -1068,6 +1093,45 @@ public final class SmpBoss extends JavaPlugin {
                 lastEnd = 0;
                 sender.sendMessage(parse("<green>Boss arrêté (temps d'attente remis à zéro)."));
             }
+            case "chance", "luck" -> {
+                // /boss chance <joueur> <multiplicateur> [minutes]  ·  /boss chance <joueur> retirer  ·  /boss chance <joueur>
+                if (a.length < 2) {
+                    sender.sendMessage(parse("<red>/boss chance <joueur> <multiplicateur> [minutes] <gray>(ex. 2 = chances x2) · <red>/boss chance <joueur> retirer"));
+                    return true;
+                }
+                @SuppressWarnings("deprecation")
+                org.bukkit.OfflinePlayer t = Bukkit.getPlayerExact(a[1]) != null ? Bukkit.getPlayerExact(a[1]) : Bukkit.getOfflinePlayer(a[1]);
+                String k = "luck-boosts." + t.getUniqueId();
+                if (a.length == 2) {
+                    double x = adminLuck(t.getUniqueId());
+                    long until = getConfig().getLong(k + ".until", 0);
+                    sender.sendMessage(parse("<gold>Chance de " + a[1] + " : <white>x" + x
+                            + (x != 1 && until > 0 ? " <gray>(encore " + Math.max(1, (until - System.currentTimeMillis()) / 60000) + " min)" : "")));
+                    return true;
+                }
+                if (a[2].equalsIgnoreCase("retirer") || a[2].equalsIgnoreCase("reset") || a[2].equalsIgnoreCase("off")) {
+                    getConfig().set(k, null);
+                    saveConfig();
+                    sender.sendMessage(parse("<green>Chance de " + a[1] + " remise à la normale."));
+                    return true;
+                }
+                double x;
+                try {
+                    x = Double.parseDouble(a[2].replace(',', '.').replace("x", ""));
+                } catch (NumberFormatException ex) {
+                    sender.sendMessage(parse("<red>Multiplicateur invalide (ex. 2, 1.5, 10)."));
+                    return true;
+                }
+                x = Math.max(0, Math.min(getConfig().getDouble("luck-max", 100), x));
+                long minutes = a.length >= 4 ? Long.parseLong(a[3].replaceAll("\\D", "0")) : 0;
+                getConfig().set(k + ".x", x);
+                getConfig().set(k + ".until", minutes > 0 ? System.currentTimeMillis() + minutes * 60_000 : 0);
+                saveConfig();
+                sender.sendMessage(parse("<green>Chance de " + a[1] + " : <white>x" + x + "</white> sur le butin des boss (armes, reliques)"
+                        + (minutes > 0 ? " pendant <white>" + minutes + " min" : " <gray>(jusqu'à /boss chance " + a[1] + " retirer)")));
+                if (t.getPlayer() != null) t.getPlayer().sendMessage(parse("<gold>✦ Ta chance sur le butin des boss est maintenant <white>x" + x + "</white> !"));
+                return true;
+            }
             case "give" -> {
                 if (a.length < 3) {
                     sender.sendMessage(parse("<red>/boss give <joueur> <graine|citrouille|faucille|relique:id> [nombre]"));
@@ -1212,7 +1276,7 @@ public final class SmpBoss extends JavaPlugin {
             return out;
         }
         if (!cmd.getName().equalsIgnoreCase("boss")) return out;
-        if (a.length == 1) out.addAll(List.of("autel", "invoquer", "stop", "give", "retirer", "reload", "arene", "topguildes", "ult", "panneau"));
+        if (a.length == 1) out.addAll(List.of("autel", "invoquer", "stop", "give", "retirer", "reload", "arene", "topguildes", "ult", "panneau", "chance"));
         else if (a.length == 2 && a[0].toLowerCase(Locale.ROOT).startsWith("ar"))
             out.addAll(List.of("construire", "annuler", "tp", "setspawn", "portail", "sortie", "recuperer", "definir", "supprimer"));
         else if (a.length == 3 && a[0].toLowerCase(Locale.ROOT).startsWith("ar") && (a[1].equalsIgnoreCase("portail") || a[1].equalsIgnoreCase("sortie")))
@@ -1221,7 +1285,10 @@ public final class SmpBoss extends JavaPlugin {
             out.addAll(List.of("16", "20", "24", "28"));
         else if (a.length == 4 && a[0].toLowerCase(Locale.ROOT).startsWith("ar") && a[1].equalsIgnoreCase("construire"))
             out.addAll(List.of("ici", "ciel"));
-        else if (a.length == 2 && (a[0].equalsIgnoreCase("give") || a[0].equalsIgnoreCase("retirer"))) for (Player p : Bukkit.getOnlinePlayers()) out.add(p.getName());
+        else if (a.length == 2 && (a[0].equalsIgnoreCase("give") || a[0].equalsIgnoreCase("retirer") || a[0].equalsIgnoreCase("chance")))
+            for (Player p : Bukkit.getOnlinePlayers()) out.add(p.getName());
+        else if (a.length == 3 && a[0].equalsIgnoreCase("chance")) out.addAll(List.of("2", "5", "10", "retirer"));
+        else if (a.length == 4 && a[0].equalsIgnoreCase("chance")) out.addAll(List.of("30", "60", "120"));
         else if (a.length == 3 && a[0].equalsIgnoreCase("retirer")) {
             out.add("tout");
             Player t = Bukkit.getPlayerExact(a[1]);

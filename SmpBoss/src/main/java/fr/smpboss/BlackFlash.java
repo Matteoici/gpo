@@ -198,7 +198,7 @@ final class BlackFlash implements Listener {
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onSwap(PlayerSwapHandItemsEvent e) {
         Player p = e.getPlayer();
-        if (!p.isSneaking()) return;
+        if (!p.isSneaking() || TojiSpear.restricted(p)) return; // lance en main : accroupi + F = Éveil
         PlayerData d = plugin.store().of(p.getUniqueId());
         boolean consec = d.equipped.contains(CONSEC), single = d.equipped.contains(SINGLE);
         if (!consec && !single) return;

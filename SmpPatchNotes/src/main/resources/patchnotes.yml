@@ -1,6 +1,23 @@
 # Patch notes (la plus récente EN PREMIER). Chaque page = une page du livre (MiniMessage, ~13 lignes max).
 # Couleurs lisibles sur le papier : black, dark_gray, dark_red, dark_blue, dark_green, dark_aqua, dark_purple, gold.
 notes:
+  - id: "2026-11-04-eveil"
+    title: "L'Éveil de Toji"
+    date: "04/11/2026"
+    pages:
+      - |
+        <dark_red><b>   LIMITLESS</b>
+        <dark_gray>     Patch note
+        <black>━━━━━━━━━━
+        <dark_red><b>✦ L'Éveil</b>
+        <dark_red><b>de Toji</b>
+        <dark_gray>4 novembre 2026
+
+        <black>Avec la relique <b>Restriction Céleste</b> et la lance en main :
+        <dark_red>accroupi + F</dark_red>.
+
+        Mode adrénaline tant que la musique joue (2 min 15) : vitesse, dégâts, vie qui remonte.
+        <dark_gray>Recharge 10 min
   - id: "2026-10-31-nerf-toji"
     title: "Équilibrage de Toji"
     date: "31/10/2026"

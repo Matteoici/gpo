@@ -540,6 +540,116 @@ final class TojiSpear implements Listener {
 
     private final Map<UUID, Long> flashCd = new HashMap<>();
 
+    // ================================================================= ÉVEIL (relique Restriction Céleste) : mode adrénaline le temps de la musique
+
+    private final Map<UUID, Long> awakeUntil = new HashMap<>(), awakeCd = new HashMap<>();
+    private final Map<UUID, BukkitTask> awakeTask = new HashMap<>();
+    private NamespacedKey adrSpeed, adrDmg, adrAtk, adrKb;
+
+    static boolean awakened(Player p) {
+        return instance != null && instance.awakeTask.containsKey(p.getUniqueId());
+    }
+
+    /** Accroupi + F, lance en main et relique équipée : l'Éveil. */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onAwaken(org.bukkit.event.player.PlayerSwapHandItemsEvent e) {
+        Player p = e.getPlayer();
+        if (!p.isSneaking() || !holds(p)) return;
+        e.setCancelled(true);
+        if (!heavenly(p)) {
+            SmpBoss.hud(p, parse(plugin.msg("lance-ciel.awaken-need-relic")));
+            return;
+        }
+        if (awakeTask.containsKey(p.getUniqueId())) return;
+        long now = System.currentTimeMillis();
+        Long until = awakeCd.get(p.getUniqueId());
+        if (until != null && until > now) {
+            long s = (until - now) / 1000;
+            SmpBoss.hud(p, parse(plugin.msg("lance-ciel.awaken-cooldown").replace("<time>", (s / 60) + " min " + (s % 60) + " s")));
+            return;
+        }
+        awaken(p);
+    }
+
+    private void awaken(Player p) {
+        if (adrSpeed == null) {
+            adrSpeed = new NamespacedKey(plugin, "toji_adr_speed");
+            adrDmg = new NamespacedKey(plugin, "toji_adr_dmg");
+            adrAtk = new NamespacedKey(plugin, "toji_adr_atk");
+            adrKb = new NamespacedKey(plugin, "toji_adr_kb");
+        }
+        UUID id = p.getUniqueId();
+        double secs = plugin.getConfig().getDouble("restriction-celeste.eveil.duration-seconds", 135.5);
+        long end = System.currentTimeMillis() + (long) (secs * 1000);
+        awakeUntil.put(id, end);
+        set(p, Attribute.MOVEMENT_SPEED, adrSpeed, plugin.getConfig().getDouble("restriction-celeste.eveil.speed", 0.3), AttributeModifier.Operation.ADD_SCALAR);
+        set(p, Attribute.ATTACK_DAMAGE, adrDmg, plugin.getConfig().getDouble("restriction-celeste.eveil.damage", 0.25), AttributeModifier.Operation.ADD_SCALAR);
+        set(p, Attribute.ATTACK_SPEED, adrAtk, plugin.getConfig().getDouble("restriction-celeste.eveil.attack-speed", 1.0), AttributeModifier.Operation.ADD_NUMBER);
+        set(p, Attribute.KNOCKBACK_RESISTANCE, adrKb, 0.4, AttributeModifier.Operation.ADD_NUMBER);
+        // la musique : le mode dure exactement le temps du morceau
+        p.playSound(p, PackFx.NS + ":toji.eveil", SoundCategory.RECORDS, (float) plugin.getConfig().getDouble("restriction-celeste.eveil.volume", 1.0), 1f);
+        p.stopSound(SoundCategory.MUSIC);
+        World w = p.getWorld();
+        w.playSound(p.getLocation(), Sound.ENTITY_WARDEN_HEARTBEAT, 2f, 0.7f);
+        w.playSound(p.getLocation(), Sound.ENTITY_RAVAGER_ROAR, 1f, 0.7f);
+        w.spawnParticle(Particle.CLOUD, p.getLocation().add(0, 1, 0), 40, 0.4, 0.8, 0.4, 0.08, null, true);
+        fx().wave(p.getLocation().add(0, 0.1, 0), "w_shock_flat", STEEL, 1, 12, 10, null, Display.Billboard.FIXED);
+        for (Player o : w.getPlayers()) if (o.getLocation().distanceSquared(p.getLocation()) < 40 * 40)
+            o.sendMessage(parse(plugin.msg("lance-ciel.awaken-broadcast").replace("<player>", SmpBoss.MM.escapeTags(p.getName()))));
+        int[] k = {0};
+        BukkitTask[] t = new BukkitTask[1];
+        t[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            int i = k[0]++;
+            long left = end - System.currentTimeMillis();
+            if (!p.isOnline() || p.isDead() || !heavenly(p) || left <= 0) {
+                endAwaken(p, left <= 0);
+                return;
+            }
+            // vapeur qui sort du corps, cœur qui bat
+            if (i % 5 == 0) {
+                Location l = p.getLocation().add(0, 1, 0);
+                w.spawnParticle(Particle.DUST, l, 6, 0.35, 0.6, 0.35, 0, new Particle.DustOptions(Color.fromRGB(235, 235, 240), 1.3f), true);
+                w.spawnParticle(Particle.DUST, l, 3, 0.35, 0.6, 0.35, 0, new Particle.DustOptions(BLOOD, 0.9f), true);
+            }
+            if (i % 30 == 0) p.playSound(p.getLocation(), Sound.ENTITY_WARDEN_HEARTBEAT, 0.6f, 1.2f);
+            if (i % 20 == 0) {
+                var max = p.getAttribute(Attribute.MAX_HEALTH);
+                if (max != null) p.setHealth(Math.min(max.getValue(), p.getHealth() + plugin.getConfig().getDouble("restriction-celeste.eveil.regen", 1)));
+                p.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 30, 0, false, false, true));
+                long s = left / 1000;
+                if (!SmpBoss.hudBusy(p.getUniqueId())) p.sendActionBar(parse(plugin.msg("lance-ciel.awaken-timer").replace("<time>", (s / 60) + ":" + String.format("%02d", s % 60))));
+            }
+        }, 1L, 1L);
+        awakeTask.put(id, t[0]);
+    }
+
+    private void endAwaken(Player p, boolean natural) {
+        UUID id = p.getUniqueId();
+        BukkitTask t = awakeTask.remove(id);
+        if (t != null) t.cancel();
+        awakeUntil.remove(id);
+        awakeCd.put(id, System.currentTimeMillis() + (long) (plugin.getConfig().getDouble("restriction-celeste.eveil.cooldown-minutes", 10) * 60_000));
+        p.stopSound(net.kyori.adventure.sound.SoundStop.named(net.kyori.adventure.key.Key.key(PackFx.NS, "toji.eveil")));
+        for (Attribute a : new Attribute[]{Attribute.MOVEMENT_SPEED, Attribute.ATTACK_DAMAGE, Attribute.ATTACK_SPEED, Attribute.KNOCKBACK_RESISTANCE}) {
+            AttributeInstance inst = p.getAttribute(a);
+            if (inst != null) for (NamespacedKey k : new NamespacedKey[]{adrSpeed, adrDmg, adrAtk, adrKb}) if (k != null) inst.removeModifier(k);
+        }
+        if (p.isOnline()) {
+            SmpBoss.hud(p, parse(plugin.msg("lance-ciel.awaken-end")));
+            p.playSound(p.getLocation(), Sound.BLOCK_FIRE_EXTINGUISH, 0.8f, 0.6f);
+        }
+    }
+
+    @EventHandler
+    public void awakenQuit(PlayerQuitEvent e) {
+        if (awakeTask.containsKey(e.getPlayer().getUniqueId())) endAwaken(e.getPlayer(), false);
+    }
+
+    @EventHandler
+    public void awakenDeath(org.bukkit.event.entity.PlayerDeathEvent e) {
+        if (awakeTask.containsKey(e.getPlayer().getUniqueId())) endAwaken(e.getPlayer(), false);
+    }
+
     @EventHandler(priority = EventPriority.HIGH)
     public void onFlashStep(PlayerInteractEvent e) {
         if (e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
