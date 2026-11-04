@@ -49,7 +49,14 @@ final class BoogieBomb implements Listener {
     private final Map<UUID, Long> lastSneak = new HashMap<>(), cooldown = new HashMap<>();
     private final Set<UUID> dancing = new HashSet<>();
 
+    static BoogieBomb INSTANCE;
+
+    void resetCooldowns(UUID id) {
+        cooldown.remove(id);
+    }
+
     BoogieBomb(SmpBoss plugin) {
+        INSTANCE = this;
         this.plugin = plugin;
         this.bombKey = new org.bukkit.NamespacedKey(plugin, "boogie_bomb");
     }

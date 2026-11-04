@@ -495,6 +495,13 @@ final class Weapons implements Listener {
 
     private final Map<String, String> lastOfGroup = new HashMap<>();
 
+    /** /boss recharge : toutes les recharges d'armes de ce joueur (et la recharge partagée) remises à zéro. */
+    void resetCooldowns(UUID id) {
+        String pre = id + ":";
+        cooldown.keySet().removeIf(k -> k.startsWith(pre));
+        lastOfGroup.keySet().removeIf(k -> k.startsWith(pre));
+    }
+
     /** lance la recharge commune du groupe : la recharge de l'arme utilisée, au plus N s (réglable) */
     private void startGroup(Player p, String id, double seconds, long now) {
         if (!plugin.getConfig().getBoolean("weapons.shared-cooldown.enabled", true)) return;

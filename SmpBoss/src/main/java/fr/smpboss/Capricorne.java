@@ -73,7 +73,16 @@ final class Capricorne implements Listener {
             org.bukkit.Material.FISHING_ROD, org.bukkit.Material.FIREWORK_ROCKET, org.bukkit.Material.WIND_CHARGE, org.bukkit.Material.SPYGLASS,
             org.bukkit.Material.GOAT_HORN, org.bukkit.Material.MILK_BUCKET, org.bukkit.Material.EXPERIENCE_BOTTLE);
 
+    static Capricorne INSTANCE;
+
+    void resetCooldowns(UUID id) {
+        cooldown.remove(id);
+        ghostCd.remove(id);
+        strikeCd.remove(id);
+    }
+
     Capricorne(SmpBoss plugin) {
+        INSTANCE = this;
         this.plugin = plugin;
     }
 

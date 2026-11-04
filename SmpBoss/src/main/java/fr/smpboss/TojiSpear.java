@@ -88,7 +88,15 @@ final class TojiSpear implements Listener {
     /** Tenue de Toji complète (3 pièces) : Corps Céleste */
     private final Set<UUID> fullSet = new HashSet<>();
 
+    static TojiSpear INSTANCE;
+
+    /** /boss recharge : toutes les recharges de la lance, du Tribâton et de l'Éveil remises à zéro. */
+    void resetCooldowns(UUID id) {
+        for (Map<UUID, Long> m : java.util.List.of(specialCd, diveCd, chainCd, flashCd, awakeCd, tribCd)) m.remove(id);
+    }
+
     TojiSpear(SmpBoss plugin) {
+        INSTANCE = this;
         this.plugin = plugin;
         instance = this;
         hp = new NamespacedKey(plugin, "toji_hp");

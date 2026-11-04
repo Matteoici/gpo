@@ -1117,6 +1117,22 @@ public final class SmpBoss extends JavaPlugin {
                 lastEnd = 0;
                 sender.sendMessage(parse("<green>Boss arrêté (temps d'attente remis à zéro)."));
             }
+            case "recharge", "cooldown", "cd" -> {
+                // /boss recharge [joueur] : remet à zéro les recharges (Éveil, lance, armes, Capricorne, Boogie Bombe)
+                Player t = a.length >= 2 ? Bukkit.getPlayerExact(a[1]) : (sender instanceof Player sp ? sp : null);
+                if (t == null) {
+                    sender.sendMessage(parse("<red>/boss recharge <joueur> <gray>(joueur connecté)"));
+                    return true;
+                }
+                java.util.UUID id = t.getUniqueId();
+                if (TojiSpear.INSTANCE != null) TojiSpear.INSTANCE.resetCooldowns(id);
+                if (Capricorne.INSTANCE != null) Capricorne.INSTANCE.resetCooldowns(id);
+                if (BoogieBomb.INSTANCE != null) BoogieBomb.INSTANCE.resetCooldowns(id);
+                if (weapons != null) weapons.resetCooldowns(id);
+                sender.sendMessage(parse("<green>Recharges de <white>" + t.getName() + "</white> remises à zéro <gray>(Éveil, lance, armes, Capricorne, Boogie Bombe)."));
+                if (t != sender) t.sendMessage(parse("<gold>⏳ Tes recharges ont été remises à zéro."));
+                return true;
+            }
             case "chance", "luck" -> {
                 // /boss chance <joueur> <multiplicateur> [minutes]  ·  /boss chance <joueur> retirer  ·  /boss chance <joueur>
                 if (a.length < 2) {
@@ -1302,7 +1318,7 @@ public final class SmpBoss extends JavaPlugin {
             return out;
         }
         if (!cmd.getName().equalsIgnoreCase("boss")) return out;
-        if (a.length == 1) out.addAll(List.of("autel", "invoquer", "stop", "give", "retirer", "reload", "arene", "topguildes", "ult", "panneau", "chance"));
+        if (a.length == 1) out.addAll(List.of("autel", "invoquer", "stop", "give", "retirer", "reload", "arene", "topguildes", "ult", "panneau", "chance", "recharge"));
         else if (a.length == 2 && a[0].toLowerCase(Locale.ROOT).startsWith("ar"))
             out.addAll(List.of("construire", "annuler", "tp", "setspawn", "portail", "sortie", "recuperer", "definir", "supprimer"));
         else if (a.length == 3 && a[0].toLowerCase(Locale.ROOT).startsWith("ar") && (a[1].equalsIgnoreCase("portail") || a[1].equalsIgnoreCase("sortie")))
@@ -1311,7 +1327,7 @@ public final class SmpBoss extends JavaPlugin {
             out.addAll(List.of("16", "20", "24", "28"));
         else if (a.length == 4 && a[0].toLowerCase(Locale.ROOT).startsWith("ar") && a[1].equalsIgnoreCase("construire"))
             out.addAll(List.of("ici", "ciel"));
-        else if (a.length == 2 && (a[0].equalsIgnoreCase("give") || a[0].equalsIgnoreCase("retirer") || a[0].equalsIgnoreCase("chance")))
+        else if (a.length == 2 && (a[0].equalsIgnoreCase("give") || a[0].equalsIgnoreCase("retirer") || a[0].equalsIgnoreCase("chance") || a[0].equalsIgnoreCase("recharge")))
             for (Player p : Bukkit.getOnlinePlayers()) out.add(p.getName());
         else if (a.length == 3 && a[0].equalsIgnoreCase("chance")) out.addAll(List.of("2", "5", "10", "retirer"));
         else if (a.length == 4 && a[0].equalsIgnoreCase("chance")) out.addAll(List.of("30", "60", "120"));
