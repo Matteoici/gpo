@@ -618,6 +618,7 @@ public final class SmpBoss extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new Outfits(this), this);
         getServer().getPluginManager().registerEvents(new BoogieBomb(this), this);
         getServer().getPluginManager().registerEvents(new CcGuard(), this);
+        getServer().getPluginManager().registerEvents(new BloodBoss(this), this);
         new BossMusic(this);
         PackStatus packStatus = new PackStatus(this);
         getServer().getPluginManager().registerEvents(packStatus, this);
@@ -734,6 +735,28 @@ public final class SmpBoss extends JavaPlugin {
 
     /** Chance en plus sur le butin du boss donnée par les familiers (SmpPets, bonus "chance-boss") : 1.1 = +10 %. */
     public double petLuck(Player p) {
+        return petLuck0(p) * (bloodMoon() ? getConfig().getDouble("blood-moon.luck", 2) : 1);
+    }
+
+    private java.lang.reflect.Method moonCheck;
+    private org.bukkit.plugin.Plugin moonPlugin;
+
+    /** Lune de sang en cours (SmpMonde) ? */
+    public boolean bloodMoon() {
+        try {
+            var pl = getServer().getPluginManager().getPlugin("SmpMonde");
+            if (pl == null || !pl.isEnabled()) return false;
+            if (pl != moonPlugin) {
+                moonPlugin = pl;
+                moonCheck = pl.getClass().getMethod("bloodMoonActive");
+            }
+            return Boolean.TRUE.equals(moonCheck.invoke(pl));
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
+            return false;
+        }
+    }
+
+    private double petLuck0(Player p) {
         try {
             if (!petLooked) {
                 petLooked = true;

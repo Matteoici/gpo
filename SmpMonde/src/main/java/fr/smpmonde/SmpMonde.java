@@ -73,6 +73,11 @@ public final class SmpMonde extends JavaPlugin {
         if (raid != null) raid.stop(false);
     }
 
+    /** Pour les autres plugins (SmpBoss : chance x2 et boss x2 pendant la lune). */
+    public boolean bloodMoonActive() {
+        return moon != null && moon.running();
+    }
+
     World world() {
         World w = Bukkit.getWorld(getConfig().getString("world", "world"));
         return w != null ? w : Bukkit.getWorlds().get(0);

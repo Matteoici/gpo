@@ -90,7 +90,9 @@ final class BloodMoon implements Listener {
         }
         Bukkit.broadcast(mm("<dark_red><b>🌑 La Lune de sang se lève !</b> <gray>Pendant <white>" + (int) c("duration-minutes", 20)
                 + " min</white> : les monstres sont <red><b>x" + (int) c("health", 10) + " plus forts</b></red>, il en sort de partout et des Champions de sang rôdent. Les meilleurs chasseurs gagnent gros."));
-        for (LivingEntity e : w.getLivingEntities()) if (e instanceof Enemy && !(e instanceof Player)) buff(e);
+        if (Bukkit.getPluginManager().isPluginEnabled("SmpBoss"))
+            Bukkit.broadcast(mm("<dark_red>🌑 <gray>Pendant la lune, les <white>boss</white> sont <red><b>2x plus forts</b></red>... mais leur butin a <gold><b>2x plus de chance</b></gold> de tomber."));
+        for (LivingEntity e : w.getLivingEntities()) if (e instanceof Enemy && !(e instanceof Player) && !fromBoss(e)) buff(e);
         task = Bukkit.getScheduler().runTaskTimer(plugin, this::loop, 20L, 20L);
     }
 
@@ -207,6 +209,11 @@ final class BloodMoon implements Listener {
         return it;
     }
 
+    private static boolean fromBoss(LivingEntity e) {
+        for (NamespacedKey k : e.getPersistentDataContainer().getKeys()) if (k.getNamespace().equals("smpboss")) return true;
+        return false;
+    }
+
     private void buff(LivingEntity e) {
         if (e.getPersistentDataContainer().has(tag) && !e.getPersistentDataContainer().has(champ)) return;
         e.getPersistentDataContainer().set(tag, PersistentDataType.BYTE, (byte) 1);
@@ -254,7 +261,11 @@ final class BloodMoon implements Listener {
     public void onSpawn(CreatureSpawnEvent e) {
         if (!running() || !(e.getEntity() instanceof Enemy) || !e.getEntity().getWorld().equals(plugin.world())) return;
         if (e.getSpawnReason() == CreatureSpawnEvent.SpawnReason.SPAWNER) return; // pas les spawners
-        buff(e.getEntity());
+        LivingEntity le = e.getEntity();
+        // un tick plus tard : les boss et serviteurs de SmpBoss ont alors leur étiquette, on ne les touche pas (ils ont leur propre x2)
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            if (le.isValid() && running() && !fromBoss(le)) buff(le);
+        });
     }
 
     /** Seul le vrai butin de monstre peut être doublé : jamais un objet qu'on lui a fait ramasser (sinon duplication). */

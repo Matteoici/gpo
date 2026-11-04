@@ -17,6 +17,7 @@ notes:
         <dark_gray>Recharge 25 s (15 s pendant l'Éveil)
 
         <dark_red><b>🌑 Lune de sang</b><black> : monstres x10 et de toutes les tailles.
+        <black>Les boss : <dark_red>2x plus forts</dark_red>, mais <gold>2x plus de chance</gold> de butin.
   - id: "2026-11-04-saison"
     title: "Saison, métiers, événements, mariages"
     date: "04/11/2026"

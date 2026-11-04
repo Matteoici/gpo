@@ -1064,6 +1064,11 @@ restriction-celeste:
     damage-taken: 0.6      # dégâts reçus x0.6 pendant l'Éveil (-40 %)
     max-hit-percent: 30    # aucun coup ne peut retirer plus de 30 % de sa vie max d'un coup (masse en chute, Hollow...)
 
+# ---------------------------------------------------------------- 🌑 Lune de sang (SmpMonde)
+blood-moon:
+  luck: 2                # chance de butin x2 pendant la lune
+  boss-strength: 2       # boss et serviteurs : dégâts x2 et vie x2 (ils encaissent 2x mieux)
+
 black-flash:
   range: 24
   arm-seconds: 4           # accroupi + F : le poing reste chargé X secondes, il faut toucher la cible

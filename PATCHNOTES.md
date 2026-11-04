@@ -7,6 +7,7 @@
 
 🌑 **LUNE DE SANG PLUS VIOLENTE**
 > Les monstres sont **10 fois plus forts** (vie, dégâts, flèches, explosions) et de **toutes les tailles** (du petit nerveux au géant). Le butin n'est plus doublé (fin de la duplication d'objets).
+> Pendant la lune, les **boss sont 2x plus forts** (dégâts et vie)… mais leur butin a **2x plus de chance** de tomber 🍀
 
 ## 04/11/2026 — SAISON 1 : passe, métiers, classements, événements, mariages
 
