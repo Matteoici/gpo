@@ -71,6 +71,7 @@ final class BlackFlash implements Listener {
 
     /** Fige un joueur comme pendant les Consécutifs (plus rien d'utilisable). */
     static void stun(Player p, int ticks) {
+        if (TojiSpear.ccImmune(p)) return; // Toji ne se fait figer par rien
         stunned.put(p.getUniqueId(), System.currentTimeMillis() + ticks * 50L + 300);
         p.clearActiveItem();
         p.closeInventory();

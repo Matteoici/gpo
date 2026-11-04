@@ -377,6 +377,7 @@ final class Ultimates {
     private void freeze(LivingEntity e, int ticks, boolean frost) {
         Boss k = plugin.king();
         if (k != null && k.isBoss(e)) return; // le Roi ne se fige pas
+        if (TojiSpear.ccImmune(e)) return; // Toji non plus
         Frozen old = frozen.get(e.getUniqueId());
         boolean ai = old != null ? old.ai() : e.hasAI();
         if (!(e instanceof Player)) e.setAI(false);

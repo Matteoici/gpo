@@ -1,6 +1,21 @@
 # Patch notes (la plus récente EN PREMIER). Chaque page = une page du livre (MiniMessage, ~13 lignes max).
 # Couleurs lisibles sur le papier : black, dark_gray, dark_red, dark_blue, dark_green, dark_aqua, dark_purple, gold.
 notes:
+  - id: "2026-11-04-toji-inarretable"
+    title: "Toji inarrêtable"
+    date: "04/11/2026"
+    pages:
+      - |
+        <dark_red><b>   LIMITLESS</b>
+        <dark_gray>     Patch note
+        <black>━━━━━━━━━━
+        <dark_red><b>✦ Toji</b>
+        <dark_red><b>inarrêtable</b>
+        <dark_gray>4 novembre 2026
+
+        <black>Lance en main, <b>plus rien ne le fige</b> : ni Black Flash, ni Boogie Bombe, ni lenteur, lévitation, cécité ou glace.
+
+        <dark_red><b>Éveil</b><black> : -40 % de dégâts reçus, et aucun coup ne peut lui retirer plus de 30 % de sa vie (fini le one shot à la masse).
   - id: "2026-11-04-pioches"
     title: "Pioches de zone"
     date: "04/11/2026"

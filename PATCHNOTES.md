@@ -1,5 +1,11 @@
 # Patch notes Limitless (textes Discord)
 
+## 04/11/2026 — Toji inarrêtable
+
+✦ **TOJI INARRÊTABLE**
+> Avec la **Lance du Ciel Inversé** en main, **plus rien ne le fige** : ni Black Flash, ni Boogie Bombe, ni gel, ni lenteur, lévitation, cécité, obscurité ou glace.
+> Pendant l'**Éveil** : **-40 % de dégâts reçus**, et **aucun coup ne peut lui retirer plus de 30 % de sa vie** d'un coup (fini le one shot à la masse).
+
 ## 04/11/2026 — Pioches de zone
 
 ⛏️ **PIOCHES DE ZONE**

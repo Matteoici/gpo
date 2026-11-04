@@ -159,6 +159,7 @@ final class BoogieBomb implements Listener {
 
     /** Il danse : sur place, il tourne sur lui-même et se baisse en rythme. Plus rien d'utilisable. */
     private void dance(LivingEntity le, int dur) {
+        if (TojiSpear.ccImmune(le)) return; // Toji ne danse pas
         if (!dancing.add(le.getUniqueId())) return;
         Location anchor = le.getLocation();
         boolean ai = le.hasAI();

@@ -1,4 +1,4 @@
-config-version: 50
+config-version: 51
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -1054,6 +1054,8 @@ restriction-celeste:
     damage: 0.25           # +25 % de dégâts
     attack-speed: 1.0
     regen: 1               # PV rendus chaque seconde
+    damage-taken: 0.6      # dégâts reçus x0.6 pendant l'Éveil (-40 %)
+    max-hit-percent: 30    # aucun coup ne peut retirer plus de 30 % de sa vie max d'un coup (masse en chute, Hollow...)
 
 black-flash:
   range: 24

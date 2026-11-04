@@ -145,6 +145,39 @@ final class TojiSpear implements Listener {
         return instance != null && instance.active.contains(p.getUniqueId());
     }
 
+    /** Toji (lance en main) : rien ne le fige, ne l'aveugle ni ne le ralentit. */
+    static boolean ccImmune(org.bukkit.entity.Entity e) {
+        return e instanceof Player p && restricted(p);
+    }
+
+    private static final Set<PotionEffectType> CC = Set.of(PotionEffectType.SLOWNESS, PotionEffectType.LEVITATION, PotionEffectType.BLINDNESS,
+            PotionEffectType.DARKNESS, PotionEffectType.NAUSEA, PotionEffectType.MINING_FATIGUE, PotionEffectType.WEAKNESS);
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void noStun(EntityPotionEffectEvent e) {
+        if (e.getNewEffect() == null || !ccImmune(e.getEntity())) return;
+        if (CC.contains(e.getNewEffect().getType())) e.setCancelled(true);
+    }
+
+    /** Éveil : il encaisse beaucoup mieux, et aucun coup (masse en chute...) ne peut lui retirer plus de X % de sa vie d'un coup. */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void awakenArmor(org.bukkit.event.entity.EntityDamageEvent e) {
+        if (!(e.getEntity() instanceof Player p) || !awakened(p)) return;
+        switch (e.getCause()) {
+            case VOID, KILL, SUICIDE, WORLD_BORDER -> {
+                return;
+            }
+            default -> {
+            }
+        }
+        String c = "restriction-celeste.eveil.";
+        e.setDamage(e.getDamage() * plugin.getConfig().getDouble(c + "damage-taken", 0.6));
+        var max = p.getAttribute(Attribute.MAX_HEALTH);
+        double cap = (max == null ? 20 : max.getValue()) * plugin.getConfig().getDouble(c + "max-hit-percent", 30) / 100.0;
+        double fin = e.getFinalDamage();
+        if (fin > cap && fin > 0) e.setDamage(e.getDamage() * cap / fin);
+    }
+
     /** Techniques bloquées : sous Restriction Céleste, ou coupées par un coup de la lance. */
     static boolean blocked(Player p) {
         if (instance == null) return false;
@@ -472,6 +505,7 @@ final class TojiSpear implements Listener {
         for (UUID id : active) {
             Player p = Bukkit.getPlayer(id);
             if (p == null) continue;
+            if (p.getFreezeTicks() > 0) p.setFreezeTicks(0); // la glace ne le ralentit pas
             Location now = p.getLocation();
             Location prev = lastPos.put(id, now.clone());
             // double saut
@@ -623,7 +657,6 @@ final class TojiSpear implements Listener {
             if (i % 20 == 0) {
                 var max = p.getAttribute(Attribute.MAX_HEALTH);
                 if (max != null) p.setHealth(Math.min(max.getValue(), p.getHealth() + plugin.getConfig().getDouble("restriction-celeste.eveil.regen", 1)));
-                p.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 30, 0, false, false, true));
                 long s = left / 1000;
                 if (!SmpBoss.hudBusy(p.getUniqueId())) p.sendActionBar(parse(plugin.msg("lance-ciel.awaken-timer").replace("<time>", (s / 60) + ":" + String.format("%02d", s % 60))));
             }

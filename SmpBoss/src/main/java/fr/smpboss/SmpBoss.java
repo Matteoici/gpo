@@ -587,6 +587,13 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 50);
             saveConfig();
         }
+        if (getConfig().getInt("config-version", 1) < 51) {
+            // Éveil : résistance et plafond par coup
+            getConfig().set("restriction-celeste.eveil.damage-taken", 0.6);
+            getConfig().set("restriction-celeste.eveil.max-hit-percent", 30);
+            getConfig().set("config-version", 51);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);
