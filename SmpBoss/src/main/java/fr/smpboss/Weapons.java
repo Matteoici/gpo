@@ -722,6 +722,7 @@ final class Weapons implements Listener {
         le.damage(dmg, p);
         if (k != null && k.isBoss(en)) return;
         le.setFallDistance(0); // un joueur qui tombait à la masse perd son élan
+        CcGuard.mark(le, lev);
         le.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, lev, (int) cfg("tranche-mace.levitation-level", 1) - 1, false, true, true));
         World w = le.getWorld();
         w.spawnParticle(Particle.DUST, le.getLocation().add(0, 1, 0), 30, 0.4, 0.6, 0.4, 0, new Particle.DustOptions(Color.fromRGB(200, 10, 30), 1.5f), true);

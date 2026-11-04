@@ -605,6 +605,7 @@ public final class SmpBoss extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new TojiSpear(this), this);
         getServer().getPluginManager().registerEvents(new Outfits(this), this);
         getServer().getPluginManager().registerEvents(new BoogieBomb(this), this);
+        getServer().getPluginManager().registerEvents(new CcGuard(), this);
         new BossMusic(this);
         PackStatus packStatus = new PackStatus(this);
         getServer().getPluginManager().registerEvents(packStatus, this);
