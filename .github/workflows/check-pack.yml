@@ -1,0 +1,17 @@
+name: Vérifier le pack en ligne
+on:
+  workflow_dispatch:
+    inputs:
+      host: { default: 'limitless.mineon.fr' }
+      port: { default: '23123' }
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          H=${{ inputs.host }}; P=${{ inputs.port }}
+          echo "== DNS"; getent hosts $H || true; dig +short SRV _minecraft._tcp.$H || true
+          echo "== Ping Minecraft"; python3 .github/tests/mcping.py $H $P || true
+          echo "== HTTP"; curl -v -m 20 -o /tmp/p.zip "http://$H:$P/pack.zip" 2>&1 | grep -E '^\*|^<|^>' | head -30 || true
+          ls -la /tmp/p.zip 2>/dev/null && sha1sum /tmp/p.zip || true
