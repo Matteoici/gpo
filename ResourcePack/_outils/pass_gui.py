@@ -176,73 +176,82 @@ save(scroll(), 'pass_season')
 save(Image.new('RGBA', (16, 16)), 'pass_blank')
 print('passe ok')
 
-# ============================================================ TOUS LES MENUS : fonds parchemin génériques (1 à 6 lignes)
-def parchment(h, seed):
+# ============================================================ TOUS LES MENUS : style GRIMOIRE (cuir cousu, page vieillie, bandeau rouge)
+LEATHER = hx('#5a3418'); STITCH = hx('#c89a5a'); PAGE = hx('#ead9b2')
+BAN, BAN_L, BAN_D = hx('#8a1a14'), hx('#b8322a'), hx('#4a0806')
+CORNER, CORNER_D = hx('#d8a640'), hx('#6a4a10')
+GW_FILL, GW_L, GW_D = hx('#c9b183'), hx('#f7ecd0'), hx('#6a5030')
+
+def grimoire(h, seed, banner=True):
     r = np.random.default_rng(seed)
-    a = np.zeros((h, W, 4), np.float32); a[..., :3] = PAPER[:3]; a[..., 3] = 255
-    yy, xx = np.mgrid[0:h, 0:W]
-    a[..., :3] += r.normal(0, 4, (h, W, 1))
-    e = np.minimum.reduce([xx, yy, W - 1 - xx, h - 1 - yy + 6]).astype(np.float32)
-    b = np.clip(1 - e / 9, 0, 1) ** 2
-    a[..., 0] -= b * 70; a[..., 1] -= b * 85; a[..., 2] -= b * 80
-    for _ in range(h): a[r.integers(4, h - 2), r.integers(4, W - 4), :3] -= r.integers(6, 16)
+    a = np.zeros((h, W, 4), np.float32); a[..., :3] = LEATHER[:3]; a[..., 3] = 255; a[..., :3] += r.normal(0, 6, (h, W, 1))
     im = Image.fromarray(np.clip(a, 0, 255).astype(np.uint8)); d = ImageDraw.Draw(im)
     for (x, y) in [(0, 0), (1, 0), (0, 1), (W - 1, 0), (W - 2, 0), (W - 1, 1)]: im.putpixel((x, y), (0, 0, 0, 0))
-    d.rectangle([2, 2, W - 3, h - 1], outline=INK); d.rectangle([4, 4, W - 5, h - 1], outline=INK2)
+    for x in range(4, W - 4, 3): im.putpixel((x, 2), STITCH)
+    for y in range(4, h, 3): im.putpixel((2, y), STITCH); im.putpixel((W - 3, y), STITCH)
+    ph, pw = h - 5, W - 10
+    pg = np.zeros((ph, pw, 4), np.float32); pg[..., :3] = PAGE[:3]; pg[..., 3] = 255; pg[..., :3] += r.normal(0, 5, (ph, pw, 1))
+    yy, xx = np.mgrid[0:ph, 0:pw]
+    e = np.minimum.reduce([xx, yy, pw - 1 - xx, ph - 1 - yy + 20]).astype(np.float32); b = np.clip(1 - e / 14, 0, 1) ** 1.6
+    pg[..., 0] -= b * 55; pg[..., 1] -= b * 70; pg[..., 2] -= b * 75
+    for _ in range(ph): pg[r.integers(0, ph), r.integers(0, pw), :3] -= r.integers(5, 14)
+    im.paste(Image.fromarray(np.clip(pg, 0, 255).astype(np.uint8)), (5, 5))
+    d.rectangle([5, 5, W - 6, h - 1], outline=hx('#2a160a'))
+    if banner:
+        d.polygon([(4, 4), (W - 5, 4), (W - 9, 9), (W - 5, 14), (4, 14), (8, 9)], fill=BAN, outline=BAN_D)
+        d.line([6, 5, W - 7, 5], fill=BAN_L)
+    for (cx, cy) in [(5, 15), (W - 6, 15)]:
+        d.rectangle([cx - 2, cy - 2, cx + 2, cy + 2], fill=CORNER, outline=CORNER_D)
     return im, d
+
+def gwell(d, i): well(d, i, GW_FILL, GW_L, GW_D)
 
 providers = json.load(open(os.path.join(A, 'font/gui.json')))['providers']
 for rows in range(1, 7):
     h = 17 + rows * 18
-    im, d = parchment(h, 100 + rows)
-    d.line([8, 15, W - 9, 15], fill=hx('#c9ad7a'))  # filet sous le titre
-    for i in range(rows * 9): well(d, i, WELL, WELL_L, WELL_D)
+    im, d = grimoire(h, 100 + rows)
+    for i in range(rows * 9): gwell(d, i)
     im.save(os.path.join(GUI, f'menu_{rows}.png'))
     providers.append({'type': 'bitmap', 'file': f'limitless:gui/menu_{rows}.png', 'ascent': 13, 'height': h, 'chars': [chr(0xe100 + rows)]})
 
-# ---- métiers (3 lignes) : médaillons pour les 5 métiers, rubans de niveau dessous
+CREAM = hx('#f5e6c0'); CREAM_SH = hx('#3a0806')
+# ---- métiers (3 lignes) : médaillons + rubans
 h = 17 + 3 * 18
-im, d = parchment(h, 210)
-t = 'TES METIERS'; text(im, (W - tw(t)) // 2, 6, t, INK, shadow=hx('#c9ad7a'))
-for x0 in ((W - tw(t)) // 2 - 14, (W + tw(t)) // 2 + 4):
-    d.line([x0, 9, x0 + 9, 9], fill=WAX)
-for i in range(11, 16):  # médaillon rond autour de la case du métier
+im, d = grimoire(h, 210)
+t = 'TES METIERS'; text(im, (W - tw(t)) // 2, 5, t, CREAM, shadow=CREAM_SH)
+for i in range(11, 16):
     x, y = slot_xy(i)
-    d.ellipse([x - 2, y - 2, x + 17, y + 17], fill=hx('#dcc597'), outline=INK2)
-    d.ellipse([x - 1, y - 1, x + 16, y + 16], outline=hx('#f5e8c8'))
+    d.ellipse([x - 2, y - 2, x + 17, y + 17], fill=hx('#d8c49a'), outline=hx('#6a4a22'))
+    d.ellipse([x - 1, y - 1, x + 16, y + 16], outline=hx('#f7ecd0'))
 for i in range(20, 25):
     x, y = slot_xy(i)
-    d.polygon([(x - 1, y + 3), (x + 16, y + 3), (x + 14, y + 8), (x + 16, y + 13), (x - 1, y + 13), (x + 1, y + 8)], fill=hx('#b0201c'), outline=hx('#5a0a08'))
-well(d, 22 - 9 + 9, WELL, WELL_L, WELL_D) if False else None
-# case du passe (en bas à droite)
-well(d, 26, WELL, WELL_L, WELL_D)
+    d.polygon([(x - 1, y + 3), (x + 16, y + 3), (x + 14, y + 8), (x + 16, y + 13), (x - 1, y + 13), (x + 1, y + 8)], fill=BAN, outline=BAN_D)
+gwell(d, 26)
 im.save(os.path.join(GUI, 'jobs.png'))
 providers.append({'type': 'bitmap', 'file': 'limitless:gui/jobs.png', 'ascent': 13, 'height': h, 'chars': ['']})
 
-# ---- classements de la semaine (3 lignes) : podium au milieu
-im, d = parchment(h, 220)
-t = 'CLASSEMENTS DE LA SEMAINE'; text(im, (W - tw(t)) // 2, 6, t, INK, shadow=hx('#c9ad7a'))
-for i in (10, 11, 12, 14, 15, 16, 22):
-    well(d, i, WELL, WELL_L, WELL_D)
-x, y = slot_xy(13)  # le podium doré au centre (classement XP de saison)
+# ---- classements de la semaine (3 lignes) : podium doré au centre
+im, d = grimoire(h, 220)
+t = 'CLASSEMENTS DE LA SEMAINE'; text(im, (W - tw(t)) // 2, 5, t, CREAM, shadow=CREAM_SH)
+for i in (10, 11, 12, 14, 15, 16, 22): gwell(d, i)
+x, y = slot_xy(13)
 d.rectangle([x - 2, y - 2, x + 17, y + 17], fill=GOLD, outline=GOLD_D); d.rectangle([x - 1, y - 1, x + 16, y + 16], outline=GOLD_L)
-for k, (dx, hh) in enumerate([(-1, 4), (6, 7), (13, 3)]):
-    pass
-# lauriers de chaque côté du podium
-for s in (-1, 1):
-    cx = x + 7 + s * 14
+for sgn in (-1, 1):
+    cx = x + 7 + sgn * 13
     for k in range(5):
-        d.ellipse([cx - 1 + s * (k % 2), y + 1 + k * 3, cx + 1 + s * (k % 2), y + 3 + k * 3], fill=hx('#5a7a2a'))
+        d.ellipse([cx - 1 + sgn * (k % 2), y + k * 3, cx + 1 + sgn * (k % 2), y + 2 + k * 3], fill=hx('#4a6a22'))
 im.save(os.path.join(GUI, 'weekly.png'))
 providers.append({'type': 'bitmap', 'file': 'limitless:gui/weekly.png', 'ascent': 13, 'height': h, 'chars': ['']})
 json.dump({'providers': providers}, open(os.path.join(A, 'font/gui.json'), 'w'), ensure_ascii=False, indent=1)
 
-# ---- morceau de parchemin qui recouvre une case (les vitres de remplissage des menus)
-patch = np.zeros((16, 16, 4), np.float32); patch[..., :3] = PAPER[:3]; patch[..., 3] = 255
-patch[..., :3] += rng.normal(0, 4, (16, 16, 1))
-Image.fromarray(np.clip(patch, 0, 255).astype(np.uint8)).save(os.path.join(TEX, 'ui_patch.png'))
+# ---- case de remplissage (les vitres des menus) : tuile de page avec un fleuron, 18x18 pour couvrir la case entière
+tile = Image.new('RGBA', (18, 18)); td = ImageDraw.Draw(tile)
+td.rectangle([0, 0, 17, 17], fill=hx('#e2cfa4')); td.rectangle([0, 0, 17, 17], outline=hx('#d2bc8c'))
+for (x, y) in [(8, 4), (9, 4), (8, 13), (9, 13), (4, 8), (4, 9), (13, 8), (13, 9), (8, 8), (9, 9), (8, 9), (9, 8), (6, 6), (11, 11), (6, 11), (11, 6)]:
+    tile.putpixel((x, y), hx('#c8ad7c'))
+tile.save(os.path.join(TEX, 'ui_patch.png'))
 json.dump({'parent': 'minecraft:item/generated', 'textures': {'layer0': 'limitless:item/pass/ui_patch'},
-           'display': {'gui': {'rotation': [0, 0, 0], 'translation': [0, 0, 0], 'scale': [1.13, 1.13, 1]}}},
+           'display': {'gui': {'rotation': [0, 0, 0], 'translation': [0, 0, 0], 'scale': [1.125, 1.125, 1]}}},
           open(os.path.join(MOD, 'ui_patch.json'), 'w'))
 
 # ---- ruban de niveau (métiers) et icônes de métiers en médaillon
