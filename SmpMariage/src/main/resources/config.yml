@@ -1,0 +1,19 @@
+# =====================================================================
+#  SmpMariage - /mariage demander <joueur> · /bisou · /mariage coffre · /mariage tp · /mariage divorcer
+# =====================================================================
+money-symbol: "$"
+# prix de la demande (la bague !) ; 0 = gratuit
+proposal-price: 5000
+proposal-seconds: 60
+# divorcer coûte ça... et la moitié va à l'ex (pension alimentaire)
+divorce-price: 20000
+tp-cooldown-seconds: 300
+kiss-cooldown-seconds: 20
+kiss-distance: 3
+kiss-heal: 2              # PV rendus aux deux
+# lune de miel : X minutes de vitesse et de cœurs après le mariage
+honeymoon-minutes: 10
+# les mariés ne peuvent pas se taper dessus
+no-friendly-fire: true
+# près l'un de l'autre (X blocs) : un peu de régénération toutes les 30 s
+love-aura-distance: 8

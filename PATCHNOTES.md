@@ -1,5 +1,31 @@
 # Patch notes Limitless (textes Discord)
 
+## 04/11/2026 — SAISON 1 : passe, métiers, classements, événements, mariages
+
+🎫 **PASSE DE SAISON** — `/passe`
+> **50 paliers** avec une ligne **gratuite** et une ligne **premium** (argent, clés de caisse, graines, **Pioche Brise-Roc 3x3** et **Pioche du Titan 5x5**). Le premium s'achète avec l'argent du jeu.
+> L'XP de saison se gagne partout : **métiers**, **kills**, **temps de jeu**, **connexion du jour**, **boss**, **largages**, événements.
+
+🏆 **CLASSEMENTS DE LA SEMAINE** — `/hebdo`
+> XP de saison, XP de métiers, joueurs tués, monstres tués, minerais, poissons. Chaque **lundi**, les **3 premiers** de chaque classement gagnent argent + clés (jusqu'à une **clé mythique**).
+
+🛠 **MÉTIERS** — `/metiers`
+> **Mineur, Bûcheron, Fermier, Chasseur, Pêcheur** : 50 niveaux, de l'argent à chaque action (+2 % par niveau) et un bonus d'objets en double (jusqu'à 30 %). Les blocs posés ne comptent pas.
+
+🌑 **LUNE DE SANG** — samedi 21 h
+> 20 min de nuit : monstres plus forts, **butin et XP x2**, monstres en plus autour de toi et des **Champions de sang**. Les meilleurs chasseurs sont récompensés.
+
+☄️ **PLUIE DE MÉTÉORES** — toutes les 4 h
+> Des météorites s'écrasent loin du spawn : **cratère plein de minerais** (diamant, débris antiques…) gardé par un **Golem de météorite**.
+
+👹 **RAID DU COLOSSE** — dimanche 20 h
+> Un boss géant à affronter tous ensemble (`/raid tp`). Sa vie grandit avec le nombre de joueurs. **1 500 000 $** partagés selon les dégâts + clés et Pioche du Titan pour le top 3.
+
+💍 **MARIAGES** — `/mariage`
+> Demande en mariage (la bague coûte 5 000 $), cérémonie avec feux d'artifice et gâteau, **/bisou** (ou accroupi + clic droit) qui soigne, **coffre commun**, **/mariage tp**, petite régénération quand vous êtes ensemble, impossible de taper son/sa marié(e)… et le **divorce** avec pension alimentaire. 💔
+
+📅 `/evenements` pour voir quand arrive le prochain événement.
+
 ## 04/11/2026 — Largages plus riches & anti-kick
 
 📦 **LARGAGES PLUS RICHES**

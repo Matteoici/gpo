@@ -1,6 +1,36 @@
 # Patch notes (la plus récente EN PREMIER). Chaque page = une page du livre (MiniMessage, ~13 lignes max).
 # Couleurs lisibles sur le papier : black, dark_gray, dark_red, dark_blue, dark_green, dark_aqua, dark_purple, gold.
 notes:
+  - id: "2026-11-04-saison"
+    title: "Saison, métiers, événements, mariages"
+    date: "04/11/2026"
+    pages:
+      - |
+        <gold><b>   LIMITLESS</b>
+        <dark_gray>     Patch note
+        <black>━━━━━━━━━━
+        <gold><b>🎫 Saison 1</b>
+        <dark_gray>4 novembre 2026
+
+        <black><b>/passe</b> : 50 paliers, ligne gratuite + ligne <gold>premium</gold> (argent, clés, pioches).
+        XP de saison : métiers, kills, temps de jeu, boss, largages.
+
+        <black><b>/hebdo</b> : 6 classements de la semaine, les 3 premiers gagnent gros chaque lundi.
+      - |
+        <dark_green><b>🛠 Métiers</b> <black>(/metiers)
+
+        <black>Mineur, Bûcheron, Fermier, Chasseur, Pêcheur : 50 niveaux, de l'argent à chaque action, et des objets en double de plus en plus souvent.
+
+        <dark_red><b>💍 Mariages</b>
+        <black>/mariage demander, /bisou, coffre commun, lune de miel... et le divorce (avec pension !).
+      - |
+        <dark_purple><b>🌍 Événements</b> <black>(/evenements)
+
+        <dark_red><b>🌑 Lune de sang</b><black> : samedi soir, monstres renforcés, butin x2, Champions de sang.
+
+        <gold><b>☄ Météores</b><black> : cratères de minerais gardés par des golems.
+
+        <dark_purple><b>👹 Raid du Colosse</b><black> : dimanche soir, boss géant, butin partagé selon les dégâts.
   - id: "2026-11-04-largages"
     title: "Largages plus riches"
     date: "04/11/2026"

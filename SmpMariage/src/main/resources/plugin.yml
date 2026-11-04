@@ -1,0 +1,19 @@
+name: SmpMariage
+version: '${version}'
+main: fr.smpmariage.SmpMariage
+api-version: '26.2'
+softdepend: [Vault]
+description: "Mariages entre joueurs : demande, cérémonie, bisous, coffre commun, lune de miel, divorce (et pension)"
+commands:
+  mariage:
+    description: "Se marier, divorcer, coffre commun..."
+    usage: /mariage [demander|accepter|refuser|info|tp|coffre|divorcer|liste]
+    aliases: [marier, mariages, marry]
+  bisou:
+    description: "Faire un bisou à ton/ta marié(e)"
+    usage: /bisou
+    aliases: [kiss, bisous]
+permissions:
+  smpmariage.use:
+    description: "Se marier"
+    default: true
