@@ -31,6 +31,7 @@ public final class SmpPack extends JavaPlugin implements Listener {
 
     private static final MiniMessage MM = MiniMessage.miniMessage();
     private HttpServer http;
+    private SharedPort shared;
     private volatile byte[] data;
     private volatile byte[] sha1;
     private volatile String shaHex = "";
@@ -47,6 +48,7 @@ public final class SmpPack extends JavaPlugin implements Listener {
     @Override
     public void onDisable() {
         if (http != null) http.stop(0);
+        if (shared != null) shared.uninstall();
     }
 
     private File packFile() {
@@ -77,7 +79,19 @@ public final class SmpPack extends JavaPlugin implements Listener {
     }
 
     private void startHttp() {
-        int port = getConfig().getInt("port", 8080);
+        int port = getConfig().getInt("port", 0);
+        if (port <= 0) {
+            if (shared != null) return;
+            try {
+                shared = new SharedPort(() -> data);
+                shared.install();
+                getLogger().info("Pack servi sur le port du jeu : " + url());
+            } catch (Throwable e) {
+                shared = null;
+                getLogger().severe("Impossible de passer par le port du jeu (" + e + "). Mets un port libre dans config.yml (port: ...).");
+            }
+            return;
+        }
         try {
             http = HttpServer.create(new InetSocketAddress(port), 0);
             http.createContext("/", this::serve);
@@ -111,7 +125,8 @@ public final class SmpPack extends JavaPlugin implements Listener {
 
     private String url() {
         int pub = getConfig().getInt("public-port", 0);
-        if (pub <= 0) pub = getConfig().getInt("port", 8080);
+        if (pub <= 0) pub = getConfig().getInt("port", 0);
+        if (pub <= 0) pub = Bukkit.getPort();
         // le ?v= change à chaque nouveau pack : le jeu ne reprend pas un vieux pack en cache
         return "http://" + getConfig().getString("public-address", "localhost") + ":" + pub + "/pack.zip?v=" + (shaHex.length() >= 8 ? shaHex.substring(0, 8) : "0");
     }
@@ -137,7 +152,7 @@ public final class SmpPack extends JavaPlugin implements Listener {
             case "reload" -> {
                 reloadConfig();
                 boolean ok = load();
-                if (http != null) http.stop(0);
+                if (http != null) { http.stop(0); http = null; }
                 startHttp();
                 s.sendMessage(MM.deserialize(ok ? "<green>Pack rechargé. <gray>SHA-1 " + shaHex + "<newline><gray>/pack-admin renvoyer pour l'envoyer aux joueurs en ligne."
                         : "<red>Pas de pack.zip dans plugins/SmpPack/"));
