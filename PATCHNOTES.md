@@ -1,5 +1,14 @@
 # Patch notes Limitless (textes Discord)
 
+## 04/11/2026 — Largages plus riches & anti-kick
+
+📦 **LARGAGES PLUS RICHES**
+> **7 à 9 objets** par caisse (au lieu de 5 à 7) et des **liasses de billets** de **2 000 à 350 000 $** ! Clic droit pour encaisser… et tant que tu ne l'as pas fait, on peut te la voler 👀
+> Nouveaux objets : diamants, blocs de fer / diamant / émeraude, netherite, pommes de Notch, shulkers, balises, étoiles du Nether, bloc de netherite…
+
+🪂 **PLUS DE KICK POUR « VOL »**
+> Figé en l'air par une capacité (Black Flash, Boogie Bombe, gel, Tranche Mace…) ? Tu n'es plus expulsé pour fly.
+
 ## 04/11/2026 — Toji inarrêtable
 
 ✦ **TOJI INARRÊTABLE**

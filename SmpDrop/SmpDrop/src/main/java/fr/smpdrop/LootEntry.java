@@ -31,6 +31,9 @@ public final class LootEntry {
     public final PotionType potion;    // peut être null
     public final int max;              // nombre max par caisse (0 = illimité)
     public final List<ItemStack> bonus = new ArrayList<>();
+    /** liasse de billets : [min, max] (null = objet normal) */
+    public int[] money;
+    static String symbol = "$";
 
     LootEntry(Rarity rarity, Material material, int[] amount, double weight, String name, List<String> lore,
               Map<String, String> enchantNames, String potionName, int max, List<String> bonusNames, Logger log) {
@@ -87,12 +90,20 @@ public final class LootEntry {
 
     /** Nom affiché de l'objet (nom personnalisé ou nom du jeu). */
     public Component displayName() {
+        if (money != null) return Texts.parse("<green>Liasse de billets");
         if (name != null) return Texts.parse(name);
         return Component.translatable(material.translationKey());
     }
 
     /** Fabrique les piles d'objets (une potion = une pile, d'où la liste). */
     public List<ItemStack> create(Random r) {
+        if (money != null) {
+            long v = money[0] + (money[1] > money[0] ? r.nextInt(money[1] - money[0] + 1) : 0);
+            v = Math.max(100, Math.round(v / 100.0) * 100); // arrondi à 100
+            List<ItemStack> out = new ArrayList<>();
+            out.add(Banknotes.note(v, rarity));
+            return out;
+        }
         int amount = minAmount + (maxAmount > minAmount ? r.nextInt(maxAmount - minAmount + 1) : 0);
         ItemStack proto = new ItemStack(material, 1);
         // objet ordinaire (diamants, fer, nourriture...) : aucune étiquette, sinon il ne s'empile plus avec les normaux

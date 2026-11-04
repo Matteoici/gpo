@@ -144,6 +144,7 @@ public final class Settings {
             else log.warning("Rareté garantie inconnue : " + g);
         }
 
+        LootEntry.symbol = c.getString("loot.money-symbol", "$");
         for (Map<?, ?> m : c.getMapList("loot.items")) {
             try {
                 String rid = str(m.get("rarity"), "commun").toLowerCase(Locale.ROOT);
@@ -152,7 +153,8 @@ public final class Settings {
                     log.warning("Rareté inconnue : " + rid);
                     continue;
                 }
-                Material mat = Material.matchMaterial(str(m.get("material"), ""));
+                boolean cash = m.get("money") != null;
+                Material mat = cash ? Material.PAPER : Material.matchMaterial(str(m.get("material"), ""));
                 if (mat == null || !mat.isItem()) {
                     log.warning("Objet inconnu dans le butin : " + m.get("material"));
                     continue;
@@ -167,9 +169,11 @@ public final class Settings {
                 if (m.get("bonus") instanceof List<?> l) for (Object o : l) bonus.add(String.valueOf(o));
                 Object name = m.get("name");
                 Object potion = m.get("potion");
-                loot.entries.add(new LootEntry(rar, mat, range(str(m.get("amount"), "1"), 1),
+                LootEntry le = new LootEntry(rar, mat, range(str(m.get("amount"), "1"), 1),
                         dbl(m.get("weight"), 1), name == null ? null : String.valueOf(name), lore, ench,
-                        potion == null ? null : String.valueOf(potion), (int) dbl(m.get("max"), 0), bonus, log));
+                        potion == null ? null : String.valueOf(potion), (int) dbl(m.get("max"), 0), bonus, log);
+                if (cash) le.money = range(str(m.get("money"), "1000"), 1000);
+                loot.entries.add(le);
             } catch (Exception e) {
                 log.warning("Objet de butin ignoré (" + m + ") : " + e.getMessage());
             }

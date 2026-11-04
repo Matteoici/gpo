@@ -1,6 +1,22 @@
 # Patch notes (la plus récente EN PREMIER). Chaque page = une page du livre (MiniMessage, ~13 lignes max).
 # Couleurs lisibles sur le papier : black, dark_gray, dark_red, dark_blue, dark_green, dark_aqua, dark_purple, gold.
 notes:
+  - id: "2026-11-04-largages"
+    title: "Largages plus riches"
+    date: "04/11/2026"
+    pages:
+      - |
+        <dark_aqua><b>   LIMITLESS</b>
+        <dark_gray>     Patch note
+        <black>━━━━━━━━━━
+        <dark_aqua><b>📦 Largages</b>
+        <dark_aqua><b>plus riches</b>
+        <dark_gray>4 novembre 2026
+
+        <black>7 à 9 objets par caisse (au lieu de 5 à 7) et des <dark_green><b>liasses de billets</b></dark_green> : de 2 000 à 350 000 $.
+        <dark_gray>Clic droit pour encaisser… et on peut te la voler avant !
+
+        <black>Nouveaux : diamants, netherite, balises, étoiles du Nether…
   - id: "2026-11-04-toji-inarretable"
     title: "Toji inarrêtable"
     date: "04/11/2026"

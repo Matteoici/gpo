@@ -3,6 +3,8 @@
 #  Les textes sont dans messages.yml. Après une modification : /largage reload
 # =====================================================================
 
+config-version: 2
+
 # ---------------------------------------------------------------- Fréquence
 schedule:
   # un largage toutes les X minutes (180 = 3 heures)
@@ -102,7 +104,9 @@ loot:
   chest-seconds: 120
 
   # nombre total d'objets dans une caisse (tirages)
-  rolls: 5-7
+  rolls: 7-9
+  # symbole de l'argent sur les liasses de billets
+  money-symbol: "$"
   # rareté garantie : un objet de cette rareté au minimum dans chaque caisse
   guaranteed: [epique]
 
@@ -139,7 +143,32 @@ loot:
   #   rarity, material, amount ("2-4" ou 3), weight (chance dans sa rareté),
   #   name, lore, enchants {nom: niveau ou "min-max"}, potion (type), max (par caisse),
   #   bonus (objets offerts avec : ["MATERIAL:quantité"])
+  #   money: "5000-15000"  -> une LIASSE DE BILLETS (clic droit pour encaisser ; on peut se la faire voler avant)
   items:
+    # ------------------------------------------------ 💵 ARGENT (liasses de billets)
+    - {rarity: commun, money: "2000-5000", weight: 14}
+    - {rarity: rare, money: "6000-15000", weight: 12}
+    - {rarity: epique, money: "20000-40000", weight: 10}
+    - {rarity: legendaire, money: "60000-120000", weight: 8}
+    - {rarity: mythique, money: "200000-350000", weight: 2}
+    # ------------------------------------------------ nouveaux objets
+    - {rarity: commun, material: DIAMOND, amount: 2-5, weight: 8, v2: true}
+    - {rarity: commun, material: IRON_BLOCK, amount: 2-4, weight: 6, v2: true}
+    - {rarity: commun, material: GOLDEN_CARROT, amount: 16-32, weight: 6, v2: true}
+    - {rarity: commun, material: COOKED_BEEF, amount: 16-32, weight: 5, v2: true}
+    - {rarity: rare, material: DIAMOND, amount: 6-12, weight: 6, v2: true}
+    - {rarity: rare, material: EMERALD_BLOCK, amount: 2-5, weight: 4, v2: true}
+    - {rarity: rare, material: EXPERIENCE_BOTTLE, amount: 24-48, weight: 5, v2: true}
+    - {rarity: rare, material: SPLASH_POTION, potion: strong_swiftness, amount: 1-2, weight: 3, v2: true}
+    - {rarity: epique, material: DIAMOND_BLOCK, amount: 2-4, weight: 5, v2: true}
+    - {rarity: epique, material: NETHERITE_SCRAP, amount: 2-4, weight: 5, v2: true}
+    - {rarity: epique, material: ENCHANTED_GOLDEN_APPLE, weight: 2, max: 1, v2: true}
+    - {rarity: epique, material: SHULKER_BOX, weight: 2, max: 1, v2: true}
+    - {rarity: legendaire, material: NETHERITE_INGOT, amount: 2-4, weight: 5, v2: true}
+    - {rarity: legendaire, material: DIAMOND_BLOCK, amount: 6-10, weight: 4, v2: true}
+    - {rarity: legendaire, material: BEACON, weight: 2, max: 1, v2: true}
+    - {rarity: mythique, material: NETHERITE_BLOCK, weight: 1, max: 1, v2: true}
+    - {rarity: mythique, material: NETHER_STAR, amount: 2, weight: 1, max: 1, v2: true}
     # ------------------------------------------------ COMMUN
     - {rarity: commun, material: GOLDEN_APPLE, amount: 2-4, weight: 10}
     - {rarity: commun, material: ENDER_PEARL, amount: 2-4, weight: 10}

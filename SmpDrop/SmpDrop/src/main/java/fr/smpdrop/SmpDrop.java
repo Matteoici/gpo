@@ -15,6 +15,7 @@ public final class SmpDrop extends JavaPlugin {
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        migrate();
         entityKey = new NamespacedKey(this, "airdrop");
         settings = new Settings(getConfig(), getLogger());
         texts = new Texts(this);
@@ -23,6 +24,7 @@ public final class SmpDrop extends JavaPlugin {
         manager.load();
 
         getServer().getPluginManager().registerEvents(new DropListener(this), this);
+        getServer().getPluginManager().registerEvents(new Banknotes(), this);
         PluginCommand cmd = getCommand("largage");
         if (cmd != null) {
             DropCommand dc = new DropCommand(this);
@@ -48,6 +50,27 @@ public final class SmpDrop extends JavaPlugin {
         if (manager != null) {
             manager.stopAll();
             manager.save();
+        }
+    }
+
+    /** Ajoute au config déjà installé ce qui est nouveau (argent, plus d'objets) sans toucher au reste. */
+    private void migrate() {
+        var c = getConfig();
+        int v = c.getInt("config-version", 1);
+        if (v < 2) {
+            java.util.List<java.util.Map<?, ?>> items = new java.util.ArrayList<>(c.getMapList("loot.items"));
+            var def = c.getDefaults();
+            if (def != null) {
+                for (java.util.Map<?, ?> m : def.getMapList("loot.items")) {
+                    if (m.get("money") != null || Boolean.TRUE.equals(m.get("v2"))) items.add(m);
+                }
+            }
+            c.set("loot.items", items);
+            if ("5-7".equals(String.valueOf(c.get("loot.rolls")))) c.set("loot.rolls", "7-9");
+            c.set("loot.money-symbol", c.getString("loot.money-symbol", "$"));
+            c.set("config-version", 2);
+            saveConfig();
+            getLogger().info("Largages : billets et nouveaux objets ajoutés au butin.");
         }
     }
 

@@ -3,19 +3,21 @@ plugins {
 }
 
 group = "fr.smpdrop"
-version = "1.0.3"
+version = "1.1.0"
 
 repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
     maven("https://repo.extendedclip.com/releases/") // PlaceholderAPI
     maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
+    maven("https://jitpack.io") // Vault
 }
 
 dependencies {
     // le build 134 de Paper référence une bibliothèque (adventure 5.2.0) pas encore publiée : on reste avant
     compileOnly("io.papermc.paper:paper-api") { version { strictly("[26.2.build.0, 26.2.build.134-stable)") } }
     compileOnly("me.clip:placeholderapi:2.11.6") { isTransitive = false }
+    compileOnly("com.github.MilkBowl:VaultAPI:1.7") { isTransitive = false }
 }
 
 java {

@@ -2,7 +2,7 @@ name: SmpDrop
 version: '${version}'
 main: fr.smpdrop.SmpDrop
 api-version: '26.2'
-softdepend: [PlaceholderAPI, SmpGuilds, SmpStart]
+softdepend: [PlaceholderAPI, SmpGuilds, SmpStart, Vault]
 description: Largages aériens PvP toutes les 3 heures (caisse en parachute, traqueur, butin rare)
 commands:
   largage:
