@@ -51,6 +51,10 @@ meteors:
   count: 4
   min-radius: 300
   max-radius: 2000
+  # de préférence près d'un joueur au hasard (entre near-min et near-max blocs), pour qu'on puisse y aller
+  near-players: true
+  near-min: 80
+  near-max: 250
   crater-radius: 3
   impact-damage: 10
   # minerais dans le cratère : bloc -> poids

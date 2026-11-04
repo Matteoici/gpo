@@ -1,0 +1,21 @@
+{
+ "providers": [
+  {
+   "type": "space",
+   "advances": {
+    "": -8,
+    "": -1,
+    "": -169
+   }
+  },
+  {
+   "type": "bitmap",
+   "file": "limitless:gui/passe.png",
+   "ascent": 13,
+   "height": 126,
+   "chars": [
+    ""
+   ]
+  }
+ ]
+}

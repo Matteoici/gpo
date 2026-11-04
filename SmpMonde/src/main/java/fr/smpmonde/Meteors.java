@@ -51,6 +51,7 @@ final class Meteors implements Listener {
     private final List<UUID> spawned = new ArrayList<>();
     private final List<BukkitTask> tasks = new ArrayList<>();
     private boolean running;
+    private final List<org.bukkit.Chunk> tickets = new ArrayList<>();
 
     Meteors(SmpMonde plugin) {
         this.plugin = plugin;
@@ -88,11 +89,30 @@ final class Meteors implements Listener {
             return;
         }
         ThreadLocalRandom r = ThreadLocalRandom.current();
-        double a = r.nextDouble() * Math.PI * 2, min = c("min-radius", 300), max = c("max-radius", 2000);
+        double cx = plugin.getConfig().getDouble("center-x", 0), cz = plugin.getConfig().getDouble("center-z", 0);
+        double min = c("min-radius", 300), max = c("max-radius", 2000);
+        // de préférence pas trop loin d'un joueur (pour qu'on puisse y aller), sinon n'importe où dans la zone
+        List<Player> near = new ArrayList<>();
+        if (plugin.getConfig().getBoolean("meteors.near-players", true))
+            for (Player p : w.getPlayers()) if (p.getGameMode() == GameMode.SURVIVAL && plugin.allowed(p.getLocation())) near.add(p);
+        if (!near.isEmpty()) {
+            Location c = near.get(r.nextInt(near.size())).getLocation();
+            cx = c.getX();
+            cz = c.getZ();
+            min = c("near-min", 80);
+            max = c("near-max", 250);
+        }
+        double a = r.nextDouble() * Math.PI * 2;
         double d = Math.sqrt(r.nextDouble() * (max * max - min * min) + min * min);
-        int x = (int) (plugin.getConfig().getDouble("center-x", 0) + Math.cos(a) * d), z = (int) (plugin.getConfig().getDouble("center-z", 0) + Math.sin(a) * d);
+        int x = (int) (cx + Math.cos(a) * d), z = (int) (cz + Math.sin(a) * d);
         w.getChunkAtAsync(x >> 4, z >> 4, true).whenComplete((ch, err) -> Bukkit.getScheduler().runTask(plugin, () -> {
-            Location g = err == null ? SmpMonde.ground(w, x, z) : null;
+            Location g = null;
+            if (err == null && ch != null) {
+                // le chunk reste chargé jusqu'à la fin (chute, cratère, golem)
+                ch.addPluginChunkTicket(plugin);
+                tickets.add(ch);
+                g = SmpMonde.ground(w, x, z);
+            }
             if (g != null && plugin.allowed(g)) spots.add(g);
             find(w, count, tries - 1, spots);
         }));
@@ -101,6 +121,11 @@ final class Meteors implements Listener {
     private void fall(List<Location> spots, int i) {
         if (i >= spots.size()) {
             Bukkit.getScheduler().runTaskLater(plugin, () -> running = false, 200L);
+            List<org.bukkit.Chunk> mine = new ArrayList<>(tickets);
+            tasks.add(Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                for (org.bukkit.Chunk ch : mine) ch.removePluginChunkTicket(plugin);
+                tickets.removeAll(mine);
+            }, 20L * 60 * 16));
             if (spots.isEmpty()) {
                 running = false;
                 Bukkit.broadcast(mm("<gray>☄ Les météorites se sont désintégrées dans l'atmosphère..."));
@@ -118,8 +143,11 @@ final class Meteors implements Listener {
         }
         // la boule de feu
         World w = target.getWorld();
-        Vector dir = new Vector(ThreadLocalRandom.current().nextDouble(-1, 1), 0, ThreadLocalRandom.current().nextDouble(-1, 1)).normalize().multiply(70);
-        Location from = target.clone().add(dir).add(0, 110, 0);
+        Vector dir = new Vector(ThreadLocalRandom.current().nextDouble(-1, 1), 0, ThreadLocalRandom.current().nextDouble(-1, 1)).normalize().multiply(28);
+        Location from = target.clone().add(dir).add(0, 90, 0);
+        org.bukkit.Chunk fc = from.getChunk(); // chargé (et gardé) pour que la boule de feu existe
+        fc.addPluginChunkTicket(plugin);
+        tickets.add(fc);
         BlockDisplay rock = w.spawn(from, BlockDisplay.class, d -> {
             d.setBlock(Material.MAGMA_BLOCK.createBlockData());
             d.setTransformation(new Transformation(new Vector3f(-1.5f, -1.5f, -1.5f), new AxisAngle4f(), new Vector3f(3, 3, 3), new AxisAngle4f()));
@@ -275,6 +303,8 @@ final class Meteors implements Listener {
             if (e != null) e.remove();
         }
         spawned.clear();
+        for (org.bukkit.Chunk ch : tickets) ch.removePluginChunkTicket(plugin);
+        tickets.clear();
         running = false;
     }
 }

@@ -117,6 +117,7 @@ def bow_tree(prefix):
                         'fallback': m(prefix + '_pulling_0')}}
 
 def custom(n):
+    if n.startswith('pass_'): return m(f'limitless:item/pass/{n}')
     if n in ('boss_pumpkin', 'boss_crown') or n in SPIDER3D: return m(f'limitless:item/items/{n}')
     return bow_tree(f'limitless:item/items/{n}') if n in BOWS else m(f'limitless:item/items/{n}')
 
@@ -142,6 +143,8 @@ use('breeze_rod', ['sceptre_abysse'])
 use('netherite_shovel', ['tribaton'])
 use('diamond_pickaxe', ['pioche_3x3'])
 use('netherite_pickaxe', ['pioche_5x5'])
+# menu du passe de saison (pass_gui.py)
+use('paper', ['pass_node_on', 'pass_node_cur', 'pass_node_off', 'pass_check', 'pass_prev', 'pass_next', 'pass_claim', 'pass_premium', 'pass_premium_on', 'pass_week', 'pass_season', 'pass_blank'])
 OUTFIT_ICONS = {'leather_chestplate': ['toji_haut', 'gojo_haut', 'sukuna_haut'], 'leather_leggings': ['toji_pantalon', 'gojo_pantalon', 'sukuna_pantalon'],
                 'leather_boots': ['toji_bottes', 'gojo_bottes', 'sukuna_bottes'], 'leather_helmet': ['gojo_bandeau']}
 for _m, _ids in OUTFIT_ICONS.items():

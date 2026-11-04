@@ -59,6 +59,33 @@ final class Gui implements InventoryHolder {
         return "<green>" + "■".repeat(full) + "<dark_gray>" + "■".repeat(len - full);
     }
 
+    /** Icône du pack (papier + custom_model_data) : le menu du passe en parchemin. */
+    static ItemStack pitem(String model, String name, List<String> lore, int amount) {
+        ItemStack it = item(Material.PAPER, name, lore, false);
+        it.setAmount(Math.max(1, Math.min(64, amount)));
+        ItemMeta m = it.getItemMeta();
+        try {
+            var c = m.getCustomModelDataComponent();
+            c.setStrings(List.of(model));
+            m.setCustomModelDataComponent(c);
+        } catch (RuntimeException | LinkageError ignored) {
+        }
+        if (name.isBlank()) m.setHideTooltip(true);
+        it.setItemMeta(m);
+        return it;
+    }
+
+    /** Titre = le fond en parchemin (police du pack), décalé pour couvrir tout le coffre. */
+    static Component packTitle() {
+        return Component.text("\uf801\ue100").font(net.kyori.adventure.key.Key.key("limitless", "gui"))
+                .color(net.kyori.adventure.text.format.NamedTextColor.WHITE);
+    }
+
+    private static void fillBlank(Inventory inv) {
+        ItemStack blank = pitem("pass_blank", " ", List.of(), 1);
+        for (int i = 0; i < inv.getSize(); i++) if (inv.getItem(i) == null) inv.setItem(i, blank);
+    }
+
     private static void fill(Inventory inv) {
         ItemStack pane = item(Material.GRAY_STAINED_GLASS_PANE, " ", List.of(), false);
         for (int i = 0; i < inv.getSize(); i++) if (inv.getItem(i) == null) inv.setItem(i, pane);
@@ -105,7 +132,7 @@ final class Gui implements InventoryHolder {
         int pages = (pl.maxTier() + 8) / 9;
         if (page < 0) page = Math.min(pages - 1, Math.max(0, (Math.max(1, tier) - 1) / 9));
         Gui g = new Gui("pass", page);
-        g.inv = Bukkit.createInventory(g, 54, mm("<dark_gray>🎫 Passe de saison · " + (page + 1) + "/" + pages));
+        g.inv = Bukkit.createInventory(g, 54, packTitle());
         boolean prem = pl.premium(p, d);
         ConfigurationSection t = pl.getConfig().getConfigurationSection("season.tiers");
         int per = pl.xpPerTier();
@@ -114,8 +141,8 @@ final class Gui implements InventoryHolder {
             if (n > pl.maxTier()) break;
             boolean reached = n <= tier;
             double prog = reached ? 1 : (n == tier + 1 ? (d.seasonXp - (long) tier * per) / (double) per : 0);
-            g.inv.setItem(9 + c, item(reached ? Material.LIME_STAINED_GLASS_PANE : (n == tier + 1 ? Material.YELLOW_STAINED_GLASS_PANE : Material.RED_STAINED_GLASS_PANE),
-                    (reached ? "<green>" : "<gray>") + "Palier " + n, List.of(bar(prog, 10), "<dark_gray>" + fmt((long) n * per) + " XP de saison"), false));
+            g.inv.setItem(9 + c, pitem(reached ? "pass_node_on" : (n == tier + 1 ? "pass_node_cur" : "pass_node_off"),
+                    (reached ? "<green>" : "<gray>") + "Palier " + n, List.of(bar(prog, 10), "<dark_gray>" + fmt((long) n * per) + " XP de saison"), n));
             for (int row = 0; row < 2; row++) {
                 boolean free = row == 0;
                 String base = n + "." + (free ? "free" : "premium");
@@ -129,25 +156,25 @@ final class Gui implements InventoryHolder {
                 else if (!reached) lore.add("<red>🔒 Palier " + n + " pas encore atteint");
                 else if (!free && !prem) lore.add("<gold>🔒 Passe premium <gray>(/passe premium)");
                 else lore.add("<yellow>▶ Clic pour récupérer !");
-                g.inv.setItem((free ? 18 : 36) + c, item(claimed ? Material.MINECART : icon,
-                        (free ? "<white>Gratuit" : "<gold>★ Premium") + " · palier " + n, lore, reached && !claimed && (free || prem)));
+                String nm = (free ? "<white>Gratuit" : "<gold>★ Premium") + " · palier " + n;
+                g.inv.setItem((free ? 18 : 36) + c, claimed ? pitem("pass_check", nm, lore, 1) : item(icon, nm, lore, reached && (free || prem)));
             }
         }
-        g.inv.setItem(4, item(Material.NETHER_STAR, pl.getConfig().getString("season.name", "Saison"), List.of(
+        g.inv.setItem(4, pitem("pass_season", pl.getConfig().getString("season.name", "Saison"), List.of(
+                "<gray>Page <white>" + (page + 1) + "</white> / " + pages,
                 "<gray>Palier <white><b>" + tier + "</b></white> / " + pl.maxTier() + " · <white>" + fmt(d.seasonXp) + "</white> XP",
                 "<gray>Fin de saison : <white>" + pl.getConfig().getString("season.ends", "?"),
                 "",
                 "<dark_gray>XP de saison : métiers, kills, temps de jeu,",
-                "<dark_gray>connexion du jour, boss, largages..."), false));
-        g.inv.setItem(27, item(Material.WHITE_BANNER, "<white>⬆ Ligne gratuite", List.of("<gray>Pour tout le monde"), false));
-        g.inv.setItem(45, item(Material.ARROW, "<white>◀ Page précédente", List.of(), false));
-        g.inv.setItem(53, item(Material.ARROW, "<white>Page suivante ▶", List.of(), false));
-        g.inv.setItem(49, item(Material.CHEST, "<green>Tout récupérer", List.of("<gray>Récupère tous les paliers atteints"), false));
-        g.inv.setItem(47, prem ? item(Material.GOLD_BLOCK, "<gold><b>★ Passe premium actif", List.of("<gray>La ligne du bas est à toi"), true)
-                : item(Material.GOLD_INGOT, "<gold><b>★ Passe premium", List.of("<gray>Débloque la ligne du bas (récompenses en plus)",
-                "<gray>Prix : <gold>" + fmt(pl.getConfig().getDouble("season.premium-price", 5000000)) + " " + pl.money(), "", "<yellow>Clic pour l'acheter"), false));
-        g.inv.setItem(51, item(Material.CLOCK, "<aqua>🏆 Classements de la semaine", List.of("<yellow>Clic : /hebdo"), false));
-        fill(g.inv);
+                "<dark_gray>connexion du jour, boss, largages..."), 1));
+        if (page > 0) g.inv.setItem(45, pitem("pass_prev", "<white>◀ Page précédente", List.of(), 1));
+        if (page < pages - 1) g.inv.setItem(53, pitem("pass_next", "<white>Page suivante ▶", List.of(), 1));
+        g.inv.setItem(49, pitem("pass_claim", "<green>Tout récupérer", List.of("<gray>Récupère tous les paliers atteints"), 1));
+        g.inv.setItem(47, prem ? pitem("pass_premium_on", "<gold><b>★ Passe premium actif", List.of("<gray>La ligne du bas est à toi"), 1)
+                : pitem("pass_premium", "<gold><b>★ Passe premium", List.of("<gray>Débloque la ligne du bas (récompenses en plus)",
+                "<gray>Prix : <gold>" + fmt(pl.getConfig().getDouble("season.premium-price", 5000000)) + " " + pl.money(), "", "<yellow>Clic pour l'acheter"), 1));
+        g.inv.setItem(51, pitem("pass_week", "<aqua>🏆 Classements de la semaine", List.of("<yellow>Clic : /hebdo"), 1));
+        fillBlank(g.inv);
         p.openInventory(g.inv);
     }
 

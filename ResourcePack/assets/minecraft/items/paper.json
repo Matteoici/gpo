@@ -1,0 +1,97 @@
+{
+ "model": {
+  "type": "minecraft:select",
+  "property": "minecraft:custom_model_data",
+  "index": 0,
+  "cases": [
+   {
+    "when": "pass_node_on",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/pass/pass_node_on"
+    }
+   },
+   {
+    "when": "pass_node_cur",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/pass/pass_node_cur"
+    }
+   },
+   {
+    "when": "pass_node_off",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/pass/pass_node_off"
+    }
+   },
+   {
+    "when": "pass_check",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/pass/pass_check"
+    }
+   },
+   {
+    "when": "pass_prev",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/pass/pass_prev"
+    }
+   },
+   {
+    "when": "pass_next",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/pass/pass_next"
+    }
+   },
+   {
+    "when": "pass_claim",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/pass/pass_claim"
+    }
+   },
+   {
+    "when": "pass_premium",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/pass/pass_premium"
+    }
+   },
+   {
+    "when": "pass_premium_on",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/pass/pass_premium_on"
+    }
+   },
+   {
+    "when": "pass_week",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/pass/pass_week"
+    }
+   },
+   {
+    "when": "pass_season",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/pass/pass_season"
+    }
+   },
+   {
+    "when": "pass_blank",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/pass/pass_blank"
+    }
+   }
+  ],
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "minecraft:item/paper"
+  }
+ }
+}
