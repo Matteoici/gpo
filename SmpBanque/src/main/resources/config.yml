@@ -1,0 +1,25 @@
+# =====================================================================
+#  SmpBanque
+#   🏦 /banque  : place ton argent, il rapporte des intérêts chaque jour, mais il est bloqué X jours
+#   📜 /contrats : commande des objets aux autres joueurs (ton argent est bloqué jusqu'à la livraison)
+# =====================================================================
+money-symbol: "$"
+timezone: "Europe/Paris"
+
+bank:
+  # intérêts par jour (composés), 0.01 = 1 % par jour
+  daily-rate: 0.01
+  lock-days: 7
+  min-deposit: 1000
+  # plafond de tout l'argent placé par un joueur (intérêts compris : au-delà, plus d'intérêts)
+  max-balance: 10000000
+  max-placements: 5
+  # retirer avant la fin : on perd X % du placement (0 = interdit)
+  early-penalty: 0.15
+
+contracts:
+  max-per-player: 5
+  expire-days: 3
+  min-price: 100
+  # taxe prise sur le prix payé au livreur (0.05 = 5 %)
+  tax: 0.03

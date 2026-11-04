@@ -5,6 +5,9 @@ on:
       plugins:
         description: "dossiers à tester, séparés par des espaces"
         default: "SmpSaison SmpMonde SmpMariage"
+      extra:
+        description: "jars en plus à télécharger (URL séparées par des espaces)"
+        default: "https://github.com/MilkBowl/Vault/releases/download/1.7.3/Vault.jar"
       wait:
         description: "secondes d'attente après les commandes"
         default: "70"
@@ -31,6 +34,7 @@ jobs:
           url=$(curl -fsSL -H 'User-Agent: gpo-ci-test' https://fill.papermc.io/v3/projects/paper/versions/26.2/builds/latest | jq -r '.downloads."server:default".url')
           curl -fsSL -H 'User-Agent: gpo-ci-test' -o srv/paper.jar "$url"
           for d in ${{ inputs.plugins }}; do cp $d/build/libs/*.jar srv/plugins/; done
+          for u in ${{ inputs.extra }}; do curl -fsSL -o "srv/plugins/$(basename $u)" "$u" || echo "pas pu télécharger $u"; done
           echo "eula=true" > srv/eula.txt
           printf 'online-mode=false\nserver-port=25565\nlevel-type=minecraft\\:flat\ngenerate-structures=false\n' > srv/server.properties
       - name: Démarrer et lancer les commandes
@@ -47,5 +51,5 @@ jobs:
       - name: Résultat
         if: always()
         run: |
-          grep -E "SmpSaison|SmpMonde|SmpMariage|Lune|météor|Météor|Golem|Exception|ERROR|WARN.*fr\.smp|at fr\.smp" srv/log.txt | head -80
+          grep -E "SmpSaison|SmpMonde|SmpMariage|SmpBanque|SmpTitles|Lune|météor|Météor|Golem|Exception|ERROR|WARN.*fr\.smp|at fr\.smp" srv/log.txt | head -80
           if grep -qE "at fr\.smp" srv/log.txt; then echo "::error::exception dans un plugin"; exit 1; fi

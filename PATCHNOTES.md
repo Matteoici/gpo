@@ -1,5 +1,19 @@
 # Patch notes Limitless (textes Discord)
 
+## 04/11/2026 — Banque, contrats, prestige & nouveaux titres
+
+🏦 **BANQUE** — `/banque`
+> Place ton argent : il rapporte **1 % par jour** (composé), mais il est **bloqué 7 jours**. Jusqu'à 5 placements et 10 M $. Pressé ? Tu peux retirer avant, en perdant 15 %.
+
+📜 **CONTRATS** — `/contrats`
+> Tiens un objet en main et poste une commande : `/contrats creer 64 50k` = « je veux 64 de ça pour 50 000 $ ». Ton argent est bloqué ; le premier qui livre est payé (3 % de taxe). Pas livré en 3 jours ? Argent rendu. Les objets livrés pendant ton absence t'attendent dans tes **colis**.
+
+★ **PRESTIGE DES MÉTIERS** — `/metiers`
+> Niveau 50 ? Clique sur ton métier pour passer **Prestige** : retour au niveau 1, mais **+10 % d'argent** et **+2 % de bonus** pour toujours, + 100 000 $ et 1 000 XP de saison. Jusqu'à 5 étoiles ★★★★★.
+
+🏷 **NOUVEAUX TITRES**
+> Tous les titres sont refaits en **badges** courts et stylés : 👑 Baron · Roi · Empereur, ☠ Traqueur · Chasseur · Faucheur, 🎃 Briseur · Terreur, 🕷 Tisseur · Venin, ✔ Bosseur · Machine, ★ Champion · Mythe.
+
 ## 04/11/2026 — Rupture du Ciel & Lune de sang plus violente
 
 ✦ **RUPTURE DU CIEL** (Toji)

@@ -65,6 +65,21 @@ public final class SmpTitles extends JavaPlugin implements Listener, TabExecutor
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        if (getConfig().getInt("config-version", 1) < 2) {
+            // titres refaits en badges (resource pack) : courts et stylés
+            var def = getConfig().getDefaults();
+            if (def != null) {
+                var ts = def.getConfigurationSection("titles");
+                if (ts != null) for (String id : ts.getKeys(false)) {
+                    getConfig().set("titles." + id + ".display", ts.getString(id + ".display"));
+                    if (!getConfig().isSet("titles." + id + ".description")) getConfig().set("titles." + id + ".description", ts.getString(id + ".description"));
+                    if (!getConfig().isSet("titles." + id + ".requires")) getConfig().set("titles." + id + ".requires", ts.get(id + ".requires"));
+                }
+                getConfig().set("format", def.getString("format", "<title> "));
+            }
+            getConfig().set("config-version", 2);
+            saveConfig();
+        }
         // titres de la Reine Araignée (ajoutés aux configs déjà installées)
         if (!getConfig().isSet("titles.reine_1")) {
             getConfig().set("counters.reine", "Reines Araignées vaincues");

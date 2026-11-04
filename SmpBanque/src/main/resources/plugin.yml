@@ -1,0 +1,19 @@
+name: SmpBanque
+version: '${version}'
+main: fr.smpbanque.SmpBanque
+api-version: '26.2'
+depend: [Vault]
+description: "Banque à intérêts (placements bloqués) et contrats d'achat entre joueurs"
+commands:
+  banque:
+    description: "Ta banque : placer de l'argent qui rapporte des intérêts"
+    usage: /banque [placer <montant>|retirer]
+    aliases: [bank, epargne]
+  contrats:
+    description: "Contrats : commander des objets aux autres joueurs"
+    usage: /contrats [creer <quantité> <prix total>|colis]
+    aliases: [contrat, commandes, contracts]
+permissions:
+  smpbanque.admin:
+    description: "Annuler n'importe quel contrat"
+    default: op

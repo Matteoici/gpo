@@ -1,6 +1,25 @@
 # Patch notes (la plus récente EN PREMIER). Chaque page = une page du livre (MiniMessage, ~13 lignes max).
 # Couleurs lisibles sur le papier : black, dark_gray, dark_red, dark_blue, dark_green, dark_aqua, dark_purple, gold.
 notes:
+  - id: "2026-11-04-banque"
+    title: "Banque, contrats, prestige, titres"
+    date: "04/11/2026"
+    pages:
+      - |
+        <gold><b>   LIMITLESS</b>
+        <dark_gray>     Patch note
+        <black>━━━━━━━━━━
+        <gold><b>🏦 Banque</b> <black>(/banque)
+        <black>Place ton argent : <dark_green>+1 % par jour</dark_green>, bloqué 7 jours.
+
+        <gold><b>📜 Contrats</b> <black>(/contrats)
+        <black>Commande des objets aux autres joueurs, ton argent est bloqué jusqu'à la livraison.
+      - |
+        <gold><b>★ Prestige</b> <black>(/metiers)
+        <black>Au niveau 50, repars au niveau 1 avec <gold>+10 % d'argent</gold> et <dark_aqua>+2 % de bonus</dark_aqua> pour toujours (5 prestiges).
+
+        <dark_purple><b>🏷 Titres</b>
+        <black>Tous refaits en badges courts et colorés : Baron, Roi, Empereur, Faucheur, Venin, Mythe...
   - id: "2026-11-04-rupture"
     title: "Rupture du Ciel"
     date: "04/11/2026"

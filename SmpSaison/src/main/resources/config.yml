@@ -25,6 +25,13 @@ jobs-settings:
   spawner-ratio: 0.2
   # petit résumé des gains au-dessus de la barre d'objets
   actionbar: true
+  # PRESTIGE : au niveau max, clic sur le métier dans /metiers -> retour au niveau 1 avec un bonus permanent
+  prestige:
+    max: 5
+    money: 0.10          # +10 % d'argent par prestige
+    bonus-chance: 2      # +2 % de bonus (objets en double) par prestige
+    season-xp: 1000
+    rewards: ["money:100000"]
 
 jobs:
   mineur:

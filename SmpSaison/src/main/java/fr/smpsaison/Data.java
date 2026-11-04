@@ -24,6 +24,8 @@ final class Data {
         String name = "?";
         /** métier -> [niveau, xp dans le niveau] */
         final Map<String, double[]> jobs = new HashMap<>();
+        /** métier -> nombre de prestiges */
+        final Map<String, Integer> prestige = new HashMap<>();
         long seasonXp;
         int seasonNumber;
         boolean premium;
@@ -86,6 +88,8 @@ final class Data {
                 if (j != null) for (String job : j.getKeys(false)) {
                     p.jobs.put(job, new double[]{j.getInt(job + ".level", 1), j.getDouble(job + ".xp", 0)});
                 }
+                ConfigurationSection pr = s.getConfigurationSection("prestige");
+                if (pr != null) for (String job : pr.getKeys(false)) p.prestige.put(job, pr.getInt(job));
                 p.seasonXp = s.getLong("season.xp");
                 p.seasonNumber = s.getInt("season.number");
                 p.premium = s.getBoolean("season.premium");
@@ -112,6 +116,7 @@ final class Data {
                 y.set(b + "jobs." + e.getKey() + ".level", (int) e.getValue()[0]);
                 y.set(b + "jobs." + e.getKey() + ".xp", Math.round(e.getValue()[1] * 100) / 100.0);
             }
+            for (Map.Entry<String, Integer> e : p.prestige.entrySet()) y.set(b + "prestige." + e.getKey(), e.getValue());
             y.set(b + "season.xp", p.seasonXp);
             y.set(b + "season.number", p.seasonNumber);
             y.set(b + "season.premium", p.premium);

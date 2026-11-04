@@ -1,3 +1,4 @@
+config-version: 2
 # =====================================================================
 #  SmpTitles - titres débloqués en gagnant des événements, affichés devant le pseudo
 #
@@ -14,7 +15,7 @@
 show-in-chat: true     # dans le chat (marche avec n'importe quel plugin de chat)
 show-in-tab: true      # dans la liste TAB
 show-above-head: true  # au-dessus de la tête
-format: "<title> <dark_gray>|</dark_gray> "
+format: "<title> "
 
 # au-dessus de la tête, chaque joueur choisit avec /nametag : titre, tag de guilde, argent
 nametag:
@@ -36,20 +37,20 @@ counters:
 
 # requires : compteur -> nombre à atteindre (tous doivent être atteints)
 titles:
-  koth_1:   {display: "<gold>♛ Conquérant", description: "Gagner un KOTH", requires: {koth: 1}}
-  koth_5:   {display: "<gradient:#ffd36b:#ff7a00><b>♛ Roi de la Colline", description: "Gagner 5 KOTH", requires: {koth: 5}}
-  koth_20:  {display: "<gradient:#ff4b1f:#ffd36b><b>♛ Empereur", description: "Gagner 20 KOTH", requires: {koth: 20}}
-  bounty_1: {display: "<red>☠ Chasseur", description: "Encaisser une prime", requires: {bounty: 1}}
-  bounty_10: {display: "<gradient:#ff416c:#ff4b2b><b>☠ Chasseur de Primes", description: "Encaisser 10 primes", requires: {bounty: 10}}
-  bounty_50: {display: "<gradient:#8e0e00:#ff4b2b><b>☠ Faucheur", description: "Encaisser 50 primes", requires: {bounty: 50}}
-  boss_1:   {display: "<#ff7a00>🎃 Briseur de Citrouille", description: "Vaincre le Roi Citrouille", requires: {boss: 1}}
-  boss_10:  {display: "<gradient:#ff7a00:#7a1fa2><b>🎃 Fléau du Roi", description: "Vaincre 10 fois le Roi Citrouille", requires: {boss: 10}}
-  reine_1:  {display: "<#5aa0ff>🕷 Briseur de Toiles", description: "Vaincre la Reine Araignée", requires: {reine: 1}}
-  reine_10: {display: "<gradient:#3a6bff:#e1ebff><b>🕷 Fléau de la Reine", description: "Vaincre 10 fois la Reine Araignée", requires: {reine: 10}}
-  quest_10: {display: "<green>✔ Travailleur", description: "Finir 10 quêtes de la semaine", requires: {quest-weekly: 10}}
-  quest_100: {display: "<gradient:#56ab2f:#a8e063><b>✔ Infatigable", description: "Finir 100 quêtes du jour", requires: {quest: 100}}
-  event_1:  {display: "<aqua>★ Champion", description: "Gagner un événement du staff", requires: {event: 1}}
-  event_5:  {display: "<gradient:#00c6ff:#0072ff><b>★ Légende", description: "Gagner 5 événements du staff", requires: {event: 5}}
+  koth_1:   {display: "<font:limitless:titles></font>", description: "Gagner un KOTH", requires: {koth: 1}}
+  koth_5:   {display: "<font:limitless:titles></font>", description: "Gagner 5 KOTH", requires: {koth: 5}}
+  koth_20:  {display: "<font:limitless:titles></font>", description: "Gagner 20 KOTH", requires: {koth: 20}}
+  bounty_1: {display: "<font:limitless:titles></font>", description: "Encaisser une prime", requires: {bounty: 1}}
+  bounty_10: {display: "<font:limitless:titles></font>", description: "Encaisser 10 primes", requires: {bounty: 10}}
+  bounty_50: {display: "<font:limitless:titles></font>", description: "Encaisser 50 primes", requires: {bounty: 50}}
+  boss_1:   {display: "<font:limitless:titles></font>", description: "Vaincre le Roi Citrouille", requires: {boss: 1}}
+  boss_10:  {display: "<font:limitless:titles></font>", description: "Vaincre 10 fois le Roi Citrouille", requires: {boss: 10}}
+  reine_1:  {display: "<font:limitless:titles></font>", description: "Vaincre la Reine Araignée", requires: {reine: 1}}
+  reine_10: {display: "<font:limitless:titles></font>", description: "Vaincre 10 fois la Reine Araignée", requires: {reine: 10}}
+  quest_10: {display: "<font:limitless:titles></font>", description: "Finir 10 quêtes de la semaine", requires: {quest-weekly: 10}}
+  quest_100: {display: "<font:limitless:titles></font>", description: "Finir 100 quêtes du jour", requires: {quest: 100}}
+  event_1:  {display: "<font:limitless:titles></font>", description: "Gagner un événement du staff", requires: {event: 1}}
+  event_5:  {display: "<font:limitless:titles></font>", description: "Gagner 5 événements du staff", requires: {event: 5}}
 
 messages:
   prefix: "<dark_gray>[<gold>Titres</gold>]</dark_gray> "

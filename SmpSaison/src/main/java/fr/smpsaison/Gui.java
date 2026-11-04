@@ -114,12 +114,19 @@ final class Gui implements InventoryHolder {
             lore.add("<gray>Niveau <white><b>" + lvl + "</b></white> / " + j.maxLevel());
             lore.add(bar(ratio, 20) + " <white>" + (max ? "MAX" : fmt(v[1]) + " / " + fmt(j.need(lvl)) + " XP"));
             lore.add("");
-            lore.add("<gray>Gains : <gold>+" + Math.round((j.moneyMult(lvl) - 1) * 100) + " %");
-            lore.add("<gray>Bonus : <aqua>" + fmt(j.bonusChance(lvl)) + " %</aqua> <gray>de " + j.bonusText(id));
+            int pr = j.prestige(p.getUniqueId(), id);
+            lore.add("<gray>Gains : <gold>+" + Math.round((j.moneyMult(p.getUniqueId(), id) - 1) * 100) + " %");
+            lore.add("<gray>Bonus : <aqua>" + fmt(j.bonusChance(p.getUniqueId(), id)) + " %</aqua> <gray>de " + j.bonusText(id));
+            lore.add("<gray>Prestige : <gold>" + (pr == 0 ? "<dark_gray>aucun" : "★".repeat(pr)) + " <dark_gray>(" + pr + "/" + j.maxPrestige() + ")");
+            if (max && pr < j.maxPrestige()) {
+                lore.add("");
+                lore.add("<gold><b>▶ Clic : passer Prestige " + (pr + 1) + "</b>");
+                lore.add("<dark_gray>Retour au niveau 1, mais +10 % d'argent et +2 % de bonus pour toujours.");
+            }
             lore.add("");
             lore.add("<dark_gray>Chaque action rapporte de l'XP de métier,");
             lore.add("<dark_gray>de l'argent et de l'XP de saison.");
-            ItemStack icon = item(j.icon(id), j.name(id), lore, max);
+            ItemStack icon = item(j.icon(id), j.name(id) + (pr > 0 ? " <gold>" + "★".repeat(pr) : ""), lore, max);
             ItemMeta im = icon.getItemMeta();
             try {
                 var cmd = im.getCustomModelDataComponent();
@@ -251,6 +258,8 @@ final class Gui implements InventoryHolder {
 
     // ================================================================= clics
 
+    private static final java.util.Map<String, Long> CONFIRM = new java.util.HashMap<>();
+
     static final class Listen implements Listener {
         private final SmpSaison pl;
 
@@ -272,6 +281,25 @@ final class Gui implements InventoryHolder {
             switch (g.kind) {
                 case "jobs" -> {
                     if (s == 26) pass(pl, p, -1);
+                    else if (s >= 11 && s <= 15) {
+                        List<String> ids = pl.jobs().ids();
+                        int k = s - 11;
+                        if (k >= ids.size()) return;
+                        String job = ids.get(k);
+                        if (pl.data().of(p.getUniqueId()).level(job) < pl.jobs().maxLevel()) return;
+                        // deux clics pour confirmer
+                        String key = p.getUniqueId() + ":" + job;
+                        Long t = CONFIRM.get(key);
+                        if (t == null || t < System.currentTimeMillis()) {
+                            CONFIRM.put(key, System.currentTimeMillis() + 5000);
+                            p.sendMessage(mm("<gold>★ Reclique dans les 5 s pour passer Prestige en " + pl.jobs().name(job) + " <gray>(retour au niveau 1)."));
+                            return;
+                        }
+                        CONFIRM.remove(key);
+                        String err = pl.jobs().doPrestige(p, job);
+                        if (err != null) p.sendMessage(mm(err));
+                        jobs(pl, p);
+                    }
                 }
                 case "weekly" -> {
                     if (s == 22) pass(pl, p, -1);

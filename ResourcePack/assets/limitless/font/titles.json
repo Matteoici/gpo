@@ -1,0 +1,130 @@
+{
+ "providers": [
+  {
+   "type": "bitmap",
+   "file": "limitless:font/titles/koth_1.png",
+   "ascent": 8,
+   "height": 10,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "limitless:font/titles/koth_5.png",
+   "ascent": 8,
+   "height": 10,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "limitless:font/titles/koth_20.png",
+   "ascent": 8,
+   "height": 10,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "limitless:font/titles/bounty_1.png",
+   "ascent": 8,
+   "height": 10,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "limitless:font/titles/bounty_10.png",
+   "ascent": 8,
+   "height": 10,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "limitless:font/titles/bounty_50.png",
+   "ascent": 8,
+   "height": 10,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "limitless:font/titles/boss_1.png",
+   "ascent": 8,
+   "height": 10,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "limitless:font/titles/boss_10.png",
+   "ascent": 8,
+   "height": 10,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "limitless:font/titles/reine_1.png",
+   "ascent": 8,
+   "height": 10,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "limitless:font/titles/reine_10.png",
+   "ascent": 8,
+   "height": 10,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "limitless:font/titles/quest_10.png",
+   "ascent": 8,
+   "height": 10,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "limitless:font/titles/quest_100.png",
+   "ascent": 8,
+   "height": 10,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "limitless:font/titles/event_1.png",
+   "ascent": 8,
+   "height": 10,
+   "chars": [
+    ""
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "limitless:font/titles/event_5.png",
+   "ascent": 8,
+   "height": 10,
+   "chars": [
+    ""
+   ]
+  }
+ ]
+}

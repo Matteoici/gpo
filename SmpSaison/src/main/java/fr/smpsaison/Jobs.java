@@ -126,6 +126,47 @@ final class Jobs implements Listener {
         return lvl * plugin.getConfig().getDouble("jobs-settings.bonus-per-level", 0.6);
     }
 
+    int maxPrestige() {
+        return plugin.getConfig().getInt("jobs-settings.prestige.max", 5);
+    }
+
+    int prestige(UUID id, String job) {
+        return plugin.data().of(id).prestige.getOrDefault(job, 0);
+    }
+
+    /** bonus (% d'objets en double) avec le prestige */
+    double bonusChance(UUID id, String job) {
+        return bonusChance(plugin.data().of(id).level(job)) + prestige(id, job) * plugin.getConfig().getDouble("jobs-settings.prestige.bonus-chance", 2);
+    }
+
+    /** multiplicateur d'argent avec le prestige */
+    double moneyMult(UUID id, String job) {
+        return moneyMult(plugin.data().of(id).level(job)) * (1 + prestige(id, job) * plugin.getConfig().getDouble("jobs-settings.prestige.money", 0.10));
+    }
+
+    /** Niveau max -> Prestige : retour au niveau 1, bonus permanent, récompense. Renvoie un message d'erreur ou null. */
+    String doPrestige(Player p, String job) {
+        Data.P d = plugin.data().of(p.getUniqueId());
+        if (d.level(job) < maxLevel()) return "<red>Il faut être niveau " + maxLevel() + " pour passer Prestige.";
+        int pr = prestige(p.getUniqueId(), job);
+        if (pr >= maxPrestige()) return "<gold>Tu as déjà le prestige maximum dans ce métier. ★";
+        d.prestige.put(job, pr + 1);
+        double[] j = d.job(job);
+        j[0] = 1;
+        j[1] = 0;
+        plugin.data().dirty = true;
+        plugin.addSeasonXp(p.getUniqueId(), plugin.getConfig().getDouble("jobs-settings.prestige.season-xp", 1000));
+        for (String c : plugin.getConfig().getStringList("jobs-settings.prestige.rewards")) {
+            if (c.startsWith("money:")) Bank.give(p, Double.parseDouble(c.substring(6)));
+            else Bukkit.dispatchCommand(Bukkit.getConsoleSender(), c.replace("%player%", p.getName()));
+        }
+        String stars = "★".repeat(pr + 1);
+        p.showTitle(net.kyori.adventure.title.Title.title(SmpSaison.mm("<gold><b>" + stars + " PRESTIGE " + (pr + 1)), SmpSaison.mm(name(job) + " <gray>· retour au niveau 1, bonus permanent")));
+        p.playSound(p.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1f, 0.8f);
+        Bukkit.broadcast(SmpSaison.mm("<gold>" + stars + " <white>" + p.getName() + "</white> est passé <b>Prestige " + (pr + 1) + "</b> en " + name(job) + " !"));
+        return null;
+    }
+
     double moneyMult(int lvl) {
         return 1 + (lvl - 1) * plugin.getConfig().getDouble("jobs-settings.money-bonus-per-level", 0.02);
     }
@@ -137,7 +178,7 @@ final class Jobs implements Listener {
         Data.P d = plugin.data().of(p.getUniqueId());
         double[] j = d.job(job);
         int lvl = (int) j[0];
-        double xp = g.xp() * ratio, money = g.money() * ratio * moneyMult(lvl);
+        double xp = g.xp() * ratio, money = g.money() * ratio * moneyMult(p.getUniqueId(), job);
         if (lvl < maxLevel()) {
             j[1] += xp;
             while (lvl < maxLevel() && j[1] >= need(lvl)) {
@@ -232,8 +273,7 @@ final class Jobs implements Listener {
         if (job.equals("mineur") && m.name().endsWith("_ORE") || m == Material.ANCIENT_DEBRIS) plugin.addWeekly(p.getUniqueId(), "minerais", 1);
         // bonus : objets en double (minerais, bûches, récoltes ; pas la pierre)
         boolean worth = !job.equals("mineur") || m.name().endsWith("_ORE") || m == Material.ANCIENT_DEBRIS || m == Material.AMETHYST_CLUSTER;
-        int lvl = plugin.data().of(p.getUniqueId()).level(job);
-        if (worth && ThreadLocalRandom.current().nextDouble() * 100 < bonusChance(lvl)) {
+        if (worth && ThreadLocalRandom.current().nextDouble() * 100 < bonusChance(p.getUniqueId(), job)) {
             ItemStack tool = p.getInventory().getItemInMainHand();
             for (ItemStack it : b.getDrops(tool, p)) b.getWorld().dropItemNaturally(b.getLocation().add(0.5, 0.5, 0.5), it);
         }
@@ -261,8 +301,7 @@ final class Jobs implements Listener {
         if (g == null) return;
         double ratio = e.getEntity().fromMobSpawner() ? plugin.getConfig().getDouble("jobs-settings.spawner-ratio", 0.2) : 1;
         gain(p, "chasseur", g, ratio);
-        int lvl = plugin.data().of(p.getUniqueId()).level("chasseur");
-        if (ratio >= 1 && ThreadLocalRandom.current().nextDouble() * 100 < bonusChance(lvl)) {
+        if (ratio >= 1 && ThreadLocalRandom.current().nextDouble() * 100 < bonusChance(p.getUniqueId(), "chasseur")) {
             List<ItemStack> extra = new ArrayList<>();
             for (ItemStack it : e.getDrops()) if (mobLoot(it)) extra.add(it.clone());
             e.getDrops().addAll(extra);
@@ -276,8 +315,7 @@ final class Jobs implements Listener {
         Player p = e.getPlayer();
         gain(p, "pecheur", fish, 1);
         plugin.addWeekly(p.getUniqueId(), "peche", 1);
-        int lvl = plugin.data().of(p.getUniqueId()).level("pecheur");
-        if (e.getCaught() instanceof Item it && ThreadLocalRandom.current().nextDouble() * 100 < bonusChance(lvl)) {
+        if (e.getCaught() instanceof Item it && ThreadLocalRandom.current().nextDouble() * 100 < bonusChance(p.getUniqueId(), "pecheur")) {
             for (ItemStack left : p.getInventory().addItem(it.getItemStack().clone()).values()) p.getWorld().dropItemNaturally(p.getLocation(), left);
             p.playSound(p.getLocation(), Sound.ENTITY_FISHING_BOBBER_SPLASH, 1f, 1.6f);
         }
