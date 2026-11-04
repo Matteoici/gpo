@@ -578,6 +578,77 @@ final class TojiSpear implements Listener {
                 || e.getEntity() instanceof Player p && restricted(p) && djUsed.contains(p.getUniqueId()))) e.setCancelled(true);
     }
 
+
+    // ================================================================= RUPTURE DU CIEL (signature : relique + lance) : accroupi + coup = la cible part au loin
+
+    private final Map<UUID, Long> sigCd = new HashMap<>();
+    private final Set<UUID> sigBusy = new HashSet<>();
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onSignature(EntityDamageByEntityEvent e) {
+        if (!(e.getDamager() instanceof Player p) || !(e.getEntity() instanceof LivingEntity t)) return;
+        if (e.getCause() != EntityDamageEvent.DamageCause.ENTITY_ATTACK || !p.isSneaking() || !holds(p) || !heavenly(p)) return;
+        if (sigBusy.contains(p.getUniqueId()) || isBoss(t)) return;
+        long now = System.currentTimeMillis();
+        Long until = sigCd.get(p.getUniqueId());
+        if (until != null && until > now) {
+            SmpBoss.hud(p, parse(plugin.msg("lance-ciel.signature-cooldown").replace("<seconds>", String.valueOf((until - now) / 1000 + 1))));
+            return;
+        }
+        double cd = cfg("signature.cooldown-seconds", 25) * (awakened(p) ? 0.6 : 1);
+        sigCd.put(p.getUniqueId(), now + (long) (cd * 1000));
+        boolean pvp = t instanceof Player;
+        double power = cfg(pvp ? "signature.pvp-power" : "signature.power", pvp ? 3.2 : 4.2) * (awakened(p) ? 1.25 : 1);
+        Vector dir = t.getLocation().toVector().subtract(p.getLocation().toVector()).setY(0);
+        if (dir.lengthSquared() < 0.01) dir = p.getLocation().getDirection().setY(0);
+        dir.normalize();
+        Vector launch = dir.clone().multiply(power).setY(cfg("signature.up", 1.1));
+        World w = p.getWorld();
+        Location at = t.getLocation().add(0, 1, 0);
+        SmpBoss.hud(p, parse(plugin.msg("lance-ciel.signature")));
+        w.playSound(at, Sound.ITEM_TRIDENT_THUNDER, 2.5f, 0.6f);
+        w.playSound(at, Sound.ENTITY_GENERIC_EXPLODE, 2f, 0.7f);
+        w.playSound(at, Sound.ENTITY_WARDEN_SONIC_BOOM, 1.2f, 1.4f);
+        w.spawnParticle(Particle.SONIC_BOOM, at, 1, 0, 0, 0, 0, null, true);
+        w.spawnParticle(Particle.EXPLOSION, at, 3, 0.4, 0.4, 0.4, 0, null, true);
+        w.spawnParticle(Particle.DUST, at, 40, 0.6, 0.6, 0.6, 0, new Particle.DustOptions(BLOOD, 1.6f), true);
+        // cercle d'onde au sol
+        for (int i = 0; i < 28; i++) {
+            double a = i * Math.PI * 2 / 28;
+            w.spawnParticle(Particle.CLOUD, p.getLocation().add(Math.cos(a) * 2.2, 0.15, Math.sin(a) * 2.2), 1, 0, 0, 0, 0.05, null, true);
+        }
+        double extra = cfg(pvp ? "signature.pvp-damage" : "signature.damage", pvp ? 6 : 14);
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            if (!t.isValid() || t.isDead()) return;
+            sigBusy.add(p.getUniqueId());
+            try {
+                t.damage(extra, p);
+            } finally {
+                sigBusy.remove(p.getUniqueId());
+            }
+            t.setVelocity(launch);
+            if (t instanceof Player tp) CcGuard.mark(tp, 60); // il vole : pas d'expulsion pour « fly »
+            int[] k = {0};
+            Bukkit.getScheduler().runTaskTimer(plugin, task -> {
+                k[0]++;
+                if (!t.isValid() || t.isDead() || k[0] > 60) {
+                    task.cancel();
+                    return;
+                }
+                Location l = t.getLocation().add(0, 0.8, 0);
+                t.getWorld().spawnParticle(Particle.CLOUD, l, 3, 0.2, 0.2, 0.2, 0.01, null, true);
+                t.getWorld().spawnParticle(Particle.DUST, l, 4, 0.25, 0.25, 0.25, 0, new Particle.DustOptions(BLOOD, 1.2f), true);
+                if (k[0] > 6 && t.isOnGround()) {
+                    // l'atterrissage
+                    t.getWorld().playSound(l, Sound.ENTITY_GENERIC_EXPLODE, 1.2f, 1.1f);
+                    t.getWorld().spawnParticle(Particle.EXPLOSION, l, 1, 0, 0, 0, 0, null, true);
+                    t.getWorld().spawnParticle(Particle.BLOCK, t.getLocation(), 30, 0.8, 0.1, 0.8, 0, t.getLocation().add(0, -0.5, 0).getBlock().getBlockData());
+                    task.cancel();
+                }
+            }, 1L, 1L);
+        });
+    }
+
     // ================================================================= Pas éclair (clic droit) : 10 blocs devant en un éclair
 
     private final Map<UUID, Long> flashCd = new HashMap<>();

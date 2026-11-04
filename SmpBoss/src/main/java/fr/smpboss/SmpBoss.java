@@ -594,6 +594,18 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 51);
             saveConfig();
         }
+        if (getConfig().getInt("config-version", 1) < 52) {
+            // Rupture du Ciel (signature de Toji)
+            var def = getConfig().getDefaults();
+            if (def != null) {
+                var sec = def.getConfigurationSection("weapons.lance-ciel.signature");
+                if (sec != null) for (String k : sec.getKeys(false)) getConfig().set("weapons.lance-ciel.signature." + k, sec.get(k));
+                getConfig().set("messages.lance-ciel.signature", def.get("messages.lance-ciel.signature"));
+                getConfig().set("messages.lance-ciel.signature-cooldown", def.get("messages.lance-ciel.signature-cooldown"));
+            }
+            getConfig().set("config-version", 52);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);

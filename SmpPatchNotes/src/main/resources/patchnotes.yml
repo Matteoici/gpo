@@ -1,6 +1,22 @@
 # Patch notes (la plus récente EN PREMIER). Chaque page = une page du livre (MiniMessage, ~13 lignes max).
 # Couleurs lisibles sur le papier : black, dark_gray, dark_red, dark_blue, dark_green, dark_aqua, dark_purple, gold.
 notes:
+  - id: "2026-11-04-rupture"
+    title: "Rupture du Ciel"
+    date: "04/11/2026"
+    pages:
+      - |
+        <dark_red><b>   LIMITLESS</b>
+        <dark_gray>     Patch note
+        <black>━━━━━━━━━━
+        <dark_red><b>✦ Rupture</b>
+        <dark_red><b>du Ciel</b>
+        <dark_gray>4 novembre 2026
+
+        <black>Nouveau coup signature de Toji (relique <b>Restriction Céleste</b> + lance) : <dark_red>accroupi + coup</dark_red> et la cible part très loin.
+        <dark_gray>Recharge 25 s (15 s pendant l'Éveil)
+
+        <dark_red><b>🌑 Lune de sang</b><black> : monstres x10 et de toutes les tailles.
   - id: "2026-11-04-saison"
     title: "Saison, métiers, événements, mariages"
     date: "04/11/2026"

@@ -1,5 +1,13 @@
 # Patch notes Limitless (textes Discord)
 
+## 04/11/2026 — Rupture du Ciel & Lune de sang plus violente
+
+✦ **RUPTURE DU CIEL** (Toji)
+> Avec la relique **Restriction Céleste** et la **Lance du Ciel Inversé** : **accroupi + coup** → onde de choc et la cible est **projetée très loin**. Recharge 25 s (15 s et plus puissant pendant l'**Éveil**).
+
+🌑 **LUNE DE SANG PLUS VIOLENTE**
+> Les monstres sont **10 fois plus forts** (vie, dégâts, flèches, explosions) et de **toutes les tailles** (du petit nerveux au géant). Le butin n'est plus doublé (fin de la duplication d'objets).
+
 ## 04/11/2026 — SAISON 1 : passe, métiers, classements, événements, mariages
 
 🎫 **PASSE DE SAISON** — `/passe`

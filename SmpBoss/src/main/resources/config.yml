@@ -1,4 +1,4 @@
-config-version: 51
+config-version: 52
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -439,6 +439,13 @@ weapons:
     cooldown-seconds: 12
   lance-ciel:             # 🕷 MYTHICAL — l'arme de Toji
     chance: 0.5
+    signature:             # RUPTURE DU CIEL (relique Restriction Céleste + lance) : accroupi + coup -> la cible s'envole au loin
+      power: 4.2           # monstres
+      pvp-power: 3.2       # joueurs
+      up: 1.1
+      damage: 14
+      pvp-damage: 6
+      cooldown-seconds: 25 # x0.6 pendant l'Éveil
     attack-damage: 11
     attack-speed: 1.8
     in-duels: true
@@ -1847,6 +1854,8 @@ messages:
     awaken-timer: "<#aa0814><b>✦ ÉVEIL</b> <gray>· <white><time>"
     awaken-end: "<dark_gray>✦ L'adrénaline retombe... <gray>(Éveil : 10 min)"
     special: "<#aa0814><b>✦ PERCÉE DU CIEL INVERSÉ"
+    signature: "<#aa0814><b>✦ RUPTURE DU CIEL"
+    signature-cooldown: "<#c8d2e6>✦ <gray>Rupture du Ciel dans <white><seconds> s"
     stunned: "<#aa0814><b>✦ CIEL INVERSÉ</b> <gray>· tu ne peux plus bouger"
     set-on: "<#c8d2e6><b>CORPS CÉLESTE</b> <gray>· Tenue de Toji complète"
   boogie-bombe:
