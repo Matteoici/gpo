@@ -1,0 +1,90 @@
+# =====================================================================
+#  SmpMonde - événements du monde
+#   🌑 Lune de sang   : une nuit par semaine, monstres renforcés, butin x2, Champions de sang
+#   ☄ Pluie de météores : régulièrement, des météorites tombent (cratère de minerais + gardien)
+#   👹 Raid du Colosse  : boss mondial, sa vie grandit avec le nombre de joueurs, butin partagé selon les dégâts
+#  /evenements (joueurs) · admin : /lune start|stop · /meteores start · /raid lieu|start|stop · /monde reload
+#  Récompenses : commandes console (%player%), "money:5000" = argent (Vault), "saison:100" = XP de saison (SmpSaison)
+# =====================================================================
+config-version: 1
+timezone: "Europe/Paris"
+world: world
+# zone des météores et des monstres en plus (autour de ce centre, jamais dans un territoire de guilde)
+center-x: 0
+center-z: 0
+spawn-safe-radius: 200     # rien ne tombe / n'apparaît à moins de X blocs du spawn du monde
+avoid-guild-claims: true
+min-players: 2
+
+# ---------------------------------------------------------------- 🌑 LUNE DE SANG
+blood-moon:
+  enabled: true
+  day: SATURDAY
+  hour: 21
+  minute: 0
+  duration-minutes: 20
+  # monstres pendant la lune
+  health: 2.0              # vie x2
+  damage: 1.5              # dégâts x1.5
+  speed: 1.15
+  drops: 2                 # butin x2
+  xp: 2                    # XP x2
+  # monstres en plus autour des joueurs (pas au spawn, pas dans les territoires de guilde)
+  extra-every-seconds: 20
+  extra-per-player: 2
+  extra-mobs: [ZOMBIE, SKELETON, SPIDER, HUSK, STRAY, WITCH]
+  # Champion de sang : un mini-boss près d'un joueur au hasard
+  champion-every-minutes: 4
+  champion-health: 300
+  champion-rewards: ["money:15000", "saison:150"]
+  # les meilleurs chasseurs de la nuit (monstres tués pendant la lune)
+  top-rewards:
+    1: ["money:60000", "saison:400", "caisse cle %player% legendaire 1"]
+    2: ["money:35000", "saison:250", "caisse cle %player% epique 1"]
+    3: ["money:20000", "saison:150", "caisse cle %player% rare 1"]
+
+# ---------------------------------------------------------------- ☄ PLUIE DE MÉTÉORES
+meteors:
+  enabled: true
+  every-minutes: 240
+  warning-seconds: 60
+  count: 4
+  min-radius: 300
+  max-radius: 2000
+  crater-radius: 3
+  impact-damage: 10
+  # minerais dans le cratère : bloc -> poids
+  ores:
+    MAGMA_BLOCK: 30
+    BLACKSTONE: 25
+    RAW_IRON_BLOCK: 6
+    IRON_ORE: 14
+    GOLD_ORE: 10
+    DIAMOND_ORE: 6
+    EMERALD_ORE: 3
+    ANCIENT_DEBRIS: 3
+  guardian-health: 250
+  guardian-rewards: ["money:10000", "saison:100"]
+
+# ---------------------------------------------------------------- 👹 RAID DU COLOSSE
+raid:
+  enabled: true
+  day: SUNDAY
+  hour: 20
+  minute: 0
+  # lieu de l'arène : /raid lieu (en étant dessus)
+  location: ""
+  warning-minutes: 5        # annonce X minutes avant
+  allow-tp: true            # /raid tp pendant l'annonce et le combat
+  duration-minutes: 20
+  base-health: 2000
+  health-per-player: 600    # + X PV par joueur présent (60 blocs)
+  max-hit-percent: 6        # un seul coup ne retire jamais plus de X % de sa vie
+  # partagé entre tous ceux qui ont tapé, selon leurs dégâts
+  money-pool: 1500000
+  season-xp-pool: 6000
+  min-share-percent: 1
+  top-rewards:
+    1: ["caisse cle %player% mythique 1", "boss give %player% pioche5x5"]
+    2: ["caisse cle %player% legendaire 2"]
+    3: ["caisse cle %player% legendaire 1"]

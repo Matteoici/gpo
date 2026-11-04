@@ -1,0 +1,29 @@
+name: SmpMonde
+version: '${version}'
+main: fr.smpmonde.SmpMonde
+api-version: '26.2'
+softdepend: [Vault, SmpGuilds, SmpSaison]
+description: Événements du monde - Lune de sang, Pluie de météores, Raid du Colosse (boss mondial)
+commands:
+  evenements:
+    description: Les prochains événements du monde
+    usage: /evenements
+    aliases: [events, evenement, event]
+  lune:
+    description: Lune de sang (admin : start / stop)
+    usage: /lune [start|stop]
+  meteores:
+    description: Pluie de météores (admin : start)
+    usage: /meteores [start|stop]
+    aliases: [meteore, meteorites]
+  raid:
+    description: Raid du Colosse (boss mondial)
+    usage: /raid [tp|lieu|start|stop]
+  monde:
+    description: Administration des événements du monde
+    usage: /monde reload
+    permission: smpmonde.admin
+permissions:
+  smpmonde.admin:
+    description: Lancer / arrêter les événements, placer le raid
+    default: op
