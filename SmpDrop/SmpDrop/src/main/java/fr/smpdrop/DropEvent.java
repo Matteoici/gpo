@@ -451,6 +451,11 @@ public final class DropEvent {
         Location c = center(ground.getY());
         List<LootTable.Rolled> rolled = s.loot.roll(random);
         plugin.manager().addWin(p);
+        // XP de saison (SmpSaison, s'il est là)
+        if (org.bukkit.Bukkit.getPluginManager().isPluginEnabled("SmpSaison")) {
+            double xp = org.bukkit.Bukkit.getPluginManager().getPlugin("SmpSaison").getConfig().getDouble("season.xp.airdrop", 250);
+            org.bukkit.Bukkit.dispatchCommand(org.bukkit.Bukkit.getConsoleSender(), "saison xp " + p.getName() + " " + xp + " largage ouvert");
+        }
 
         model.open();
         Rarity best = rolled.isEmpty() ? null : rolled.get(0).entry().rarity;

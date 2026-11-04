@@ -1,0 +1,260 @@
+package fr.smpsaison;
+
+import net.kyori.adventure.text.Component;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.Sound;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
+import org.bukkit.inventory.ItemFlag;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+import static fr.smpsaison.SmpSaison.fmt;
+import static fr.smpsaison.SmpSaison.mm;
+
+/** Menus : /metiers, /passe, /hebdo. */
+final class Gui implements InventoryHolder {
+
+    final String kind;
+    final int page;
+    Inventory inv;
+
+    private Gui(String kind, int page) {
+        this.kind = kind;
+        this.page = page;
+    }
+
+    @Override
+    public Inventory getInventory() {
+        return inv;
+    }
+
+    static ItemStack item(Material m, String name, List<String> lore, boolean glow) {
+        ItemStack it = new ItemStack(m == null ? Material.PAPER : m);
+        ItemMeta meta = it.getItemMeta();
+        meta.displayName(mm(name));
+        List<Component> l = new ArrayList<>();
+        for (String s : lore) l.add(mm(s));
+        meta.lore(l);
+        meta.addItemFlags(ItemFlag.values());
+        if (glow) meta.setEnchantmentGlintOverride(true);
+        it.setItemMeta(meta);
+        return it;
+    }
+
+    static String bar(double ratio, int len) {
+        int full = (int) Math.round(Math.max(0, Math.min(1, ratio)) * len);
+        return "<green>" + "■".repeat(full) + "<dark_gray>" + "■".repeat(len - full);
+    }
+
+    private static void fill(Inventory inv) {
+        ItemStack pane = item(Material.GRAY_STAINED_GLASS_PANE, " ", List.of(), false);
+        for (int i = 0; i < inv.getSize(); i++) if (inv.getItem(i) == null) inv.setItem(i, pane);
+    }
+
+    // ================================================================= métiers
+
+    static void jobs(SmpSaison pl, Player p) {
+        Gui g = new Gui("jobs", 0);
+        g.inv = Bukkit.createInventory(g, 27, mm("<dark_gray>🛠 Tes métiers"));
+        Jobs j = pl.jobs();
+        Data.P d = pl.data().of(p.getUniqueId());
+        int[] slots = {11, 12, 13, 14, 15};
+        int i = 0;
+        for (String id : j.ids()) {
+            if (i >= slots.length) break;
+            double[] v = d.job(id);
+            int lvl = (int) v[0];
+            boolean max = lvl >= j.maxLevel();
+            double ratio = max ? 1 : v[1] / j.need(lvl);
+            List<String> lore = new ArrayList<>();
+            lore.add("<gray>Niveau <white><b>" + lvl + "</b></white> / " + j.maxLevel());
+            lore.add(bar(ratio, 20) + " <white>" + (max ? "MAX" : fmt(v[1]) + " / " + fmt(j.need(lvl)) + " XP"));
+            lore.add("");
+            lore.add("<gray>Gains : <gold>+" + Math.round((j.moneyMult(lvl) - 1) * 100) + " %");
+            lore.add("<gray>Bonus : <aqua>" + fmt(j.bonusChance(lvl)) + " %</aqua> <gray>de " + j.bonusText(id));
+            lore.add("");
+            lore.add("<dark_gray>Chaque action rapporte de l'XP de métier,");
+            lore.add("<dark_gray>de l'argent et de l'XP de saison.");
+            g.inv.setItem(slots[i++], item(j.icon(id), j.name(id), lore, max));
+        }
+        Data.P s = pl.season(p.getUniqueId());
+        g.inv.setItem(22, item(Material.NETHER_STAR, "<gold>🎫 Passe de saison", List.of("<gray>Palier <white>" + pl.tierOf(s) + "</white> / " + pl.maxTier(),
+                "", "<yellow>Clic : ouvrir le passe"), false));
+        fill(g.inv);
+        p.openInventory(g.inv);
+    }
+
+    // ================================================================= passe
+
+    static void pass(SmpSaison pl, Player p, int page) {
+        Data.P d = pl.season(p.getUniqueId());
+        int tier = pl.tierOf(d);
+        int pages = (pl.maxTier() + 8) / 9;
+        if (page < 0) page = Math.min(pages - 1, Math.max(0, (Math.max(1, tier) - 1) / 9));
+        Gui g = new Gui("pass", page);
+        g.inv = Bukkit.createInventory(g, 54, mm("<dark_gray>🎫 Passe de saison · " + (page + 1) + "/" + pages));
+        boolean prem = pl.premium(p, d);
+        ConfigurationSection t = pl.getConfig().getConfigurationSection("season.tiers");
+        int per = pl.xpPerTier();
+        for (int c = 0; c < 9; c++) {
+            int n = page * 9 + c + 1;
+            if (n > pl.maxTier()) break;
+            boolean reached = n <= tier;
+            double prog = reached ? 1 : (n == tier + 1 ? (d.seasonXp - (long) tier * per) / (double) per : 0);
+            g.inv.setItem(9 + c, item(reached ? Material.LIME_STAINED_GLASS_PANE : (n == tier + 1 ? Material.YELLOW_STAINED_GLASS_PANE : Material.RED_STAINED_GLASS_PANE),
+                    (reached ? "<green>" : "<gray>") + "Palier " + n, List.of(bar(prog, 10), "<dark_gray>" + fmt((long) n * per) + " XP de saison"), false));
+            for (int row = 0; row < 2; row++) {
+                boolean free = row == 0;
+                String base = n + "." + (free ? "free" : "premium");
+                if (t == null || !t.isConfigurationSection(base)) continue;
+                Material icon = Material.matchMaterial(t.getString(base + ".icon", "PAPER"));
+                boolean claimed = (free ? d.claimedFree : d.claimedPremium).contains(n);
+                List<String> lore = new ArrayList<>();
+                lore.add("<white>" + t.getString(base + ".desc", ""));
+                lore.add("");
+                if (claimed) lore.add("<green>✔ Récupéré");
+                else if (!reached) lore.add("<red>🔒 Palier " + n + " pas encore atteint");
+                else if (!free && !prem) lore.add("<gold>🔒 Passe premium <gray>(/passe premium)");
+                else lore.add("<yellow>▶ Clic pour récupérer !");
+                g.inv.setItem((free ? 18 : 36) + c, item(claimed ? Material.MINECART : icon,
+                        (free ? "<white>Gratuit" : "<gold>★ Premium") + " · palier " + n, lore, reached && !claimed && (free || prem)));
+            }
+        }
+        g.inv.setItem(4, item(Material.NETHER_STAR, pl.getConfig().getString("season.name", "Saison"), List.of(
+                "<gray>Palier <white><b>" + tier + "</b></white> / " + pl.maxTier() + " · <white>" + fmt(d.seasonXp) + "</white> XP",
+                "<gray>Fin de saison : <white>" + pl.getConfig().getString("season.ends", "?"),
+                "",
+                "<dark_gray>XP de saison : métiers, kills, temps de jeu,",
+                "<dark_gray>connexion du jour, boss, largages..."), false));
+        g.inv.setItem(27, item(Material.WHITE_BANNER, "<white>⬆ Ligne gratuite", List.of("<gray>Pour tout le monde"), false));
+        g.inv.setItem(45, item(Material.ARROW, "<white>◀ Page précédente", List.of(), false));
+        g.inv.setItem(53, item(Material.ARROW, "<white>Page suivante ▶", List.of(), false));
+        g.inv.setItem(49, item(Material.CHEST, "<green>Tout récupérer", List.of("<gray>Récupère tous les paliers atteints"), false));
+        g.inv.setItem(47, prem ? item(Material.GOLD_BLOCK, "<gold><b>★ Passe premium actif", List.of("<gray>La ligne du bas est à toi"), true)
+                : item(Material.GOLD_INGOT, "<gold><b>★ Passe premium", List.of("<gray>Débloque la ligne du bas (récompenses en plus)",
+                "<gray>Prix : <gold>" + fmt(pl.getConfig().getDouble("season.premium-price", 250000)) + " " + pl.money(), "", "<yellow>Clic pour l'acheter"), false));
+        g.inv.setItem(51, item(Material.CLOCK, "<aqua>🏆 Classements de la semaine", List.of("<yellow>Clic : /hebdo"), false));
+        fill(g.inv);
+        p.openInventory(g.inv);
+    }
+
+    // ================================================================= semaine
+
+    static void weekly(SmpSaison pl, Player p) {
+        Gui g = new Gui("weekly", 0);
+        g.inv = Bukkit.createInventory(g, 27, mm("<dark_gray>🏆 Classements de la semaine"));
+        ConfigurationSection boards = pl.getConfig().getConfigurationSection("weekly.boards");
+        Duration left = Duration.between(ZonedDateTime.now(pl.zone()), pl.nextReset());
+        String time = left.toDays() + " j " + left.toHoursPart() + " h " + left.toMinutesPart() + " min";
+        int[] slots = {10, 11, 12, 14, 15, 16, 13};
+        int i = 0;
+        if (boards != null) for (String b : boards.getKeys(false)) {
+            if (i >= slots.length) break;
+            List<SmpSaison.Rank> top = pl.top(b, 10);
+            List<String> lore = new ArrayList<>();
+            for (int k = 0; k < top.size(); k++) {
+                SmpSaison.Rank r = top.get(k);
+                String medal = k == 0 ? "<gold>🥇" : k == 1 ? "<gray>🥈" : k == 2 ? "<#cd7f32>🥉" : "<dark_gray>" + (k + 1) + ".";
+                lore.add(medal + " <white>" + SmpSaison.MM.escapeTags(r.name()) + " <dark_gray>— <yellow>" + fmt(r.value()));
+            }
+            if (top.isEmpty()) lore.add("<dark_gray>Personne pour l'instant... à toi de jouer !");
+            lore.add("");
+            double mine = pl.data().of(p.getUniqueId()).weekly.getOrDefault(b, 0.0);
+            lore.add("<gray>Toi : <white>" + fmt(mine));
+            lore.add("");
+            lore.add("<gold>Récompenses :");
+            for (int k = 1; k <= 3; k++) {
+                List<String> rw = boards.getStringList(b + ".rewards." + k);
+                if (rw.isEmpty()) continue;
+                lore.add("<gray>" + k + (k == 1 ? "er" : "e") + " : <white>" + describe(pl, rw));
+            }
+            lore.add("");
+            lore.add("<dark_gray>Fin dans " + time);
+            g.inv.setItem(slots[i++], item(Material.matchMaterial(boards.getString(b + ".icon", "PAPER")), boards.getString(b + ".name", b), lore, false));
+        }
+        g.inv.setItem(22, item(Material.NETHER_STAR, "<gold>🎫 Passe de saison", List.of("<yellow>Clic : /passe"), false));
+        fill(g.inv);
+        p.openInventory(g.inv);
+    }
+
+    private static String describe(SmpSaison pl, List<String> rewards) {
+        List<String> out = new ArrayList<>();
+        for (String r : rewards) {
+            if (r.startsWith("money:")) out.add(fmt(Double.parseDouble(r.substring(6))) + " " + pl.money());
+            else if (r.contains("caisse cle")) {
+                String[] p = r.split(" ");
+                out.add("clé " + (p.length > 3 ? p[3].replace("epique", "épique").replace("legendaire", "légendaire") : "?"));
+            } else out.add(r.replace("%player%", "toi"));
+        }
+        return String.join(" + ", out);
+    }
+
+    // ================================================================= clics
+
+    static final class Listen implements Listener {
+        private final SmpSaison pl;
+
+        Listen(SmpSaison pl) {
+            this.pl = pl;
+        }
+
+        @EventHandler
+        public void onDrag(InventoryDragEvent e) {
+            if (e.getInventory().getHolder() instanceof Gui) e.setCancelled(true);
+        }
+
+        @EventHandler
+        public void onClick(InventoryClickEvent e) {
+            if (!(e.getInventory().getHolder() instanceof Gui g)) return;
+            e.setCancelled(true);
+            if (!(e.getWhoClicked() instanceof Player p) || e.getClickedInventory() != e.getInventory()) return;
+            int s = e.getRawSlot();
+            switch (g.kind) {
+                case "jobs" -> {
+                    if (s == 22) pass(pl, p, -1);
+                }
+                case "weekly" -> {
+                    if (s == 22) pass(pl, p, -1);
+                }
+                case "pass" -> {
+                    int pages = (pl.maxTier() + 8) / 9;
+                    if (s == 45 && g.page > 0) pass(pl, p, g.page - 1);
+                    else if (s == 53 && g.page < pages - 1) pass(pl, p, g.page + 1);
+                    else if (s == 49) {
+                        int n = pl.claimAll(p);
+                        p.sendMessage(mm(n == 0 ? "<gray>Rien à récupérer pour l'instant." : "<green>✔ " + n + " récompense(s) récupérée(s) !"));
+                        pass(pl, p, g.page);
+                    } else if (s == 47) {
+                        pl.buyPremium(p);
+                        pass(pl, p, g.page);
+                    } else if (s == 51) weekly(pl, p);
+                    else if ((s >= 18 && s <= 26) || (s >= 36 && s <= 44)) {
+                        boolean free = s <= 26;
+                        int tier = g.page * 9 + (s - (free ? 18 : 36)) + 1;
+                        String err = pl.claim(p, tier, free);
+                        if (err != null) {
+                            p.sendMessage(mm(err));
+                            p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.6f, 0.8f);
+                        }
+                        pass(pl, p, g.page);
+                    }
+                }
+                default -> {
+                }
+            }
+        }
+    }
+}

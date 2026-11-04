@@ -1,0 +1,30 @@
+name: SmpSaison
+version: '${version}'
+main: fr.smpsaison.SmpSaison
+api-version: '26.2'
+softdepend: [Vault, SmpCrates, SmpBoss]
+description: Métiers, passe de saison (gratuit + premium) et classements de la semaine avec récompenses
+commands:
+  metiers:
+    description: Tes métiers (niveaux, gains, bonus)
+    usage: /metiers
+    aliases: [metier, jobs, job]
+  passe:
+    description: Le passe de saison
+    usage: /passe [premium|tout]
+    aliases: [pass, saisonpass, battlepass, bp]
+  hebdo:
+    description: Classements de la semaine et leurs récompenses
+    usage: /hebdo
+    aliases: [semaine, classementhebdo, weekly, top]
+  saison:
+    description: Administration de la saison
+    usage: /saison <xp|premium|info|reset|hebdo-reset|reload>
+    permission: smpsaison.admin
+permissions:
+  smpsaison.admin:
+    description: Gérer la saison, les métiers et les classements
+    default: op
+  smpsaison.premium:
+    description: Passe premium offert (grade, staff...)
+    default: false

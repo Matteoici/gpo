@@ -1813,6 +1813,11 @@ final class Weapons implements Listener {
     }
 
     void roll(Player p, boolean spider) {
+        // XP de saison (SmpSaison, s'il est là)
+        if (Bukkit.getPluginManager().isPluginEnabled("SmpSaison")) {
+            double xp = Bukkit.getPluginManager().getPlugin("SmpSaison").getConfig().getDouble("season.xp.boss-victory", 300);
+            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "saison xp " + p.getName() + " " + xp + " victoire contre le boss");
+        }
         for (String id : spider ? SPIDER : PUMPKIN) {
             double chance = cfg(path(id) + ".chance", defChance(id));
             chance *= plugin.petLuck(p);

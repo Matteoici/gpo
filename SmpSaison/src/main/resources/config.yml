@@ -1,0 +1,358 @@
+# =====================================================================
+#  SmpSaison - métiers, passe de saison, classements de la semaine
+#  /metiers   /passe   /hebdo      admin : /saison xp|premium|info|reset|hebdo-reset|reload
+#  Récompenses = liste de commandes lancées par la console (%player% = le joueur)
+#    "money:5000"                          -> argent (Vault)
+#    "caisse cle %player% rare 1"           -> clé de caisse (SmpCrates)
+#    "boss give %player% pioche3x3"         -> objet de boss (SmpBoss)
+#  Un joueur hors ligne reçoit ses récompenses à sa prochaine connexion.
+# =====================================================================
+config-version: 1
+money-symbol: "$"
+timezone: "Europe/Paris"
+
+# ---------------------------------------------------------------- 🛠 MÉTIERS
+# chaque action donne de l'XP de métier et de l'argent ; l'argent monte de +2 % par niveau
+# XP pour passer du niveau N au niveau N+1 = xp-base x N^xp-exposant
+jobs-settings:
+  max-level: 50
+  xp-base: 100
+  xp-exponent: 1.55
+  money-bonus-per-level: 0.02
+  # bonus du métier : % de chance par niveau (niveau 50 x 0.6 = 30 %)
+  bonus-per-level: 0.6
+  # mobs sortis d'un spawner : gains x0.2
+  spawner-ratio: 0.2
+  # petit résumé des gains au-dessus de la barre d'objets
+  actionbar: true
+
+jobs:
+  mineur:
+    name: "<#8fd3ff>⛏ Mineur"
+    icon: IRON_PICKAXE
+    bonus: "minerai en double"
+    # bloc: [xp, argent]
+    blocks:
+      STONE: [0.5, 0.3]
+      DEEPSLATE: [0.6, 0.35]
+      COBBLED_DEEPSLATE: [0.3, 0.2]
+      TUFF: [0.4, 0.25]
+      NETHERRACK: [0.2, 0.1]
+      BLACKSTONE: [0.5, 0.3]
+      BASALT: [0.4, 0.25]
+      COAL_ORE: [4, 4]
+      DEEPSLATE_COAL_ORE: [5, 5]
+      COPPER_ORE: [4, 4]
+      DEEPSLATE_COPPER_ORE: [5, 5]
+      IRON_ORE: [8, 10]
+      DEEPSLATE_IRON_ORE: [9, 12]
+      GOLD_ORE: [12, 16]
+      DEEPSLATE_GOLD_ORE: [14, 18]
+      NETHER_GOLD_ORE: [6, 6]
+      REDSTONE_ORE: [8, 8]
+      DEEPSLATE_REDSTONE_ORE: [9, 9]
+      LAPIS_ORE: [12, 14]
+      DEEPSLATE_LAPIS_ORE: [14, 16]
+      NETHER_QUARTZ_ORE: [6, 6]
+      DIAMOND_ORE: [40, 60]
+      DEEPSLATE_DIAMOND_ORE: [45, 70]
+      EMERALD_ORE: [50, 80]
+      DEEPSLATE_EMERALD_ORE: [55, 90]
+      ANCIENT_DEBRIS: [120, 250]
+      AMETHYST_CLUSTER: [6, 6]
+  bucheron:
+    name: "<#c8a165>🪓 Bûcheron"
+    icon: IRON_AXE
+    bonus: "bûches en double"
+    blocks:
+      OAK_LOG: [3, 3]
+      SPRUCE_LOG: [3, 3]
+      BIRCH_LOG: [3, 3]
+      JUNGLE_LOG: [3, 3]
+      ACACIA_LOG: [3, 3]
+      DARK_OAK_LOG: [3, 3]
+      MANGROVE_LOG: [3, 3]
+      CHERRY_LOG: [3.5, 3.5]
+      PALE_OAK_LOG: [3.5, 3.5]
+      CRIMSON_STEM: [4, 4]
+      WARPED_STEM: [4, 4]
+      MUSHROOM_STEM: [2, 2]
+  fermier:
+    name: "<#9be36b>🌾 Fermier"
+    icon: IRON_HOE
+    bonus: "récolte en double"
+    # les plantes ne comptent que mûres
+    blocks:
+      WHEAT: [2, 2]
+      CARROTS: [2, 2]
+      POTATOES: [2, 2]
+      BEETROOTS: [2.5, 2.5]
+      NETHER_WART: [3, 3]
+      COCOA: [2.5, 2.5]
+      SWEET_BERRY_BUSH: [1.5, 1.5]
+      MELON: [3, 3]
+      PUMPKIN: [3, 3]
+      SUGAR_CANE: [1, 1]
+      CACTUS: [1, 1]
+      BAMBOO: [0.3, 0.3]
+  chasseur:
+    name: "<#ff6b6b>🗡 Chasseur"
+    icon: IRON_SWORD
+    bonus: "butin en double"
+    # monstre: [xp, argent]
+    mobs:
+      ZOMBIE: [6, 8]
+      HUSK: [6, 8]
+      DROWNED: [7, 9]
+      SKELETON: [7, 9]
+      STRAY: [7, 9]
+      BOGGED: [7, 9]
+      SPIDER: [6, 8]
+      CAVE_SPIDER: [6, 8]
+      CREEPER: [8, 10]
+      ENDERMAN: [12, 15]
+      WITCH: [12, 15]
+      SLIME: [3, 3]
+      MAGMA_CUBE: [3, 3]
+      PHANTOM: [10, 12]
+      BLAZE: [12, 15]
+      GHAST: [15, 20]
+      WITHER_SKELETON: [18, 25]
+      PIGLIN_BRUTE: [20, 25]
+      HOGLIN: [10, 12]
+      GUARDIAN: [12, 15]
+      ELDER_GUARDIAN: [150, 400]
+      PILLAGER: [10, 12]
+      VINDICATOR: [14, 18]
+      EVOKER: [40, 60]
+      RAVAGER: [60, 80]
+      BREEZE: [20, 25]
+      SHULKER: [15, 20]
+      WARDEN: [300, 1000]
+      WITHER: [500, 1500]
+      ENDER_DRAGON: [800, 2500]
+  pecheur:
+    name: "<#5ec8ff>🎣 Pêcheur"
+    icon: FISHING_ROD
+    bonus: "prise en double"
+    # chaque prise
+    catch: [10, 14]
+
+# ---------------------------------------------------------------- 🎫 PASSE DE SAISON
+season:
+  number: 1
+  name: "<gradient:#ff8a3d:#ffd36b><b>Saison 1</b></gradient>"
+  # date de fin (affichée) ; /saison reset pour passer à la suivante
+  ends: "2026-12-31"
+  xp-per-tier: 1000
+  # le premium s'achète avec l'argent du jeu (/passe premium) ; permission smpsaison.premium = offert
+  premium-price: 250000
+  # d'où vient l'XP de saison
+  xp:
+    job-ratio: 0.5          # 50 % de l'XP de métier
+    player-kill: 40
+    mob-kill: 1
+    playtime-10min: 25      # toutes les 10 min jouées (pas AFK)
+    daily-login: 100        # première connexion du jour
+    boss-victory: 300       # donné par SmpBoss (/saison xp)
+    airdrop: 250            # donné par SmpDrop
+  tiers:
+    1:
+      free: {icon: GOLD_NUGGET, desc: "2 000 $", rewards: ["money:2000"]}
+      premium: {icon: GOLD_INGOT, desc: "5 200 $", rewards: ["money:5200"]}
+    2:
+      free: {icon: GOLD_NUGGET, desc: "2 500 $", rewards: ["money:2500"]}
+      premium: {icon: GOLD_INGOT, desc: "6 400 $", rewards: ["money:6400"]}
+    3:
+      free: {icon: GOLD_NUGGET, desc: "3 000 $", rewards: ["money:3000"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "7 600 $ + clé épique", rewards: ["money:7600", "caisse cle %player% epique 1"]}
+    4:
+      free: {icon: GOLD_NUGGET, desc: "3 500 $", rewards: ["money:3500"]}
+      premium: {icon: GOLD_INGOT, desc: "8 800 $", rewards: ["money:8800"]}
+    5:
+      free: {icon: TRIPWIRE_HOOK, desc: "4 000 $ + clé rare", rewards: ["money:4000", "caisse cle %player% rare 1"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "10 000 $ + clé épique", rewards: ["money:10000", "caisse cle %player% epique 1"]}
+    6:
+      free: {icon: GOLD_NUGGET, desc: "4 500 $", rewards: ["money:4500"]}
+      premium: {icon: GOLD_INGOT, desc: "11 200 $", rewards: ["money:11200"]}
+    7:
+      free: {icon: GOLD_NUGGET, desc: "5 000 $", rewards: ["money:5000"]}
+      premium: {icon: GOLD_INGOT, desc: "12 400 $", rewards: ["money:12400"]}
+    8:
+      free: {icon: GOLD_NUGGET, desc: "5 500 $", rewards: ["money:5500"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "13 600 $ + clé épique", rewards: ["money:13600", "caisse cle %player% epique 1"]}
+    9:
+      free: {icon: GOLD_NUGGET, desc: "6 000 $", rewards: ["money:6000"]}
+      premium: {icon: GOLD_INGOT, desc: "14 800 $", rewards: ["money:14800"]}
+    10:
+      free: {icon: TRIPWIRE_HOOK, desc: "6 500 $ + clé rare", rewards: ["money:6500", "caisse cle %player% rare 1"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "16 000 $ + clé épique", rewards: ["money:16000", "caisse cle %player% epique 1"]}
+    11:
+      free: {icon: GOLD_NUGGET, desc: "7 000 $", rewards: ["money:7000"]}
+      premium: {icon: GOLD_INGOT, desc: "17 200 $", rewards: ["money:17200"]}
+    12:
+      free: {icon: GOLD_NUGGET, desc: "7 500 $", rewards: ["money:7500"]}
+      premium: {icon: NETHER_WART, desc: "18 400 $ + 8 graines maudites", rewards: ["money:18400", "boss give %player% graine 8"]}
+    13:
+      free: {icon: GOLD_NUGGET, desc: "8 000 $", rewards: ["money:8000"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "19 600 $ + clé épique", rewards: ["money:19600", "caisse cle %player% epique 1"]}
+    14:
+      free: {icon: GOLD_NUGGET, desc: "8 500 $", rewards: ["money:8500"]}
+      premium: {icon: GOLD_INGOT, desc: "20 800 $", rewards: ["money:20800"]}
+    15:
+      free: {icon: TRIPWIRE_HOOK, desc: "9 000 $ + clé rare", rewards: ["money:9000", "caisse cle %player% rare 1"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "22 000 $ + clé épique", rewards: ["money:22000", "caisse cle %player% epique 1"]}
+    16:
+      free: {icon: GOLD_NUGGET, desc: "9 500 $", rewards: ["money:9500"]}
+      premium: {icon: GOLD_INGOT, desc: "23 200 $", rewards: ["money:23200"]}
+    17:
+      free: {icon: GOLD_NUGGET, desc: "10 000 $", rewards: ["money:10000"]}
+      premium: {icon: GOLD_INGOT, desc: "24 400 $", rewards: ["money:24400"]}
+    18:
+      free: {icon: GOLD_NUGGET, desc: "10 500 $", rewards: ["money:10500"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "25 600 $ + clé épique", rewards: ["money:25600", "caisse cle %player% epique 1"]}
+    19:
+      free: {icon: GOLD_NUGGET, desc: "11 000 $", rewards: ["money:11000"]}
+      premium: {icon: GOLD_INGOT, desc: "26 800 $", rewards: ["money:26800"]}
+    20:
+      free: {icon: TRIPWIRE_HOOK, desc: "11 500 $ + clé épique", rewards: ["money:11500", "caisse cle %player% epique 1"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "28 000 $ + clé épique", rewards: ["money:28000", "caisse cle %player% epique 1"]}
+    21:
+      free: {icon: GOLD_NUGGET, desc: "12 000 $", rewards: ["money:12000"]}
+      premium: {icon: GOLD_INGOT, desc: "29 200 $", rewards: ["money:29200"]}
+    22:
+      free: {icon: GOLD_NUGGET, desc: "12 500 $", rewards: ["money:12500"]}
+      premium: {icon: GOLD_INGOT, desc: "30 400 $", rewards: ["money:30400"]}
+    23:
+      free: {icon: GOLD_NUGGET, desc: "13 000 $", rewards: ["money:13000"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "31 600 $ + clé épique", rewards: ["money:31600", "caisse cle %player% epique 1"]}
+    24:
+      free: {icon: GOLD_NUGGET, desc: "13 500 $", rewards: ["money:13500"]}
+      premium: {icon: NETHER_WART, desc: "32 800 $ + 8 graines maudites", rewards: ["money:32800", "boss give %player% graine 8"]}
+    25:
+      free: {icon: TRIPWIRE_HOOK, desc: "14 000 $ + clé épique", rewards: ["money:14000", "caisse cle %player% epique 1"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "34 000 $ + clé légendaire", rewards: ["money:34000", "caisse cle %player% legendaire 1"]}
+    26:
+      free: {icon: GOLD_NUGGET, desc: "14 500 $", rewards: ["money:14500"]}
+      premium: {icon: GOLD_INGOT, desc: "35 200 $", rewards: ["money:35200"]}
+    27:
+      free: {icon: GOLD_NUGGET, desc: "15 000 $", rewards: ["money:15000"]}
+      premium: {icon: GOLD_INGOT, desc: "36 400 $", rewards: ["money:36400"]}
+    28:
+      free: {icon: GOLD_NUGGET, desc: "15 500 $", rewards: ["money:15500"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "37 600 $ + clé légendaire", rewards: ["money:37600", "caisse cle %player% legendaire 1"]}
+    29:
+      free: {icon: GOLD_NUGGET, desc: "16 000 $", rewards: ["money:16000"]}
+      premium: {icon: GOLD_INGOT, desc: "38 800 $", rewards: ["money:38800"]}
+    30:
+      free: {icon: DIAMOND_PICKAXE, desc: "16 500 $ + clé épique + Pioche Brise-Roc 3x3", rewards: ["money:16500", "caisse cle %player% epique 1", "boss give %player% pioche3x3"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "40 000 $ + clé légendaire", rewards: ["money:40000", "caisse cle %player% legendaire 1"]}
+    31:
+      free: {icon: GOLD_NUGGET, desc: "17 000 $", rewards: ["money:17000"]}
+      premium: {icon: GOLD_INGOT, desc: "41 200 $", rewards: ["money:41200"]}
+    32:
+      free: {icon: GOLD_NUGGET, desc: "17 500 $", rewards: ["money:17500"]}
+      premium: {icon: GOLD_INGOT, desc: "42 400 $", rewards: ["money:42400"]}
+    33:
+      free: {icon: GOLD_NUGGET, desc: "18 000 $", rewards: ["money:18000"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "43 600 $ + clé légendaire", rewards: ["money:43600", "caisse cle %player% legendaire 1"]}
+    34:
+      free: {icon: GOLD_NUGGET, desc: "18 500 $", rewards: ["money:18500"]}
+      premium: {icon: GOLD_INGOT, desc: "44 800 $", rewards: ["money:44800"]}
+    35:
+      free: {icon: TRIPWIRE_HOOK, desc: "19 000 $ + clé légendaire", rewards: ["money:19000", "caisse cle %player% legendaire 1"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "46 000 $ + clé légendaire", rewards: ["money:46000", "caisse cle %player% legendaire 1"]}
+    36:
+      free: {icon: GOLD_NUGGET, desc: "19 500 $", rewards: ["money:19500"]}
+      premium: {icon: NETHER_WART, desc: "47 200 $ + 8 graines maudites", rewards: ["money:47200", "boss give %player% graine 8"]}
+    37:
+      free: {icon: GOLD_NUGGET, desc: "20 000 $", rewards: ["money:20000"]}
+      premium: {icon: GOLD_INGOT, desc: "48 400 $", rewards: ["money:48400"]}
+    38:
+      free: {icon: GOLD_NUGGET, desc: "20 500 $", rewards: ["money:20500"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "49 600 $ + clé légendaire", rewards: ["money:49600", "caisse cle %player% legendaire 1"]}
+    39:
+      free: {icon: GOLD_NUGGET, desc: "21 000 $", rewards: ["money:21000"]}
+      premium: {icon: GOLD_INGOT, desc: "50 800 $", rewards: ["money:50800"]}
+    40:
+      free: {icon: TRIPWIRE_HOOK, desc: "21 500 $ + clé légendaire", rewards: ["money:21500", "caisse cle %player% legendaire 1"]}
+      premium: {icon: DIAMOND_PICKAXE, desc: "52 000 $ + clé légendaire + Pioche Brise-Roc 3x3", rewards: ["money:52000", "caisse cle %player% legendaire 1", "boss give %player% pioche3x3"]}
+    41:
+      free: {icon: GOLD_NUGGET, desc: "22 000 $", rewards: ["money:22000"]}
+      premium: {icon: GOLD_INGOT, desc: "53 200 $", rewards: ["money:53200"]}
+    42:
+      free: {icon: GOLD_NUGGET, desc: "22 500 $", rewards: ["money:22500"]}
+      premium: {icon: GOLD_INGOT, desc: "54 400 $", rewards: ["money:54400"]}
+    43:
+      free: {icon: GOLD_NUGGET, desc: "23 000 $", rewards: ["money:23000"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "55 600 $ + clé légendaire", rewards: ["money:55600", "caisse cle %player% legendaire 1"]}
+    44:
+      free: {icon: GOLD_NUGGET, desc: "23 500 $", rewards: ["money:23500"]}
+      premium: {icon: GOLD_INGOT, desc: "56 800 $", rewards: ["money:56800"]}
+    45:
+      free: {icon: TRIPWIRE_HOOK, desc: "24 000 $ + clé légendaire", rewards: ["money:24000", "caisse cle %player% legendaire 1"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "58 000 $ + clé mythique", rewards: ["money:58000", "caisse cle %player% mythique 1"]}
+    46:
+      free: {icon: GOLD_NUGGET, desc: "24 500 $", rewards: ["money:24500"]}
+      premium: {icon: GOLD_INGOT, desc: "59 200 $", rewards: ["money:59200"]}
+    47:
+      free: {icon: GOLD_NUGGET, desc: "25 000 $", rewards: ["money:25000"]}
+      premium: {icon: GOLD_INGOT, desc: "60 400 $", rewards: ["money:60400"]}
+    48:
+      free: {icon: GOLD_NUGGET, desc: "25 500 $", rewards: ["money:25500"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "61 600 $ + clé mythique", rewards: ["money:61600", "caisse cle %player% mythique 1"]}
+    49:
+      free: {icon: GOLD_NUGGET, desc: "26 000 $", rewards: ["money:26000"]}
+      premium: {icon: GOLD_INGOT, desc: "62 800 $", rewards: ["money:62800"]}
+    50:
+      free: {icon: NETHER_STAR, desc: "26 500 $ + clés légendaire et mythique", rewards: ["money:26500", "caisse cle %player% legendaire 1", "caisse cle %player% mythique 1"]}
+      premium: {icon: NETHERITE_PICKAXE, desc: "64 000 $ + clé mythique + Pioche du Titan 5x5 + clé premium", rewards: ["money:64000", "caisse cle %player% mythique 1", "boss give %player% pioche5x5", "caisse cle %player% premium 1"]}
+
+# ---------------------------------------------------------------- 🏆 CLASSEMENTS DE LA SEMAINE
+# remis à zéro chaque semaine ; les 3 premiers de chaque classement reçoivent leurs récompenses
+weekly:
+  reset-day: MONDAY
+  reset-hour: 0
+  boards:
+    saison:
+      name: "<gold>🎫 XP de saison"
+      icon: EXPERIENCE_BOTTLE
+      rewards:
+        1: ["money:150000", "caisse cle %player% mythique 1"]
+        2: ["money:80000", "caisse cle %player% legendaire 1"]
+        3: ["money:40000", "caisse cle %player% epique 1"]
+    metiers:
+      name: "<#9be36b>🛠 XP de métiers"
+      icon: IRON_PICKAXE
+      rewards:
+        1: ["money:100000", "caisse cle %player% legendaire 1"]
+        2: ["money:60000", "caisse cle %player% epique 1"]
+        3: ["money:30000", "caisse cle %player% rare 1"]
+    kills:
+      name: "<red>⚔ Joueurs tués"
+      icon: NETHERITE_SWORD
+      rewards:
+        1: ["money:100000", "caisse cle %player% legendaire 1"]
+        2: ["money:60000", "caisse cle %player% epique 1"]
+        3: ["money:30000", "caisse cle %player% rare 1"]
+    mobs:
+      name: "<dark_green>🧟 Monstres tués"
+      icon: ZOMBIE_HEAD
+      rewards:
+        1: ["money:60000", "caisse cle %player% epique 1"]
+        2: ["money:35000", "caisse cle %player% rare 1"]
+        3: ["money:20000"]
+    minerais:
+      name: "<aqua>💎 Minerais minés"
+      icon: DIAMOND_ORE
+      rewards:
+        1: ["money:60000", "caisse cle %player% epique 1"]
+        2: ["money:35000", "caisse cle %player% rare 1"]
+        3: ["money:20000"]
+    peche:
+      name: "<#5ec8ff>🎣 Poissons pêchés"
+      icon: COD
+      rewards:
+        1: ["money:50000", "caisse cle %player% epique 1"]
+        2: ["money:30000", "caisse cle %player% rare 1"]
+        3: ["money:15000"]
