@@ -239,6 +239,20 @@ final class Jobs implements Listener {
         }
     }
 
+    /** Seul le vrai butin de monstre peut être doublé : jamais un objet qu'on lui a fait ramasser (sinon duplication). */
+    static final java.util.Set<org.bukkit.Material> MOB_LOOT = java.util.EnumSet.of(
+            org.bukkit.Material.ROTTEN_FLESH, org.bukkit.Material.BONE, org.bukkit.Material.ARROW, org.bukkit.Material.STRING,
+            org.bukkit.Material.SPIDER_EYE, org.bukkit.Material.GUNPOWDER, org.bukkit.Material.ENDER_PEARL, org.bukkit.Material.BLAZE_ROD,
+            org.bukkit.Material.GHAST_TEAR, org.bukkit.Material.SLIME_BALL, org.bukkit.Material.MAGMA_CREAM, org.bukkit.Material.PHANTOM_MEMBRANE,
+            org.bukkit.Material.PRISMARINE_SHARD, org.bukkit.Material.PRISMARINE_CRYSTALS, org.bukkit.Material.COAL, org.bukkit.Material.GLOWSTONE_DUST,
+            org.bukkit.Material.REDSTONE, org.bukkit.Material.SUGAR, org.bukkit.Material.GLASS_BOTTLE, org.bukkit.Material.STICK,
+            org.bukkit.Material.GOLD_NUGGET, org.bukkit.Material.COPPER_INGOT, org.bukkit.Material.LEATHER, org.bukkit.Material.FEATHER,
+            org.bukkit.Material.INK_SAC, org.bukkit.Material.BREEZE_ROD, org.bukkit.Material.EMERALD, org.bukkit.Material.RABBIT_HIDE);
+
+    static boolean mobLoot(org.bukkit.inventory.ItemStack it) {
+        return it != null && MOB_LOOT.contains(it.getType()) && !it.hasItemMeta();
+    }
+
     @EventHandler(priority = EventPriority.MONITOR)
     public void onKill(EntityDeathEvent e) {
         Player p = e.getEntity().getKiller();
@@ -250,7 +264,7 @@ final class Jobs implements Listener {
         int lvl = plugin.data().of(p.getUniqueId()).level("chasseur");
         if (ratio >= 1 && ThreadLocalRandom.current().nextDouble() * 100 < bonusChance(lvl)) {
             List<ItemStack> extra = new ArrayList<>();
-            for (ItemStack it : e.getDrops()) if (it != null) extra.add(it.clone());
+            for (ItemStack it : e.getDrops()) if (mobLoot(it)) extra.add(it.clone());
             e.getDrops().addAll(extra);
             e.setDroppedExp(e.getDroppedExp() * 2);
         }
