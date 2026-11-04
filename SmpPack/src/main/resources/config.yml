@@ -1,0 +1,21 @@
+# =====================================================================
+#  SmpPack - le serveur héberge lui-même le resource pack (gratuit, aucun site externe)
+#  1) Demande un port en plus à ton hébergeur (onglet Réseau / Allocations) et mets-le dans "port".
+#  2) Mets ton pack dans plugins/SmpPack/pack.zip (le nom exact compte).
+#  3) Dans server.properties, VIDE les lignes resource-pack=, resource-pack-sha1= et resource-pack-id=
+#     (sinon les joueurs reçoivent deux packs). Le plugin envoie le pack tout seul à la connexion.
+#  4) Redémarre. /pack-admin info pour vérifier, /pack-admin reload après avoir changé le zip.
+# =====================================================================
+
+# port d'écoute du petit serveur web (un port différent de celui de Minecraft, ouvert en TCP)
+port: 8080
+# adresse que les joueurs utilisent pour se connecter (nom de domaine ou IP publique)
+public-address: "limitless.mineon.fr"
+# port à mettre dans le lien (souvent le même que "port", sauf si l'hébergeur redirige)
+public-port: 0            # 0 = le même que "port"
+
+# envoyer le pack aux joueurs à la connexion
+send-on-join: true
+# obligatoire : refuser = être déconnecté
+required: true
+prompt: "<gold>Limitless utilise un pack de ressources (sons, musiques et effets des armes, boss...) !"

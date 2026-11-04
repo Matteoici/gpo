@@ -1,0 +1,15 @@
+name: SmpPack
+version: '${version}'
+main: fr.smppack.SmpPack
+api-version: '26.2'
+description: "Héberge le resource pack directement depuis le serveur (plus besoin de site) et l'envoie aux joueurs"
+commands:
+  pack-admin:
+    description: Resource pack hébergé par le serveur
+    usage: /pack-admin <info|reload|renvoyer>
+    aliases: [smppack]
+    permission: smppack.admin
+permissions:
+  smppack.admin:
+    description: Gérer le pack hébergé
+    default: op
