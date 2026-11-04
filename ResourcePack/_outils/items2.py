@@ -1073,3 +1073,55 @@ def heavenly_icon():
         a[2 + k, 3 + k] = hx('f0f4fa') if k % 2 == 0 else hx('c8d2e6')
     save(outline(a, hx('0c0a10')), 'relic_restriction_celeste')
 heavenly_icon()
+
+def pioches():
+    """Pioches de zone. 3x3 Brise-Roc : tête d'obsidienne veinée d'améthyste qui pulse.
+    5x5 du Titan : tête de basalte noir, fissures de magma qui coulent, bagues dorées sur le manche."""
+    # ---- 3x3
+    OBS = [hx('0e0818'), hx('1d1230'), hx('2e1d4a'), hx('43306a'), hx('5c4690')]
+    HANDLE = [hx('1c120c'), hx('35241a'), hx('523a28'), hx('6e5038')]
+    a = load('diamond_pickaxe'); op, brown = classes(a)
+    head = op & ~brown
+    base = remap(remap(a, head, OBS), brown, HANDLE)
+    ys, xs = np.nonzero(head)
+    # veines : une diagonale le long de la tête + quelques points
+    vein = [(x, y) for x, y in zip(xs, ys) if (x + 2 * y) % 5 == 0]
+    AME = [hx('7a3ccf'), hx('a35cff'), hx('d2a8ff'), hx('a35cff')]
+    fr = []
+    for k in range(4):
+        b = base.copy()
+        for i, (x, y) in enumerate(vein):
+            b[y, x] = AME[(i + k) % 4]
+        # bague dorée entre la tête et le manche
+        for (x, y) in [(7, 8), (8, 7)]:
+            if b[y, x, 3] > 0: b[y, x] = hx('e0b040')
+        fr.append(outline(b, hx('0a0610')))
+    save(None, 'pioche_3x3', fr, ft=4)
+
+    # ---- 5x5
+    BAS = [hx('0b0a0c'), hx('1a171c'), hx('2b262e'), hx('3e3742'), hx('564c5a')]
+    HANDLE2 = [hx('140c08'), hx('2a1a10'), hx('44301c'), hx('5e4428')]
+    a = load('netherite_pickaxe'); op, _ = classes(a)
+    brown = classes(load('diamond_pickaxe'))[1] & op   # le manche netherite est trop sombre pour être reconnu : même forme que le diamant
+    head = op & ~brown
+    base = remap(remap(a, head, BAS), brown, HANDLE2)
+    hys, hxs = np.nonzero(head)
+    cells = sorted(zip(hxs, hys), key=lambda p: p[0] - p[1])
+    MAG = [hx('5a0e02'), hx('b02a04'), hx('ff6a0a'), hx('ffb43a'), hx('fff0b0')]
+    rng = np.random.default_rng(55)
+    crack = [p for p in cells if rng.random() < 0.34]
+    fr = []
+    for k in range(6):
+        b = base.copy()
+        for i, (x, y) in enumerate(crack):
+            # la chaleur coule le long de la tête
+            t = (i - k * 2) % len(crack)
+            lvl = max(0, 4 - abs(t - len(crack) // 2) // 2)
+            b[y, x] = MAG[min(4, 1 + lvl // 2 + (1 if (i + k) % 3 == 0 else 0))]
+        # bagues dorées sur le manche
+        bys, bxs = np.nonzero(brown)
+        for x, y in zip(bxs, bys):
+            if (x - y) % 6 == 0: b[y, x] = hx('d8a030')
+        fr.append(outline(b, hx('0c0402')))
+    save(None, 'pioche_5x5', fr, ft=3)
+pioches()

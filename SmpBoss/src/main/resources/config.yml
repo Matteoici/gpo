@@ -1,4 +1,4 @@
-config-version: 49
+config-version: 50
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -479,6 +479,18 @@ weapons:
       percent: 40          # % de la vie max d'un joueur, sur toute la combo
       damage: 90           # contre un monstre
       boss-damage: 400
+  pioche-3x3:             # 🎃🕷 épique — Pioche Brise-Roc (tombe sur les deux boss)
+    chance: 3
+    efficiency: 5
+    mining-speed: 1.0      # 1 = vitesse normale
+    hardness-margin: 5     # autour, seulement les blocs pas beaucoup plus durs que celui miné (pas d'obsidienne autour de la pierre)
+    sneak-single: true     # accroupi = un seul bloc
+  pioche-5x5:             # 🎃🕷 légendaire — Pioche du Titan (tombe sur les deux boss)
+    chance: 0.4
+    efficiency: 5
+    mining-speed: 0.85     # un peu plus lente : 25 blocs d'un coup
+    hardness-margin: 5
+    sneak-single: true
   tribaton:               # 🕷 légendaire — Nuage Joueur
     chance: 0.4
     attack-damage: 12
@@ -1331,6 +1343,26 @@ messages:
         - "<#c8d2e6>✦ <b>DOUBLE SAUT</b> <gray>(espace en l'air)"
         - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
         - "<white>⚔ 11</white> <gray>au corps à corps   <dark_gray>|</dark_gray>   <white>⏳ <cooldown> s"
+        - "<dark_gray>✧ Ne tombe pas à la mort · incassable"
+    pioche-3x3:
+      name: "Pioche Brise-Roc"
+      lore:
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<#a35cff>⛏ <b>CREUSE EN 3x3</b>"
+        - "<gray>Chaque bloc miné casse aussi les 8 autour,"
+        - "<gray>dans le sens où tu creuses."
+        - "<dark_gray>Accroupi : un seul bloc."
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<dark_gray>✧ Ne tombe pas à la mort · incassable"
+    pioche-5x5:
+      name: "Pioche du Titan"
+      lore:
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
+        - "<#ff6a0a>⛏ <b>CREUSE EN 5x5</b>"
+        - "<gray>Chaque bloc miné casse aussi les 24 autour,"
+        - "<gray>dans le sens où tu creuses. Un peu plus lente."
+        - "<dark_gray>Accroupi : un seul bloc."
+        - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━"
         - "<dark_gray>✧ Ne tombe pas à la mort · incassable"
     tribaton:
       name: "Tribâton · Nuage Joueur"

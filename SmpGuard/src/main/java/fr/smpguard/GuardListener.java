@@ -106,6 +106,7 @@ final class GuardListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBreak(BlockBreakEvent e) {
+        if (areaBreak(e)) return;
         plugin.xray().onBreak(e.getPlayer(), e.getBlock());
         plugin.oreBait().onBreak(e.getPlayer(), e.getBlock());
     }
@@ -169,6 +170,7 @@ final class GuardListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onBreakCheck(BlockBreakEvent e) {
+        if (areaBreak(e)) return;
         plugin.wall().onBreak(e);
         if (!e.isCancelled()) plugin.breaks().onBreak(e);
     }
@@ -176,6 +178,11 @@ final class GuardListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onDig(org.bukkit.event.block.BlockDamageEvent e) {
         plugin.breaks().onDamage(e);
+    }
+
+    /** Blocs autour cassés par une pioche de zone (SmpBoss, 3x3 / 5x5) : ce n'est pas le joueur qui les mine, on ne les compte pas. */
+    private static boolean areaBreak(BlockBreakEvent e) {
+        return e.getPlayer().hasMetadata("smp-area-break");
     }
 
     // ---------------------------------------------------------------- combat

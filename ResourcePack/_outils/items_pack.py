@@ -16,7 +16,7 @@ for d in (MOD, DEF):
 def w(path, obj):
     with open(path, 'w') as f: json.dump(obj, f, indent=1)
 
-HANDHELD = ['lance_ciel', 'tribaton', 'dague_venin', 'croc_reine', 'faux_tisseuse', 'sceptre_abysse', 'boss_blade', 'lame_citrouille', 'croc_de_givre', 'tranche_mace', 'brise_terre', 'hache_maudite', 'arbalete_spectrale', 'faucille', 'fuga']
+HANDHELD = ['pioche_3x3', 'pioche_5x5', 'lance_ciel', 'tribaton', 'dague_venin', 'croc_reine', 'faux_tisseuse', 'sceptre_abysse', 'boss_blade', 'lame_citrouille', 'croc_de_givre', 'tranche_mace', 'brise_terre', 'hache_maudite', 'arbalete_spectrale', 'faucille', 'fuga']
 RELICS = {'trainee_flammes': 'blaze_powder', 'amulette_recolte': 'golden_carrot', 'lanterne_mineure': 'lantern',
           'couronne': 'golden_helmet', 'lanterne_eternelle': 'soul_lantern', 'bottes_recolte': 'golden_boots',
           'sac_recolte': 'bundle', 'braises_ardentes': 'magma_cream', 'crane_maudit': 'wither_skeleton_skull',
@@ -140,6 +140,8 @@ use('diamond_axe', ['hache_maudite'])
 use('netherite_hoe', ['arbalete_spectrale', 'faucille', 'faux_tisseuse'])
 use('breeze_rod', ['sceptre_abysse'])
 use('netherite_shovel', ['tribaton'])
+use('diamond_pickaxe', ['pioche_3x3'])
+use('netherite_pickaxe', ['pioche_5x5'])
 OUTFIT_ICONS = {'leather_chestplate': ['toji_haut', 'gojo_haut', 'sukuna_haut'], 'leather_leggings': ['toji_pantalon', 'gojo_pantalon', 'sukuna_pantalon'],
                 'leather_boots': ['toji_bottes', 'gojo_bottes', 'sukuna_bottes'], 'leather_helmet': ['gojo_bandeau']}
 for _m, _ids in OUTFIT_ICONS.items():

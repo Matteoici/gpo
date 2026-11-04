@@ -58,7 +58,7 @@ final class Weapons implements Listener {
             LAME = "lame_citrouille", FOLLETS = "arc_feux_follets", HACHE = "hache_maudite",
             DAGUE = "dague_venin", ARC_TOILES = "arc_toiles", CROC_REINE = "croc_reine",
             FAUX_TISSEUSE = "faux_tisseuse", SCEPTRE = "sceptre_abysse", LANCE = "lance_ciel", TRIBATON = "tribaton", TENUE = "tenue_toji",
-            TENUE_GOJO = "tenue_gojo", TENUE_SUKUNA = "tenue_sukuna";
+            TENUE_GOJO = "tenue_gojo", TENUE_SUKUNA = "tenue_sukuna", PIOCHE3 = "pioche_3x3", PIOCHE5 = "pioche_5x5";
     /** les tenues : toutes leurs pièces tombent ensemble */
     static final Map<String, String[]> OUTFITS = Map.of(
             TENUE, new String[]{"toji_haut", "toji_pantalon", "toji_bottes"},
@@ -72,11 +72,11 @@ final class Weapons implements Listener {
         return null;
     }
     /** armes du Roi Citrouille */
-    static final String[] PUMPKIN = {SONIC, TRANCHE, BRISE, SPECTRAL, GIVRE, TEMPETE, HOLLOW, FUGA, LAME, FOLLETS, HACHE, TENUE_GOJO, TENUE_SUKUNA};
+    static final String[] PUMPKIN = {SONIC, TRANCHE, BRISE, SPECTRAL, GIVRE, TEMPETE, HOLLOW, FUGA, LAME, FOLLETS, HACHE, TENUE_GOJO, TENUE_SUKUNA, PIOCHE3, PIOCHE5};
     /** armes de la Reine Araignée */
-    static final String[] SPIDER = {DAGUE, ARC_TOILES, FAUX_TISSEUSE, TRIBATON, TENUE, CROC_REINE, LANCE, SCEPTRE};
+    static final String[] SPIDER = {DAGUE, ARC_TOILES, PIOCHE3, FAUX_TISSEUSE, TRIBATON, TENUE, PIOCHE5, CROC_REINE, LANCE, SCEPTRE};
     static final String[] ALL = {SONIC, TRANCHE, BRISE, SPECTRAL, GIVRE, TEMPETE, HOLLOW, FUGA, LAME, FOLLETS, HACHE, DAGUE, ARC_TOILES, CROC_REINE,
-            FAUX_TISSEUSE, SCEPTRE, LANCE, TRIBATON, TENUE, TENUE_GOJO, TENUE_SUKUNA};
+            FAUX_TISSEUSE, SCEPTRE, LANCE, TRIBATON, TENUE, TENUE_GOJO, TENUE_SUKUNA, PIOCHE3, PIOCHE5};
 
     /** Chance par victoire si le config n'en donne pas. */
     static double defChance(String id) {
@@ -113,6 +113,8 @@ final class Weapons implements Listener {
             case TENUE -> "tenue-toji";
             case TENUE_GOJO -> "tenue-gojo";
             case TENUE_SUKUNA -> "tenue-sukuna";
+            case PIOCHE3 -> "pioche-3x3";
+            case PIOCHE5 -> "pioche-5x5";
             default -> "arbalete-spectrale";
         };
     }
@@ -135,13 +137,16 @@ final class Weapons implements Listener {
             case SCEPTRE -> Material.BREEZE_ROD;
             case LANCE -> Material.NETHERITE_SWORD;
             case TRIBATON -> Material.NETHERITE_SHOVEL;
+            case PIOCHE3 -> Material.DIAMOND_PICKAXE;
+            case PIOCHE5 -> Material.NETHERITE_PICKAXE;
             default -> Material.NETHERITE_HOE; // faux spectrale, faux de la tisseuse
         };
     }
 
     /** PRESTIGE : Sonic Bow, Brise-Terre, Faux des Âmes, Violet Imaginaire, Fûga. SECRET : le reste. */
     static Rarity rarity(String id) {
-        if (LAME.equals(id) || FOLLETS.equals(id) || HACHE.equals(id) || DAGUE.equals(id) || ARC_TOILES.equals(id)) return Rarity.EPIC;
+        if (LAME.equals(id) || FOLLETS.equals(id) || HACHE.equals(id) || DAGUE.equals(id) || ARC_TOILES.equals(id) || PIOCHE3.equals(id)) return Rarity.EPIC;
+        if (PIOCHE5.equals(id)) return Rarity.LEGENDARY;
         if (CROC_REINE.equals(id) || LANCE.equals(id)) return Rarity.SECRET;
         if (TRIBATON.equals(id) || OUTFITS.containsKey(id) || outfitOf(id) != null) return Rarity.LEGENDARY;
         if (FAUX_TISSEUSE.equals(id)) return Rarity.LEGENDARY;
@@ -304,6 +309,23 @@ final class Weapons implements Listener {
             m.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_SPEED, new org.bukkit.attribute.AttributeModifier(
                     new NamespacedKey(plugin, "tranche_speed"), cfg("tranche-mace.attack-speed", 1.6) - 4,
                     org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND));
+        }
+        if (PIOCHE3.equals(id) || PIOCHE5.equals(id)) {
+            int eff = (int) cfg(path(id) + ".efficiency", PIOCHE3.equals(id) ? 5 : 5);
+            if (eff > 0) m.addEnchant(Enchantment.EFFICIENCY, eff, true);
+            double speed = cfg(path(id) + ".mining-speed", PIOCHE3.equals(id) ? 1.0 : 0.85);
+            if (speed != 1.0) {
+                // la 5x5 creuse un peu moins vite (25 blocs d'un coup)
+                m.addAttributeModifier(org.bukkit.attribute.Attribute.BLOCK_BREAK_SPEED, new org.bukkit.attribute.AttributeModifier(
+                        new NamespacedKey(plugin, id + "_mine"), speed - 1, org.bukkit.attribute.AttributeModifier.Operation.MULTIPLY_SCALAR_1,
+                        org.bukkit.inventory.EquipmentSlotGroup.MAINHAND));
+                m.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_DAMAGE, new org.bukkit.attribute.AttributeModifier(
+                        new NamespacedKey(plugin, id + "_damage"), PIOCHE5.equals(id) ? 5 : 4, org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER,
+                        org.bukkit.inventory.EquipmentSlotGroup.MAINHAND));
+                m.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_SPEED, new org.bukkit.attribute.AttributeModifier(
+                        new NamespacedKey(plugin, id + "_speed"), -2.8, org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER,
+                        org.bukkit.inventory.EquipmentSlotGroup.MAINHAND));
+            }
         }
         m.setUnbreakable(true);
         m.setEnchantmentGlintOverride(true);
@@ -1714,6 +1736,65 @@ final class Weapons implements Listener {
         for (Map.Entry<UUID, List<ItemStack>> e : kept.entrySet()) plugin.store().of(e.getKey()).stash.addAll(e.getValue());
         if (!kept.isEmpty()) plugin.store().dirty();
         kept.clear();
+    }
+
+    // ================================================================= pioches de zone (3x3 / 5x5)
+
+    private final Set<UUID> areaBusy = new HashSet<>();
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onAreaBreak(org.bukkit.event.block.BlockBreakEvent e) {
+        Player p = e.getPlayer();
+        if (areaBusy.contains(p.getUniqueId())) return;
+        ItemStack tool = p.getInventory().getItemInMainHand();
+        String id = id(tool);
+        int r = PIOCHE3.equals(id) ? 1 : PIOCHE5.equals(id) ? 2 : 0;
+        if (r == 0) return;
+        if (p.isSneaking() && plugin.getConfig().getBoolean("weapons." + path(id) + ".sneak-single", true)) return; // accroupi = un seul bloc
+        if (TojiSpear.itemLocked(p)) return;
+        org.bukkit.block.Block center = e.getBlock();
+        if (!center.isPreferredTool(tool)) return; // seulement ce qui se mine à la pioche (pas la terre, le bois...)
+        org.bukkit.block.BlockFace face = faceOf(p, center);
+        float maxHard = center.getType().getHardness() + (float) cfg(path(id) + ".hardness-margin", 5);
+        areaBusy.add(p.getUniqueId());
+        p.setMetadata("smp-area-break", new org.bukkit.metadata.FixedMetadataValue(plugin, true));
+        try {
+            for (int a = -r; a <= r; a++) {
+                for (int b = -r; b <= r; b++) {
+                    if (a == 0 && b == 0) continue;
+                    org.bukkit.block.Block t = switch (face) {
+                        case UP, DOWN -> center.getRelative(a, 0, b);
+                        case NORTH, SOUTH -> center.getRelative(a, b, 0);
+                        default -> center.getRelative(0, b, a);
+                    };
+                    if (!breakable(t, tool, maxHard)) continue;
+                    p.breakBlock(t); // comme si le joueur le cassait : protections, drops, Fortune, XP, quêtes...
+                }
+            }
+        } finally {
+            areaBusy.remove(p.getUniqueId());
+            p.removeMetadata("smp-area-break", plugin);
+        }
+    }
+
+    private static boolean breakable(org.bukkit.block.Block b, ItemStack tool, float maxHard) {
+        Material t = b.getType();
+        if (t.isAir() || b.isLiquid()) return false;
+        float h = t.getHardness();
+        if (h < 0 || h > maxHard) return false;            // bedrock, barrières ; obsidienne autour de la pierre
+        if (t == Material.SPAWNER || t == Material.REINFORCED_DEEPSLATE || t == Material.BUDDING_AMETHYST) return false;
+        if (b.getState() instanceof org.bukkit.block.TileState) return false; // fours, coffres, pancartes... jamais en zone
+        return b.isPreferredTool(tool);
+    }
+
+    /** Face du bloc que le joueur mine (pour savoir dans quel plan creuser). */
+    private static org.bukkit.block.BlockFace faceOf(Player p, org.bukkit.block.Block center) {
+        RayTraceResult r = p.rayTraceBlocks(7, org.bukkit.FluidCollisionMode.NEVER);
+        if (r != null && center.equals(r.getHitBlock()) && r.getHitBlockFace() != null) return r.getHitBlockFace();
+        float pitch = p.getLocation().getPitch();
+        if (pitch > 50) return org.bukkit.block.BlockFace.UP;
+        if (pitch < -50) return org.bukkit.block.BlockFace.DOWN;
+        return p.getFacing().getOppositeFace();
     }
 
     // ================================================================= butin
