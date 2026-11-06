@@ -52,4 +52,5 @@ jobs:
         if: always()
         run: |
           grep -E "SmpBoss|Smasher|Erreur|SmpEvents|SmpSaison|SmpMonde|SmpMariage|SmpBanque|SmpTitles|Lune|météor|Météor|Golem|Exception|ERROR|WARN.*fr\.smp|at fr\.smp" srv/log.txt | head -120
+          echo "----- fin du log -----"; grep -vE "Preparing|Time elapsed|chunks|spawn area" srv/log.txt | tail -60
           if grep -qE "at fr\.smp" srv/log.txt; then echo "::error::exception dans un plugin"; exit 1; fi

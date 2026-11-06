@@ -1,6 +1,25 @@
 # Patch notes (la plus récente EN PREMIER). Chaque page = une page du livre (MiniMessage, ~13 lignes max).
 # Couleurs lisibles sur le papier : black, dark_gray, dark_red, dark_blue, dark_green, dark_aqua, dark_purple, gold.
 notes:
+  - id: "2026-11-06-smasher"
+    title: "Adam Smasher & Night City"
+    date: "06/11/2026"
+    pages:
+      - |
+        <dark_red><b>   LIMITLESS</b>
+        <dark_gray>     Patch note
+        <black>━━━━━━━━━━
+        <dark_red><b>⚡ Adam Smasher</b>
+        <black>Nouveau boss sur <dark_purple>Night City</dark_purple>, une île flottante sous un dôme. <dark_gray>/arene smasher</dark_gray>
+        <black>Branche une <dark_red>Puce militaire</dark_red> sur son autel.
+        <black>Rafale, missiles, charge, IEM, sauts derrière toi...
+      - |
+        <dark_purple><b>🔧 15 implants</b>
+        <black>Prestige : <dark_green>Sandevistan de Martinez</dark_green> (accroupi en sprintant, le temps s'arrête) et <dark_red>Projet Capricorne</dark_red> (plus que chez Smasher).
+        <black>Mythical : Sandevistan prototype, Châssis de Smasher. + Lames Mantis, Bras Gorilla, Second Cœur...
+
+        <gold><b>🎫 XP de saison</b>
+        <black>KOTH, primes et quêtes en donnent.
   - id: "2026-11-06-passe"
     title: "Passe remis à zéro, premium rentable"
     date: "06/11/2026"

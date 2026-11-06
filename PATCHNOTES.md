@@ -1,5 +1,29 @@
 # Patch notes Limitless (textes Discord)
 
+## 06/11/2026 — ⚡ ADAM SMASHER débarque à Night City
+
+🌃 **NIGHT CITY** — `/arene smasher`
+> Une nouvelle île flottante : une ville de néons sous un **dôme fermé**, avec ses tours, ses panneaux et son ascenseur. Au centre, l'autel d'**Adam Smasher**.
+
+⚡ **ADAM SMASHER** (nouveau boss)
+> Branche une **Puce militaire** sur son autel. Un colosse de métal **2 fois plus grand que toi**, en 3 phases :
+> • **Rafale** : un laser rouge te suit… puis la mitrailleuse tire dans la ligne
+> • **Missiles** : sors des cercles rouges
+> • **Charge** et **Écrasement** : regarde le sol
+> • **IEM** (phase 2) : reste dans le cercle cyan et tes **implants sont coupés**
+> • **Renforts** : des soldats arrivent
+> • **Sauts Kerenzikov** (phase 3) : il apparaît **derrière toi**
+
+🔧 **15 IMPLANTS À GAGNER** (nouvelles reliques)
+> ❂ **Prestige** : **Sandevistan de Martinez** (accroupi en sprintant : **le temps s'arrête presque** autour de toi pendant 10 s, les flèches flottent, et toi tu frappes **+50 %**) · **Projet Capricorne**, qui ne tombe **plus que sur Smasher** (ceux qui l'ont déjà le gardent)
+> ✧ **Mythical** : **Sandevistan prototype** (6 s, mais un contrecoup après) · **Châssis de Smasher** (presque aucun recul, -50 % d'explosions)
+> ★ **Légendaire** : Lames Mantis (saignement) · Bras Gorilla (uppercut) · Second Cœur (tu survis à un coup mortel)
+> ◆ **Épique** : Kerenzikov (esquive) · Optiques Kiroshi · Tendons renforcés · Armure subdermique
+> ◇ **Rare** : Pompe sanguine · Synapses boostées · Puce de combat · Peau de titane
+
+🎫 **XP DE SAISON DES ÉVÉNEMENTS**
+> **KOTH** : 400 XP par gagnant, 75 pour ceux qui ont tenu la zone · **prime encaissée** 150 · **quête du jour** 40 · **quête de la semaine** 250 · **Adam Smasher** 500.
+
 ## 06/11/2026 — Passe remis à zéro & premium enfin rentable
 
 🎫 **PASSE REMIS À ZÉRO** — `/passe`
