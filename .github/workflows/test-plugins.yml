@@ -51,5 +51,5 @@ jobs:
       - name: Résultat
         if: always()
         run: |
-          grep -E "SmpSaison|SmpMonde|SmpMariage|SmpBanque|SmpTitles|Lune|météor|Météor|Golem|Exception|ERROR|WARN.*fr\.smp|at fr\.smp" srv/log.txt | head -80
+          grep -E "SmpBoss|Smasher|Erreur|SmpEvents|SmpSaison|SmpMonde|SmpMariage|SmpBanque|SmpTitles|Lune|météor|Météor|Golem|Exception|ERROR|WARN.*fr\.smp|at fr\.smp" srv/log.txt | head -120
           if grep -qE "at fr\.smp" srv/log.txt; then echo "::error::exception dans un plugin"; exit 1; fi
