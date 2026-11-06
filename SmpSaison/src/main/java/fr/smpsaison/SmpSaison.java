@@ -89,8 +89,27 @@ public final class SmpSaison extends JavaPlugin implements Listener {
             getConfig().set("config-version", 3);
             saveConfig();
         }
+        if (getConfig().getInt("config-version", 1) < 5) {
+            // premium rentable : 12,6 M $ sur la ligne premium (remboursé vers le palier 25) + 25 % d'XP de saison en plus
+            var def = getConfig().getDefaults();
+            if (def != null && def.isConfigurationSection("season.tiers")) {
+                getConfig().set("season.tiers", null);
+                var ts = def.getConfigurationSection("season.tiers");
+                for (String k : ts.getKeys(true)) if (!ts.isConfigurationSection(k)) getConfig().set("season.tiers." + k, ts.get(k));
+            }
+            getConfig().set("season.premium-xp-bonus", 1.25);
+            getConfig().set("config-version", 5);
+            saveConfig();
+        }
         data = new Data(getDataFolder(), getLogger());
         data.load();
+        if (getConfig().getInt("pass-restart", 0) < 1) {
+            // remise à zéro du passe demandée par l'admin (une seule fois) : tout le monde repart du début (le premium est gardé)
+            int n = restartPass();
+            getLogger().info("Passe remis au début pour " + n + " joueurs (premium gardé).");
+            getConfig().set("pass-restart", 1);
+            saveConfig();
+        }
         jobs = new Jobs(this);
         jobs.load();
         getServer().getPluginManager().registerEvents(this, this);
@@ -131,6 +150,21 @@ public final class SmpSaison extends JavaPlugin implements Listener {
         return p;
     }
 
+    /** Tout le monde repart du début du passe : XP de saison à 0, récompenses à reprendre. Le premium acheté reste. */
+    int restartPass() {
+        int n = 0;
+        for (Data.P p : data.all()) {
+            p.seasonNumber = seasonNumber();
+            p.seasonXp = 0;
+            p.claimedFree.clear();
+            p.claimedPremium.clear();
+            n++;
+        }
+        data.dirty = true;
+        data.save();
+        return n;
+    }
+
     int xpPerTier() {
         return Math.max(1, getConfig().getInt("season.xp-per-tier", 1000));
     }
@@ -159,6 +193,9 @@ public final class SmpSaison extends JavaPlugin implements Listener {
         if (xp <= 0) return;
         Data.P p = season(id);
         int before = tierOf(p);
+        // premium : on monte plus vite
+        Player online = Bukkit.getPlayer(id);
+        if (p.premium || online != null && online.hasPermission("smpsaison.premium")) xp *= Math.max(1, getConfig().getDouble("season.premium-xp-bonus", 1.25));
         p.seasonXp += Math.round(xp);
         addWeekly(id, "saison", xp);
         data.dirty = true;
@@ -464,6 +501,16 @@ public final class SmpSaison extends JavaPlugin implements Listener {
                 for (Player p : Bukkit.getOnlinePlayers()) season(p.getUniqueId());
                 Bukkit.broadcast(mm("<gradient:#ff8a3d:#ffd36b><b>🎫 La saison " + seasonNumber() + " commence !</b></gradient> <gray>Nouveau passe : <yellow>/passe"));
             }
+            case "remise" -> {
+                // tout le monde repart du début du passe, sans changer de saison (le premium reste)
+                if (a.length < 2 || !a[1].equalsIgnoreCase("confirmer")) {
+                    s.sendMessage(mm("<red>Remet le passe de TOUS les joueurs au début (XP de saison à 0, récompenses à reprendre). Le premium acheté reste. <white>/saison remise confirmer"));
+                    return;
+                }
+                int n = restartPass();
+                s.sendMessage(mm("<green>Passe remis au début pour " + n + " joueurs."));
+                Bukkit.broadcast(mm("<gradient:#ff8a3d:#ffd36b><b>🎫 Le passe repart à zéro !</b></gradient> <gray>Tout le monde recommence au palier 1 (premium gardé) : <yellow>/passe"));
+            }
             case "hebdo-reset" -> {
                 weeklyReset();
                 s.sendMessage(mm("<green>Semaine terminée de force (récompenses données)."));
@@ -473,7 +520,7 @@ public final class SmpSaison extends JavaPlugin implements Listener {
                 jobs.load();
                 s.sendMessage(mm("<green>SmpSaison rechargé."));
             }
-            default -> s.sendMessage(mm("<gold>/saison xp <joueur> <n> · premium <joueur> [retirer] · info <joueur> · reset confirmer · hebdo-reset · reload"));
+            default -> s.sendMessage(mm("<gold>/saison xp <joueur> <n> · premium <joueur> [retirer] · info <joueur> · remise confirmer · reset confirmer · hebdo-reset · reload"));
         }
     }
 
@@ -483,7 +530,7 @@ public final class SmpSaison extends JavaPlugin implements Listener {
         String n = cmd.getName().toLowerCase(Locale.ROOT);
         if (n.equals("passe") && a.length == 1) out.addAll(List.of("premium", "tout"));
         if (n.equals("saison")) {
-            if (a.length == 1) out.addAll(List.of("xp", "premium", "info", "reset", "hebdo-reset", "reload"));
+            if (a.length == 1) out.addAll(List.of("xp", "premium", "info", "remise", "reset", "hebdo-reset", "reload"));
             else if (a.length == 2) for (Player p : Bukkit.getOnlinePlayers()) out.add(p.getName());
         }
         String last = a.length == 0 ? "" : a[a.length - 1].toLowerCase(Locale.ROOT);

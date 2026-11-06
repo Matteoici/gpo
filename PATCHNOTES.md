@@ -1,5 +1,14 @@
 # Patch notes Limitless (textes Discord)
 
+## 06/11/2026 — Passe remis à zéro & premium enfin rentable
+
+🎫 **PASSE REMIS À ZÉRO** — `/passe`
+> Tout le monde repart du **palier 1**, récompenses à reprendre. Ceux qui ont acheté le **premium le gardent** (pas besoin de le racheter).
+
+★ **LE PREMIUM EST RENTABLE**
+> La ligne premium rapporte maintenant **12,6 M $** au total (154 000 $ au palier 1, jusqu'à 350 000 $ au palier 50), en plus des clés et des pioches. Pour **5 M $**, il est **remboursé vers le palier 25**, tout le reste c'est du bonus.
+> Et avec le premium tu gagnes **+25 % d'XP de saison** : tu montes plus vite.
+
 ## 04/11/2026 — Banque, contrats, prestige & nouveaux titres
 
 🏦 **BANQUE** — `/banque`

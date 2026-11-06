@@ -197,8 +197,9 @@ final class Gui implements InventoryHolder {
         if (page > 0) g.inv.setItem(45, pitem("pass_prev", "<white>◀ Page précédente", List.of(), 1));
         if (page < pages - 1) g.inv.setItem(53, pitem("pass_next", "<white>Page suivante ▶", List.of(), 1));
         g.inv.setItem(49, pitem("pass_claim", "<green>Tout récupérer", List.of("<gray>Récupère tous les paliers atteints"), 1));
-        g.inv.setItem(47, prem ? pitem("pass_premium_on", "<gold><b>★ Passe premium actif", List.of("<gray>La ligne du bas est à toi"), 1)
-                : pitem("pass_premium", "<gold><b>★ Passe premium", List.of("<gray>Débloque la ligne du bas (récompenses en plus)",
+        g.inv.setItem(47, prem ? pitem("pass_premium_on", "<gold><b>★ Passe premium actif", List.of("<gray>La ligne du bas est à toi", "<gray>+25 % d'XP de saison"), 1)
+                : pitem("pass_premium", "<gold><b>★ Passe premium", List.of("<gray>Débloque la ligne du bas : <gold>12,6 M $</gold> en tout",
+                "<gray>(remboursé vers le palier 25) + clés et pioches", "<gray>et <white>+25 % d'XP de saison</white> pour monter plus vite",
                 "<gray>Prix : <gold>" + fmt(pl.getConfig().getDouble("season.premium-price", 5000000)) + " " + pl.money(), "", "<yellow>Clic pour l'acheter"), 1));
         g.inv.setItem(51, pitem("pass_week", "<aqua>🏆 Classements de la semaine", List.of("<yellow>Clic : /hebdo"), 1));
         fillBlank(g.inv);

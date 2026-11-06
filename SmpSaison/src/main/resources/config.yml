@@ -7,7 +7,9 @@
 #    "boss give %player% pioche3x3"         -> objet de boss (SmpBoss)
 #  Un joueur hors ligne reçoit ses récompenses à sa prochaine connexion.
 # =====================================================================
-config-version: 3
+config-version: 5
+# remise du passe déjà faite (ne pas toucher)
+pass-restart: 1
 money-symbol: "$"
 timezone: "Europe/Paris"
 
@@ -154,6 +156,8 @@ season:
   xp-per-tier: 1000
   # le premium s'achète avec l'argent du jeu (/passe premium) ; permission smpsaison.premium = offert
   premium-price: 5000000
+  # avec le premium : +25 % d'XP de saison (on monte plus vite)
+  premium-xp-bonus: 1.25
   # d'où vient l'XP de saison
   xp:
     job-ratio: 0.5          # 50 % de l'XP de métier
@@ -166,154 +170,154 @@ season:
   tiers:
     1:
       free: {icon: GOLD_NUGGET, desc: "2 000 $", rewards: ["money:2000"]}
-      premium: {icon: GOLD_INGOT, desc: "23 600 $", rewards: ["money:23600"]}
+      premium: {icon: GOLD_INGOT, desc: "154 000 $", rewards: ["money:154000"]}
     2:
       free: {icon: GOLD_NUGGET, desc: "2 500 $", rewards: ["money:2500"]}
-      premium: {icon: GOLD_INGOT, desc: "27 200 $", rewards: ["money:27200"]}
+      premium: {icon: GOLD_INGOT, desc: "158 000 $", rewards: ["money:158000"]}
     3:
       free: {icon: GOLD_NUGGET, desc: "3 000 $", rewards: ["money:3000"]}
-      premium: {icon: TRIPWIRE_HOOK, desc: "30 800 $ + clé épique", rewards: ["money:30800", "caisse cle %player% epique 1"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "162 000 $ + clé épique", rewards: ["money:162000", "caisse cle %player% epique 1"]}
     4:
       free: {icon: GOLD_NUGGET, desc: "3 500 $", rewards: ["money:3500"]}
-      premium: {icon: GOLD_INGOT, desc: "34 400 $", rewards: ["money:34400"]}
+      premium: {icon: GOLD_INGOT, desc: "166 000 $", rewards: ["money:166000"]}
     5:
       free: {icon: TRIPWIRE_HOOK, desc: "4 000 $ + clé rare", rewards: ["money:4000", "caisse cle %player% rare 1"]}
-      premium: {icon: TRIPWIRE_HOOK, desc: "38 000 $ + clé épique", rewards: ["money:38000", "caisse cle %player% epique 1"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "170 000 $ + clé épique", rewards: ["money:170000", "caisse cle %player% epique 1"]}
     6:
       free: {icon: GOLD_NUGGET, desc: "4 500 $", rewards: ["money:4500"]}
-      premium: {icon: GOLD_INGOT, desc: "41 600 $", rewards: ["money:41600"]}
+      premium: {icon: GOLD_INGOT, desc: "174 000 $", rewards: ["money:174000"]}
     7:
       free: {icon: GOLD_NUGGET, desc: "5 000 $", rewards: ["money:5000"]}
-      premium: {icon: GOLD_INGOT, desc: "45 200 $", rewards: ["money:45200"]}
+      premium: {icon: GOLD_INGOT, desc: "178 000 $", rewards: ["money:178000"]}
     8:
       free: {icon: GOLD_NUGGET, desc: "5 500 $", rewards: ["money:5500"]}
-      premium: {icon: TRIPWIRE_HOOK, desc: "48 800 $ + clé épique", rewards: ["money:48800", "caisse cle %player% epique 1"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "182 000 $ + clé épique", rewards: ["money:182000", "caisse cle %player% epique 1"]}
     9:
       free: {icon: GOLD_NUGGET, desc: "6 000 $", rewards: ["money:6000"]}
-      premium: {icon: GOLD_INGOT, desc: "52 400 $", rewards: ["money:52400"]}
+      premium: {icon: GOLD_INGOT, desc: "186 000 $", rewards: ["money:186000"]}
     10:
       free: {icon: TRIPWIRE_HOOK, desc: "6 500 $ + clé rare", rewards: ["money:6500", "caisse cle %player% rare 1"]}
-      premium: {icon: TRIPWIRE_HOOK, desc: "56 000 $ + clé épique", rewards: ["money:56000", "caisse cle %player% epique 1"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "190 000 $ + clé épique", rewards: ["money:190000", "caisse cle %player% epique 1"]}
     11:
       free: {icon: GOLD_NUGGET, desc: "7 000 $", rewards: ["money:7000"]}
-      premium: {icon: GOLD_INGOT, desc: "59 600 $", rewards: ["money:59600"]}
+      premium: {icon: GOLD_INGOT, desc: "194 000 $", rewards: ["money:194000"]}
     12:
       free: {icon: GOLD_NUGGET, desc: "7 500 $", rewards: ["money:7500"]}
-      premium: {icon: NETHER_WART, desc: "63 200 $ + 8 graines maudites", rewards: ["money:63200", "boss give %player% graine 8"]}
+      premium: {icon: NETHER_WART, desc: "198 000 $ + 8 graines maudites", rewards: ["money:198000", "boss give %player% graine 8"]}
     13:
       free: {icon: GOLD_NUGGET, desc: "8 000 $", rewards: ["money:8000"]}
-      premium: {icon: TRIPWIRE_HOOK, desc: "66 800 $ + clé épique", rewards: ["money:66800", "caisse cle %player% epique 1"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "202 000 $ + clé épique", rewards: ["money:202000", "caisse cle %player% epique 1"]}
     14:
       free: {icon: GOLD_NUGGET, desc: "8 500 $", rewards: ["money:8500"]}
-      premium: {icon: GOLD_INGOT, desc: "70 400 $", rewards: ["money:70400"]}
+      premium: {icon: GOLD_INGOT, desc: "206 000 $", rewards: ["money:206000"]}
     15:
       free: {icon: TRIPWIRE_HOOK, desc: "9 000 $ + clé rare", rewards: ["money:9000", "caisse cle %player% rare 1"]}
-      premium: {icon: TRIPWIRE_HOOK, desc: "74 000 $ + clé épique", rewards: ["money:74000", "caisse cle %player% epique 1"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "210 000 $ + clé épique", rewards: ["money:210000", "caisse cle %player% epique 1"]}
     16:
       free: {icon: GOLD_NUGGET, desc: "9 500 $", rewards: ["money:9500"]}
-      premium: {icon: GOLD_INGOT, desc: "77 600 $", rewards: ["money:77600"]}
+      premium: {icon: GOLD_INGOT, desc: "214 000 $", rewards: ["money:214000"]}
     17:
       free: {icon: GOLD_NUGGET, desc: "10 000 $", rewards: ["money:10000"]}
-      premium: {icon: GOLD_INGOT, desc: "81 200 $", rewards: ["money:81200"]}
+      premium: {icon: GOLD_INGOT, desc: "218 000 $", rewards: ["money:218000"]}
     18:
       free: {icon: GOLD_NUGGET, desc: "10 500 $", rewards: ["money:10500"]}
-      premium: {icon: TRIPWIRE_HOOK, desc: "84 800 $ + clé épique", rewards: ["money:84800", "caisse cle %player% epique 1"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "222 000 $ + clé épique", rewards: ["money:222000", "caisse cle %player% epique 1"]}
     19:
       free: {icon: GOLD_NUGGET, desc: "11 000 $", rewards: ["money:11000"]}
-      premium: {icon: GOLD_INGOT, desc: "88 400 $", rewards: ["money:88400"]}
+      premium: {icon: GOLD_INGOT, desc: "226 000 $", rewards: ["money:226000"]}
     20:
       free: {icon: TRIPWIRE_HOOK, desc: "11 500 $ + clé épique", rewards: ["money:11500", "caisse cle %player% epique 1"]}
-      premium: {icon: TRIPWIRE_HOOK, desc: "92 000 $ + clé épique", rewards: ["money:92000", "caisse cle %player% epique 1"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "230 000 $ + clé épique", rewards: ["money:230000", "caisse cle %player% epique 1"]}
     21:
       free: {icon: GOLD_NUGGET, desc: "12 000 $", rewards: ["money:12000"]}
-      premium: {icon: GOLD_INGOT, desc: "95 600 $", rewards: ["money:95600"]}
+      premium: {icon: GOLD_INGOT, desc: "234 000 $", rewards: ["money:234000"]}
     22:
       free: {icon: GOLD_NUGGET, desc: "12 500 $", rewards: ["money:12500"]}
-      premium: {icon: GOLD_INGOT, desc: "99 200 $", rewards: ["money:99200"]}
+      premium: {icon: GOLD_INGOT, desc: "238 000 $", rewards: ["money:238000"]}
     23:
       free: {icon: GOLD_NUGGET, desc: "13 000 $", rewards: ["money:13000"]}
-      premium: {icon: TRIPWIRE_HOOK, desc: "102 800 $ + clé épique", rewards: ["money:102800", "caisse cle %player% epique 1"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "242 000 $ + clé épique", rewards: ["money:242000", "caisse cle %player% epique 1"]}
     24:
       free: {icon: GOLD_NUGGET, desc: "13 500 $", rewards: ["money:13500"]}
-      premium: {icon: NETHER_WART, desc: "106 400 $ + 8 graines maudites", rewards: ["money:106400", "boss give %player% graine 8"]}
+      premium: {icon: NETHER_WART, desc: "246 000 $ + 8 graines maudites", rewards: ["money:246000", "boss give %player% graine 8"]}
     25:
       free: {icon: TRIPWIRE_HOOK, desc: "14 000 $ + clé épique", rewards: ["money:14000", "caisse cle %player% epique 1"]}
-      premium: {icon: TRIPWIRE_HOOK, desc: "110 000 $ + clé légendaire", rewards: ["money:110000", "caisse cle %player% legendaire 1"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "250 000 $ + clé légendaire", rewards: ["money:250000", "caisse cle %player% legendaire 1"]}
     26:
       free: {icon: GOLD_NUGGET, desc: "14 500 $", rewards: ["money:14500"]}
-      premium: {icon: GOLD_INGOT, desc: "113 600 $", rewards: ["money:113600"]}
+      premium: {icon: GOLD_INGOT, desc: "254 000 $", rewards: ["money:254000"]}
     27:
       free: {icon: GOLD_NUGGET, desc: "15 000 $", rewards: ["money:15000"]}
-      premium: {icon: GOLD_INGOT, desc: "117 200 $", rewards: ["money:117200"]}
+      premium: {icon: GOLD_INGOT, desc: "258 000 $", rewards: ["money:258000"]}
     28:
       free: {icon: GOLD_NUGGET, desc: "15 500 $", rewards: ["money:15500"]}
-      premium: {icon: TRIPWIRE_HOOK, desc: "120 800 $ + clé légendaire", rewards: ["money:120800", "caisse cle %player% legendaire 1"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "262 000 $ + clé légendaire", rewards: ["money:262000", "caisse cle %player% legendaire 1"]}
     29:
       free: {icon: GOLD_NUGGET, desc: "16 000 $", rewards: ["money:16000"]}
-      premium: {icon: GOLD_INGOT, desc: "124 400 $", rewards: ["money:124400"]}
+      premium: {icon: GOLD_INGOT, desc: "266 000 $", rewards: ["money:266000"]}
     30:
       free: {icon: DIAMOND_PICKAXE, desc: "16 500 $ + clé épique + Pioche Brise-Roc 3x3", rewards: ["money:16500", "caisse cle %player% epique 1", "boss give %player% pioche3x3"]}
-      premium: {icon: TRIPWIRE_HOOK, desc: "128 000 $ + clé légendaire", rewards: ["money:128000", "caisse cle %player% legendaire 1"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "270 000 $ + clé légendaire", rewards: ["money:270000", "caisse cle %player% legendaire 1"]}
     31:
       free: {icon: GOLD_NUGGET, desc: "17 000 $", rewards: ["money:17000"]}
-      premium: {icon: GOLD_INGOT, desc: "131 600 $", rewards: ["money:131600"]}
+      premium: {icon: GOLD_INGOT, desc: "274 000 $", rewards: ["money:274000"]}
     32:
       free: {icon: GOLD_NUGGET, desc: "17 500 $", rewards: ["money:17500"]}
-      premium: {icon: GOLD_INGOT, desc: "135 200 $", rewards: ["money:135200"]}
+      premium: {icon: GOLD_INGOT, desc: "278 000 $", rewards: ["money:278000"]}
     33:
       free: {icon: GOLD_NUGGET, desc: "18 000 $", rewards: ["money:18000"]}
-      premium: {icon: TRIPWIRE_HOOK, desc: "138 800 $ + clé légendaire", rewards: ["money:138800", "caisse cle %player% legendaire 1"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "282 000 $ + clé légendaire", rewards: ["money:282000", "caisse cle %player% legendaire 1"]}
     34:
       free: {icon: GOLD_NUGGET, desc: "18 500 $", rewards: ["money:18500"]}
-      premium: {icon: GOLD_INGOT, desc: "142 400 $", rewards: ["money:142400"]}
+      premium: {icon: GOLD_INGOT, desc: "286 000 $", rewards: ["money:286000"]}
     35:
       free: {icon: TRIPWIRE_HOOK, desc: "19 000 $ + clé légendaire", rewards: ["money:19000", "caisse cle %player% legendaire 1"]}
-      premium: {icon: TRIPWIRE_HOOK, desc: "146 000 $ + clé légendaire", rewards: ["money:146000", "caisse cle %player% legendaire 1"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "290 000 $ + clé légendaire", rewards: ["money:290000", "caisse cle %player% legendaire 1"]}
     36:
       free: {icon: GOLD_NUGGET, desc: "19 500 $", rewards: ["money:19500"]}
-      premium: {icon: NETHER_WART, desc: "149 600 $ + 8 graines maudites", rewards: ["money:149600", "boss give %player% graine 8"]}
+      premium: {icon: NETHER_WART, desc: "294 000 $ + 8 graines maudites", rewards: ["money:294000", "boss give %player% graine 8"]}
     37:
       free: {icon: GOLD_NUGGET, desc: "20 000 $", rewards: ["money:20000"]}
-      premium: {icon: GOLD_INGOT, desc: "153 200 $", rewards: ["money:153200"]}
+      premium: {icon: GOLD_INGOT, desc: "298 000 $", rewards: ["money:298000"]}
     38:
       free: {icon: GOLD_NUGGET, desc: "20 500 $", rewards: ["money:20500"]}
-      premium: {icon: TRIPWIRE_HOOK, desc: "156 800 $ + clé légendaire", rewards: ["money:156800", "caisse cle %player% legendaire 1"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "302 000 $ + clé légendaire", rewards: ["money:302000", "caisse cle %player% legendaire 1"]}
     39:
       free: {icon: GOLD_NUGGET, desc: "21 000 $", rewards: ["money:21000"]}
-      premium: {icon: GOLD_INGOT, desc: "160 400 $", rewards: ["money:160400"]}
+      premium: {icon: GOLD_INGOT, desc: "306 000 $", rewards: ["money:306000"]}
     40:
       free: {icon: TRIPWIRE_HOOK, desc: "21 500 $ + clé légendaire", rewards: ["money:21500", "caisse cle %player% legendaire 1"]}
-      premium: {icon: DIAMOND_PICKAXE, desc: "164 000 $ + clé légendaire + Pioche Brise-Roc 3x3", rewards: ["money:164000", "caisse cle %player% legendaire 1", "boss give %player% pioche3x3"]}
+      premium: {icon: DIAMOND_PICKAXE, desc: "310 000 $ + clé légendaire + Pioche Brise-Roc 3x3", rewards: ["money:310000", "caisse cle %player% legendaire 1", "boss give %player% pioche3x3"]}
     41:
       free: {icon: GOLD_NUGGET, desc: "22 000 $", rewards: ["money:22000"]}
-      premium: {icon: GOLD_INGOT, desc: "167 600 $", rewards: ["money:167600"]}
+      premium: {icon: GOLD_INGOT, desc: "314 000 $", rewards: ["money:314000"]}
     42:
       free: {icon: GOLD_NUGGET, desc: "22 500 $", rewards: ["money:22500"]}
-      premium: {icon: GOLD_INGOT, desc: "171 200 $", rewards: ["money:171200"]}
+      premium: {icon: GOLD_INGOT, desc: "318 000 $", rewards: ["money:318000"]}
     43:
       free: {icon: GOLD_NUGGET, desc: "23 000 $", rewards: ["money:23000"]}
-      premium: {icon: TRIPWIRE_HOOK, desc: "174 800 $ + clé légendaire", rewards: ["money:174800", "caisse cle %player% legendaire 1"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "322 000 $ + clé légendaire", rewards: ["money:322000", "caisse cle %player% legendaire 1"]}
     44:
       free: {icon: GOLD_NUGGET, desc: "23 500 $", rewards: ["money:23500"]}
-      premium: {icon: GOLD_INGOT, desc: "178 400 $", rewards: ["money:178400"]}
+      premium: {icon: GOLD_INGOT, desc: "326 000 $", rewards: ["money:326000"]}
     45:
       free: {icon: TRIPWIRE_HOOK, desc: "24 000 $ + clé légendaire", rewards: ["money:24000", "caisse cle %player% legendaire 1"]}
-      premium: {icon: TRIPWIRE_HOOK, desc: "182 000 $ + clé mythique", rewards: ["money:182000", "caisse cle %player% mythique 1"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "330 000 $ + clé mythique", rewards: ["money:330000", "caisse cle %player% mythique 1"]}
     46:
       free: {icon: GOLD_NUGGET, desc: "24 500 $", rewards: ["money:24500"]}
-      premium: {icon: GOLD_INGOT, desc: "185 600 $", rewards: ["money:185600"]}
+      premium: {icon: GOLD_INGOT, desc: "334 000 $", rewards: ["money:334000"]}
     47:
       free: {icon: GOLD_NUGGET, desc: "25 000 $", rewards: ["money:25000"]}
-      premium: {icon: GOLD_INGOT, desc: "189 200 $", rewards: ["money:189200"]}
+      premium: {icon: GOLD_INGOT, desc: "338 000 $", rewards: ["money:338000"]}
     48:
       free: {icon: GOLD_NUGGET, desc: "25 500 $", rewards: ["money:25500"]}
-      premium: {icon: TRIPWIRE_HOOK, desc: "192 800 $ + clé mythique", rewards: ["money:192800", "caisse cle %player% mythique 1"]}
+      premium: {icon: TRIPWIRE_HOOK, desc: "342 000 $ + clé mythique", rewards: ["money:342000", "caisse cle %player% mythique 1"]}
     49:
       free: {icon: GOLD_NUGGET, desc: "26 000 $", rewards: ["money:26000"]}
-      premium: {icon: GOLD_INGOT, desc: "196 400 $", rewards: ["money:196400"]}
+      premium: {icon: GOLD_INGOT, desc: "346 000 $", rewards: ["money:346000"]}
     50:
       free: {icon: NETHER_STAR, desc: "26 500 $ + clés légendaire et mythique", rewards: ["money:26500", "caisse cle %player% legendaire 1", "caisse cle %player% mythique 1"]}
-      premium: {icon: NETHERITE_PICKAXE, desc: "200 000 $ + clé mythique + Pioche du Titan 5x5 + clé premium", rewards: ["money:200000", "caisse cle %player% mythique 1", "boss give %player% pioche5x5", "caisse cle %player% premium 1"]}
+      premium: {icon: NETHERITE_PICKAXE, desc: "350 000 $ + clé mythique + Pioche du Titan 5x5 + clé premium", rewards: ["money:350000", "caisse cle %player% mythique 1", "boss give %player% pioche5x5", "caisse cle %player% premium 1"]}
 
 # ---------------------------------------------------------------- 🏆 CLASSEMENTS DE LA SEMAINE
 # remis à zéro chaque semaine ; les 3 premiers de chaque classement reçoivent leurs récompenses
