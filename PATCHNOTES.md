@@ -6,7 +6,7 @@
 > Une nouvelle île flottante : une ville de néons sous un **dôme fermé**, avec ses tours, ses panneaux et son ascenseur. Au centre, l'autel d'**Adam Smasher**.
 
 ⚡ **ADAM SMASHER** (nouveau boss)
-> Branche une **Puce militaire** sur son autel. Pour la fabriquer : **8 Fragments de puce** (lâchés par les **illageois** : pillards, vindicateurs, évocateurs, ravageurs, sorcières) autour d'**1 bloc de redstone**. Un **colosse cybernétique de 4 blocs entièrement modélisé** (visière rouge, réacteur qui pulse, bras-canon, il marche, vise et lève les bras), en 3 phases :
+> Branche une **Puce militaire** sur son autel. Pour la fabriquer : **4 Fragments de puce** en croix autour d'**1 bloc de redstone**. Les **illageois** en lâchent (20 % : pillards, vindicateurs, évocateurs, ravageurs, sorcières) et chaque victoire contre le **Roi Citrouille** ou la **Reine** en donne 1 à 2. Un **colosse cybernétique de 4 blocs entièrement modélisé** (visière rouge, réacteur qui pulse, bras-canon, il marche, vise et lève les bras), en 3 phases :
 > • **Rafale** : un laser rouge te suit… puis la mitrailleuse tire dans la ligne
 > • **Missiles** : sors des cercles rouges
 > • **Charge** et **Écrasement** : regarde le sol

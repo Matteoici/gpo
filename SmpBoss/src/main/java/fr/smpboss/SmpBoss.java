@@ -859,7 +859,7 @@ public final class SmpBoss extends JavaPlugin {
         NamespacedKey pk = new NamespacedKey(this, "smasher_chip");
         Bukkit.removeRecipe(pk);
         ShapedRecipe pr = new ShapedRecipe(pk, items.chip());
-        pr.shape("FFF", "FRF", "FFF");
+        pr.shape(" F ", "FRF", " F ");
         pr.setIngredient('F', new RecipeChoice.ExactChoice(items.chipFragment(1)));
         pr.setIngredient('R', Material.REDSTONE_BLOCK);
         Bukkit.addRecipe(pr);

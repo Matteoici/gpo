@@ -51,6 +51,11 @@ public final class Loot {
             int min = seeds.isEmpty() ? 1 : seeds.get(0), max = seeds.size() > 1 ? seeds.get(1) : min;
             int n = ThreadLocalRandom.current().nextInt(min, max + 1);
             if (n > 0) give(p, spider ? plugin.items().cursedEye(n) : plugin.items().seed(n));
+            // des fragments de puce pour aller voir Adam Smasher ensuite
+            List<Integer> fr = c.getIntegerList("smasher.fragments.boss-reward");
+            int fmin = fr.isEmpty() ? 1 : fr.get(0), fmax = fr.size() > 1 ? fr.get(1) : fmin;
+            int nf = ThreadLocalRandom.current().nextInt(fmin, Math.max(fmin, fmax) + 1);
+            if (nf > 0) give(p, plugin.items().chipFragment(nf));
             // ---- armes : tirage à part (celles du boss vaincu)
             plugin.weapons().roll(p, spider);
         } else if (Bukkit.getPluginManager().isPluginEnabled("SmpSaison")) {
