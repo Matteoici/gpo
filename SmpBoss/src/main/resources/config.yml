@@ -1169,6 +1169,12 @@ smasher:
   enrage-at: 0.12
   # XP de saison à chaque victoire (SmpSaison)
   season-xp: 500
+  # Fragments de puce lâchés par les illageois (8 + 1 bloc de redstone = Puce militaire)
+  fragments:
+    enabled: true
+    chance: 8
+    mobs: [PILLAGER, VINDICATOR, EVOKER, ILLUSIONER, RAVAGER, WITCH]
+    from-spawners: false
   attack-interval:
     1: 60
     2: 48
@@ -2123,6 +2129,11 @@ messages:
       - "<gray>sans, un <white>Mythical</white> au bout de <white><pity-secret></white>."
       - "<dark_gray>(compteur commun à tous les boss)"
     items:
+      fragment:
+        name: "<#ff2a6d>Fragment de puce"
+        lore:
+          - "<gray>Un morceau de puce militaire, arraché à un illageois."
+          - "<gray>8 fragments + 1 <red>bloc de redstone</red> = <#ff2a6d>Puce militaire"
       chip:
         name: "<gradient:#ff2a6d:#05d9e8><b>Puce militaire"
         lore:

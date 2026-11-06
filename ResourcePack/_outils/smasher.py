@@ -212,4 +212,8 @@ VIAL = ["........", ".....kkk", "....kmmm", ".....kkk", "....kgwr", "....kgrr", 
         "..kgrrRR", "..kgrrrR", "..kgrrrr", "..kgrrrr", "...kgrrr", "....kmmm", ".....kkk", "........"]
 save16('relic_pompe_sanguine', pulse(VIAL, {'k': '1a0406', 'm': '8a93a8', 'g': 'c8e6ff', 'w': 'ffffff', 'r': 'b3121f', 'R': 'ff3a4a'},
                                      ['R'], ['ff3a4a', 'ff7a8a', 'ff3a4a', 'c8102e'], n=4), ft=5)
+FRAG = ["................", "................", "......kkkk......", ".....kddddk.....", "....kdgggdkk....", "...kdgdddgdyk...",
+        "..kdgdGGdgdk....", "..kdgdGGdgk.....", "...kdgddgdk.....", "....kdggdk......", "....ykddk.......", ".....kkk........",
+        "................", "................", "................", "................"]
+save16('fragment_puce', icon_from(FRAG, {'k': '0a0606', 'd': '2a0a0e', 'g': 'ff1e32', 'G': 'ffd0d0', 'y': 'f2bd2e'}, mirror=False))
 print('icônes Smasher OK')

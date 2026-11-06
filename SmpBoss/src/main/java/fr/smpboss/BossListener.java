@@ -214,6 +214,14 @@ final class BossListener implements Listener {
             e.getDrops().add(plugin.items().cursedEye(1));
             dead.getWorld().spawnParticle(Particle.SOUL, dead.getLocation().add(0, 0.6, 0), 10, 0.3, 0.3, 0.3, 0.02);
         }
+        // fragments de puce (Adam Smasher) : sur les illageois
+        if (eyeKiller != null && !(dead instanceof Player) && c.getBoolean("smasher.fragments.enabled", true)
+                && c.getStringList("smasher.fragments.mobs").contains(dead.getType().name())
+                && !(dead.getPersistentDataContainer().has(spawnerKey, PersistentDataType.BYTE) && !c.getBoolean("smasher.fragments.from-spawners", false))
+                && ThreadLocalRandom.current().nextDouble() * 100 < c.getDouble("smasher.fragments.chance", 8)) {
+            e.getDrops().add(plugin.items().chipFragment(1));
+            dead.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, dead.getLocation().add(0, 0.8, 0), 14, 0.3, 0.4, 0.3, 0.1);
+        }
         // graines maudites
         if (!c.getBoolean("seeds.enabled", true)) return;
         Player killer = dead.getKiller();

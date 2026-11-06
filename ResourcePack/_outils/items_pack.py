@@ -33,7 +33,7 @@ RELICS = {'trainee_flammes': 'blaze_powder', 'amulette_recolte': 'golden_carrot'
           'lames_mantis': 'quartz', 'bras_gorilla': 'raw_iron', 'second_coeur': 'heart_of_the_sea', 'kerenzikov': 'clock',
           'optiques_kiroshi': 'glow_ink_sac', 'tendons_renforces': 'rabbit_foot', 'armure_subdermique': 'netherite_scrap',
           'pompe_sanguine': 'redstone', 'synapses_boost': 'glowstone_dust', 'puce_combat': 'gold_nugget', 'peau_titane': 'iron_nugget'}
-FLAT = ['oeil_maudit', 'cocon', 'puce_smasher', 'hollow_purple', 'graine', 'egg_rare', 'egg_epique', 'egg_legendaire', 'egg_mythique'] + ['relic_' + r for r in RELICS]
+FLAT = ['oeil_maudit', 'cocon', 'puce_smasher', 'fragment_puce', 'hollow_purple', 'graine', 'egg_rare', 'egg_epique', 'egg_legendaire', 'egg_mythique'] + ['relic_' + r for r in RELICS]
 BOWS = ['sonic_bow', 'arc_tempete', 'arc_feux_follets', 'arc_toiles']
 
 for n in HANDHELD:
@@ -218,6 +218,7 @@ use('iron_sword', ['dague_venin'])
 use('fermented_spider_eye', ['oeil_maudit'])
 use('cobweb', ['cocon'])
 use('echo_shard', ['puce_smasher'])
+use('prismarine_shard', ['fragment_puce'])
 use('black_concrete', ['spider_head', 'spider_abdomen', 'spider_leg_upper', 'spider_leg_lower'] + SMASHER3D)
 use('sea_lantern', ['spider_hide'])
 use('white_wool', ['spider_eggsac'])

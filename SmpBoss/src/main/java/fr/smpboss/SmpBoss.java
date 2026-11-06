@@ -856,6 +856,13 @@ public final class SmpBoss extends JavaPlugin {
         cr.setIngredient('E', new RecipeChoice.ExactChoice(items.cursedEye(1)));
         cr.setIngredient('C', Material.COBWEB);
         Bukkit.addRecipe(cr);
+        NamespacedKey pk = new NamespacedKey(this, "smasher_chip");
+        Bukkit.removeRecipe(pk);
+        ShapedRecipe pr = new ShapedRecipe(pk, items.chip());
+        pr.shape("FFF", "FRF", "FFF");
+        pr.setIngredient('F', new RecipeChoice.ExactChoice(items.chipFragment(1)));
+        pr.setIngredient('R', Material.REDSTONE_BLOCK);
+        Bukkit.addRecipe(pr);
         NamespacedKey key = new NamespacedKey(this, "sacrifice");
         Bukkit.removeRecipe(key);
         ShapedRecipe r = new ShapedRecipe(key, items.sacrifice());
@@ -1301,6 +1308,7 @@ public final class SmpBoss extends JavaPlugin {
                         }
                         case "faucille", "sickle" -> items.sickle();
                         case "oeil", "oeil_maudit", "yeux", "eye" -> items.cursedEye(n);
+                        case "fragment", "fragments", "fragment_puce" -> items.chipFragment(n);
                         case "puce", "puce_smasher", "chip" -> {
                             ItemStack s = items.chip();
                             s.setAmount(Math.min(16, n));
@@ -1442,7 +1450,7 @@ public final class SmpBoss extends JavaPlugin {
         }
         else if (a.length == 3 && a[0].equalsIgnoreCase("give")) {
             out.addAll(List.of("graine", "citrouille", "faucille", "sonicbow", "tranchemace", "briseterre", "faux", "crocdegivre", "arctempete", "hollowpurple", "fuga", "lamecitrouille", "arcfeuxfollets", "hachemaudite",
-                    "oeil", "cocon", "puce", "dague", "toiles", "fauxtisseuse", "crocreine", "sceptre", "lance", "tribaton", "tenue_toji", "tenue_gojo", "tenue_sukuna", "pioche3x3", "pioche5x5"));
+                    "oeil", "cocon", "puce", "fragment", "dague", "toiles", "fauxtisseuse", "crocreine", "sceptre", "lance", "tribaton", "tenue_toji", "tenue_gojo", "tenue_sukuna", "pioche3x3", "pioche5x5"));
             for (String id : relics.all().keySet()) out.add("relique:" + id);
         }
         String last = a.length == 0 ? "" : a[a.length - 1].toLowerCase(Locale.ROOT);

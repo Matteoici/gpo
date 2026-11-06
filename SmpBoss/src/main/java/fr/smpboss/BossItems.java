@@ -73,7 +73,7 @@ public final class BossItems {
     }
 
     private final NamespacedKey eyeKey = new NamespacedKey("smpboss", "cursed_eye"), cocoonKey = new NamespacedKey("smpboss", "cocoon"),
-            chipKey = new NamespacedKey("smpboss", "smasher_chip");
+            chipKey = new NamespacedKey("smpboss", "smasher_chip"), fragmentKey = new NamespacedKey("smpboss", "smasher_fragment");
 
     /** Puce militaire : posée sur l'autel de Night City, elle appelle Adam Smasher. */
     public ItemStack chip() {
@@ -85,6 +85,19 @@ public final class BossItems {
         m.setMaxStackSize(16);
         m.getPersistentDataContainer().set(chipKey, PersistentDataType.BYTE, (byte) 1);
         SmpBoss.modelData(m, "puce_smasher");
+        it.setItemMeta(m);
+        return it;
+    }
+
+    /** Fragment de puce : lâché par les illageois. 8 + 1 bloc de redstone = Puce militaire. */
+    public ItemStack chipFragment(int amount) {
+        ItemStack it = new ItemStack(Material.PRISMARINE_SHARD, Math.max(1, amount));
+        ItemMeta m = it.getItemMeta();
+        m.displayName(parse(plugin.msg("smasher.items.fragment.name")));
+        m.lore(lines(plugin.getConfig().getStringList("messages.smasher.items.fragment.lore")));
+        m.setEnchantmentGlintOverride(true);
+        m.getPersistentDataContainer().set(fragmentKey, PersistentDataType.BYTE, (byte) 1);
+        SmpBoss.modelData(m, "fragment_puce");
         it.setItemMeta(m);
         return it;
     }
