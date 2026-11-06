@@ -27,6 +27,11 @@ commands:
     usage: /arenearaignee [tp|construire|portail|sortie|setspawn|annuler]
     aliases: [arenaaraignee, nid, arenereine, spiderarena]
     permission: smpboss.arena.join
+  arenesmasher:
+    description: "Night City, le toit d'Adam Smasher : y aller (joueurs) / le construire et le régler (admin)"
+    usage: /arenesmasher [tp|construire|portail|sortie|setspawn|annuler]
+    aliases: [nightcity, areneadam, smasherarena]
+    permission: smpboss.arena.join
   arenecitrouille:
     description: "Arène du Roi Citrouille : y aller (joueurs) / la construire et la régler (admin)"
     usage: /arenecitrouille [tp|construire|portail|sortie|setspawn|annuler]

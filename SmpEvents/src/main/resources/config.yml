@@ -67,6 +67,14 @@ leaderboards:
   # joueurs cachés des classements (staff, comptes de test...)
   exclude: []
 
+# ---------------------------------------------------------------- XP du passe de saison (SmpSaison)
+season-xp:
+  koth: 400                 # chaque gagnant du KOTH
+  koth-participation: 75    # ceux qui ont tenu la zone sans gagner
+  bounty: 150               # prime encaissée
+  quest: 40                 # quête du jour terminée
+  quest-weekly: 250         # quête de la semaine terminée
+
 # ---------------------------------------------------------------- Roi de la colline
 koth:
   enabled: true

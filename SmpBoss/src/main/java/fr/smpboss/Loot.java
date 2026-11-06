@@ -34,19 +34,28 @@ public final class Loot {
 
     /** spider = butin de la Reine Araignée (section "spider-loot" : ses reliques, ses armes, des yeux maudits). */
     public void reward(Player p, boolean spider) {
+        reward(p, spider ? "spider-loot." : "loot.");
+    }
+
+    /** L = section du butin : "loot." (Roi), "spider-loot." (Reine), "smasher-loot." (Adam Smasher). */
+    public void reward(Player p, String L) {
         var c = plugin.getConfig();
-        String L = spider ? "spider-loot." : "loot.";
+        boolean spider = L.startsWith("spider"), smasher = L.startsWith("smasher");
         PlayerData d = plugin.store().of(p.getUniqueId());
         d.kills++;
 
         // ---- toujours : commandes + graines (ou yeux maudits)
         for (String cmd : c.getStringList(L + "always-commands")) run(p, cmd);
-        List<Integer> seeds = c.getIntegerList(spider ? L + "always-eyes" : L + "always-seeds");
-        int min = seeds.isEmpty() ? 1 : seeds.get(0), max = seeds.size() > 1 ? seeds.get(1) : min;
-        int n = ThreadLocalRandom.current().nextInt(min, max + 1);
-        if (n > 0) give(p, spider ? plugin.items().cursedEye(n) : plugin.items().seed(n));
-        // ---- armes : tirage à part (celles du boss vaincu)
-        plugin.weapons().roll(p, spider);
+        if (!smasher) {
+            List<Integer> seeds = c.getIntegerList(spider ? L + "always-eyes" : L + "always-seeds");
+            int min = seeds.isEmpty() ? 1 : seeds.get(0), max = seeds.size() > 1 ? seeds.get(1) : min;
+            int n = ThreadLocalRandom.current().nextInt(min, max + 1);
+            if (n > 0) give(p, spider ? plugin.items().cursedEye(n) : plugin.items().seed(n));
+            // ---- armes : tirage à part (celles du boss vaincu)
+            plugin.weapons().roll(p, spider);
+        } else if (Bukkit.getPluginManager().isPluginEnabled("SmpSaison")) {
+            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "saison xp " + p.getName() + " " + c.getDouble("smasher.season-xp", 500) + " victoire contre Adam Smasher");
+        }
 
         // ---- tirage de rareté (avec garantie)
         ThreadLocalRandom r = ThreadLocalRandom.current();

@@ -635,6 +635,11 @@ public final class Koth {
             t.send(p, "koth.you-won", ph("money", s.money(each)));
             p.playSound(Sound.sound(Key.key("minecraft", "ui.toast.challenge_complete"), Sound.Source.MASTER, 1f, 1f));
         }
+        // XP de saison pour tous ceux qui ont tenu la zone (les gagnants ont déjà la leur)
+        for (var e : personal.entrySet()) {
+            Player p = Bukkit.getPlayer(e.getKey());
+            if (p != null && e.getValue() > 0 && !winners.contains(p)) fr.smpevents.SmpEvents.seasonXp(p, "koth-participation");
+        }
         plugin.markDirty();
         Bukkit.broadcast(t.prefixed("koth.won", ph("team", teamName), ph("zone", z.name),
                 ph("players", names.isEmpty() ? "-" : String.join(", ", names)), ph("money", s.money(rewardMoney)),

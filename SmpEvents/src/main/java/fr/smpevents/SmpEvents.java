@@ -240,8 +240,33 @@ public final class SmpEvents extends JavaPlugin {
         return spawnerKey;
     }
 
+    /** Lien avec SmpSaison : XP du passe de saison pour un événement (season-xp.<événement> dans config.yml). */
+    public static void seasonXp(org.bukkit.entity.Player p, String event) {
+        if (p == null || !org.bukkit.Bukkit.getPluginManager().isPluginEnabled("SmpSaison")) return;
+        double def = switch (event) {
+            case "koth" -> 400;
+            case "koth-participation" -> 75;
+            case "bounty" -> 150;
+            case "quest" -> 40;
+            case "quest-weekly" -> 250;
+            default -> 0;
+        };
+        double xp = org.bukkit.plugin.java.JavaPlugin.getPlugin(SmpEvents.class).getConfig().getDouble("season-xp." + event, def);
+        if (xp <= 0) return;
+        String why = switch (event) {
+            case "koth" -> "victoire au KOTH";
+            case "koth-participation" -> "participation au KOTH";
+            case "bounty" -> "prime encaissée";
+            case "quest" -> "quête du jour";
+            case "quest-weekly" -> "quête de la semaine";
+            default -> event;
+        };
+        org.bukkit.Bukkit.dispatchCommand(org.bukkit.Bukkit.getConsoleSender(), "saison xp " + p.getName() + " " + Math.round(xp) + " " + why);
+    }
+
     /** Lien avec SmpTitles : compte une victoire (débloque les titres) si le plugin est installé. */
     public static void titleWin(org.bukkit.entity.Player p, String counter) {
+        seasonXp(p, counter);
         if (p == null || !org.bukkit.Bukkit.getPluginManager().isPluginEnabled("SmpTitles")) return;
         org.bukkit.Bukkit.dispatchCommand(org.bukkit.Bukkit.getConsoleSender(), "titre win " + p.getName() + " " + counter);
     }

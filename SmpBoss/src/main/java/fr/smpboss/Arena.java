@@ -115,32 +115,41 @@ public final class Arena {
     }
 
     /** true = l'arène de la Reine Araignée (noir et bleu), sinon celle du Roi Citrouille. */
+    /** true pour la Reine ET pour Smasher (île au-dessus du vide : on remonte ceux qui tombent) */
     final boolean spider;
+    /** l'île de Night City d'Adam Smasher */
+    final boolean smasher;
 
     Arena(SmpBoss plugin) {
         this(plugin, false);
     }
 
     Arena(SmpBoss plugin, boolean spider) {
+        this(plugin, spider, false);
+    }
+
+    Arena(SmpBoss plugin, boolean spider, boolean smasher) {
         this.plugin = plugin;
-        this.spider = spider;
-        this.file = new File(plugin.getDataFolder(), spider ? "arena-spider.yml" : "arena.yml");
-        this.backupFile = new File(plugin.getDataFolder(), spider ? "arena-spider-backup.dat" : "arena-backup.dat");
-        this.gateFile = new File(plugin.getDataFolder(), spider ? "arena-spider-gate.dat" : "arena-gate.dat");
+        this.spider = spider || smasher;
+        this.smasher = smasher;
+        String tag = smasher ? "arena-smasher" : spider ? "arena-spider" : "arena";
+        this.file = new File(plugin.getDataFolder(), tag + ".yml");
+        this.backupFile = new File(plugin.getDataFolder(), tag + "-backup.dat");
+        this.gateFile = new File(plugin.getDataFolder(), tag + "-gate.dat");
         load();
     }
 
     /** "/boss arene" ou "/boss araignee arene" (textes d'aide). */
     private String cmd() {
-        return spider ? "/arenearaignee" : "/arenecitrouille";
+        return smasher ? "/arenesmasher" : spider ? "/arenearaignee" : "/arenecitrouille";
     }
 
     private Location myAltar() {
-        return spider ? plugin.spiderAltar() : plugin.altar();
+        return smasher ? plugin.smasherAltar() : spider ? plugin.spiderAltar() : plugin.altar();
     }
 
     private String radiusKey() {
-        return spider ? "spider.arena-radius" : "boss.arena-radius";
+        return smasher ? "smasher.arena-radius" : spider ? "spider.arena-radius" : "boss.arena-radius";
     }
 
     // ================================================================= zone
@@ -285,7 +294,7 @@ public final class Arena {
         Bukkit.getScheduler().runTaskLater(plugin, () -> p.setFireTicks(0), 1L);
         Bukkit.getScheduler().runTaskLater(plugin, () -> p.setFireTicks(0), 5L);
         p.getWorld().playSound(to, org.bukkit.Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 0.6f);
-        SmpBoss.hud(p, parse(spider ? "<aqua>Les toiles te remontent du gouffre…" : "<gold>La lave te recrache dans l'arène…"));
+        SmpBoss.hud(p, parse(smasher ? "<#ff2a6d>Un drone de la NCPD te repose sur l'île…" : spider ? "<aqua>Les toiles te remontent du gouffre…" : "<gold>La lave te recrache dans l'arène…"));
     }
 
     /** Tombé dans le gouffre du nid (sous le niveau du sol, hors du sol de combat). */
@@ -379,8 +388,8 @@ public final class Arena {
         World w = world();
         if (w == null) return;
         ThreadLocalRandom r = ThreadLocalRandom.current();
-        Particle.DustOptions fog = new Particle.DustOptions(spider ? Color.fromRGB(8, 14, 60) : Color.fromRGB(120, 8, 8), 3.2f);
-        Particle.DustOptions ember = new Particle.DustOptions(spider ? Color.fromRGB(60, 170, 255) : Color.fromRGB(255, 70, 20), 1.1f);
+        Particle.DustOptions fog = new Particle.DustOptions(smasher ? Color.fromRGB(30, 6, 40) : spider ? Color.fromRGB(8, 14, 60) : Color.fromRGB(120, 8, 8), 3.2f);
+        Particle.DustOptions ember = new Particle.DustOptions(smasher ? Color.fromRGB(255, 40, 160) : spider ? Color.fromRGB(60, 170, 255) : Color.fromRGB(255, 70, 20), 1.1f);
         boolean someone = false;
         for (Player p : w.getPlayers()) {
             if (!contains(p.getLocation())) continue;
@@ -390,7 +399,7 @@ public final class Arena {
                 double a = r.nextDouble() * Math.PI * 2, d = 4 + r.nextDouble() * 14;
                 p.spawnParticle(Particle.DUST, l.clone().add(Math.cos(a) * d, r.nextDouble() * 4, Math.sin(a) * d), 2, 1.2, 0.6, 1.2, 0, fog);
             }
-            p.spawnParticle(spider ? Particle.WARPED_SPORE : Particle.CRIMSON_SPORE, l.clone().add(0, 2, 0), 14, 9, 3, 9, 0);
+            p.spawnParticle(smasher ? Particle.ELECTRIC_SPARK : spider ? Particle.WARPED_SPORE : Particle.CRIMSON_SPORE, l.clone().add(0, 2, 0), 14, 9, 3, 9, 0);
             p.spawnParticle(Particle.DUST, l.clone().add(0, 1.5, 0), 4, 6, 2, 6, 0, ember);
         }
         if (!someone) return;
@@ -466,7 +475,7 @@ public final class Arena {
                 sender.sendMessage(parse("<yellow>Zone d'arène retirée (les blocs restent, la protection est coupée)."));
             }
             default -> {
-                sender.sendMessage(parse(spider ? "<dark_aqua><b>Arène de la Reine Araignée" : "<dark_red><b>Arène du boss"));
+                sender.sendMessage(parse(smasher ? "<#ff2a6d><b>Arène d'Adam Smasher" : spider ? "<dark_aqua><b>Arène de la Reine Araignée" : "<dark_red><b>Arène du boss"));
                 sender.sendMessage(parse("<aqua>" + cmd() + " construire [taille] [ici|ciel|Y]</aqua> <gray>- construit l'arène (taille 14-40, défaut 20 ; <white>ciel</white> = île flottante)"));
                 sender.sendMessage(parse("<aqua>" + cmd() + " annuler</aqua> <gray>- remet le terrain comme avant la construction"));
                 sender.sendMessage(parse("<aqua>" + cmd() + " tp [joueur]</aqua> <gray>- envoie dans l'arène (les joueurs : <white>/arene</white>)"));
@@ -658,7 +667,7 @@ public final class Arena {
             p.setFireTicks(0);
             Bukkit.getScheduler().runTaskLater(plugin, () -> p.setFireTicks(0), 1L);
             p.getWorld().playSound(e, org.bukkit.Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 0.6f);
-            SmpBoss.hud(p, parse(spider ? "<#5aa0ff><b>🕷 Le Nid de la Reine Araignée</b>" : "<dark_red><b>☠ L'arène du Roi Citrouille</b>"));
+            SmpBoss.hud(p, parse(smasher ? "<gradient:#ff2a6d:#05d9e8><b>⚡ Night City · le toit d'Adam Smasher</b>" : spider ? "<#5aa0ff><b>🕷 Le Nid de la Reine Araignée</b>" : "<dark_red><b>☠ L'arène du Roi Citrouille</b>"));
         });
     }
 
@@ -742,7 +751,7 @@ public final class Arena {
     // ================================================================= tourbillons (à la place des portails du Nether)
 
     private Color swirlColor() {
-        return spider ? Color.fromRGB(70, 130, 255) : Color.fromRGB(255, 120, 25);
+        return smasher ? Color.fromRGB(255, 42, 109) : spider ? Color.fromRGB(70, 130, 255) : Color.fromRGB(255, 120, 25);
     }
 
     /** Toutes les 10 ticks : un tourbillon animé dans le portail du spawn et dans la sortie ; les vieux portails du Nether disparaissent. */
@@ -823,9 +832,11 @@ public final class Arena {
         World w = p.getWorld();
         int ox = p.getLocation().getBlockX() + fx * 3, oy = p.getLocation().getBlockY() - 1, oz = p.getLocation().getBlockZ() + fz * 3;
         Map<int[], String> plan = new java.util.LinkedHashMap<>();
-        String pillar = spider ? "polished_deepslate" : "polished_blackstone_bricks", accent = spider ? "sea_lantern" : "jack_o_lantern",
-                top = spider ? "chiseled_deepslate" : "chiseled_polished_blackstone", inner = spider ? "black_concrete" : "obsidian",
-                lamp = spider ? "soul_lantern" : "lantern";
+        String pillar = smasher ? "black_concrete" : spider ? "polished_deepslate" : "polished_blackstone_bricks",
+                accent = smasher ? "magenta_glazed_terracotta" : spider ? "sea_lantern" : "jack_o_lantern",
+                top = smasher ? "cyan_concrete" : spider ? "chiseled_deepslate" : "chiseled_polished_blackstone",
+                inner = smasher ? "black_stained_glass" : spider ? "black_concrete" : "obsidian",
+                lamp = smasher ? "sea_lantern" : spider ? "soul_lantern" : "lantern";
         for (int u = -2; u <= 2; u++) {
             for (int y = 0; y <= 5; y++) {
                 boolean inside = Math.abs(u) <= 1 && y >= 1 && y <= 4;
@@ -836,13 +847,13 @@ public final class Arena {
             for (int y = 0; y <= 6; y++) plan.put(new int[]{3 * s, y, 0}, y == 3 ? accent + (spider ? "" : "[facing=" + face.getOppositeFace().name().toLowerCase(java.util.Locale.ROOT) + "]") : y == 6 ? top : pillar);
             plan.put(new int[]{3 * s, 7, 0}, lamp);
             plan.put(new int[]{2 * s, 6, 0}, top);
-            if (spider) {
+            if (spider && !smasher) {
                 plan.put(new int[]{4 * s, 5, 0}, "cobweb");
                 plan.put(new int[]{4 * s, 1, 0}, "cobweb");
             }
         }
         for (int u = -1; u <= 1; u++) plan.put(new int[]{u, 6, 0}, u == 0 ? accent + (spider ? "" : "[facing=" + face.getOppositeFace().name().toLowerCase(java.util.Locale.ROOT) + "]") : top);
-        if (spider) plan.put(new int[]{0, 7, 0}, "cobweb");
+        if (spider && !smasher) plan.put(new int[]{0, 7, 0}, "cobweb");
         List<int[]> pos = new ArrayList<>();
         List<String> old = new ArrayList<>();
         int minX = Integer.MAX_VALUE, minZ = Integer.MAX_VALUE, maxX = Integer.MIN_VALUE, maxZ = Integer.MIN_VALUE;
@@ -867,7 +878,7 @@ public final class Arena {
         if (spawnSwirl != null) spawnSwirl.remove();
         spawnSwirl = null;
         w.playSound(new Location(w, ox, oy + 2, oz), org.bukkit.Sound.BLOCK_END_PORTAL_FRAME_FILL, 1f, spider ? 0.7f : 1f);
-        p.sendMessage(parse("<green>Arche posée devant toi : y entrer = téléporté dans " + (spider ? "le nid de la Reine" : "l'arène du Roi") + "."));
+        p.sendMessage(parse("<green>Arche posée devant toi : y entrer = téléporté dans " + (smasher ? "l'île d'Adam Smasher" : spider ? "le nid de la Reine" : "l'arène du Roi") + "."));
         if (entrance() == null) p.sendMessage(parse("<yellow>L'arène n'est pas encore construite : <white>" + cmd() + " construire</white>."));
     }
 
@@ -932,7 +943,8 @@ public final class Arena {
         boolean on = plugin.getConfig().getBoolean("arena.portal-hologram", true);
         double above = plugin.getConfig().getDouble("arena.portal-hologram-height", 0.6);
         portalHolo = holo(portalHolo, on ? portalWorld : null, portal, above,
-                plugin.msg(spider ? "spider.portal-hologram" : "portal.hologram").replace("<status>", spider ? plugin.spiderStatus() : plugin.bossStatus()));
+                plugin.msg(smasher ? "smasher.portal-hologram" : spider ? "spider.portal-hologram" : "portal.hologram")
+                        .replace("<status>", smasher ? plugin.smasherStatus() : spider ? plugin.spiderStatus() : plugin.bossStatus()));
         int[] auto = exitBox == null ? autoExit() : null;
         exitHolo = holo(exitHolo, on ? (exitBox != null ? exitWorld : auto != null ? worldName : null) : null, exitBox != null ? exitBox : auto, above,
                 plugin.msg("portal.exit-hologram"));
@@ -944,7 +956,7 @@ public final class Arena {
             Location at = portalHolo.getLocation().subtract(0, 0.2, 0);
             if (portalClick == null || !portalClick.isValid() || portalClick.getWorld() != at.getWorld() || portalClick.getLocation().distanceSquared(at) > 0.25) {
                 if (portalClick != null) portalClick.remove();
-                portalClick = DropsMenu.spawnClick(plugin, at, 2.6f, 2.8f, spider);
+                portalClick = DropsMenu.spawnClick(plugin, at, 2.6f, 2.8f, smasher ? 3 : spider ? 2 : 1);
             }
         }
     }
@@ -1001,7 +1013,7 @@ public final class Arena {
         for (Player p : w.getPlayers()) if (p.getLocation().distanceSquared(c) < 48 * 48) near = true;
         if (!near) return;
         ThreadLocalRandom r = ThreadLocalRandom.current();
-        Particle.DustOptions red = new Particle.DustOptions(spider ? Color.fromRGB(40, 110, 255) : Color.fromRGB(200, 20, 20), 1.3f);
+        Particle.DustOptions red = new Particle.DustOptions(smasher ? Color.fromRGB(255, 42, 109) : spider ? Color.fromRGB(40, 110, 255) : Color.fromRGB(200, 20, 20), 1.3f);
         int n = Math.min(40, 6 + (portal[3] - portal[0] + 1) * (portal[5] - portal[2] + 1) / 2);
         for (int i = 0; i < n; i++) {
             Location l = new Location(w, portal[0] + r.nextDouble() * (portal[3] - portal[0] + 1), portal[1] + r.nextDouble() * 2.2,
@@ -1040,7 +1052,7 @@ public final class Arena {
             sender.sendMessage(parse("<red>Un chantier est déjà en cours."));
             return;
         }
-        int def = spider ? 32 : 20;   // la Reine est immense : son nid est plus grand
+        int def = smasher ? 24 : spider ? 32 : 20;   // la Reine est immense : son nid est plus grand
         int size = a.length >= 3 ? parseInt(a[2], def) : def;
         size = Math.max(14, Math.min(40, size));
         // hauteur : "ici" (sous tes pieds, défaut), "ciel" (île flottante tout en haut) ou un Y précis
@@ -1058,10 +1070,10 @@ public final class Arena {
             confirm.put(p.getUniqueId(), new long[]{System.currentTimeMillis() + 20_000, size * 100_000L + targetY});
             int total = size + 27;
             boolean sky = targetY > p.getLocation().getBlockY() + 5;
-            sender.sendMessage(parse("<gold><b>Construire " + (spider ? "le nid de la Reine Araignée " : "l'arène infernale ") + (sky ? "dans le ciel (Y " + targetY + ")" : "ici") + " ?</b>"));
+            sender.sendMessage(parse("<gold><b>Construire " + (smasher ? "l'île de Night City d'Adam Smasher " : spider ? "le nid de la Reine Araignée " : "l'arène infernale ") + (sky ? "dans le ciel (Y " + targetY + ")" : "ici") + " ?</b>"));
             sender.sendMessage(parse("<gray>Centre = " + (sky ? "au-dessus de toi, à Y <white>" + targetY + "</white> (île de roche flottante)"
                     : "le bloc sous tes pieds") + " : ce sera l'autel. C'est une bulle fermée de rayon ≈ <white>" + total
-                    + "</white> blocs et " + (size + 25) + " de haut, " + (spider ? "la tête d'araignée (sortie)" : "le crâne-portail") + " est au <white>nord</white>. Tout ce qui est dedans est remplacé."));
+                    + "</white> blocs et " + (size + 25) + " de haut, " + (smasher ? "la porte de l'ascenseur (sortie)" : spider ? "la tête d'araignée (sortie)" : "le crâne-portail") + " est au <white>nord</white>. Tout ce qui est dedans est remplacé."));
             sender.sendMessage(parse("<gray>Une sauvegarde est faite : <aqua>" + cmd() + " annuler</aqua> remet tout comme avant."));
             sender.sendMessage(parse("<yellow>Retape <white>" + cmd + "</white> dans les 20 secondes pour confirmer."));
             return;
@@ -1076,13 +1088,13 @@ public final class Arena {
         at.setY(targetY);
         Block base = at.getBlock();
         World w = base.getWorld();
-        int below = spider ? 36 : 25;
+        int below = smasher ? 30 : spider ? 36 : 25;
         if (base.getY() - below < w.getMinHeight() || base.getY() + size + 28 > w.getMaxHeight()) {
             sender.sendMessage(parse("<red>Trop près du fond ou du plafond du monde. <gray>(Y entre " + (w.getMinHeight() + below) + " et "
                     + (w.getMaxHeight() - size - 28) + ")"));
             return;
         }
-        ArenaPlan d = spider ? new SpiderDesign(size) : new ArenaDesign(size);
+        ArenaPlan d = smasher ? new SmasherDesign(size) : spider ? new SpiderDesign(size) : new ArenaDesign(size);
         int ox = base.getX(), oy = base.getY(), oz = base.getZ();
         long[] keys = new long[d.blocks().size()];
         String[] ids = new String[keys.length];
@@ -1157,7 +1169,8 @@ public final class Arena {
         }
         writeBackup(w, pos, old);
         // lien avec le boss : l'autel au centre, le boss reste sur le sol
-        if (spider) plugin.setSpiderAltar(new Location(w, ox, oy, oz));
+        if (smasher) plugin.setSmasherAltar(new Location(w, ox, oy, oz));
+        else if (spider) plugin.setSpiderAltar(new Location(w, ox, oy, oz));
         else plugin.setAltar(new Location(w, ox, oy, oz));
         plugin.getConfig().set(radiusKey(), Math.max(8, d.radius() - 1));
         plugin.saveConfig();
@@ -1169,10 +1182,10 @@ public final class Arena {
             }
             p.sendMessage(parse("<green><b>Arène terminée !</b> <gray>(" + pos.size() + " blocs changés)"));
             p.sendMessage(parse("<gray>L'autel est le bloc d'obsidienne pleureuse au centre : clic droit dessus avec "
-                    + (spider ? "un <aqua>Cocon sacrificiel</aqua> pour réveiller la Reine Araignée" : "une <gold>Citrouille sacrificielle</gold> pour réveiller le Roi Citrouille")
+                    + (smasher ? "une <#ff2a6d>Puce militaire</#ff2a6d> pour appeler Adam Smasher" : spider ? "un <aqua>Cocon sacrificiel</aqua> pour réveiller la Reine Araignée" : "une <gold>Citrouille sacrificielle</gold> pour réveiller le Roi Citrouille")
                     + ". Rayon du boss réglé sur <white>"
                     + Math.max(8, d.radius() - 1) + "</white>."));
-            p.sendMessage(parse("<gray>Zone protégée : pas de casse/pose, pas de PvP, aucun monstre à part le boss. <aqua>/arene</aqua> pour y aller, le portail au fond " + (spider ? "de la tête d'araignée" : "du crâne") + " pour sortir."));
+            p.sendMessage(parse("<gray>Zone protégée : pas de casse/pose, pas de PvP, aucun monstre à part le boss. <aqua>/arene</aqua> pour y aller, le portail au fond " + (smasher ? "de l'ascenseur" : spider ? "de la tête d'araignée" : "du crâne") + " pour sortir."));
         }
     }
 

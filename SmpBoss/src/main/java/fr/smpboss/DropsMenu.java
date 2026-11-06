@@ -48,16 +48,24 @@ final class DropsMenu implements InventoryHolder {
     private final Inventory inv;
     private final int page;
     private final boolean spider;
+    /** le butin d'Adam Smasher (section smasher-loot, pas d'armes) */
+    private final boolean smasher;
 
     private record Entry(ItemStack item, Rarity rarity, double chance) {}
 
     private DropsMenu(SmpBoss plugin, int page, boolean spider) {
+        this(plugin, page, spider, false);
+    }
+
+    private DropsMenu(SmpBoss plugin, int page, boolean spider, boolean smasher) {
         this.plugin = plugin;
-        this.spider = spider;
+        this.spider = spider && !smasher;
+        this.smasher = smasher;
+        spider = this.spider;
         List<Entry> all = entries();
         int pages = Math.max(1, (all.size() + PER_PAGE - 1) / PER_PAGE);
         this.page = Math.max(0, Math.min(page, pages - 1));
-        this.inv = Bukkit.createInventory(this, 54, PackUi.title(parse(plugin.msg(spider ? "spider.drops-title" : "drops.title")), 54));
+        this.inv = Bukkit.createInventory(this, 54, PackUi.title(parse(plugin.msg(smasher ? "smasher.drops-title" : spider ? "spider.drops-title" : "drops.title")), 54));
         // bandes
         ItemStack band = pane(spider ? Material.LIGHT_BLUE_STAINED_GLASS_PANE : Material.ORANGE_STAINED_GLASS_PANE), dark = pane(Material.BLACK_STAINED_GLASS_PANE);
         for (int i = 0; i < 9; i++) inv.setItem(i, i % 2 == 0 ? band : dark);
@@ -76,7 +84,11 @@ final class DropsMenu implements InventoryHolder {
 
     /** spider = butin de la Reine Araignée (ses armes, sa section spider-loot). */
     static void open(SmpBoss plugin, Player p, int page, boolean spider) {
-        p.openInventory(new DropsMenu(plugin, page, spider).inv);
+        open(plugin, p, page, spider, false);
+    }
+
+    static void open(SmpBoss plugin, Player p, int page, boolean spider, boolean smasher) {
+        p.openInventory(new DropsMenu(plugin, page, spider, smasher).inv);
         p.playSound(p.getLocation(), Sound.BLOCK_CHEST_OPEN, 0.6f, 1.2f);
     }
 
@@ -92,14 +104,14 @@ final class DropsMenu implements InventoryHolder {
         List<Entry> out = new ArrayList<>();
         // armes : tirage à part, chacune sa chance
         Weapons w = plugin.weapons();
-        for (String id : spider ? Weapons.SPIDER : Weapons.PUMPKIN) {
+        for (String id : smasher ? new String[0] : spider ? Weapons.SPIDER : Weapons.PUMPKIN) {
             double ch = c.getDouble("weapons." + Weapons.path(id) + ".chance", Weapons.defChance(id));
             if (ch <= 0) continue;
             ItemStack it = w.create(id);
             out.add(new Entry(withChance(it, ch, null), Weapons.rarity(id), ch));
         }
         // reliques et objets : d'abord la rareté, puis un objet au hasard dans la liste
-        String L = spider ? "spider-loot." : "loot.";
+        String L = smasher ? "smasher-loot." : spider ? "spider-loot." : "loot.";
         boolean hasPrestige = !c.getMapList(L + "pools.prestige").isEmpty();
         Map<Rarity, Double> rar = Map.of(
                 Rarity.PRESTIGE, hasPrestige ? chance(L, "prestige", 0.01) : 0,
@@ -166,14 +178,14 @@ final class DropsMenu implements InventoryHolder {
 
     private ItemStack info() {
         var c = plugin.getConfig();
-        String L = spider ? "spider-loot." : "loot.";
-        ItemStack it = new ItemStack(spider ? Material.COBWEB : Material.NETHER_STAR);
+        String L = smasher ? "smasher-loot." : spider ? "spider-loot." : "loot.";
+        ItemStack it = new ItemStack(smasher ? Material.ECHO_SHARD : spider ? Material.COBWEB : Material.NETHER_STAR);
         ItemMeta m = it.getItemMeta();
         m.displayName(line(plugin.msg("drops.info-name")));
         List<Component> lore = new ArrayList<>();
-        List<String> src = plugin.getConfig().getStringList(spider ? "messages.spider.drops-info-lore" : "messages.drops.info-lore");
+        List<String> src = plugin.getConfig().getStringList(smasher ? "messages.smasher.drops-info-lore" : spider ? "messages.spider.drops-info-lore" : "messages.drops.info-lore");
         if (src.isEmpty() && plugin.getConfig().getDefaults() != null)
-            src = plugin.getConfig().getDefaults().getStringList(spider ? "messages.spider.drops-info-lore" : "messages.drops.info-lore");
+            src = plugin.getConfig().getDefaults().getStringList(smasher ? "messages.smasher.drops-info-lore" : spider ? "messages.spider.drops-info-lore" : "messages.drops.info-lore");
         for (String l : src) {
             lore.add(line(l.replace("<prestige>", pct(c.getMapList(L + "pools.prestige").isEmpty() ? 0 : chance(L, "prestige", 0.01)))
                     .replace("<secret>", pct(chance(L, "secret", 0.5)))
@@ -242,10 +254,10 @@ final class DropsMenu implements InventoryHolder {
             if (!(e.getWhoClicked() instanceof Player p) || e.getRawSlot() < 0 || e.getRawSlot() >= m.inv.getSize()) return;
             switch (e.getRawSlot()) {
                 case PREV -> {
-                    if (m.inv.getItem(PREV) != null && m.inv.getItem(PREV).getType() == Material.ARROW) open(plugin, p, m.page - 1, m.spider);
+                    if (m.inv.getItem(PREV) != null && m.inv.getItem(PREV).getType() == Material.ARROW) open(plugin, p, m.page - 1, m.spider, m.smasher);
                 }
                 case NEXT -> {
-                    if (m.inv.getItem(NEXT) != null && m.inv.getItem(NEXT).getType() == Material.ARROW) open(plugin, p, m.page + 1, m.spider);
+                    if (m.inv.getItem(NEXT) != null && m.inv.getItem(NEXT).getType() == Material.ARROW) open(plugin, p, m.page + 1, m.spider, m.smasher);
                 }
                 case CLOSE -> p.closeInventory();
                 default -> {
@@ -265,7 +277,7 @@ final class DropsMenu implements InventoryHolder {
             e.setCancelled(true);
             if (e.getHand() != EquipmentSlot.HAND) return;
             Byte kind = i.getPersistentDataContainer().get(tag, PersistentDataType.BYTE);
-            open(plugin, e.getPlayer(), 0, kind != null && kind == 2);
+            open(plugin, e.getPlayer(), 0, kind != null && kind == 2, kind != null && kind == 3);
         }
 
         /** Clic droit sur un panneau enregistré (/boss panneau). */
@@ -319,13 +331,17 @@ final class DropsMenu implements InventoryHolder {
     }
 
     static Interaction spawnClick(SmpBoss plugin, Location at, float width, float height, boolean spider) {
+        return spawnClick(plugin, at, width, height, spider ? 2 : 1);
+    }
+
+    static Interaction spawnClick(SmpBoss plugin, Location at, float width, float height, int kind) {
         NamespacedKey tag = new NamespacedKey(plugin, "drops_click");
         return at.getWorld().spawn(at, Interaction.class, i -> {
             i.setPersistent(false);
             i.setInteractionWidth(width);
             i.setInteractionHeight(height);
             i.setResponsive(true);
-            i.getPersistentDataContainer().set(tag, PersistentDataType.BYTE, (byte) (spider ? 2 : 1));
+            i.getPersistentDataContainer().set(tag, PersistentDataType.BYTE, (byte) kind);
         });
     }
 }

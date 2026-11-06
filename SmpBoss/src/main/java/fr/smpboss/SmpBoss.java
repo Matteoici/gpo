@@ -40,10 +40,10 @@ public final class SmpBoss extends JavaPlugin {
     private InvButtons invButtons;
     /** le boss en cours (Roi Citrouille OU Reine Araignée : jamais les deux en même temps) */
     private Boss king;
-    private Arena arena, spiderArena;
-    private Location spiderAltar;
-    private long spiderLastEnd;
-    private AltarHologram spiderHologram;
+    private Arena arena, spiderArena, smasherArena;
+    private Location spiderAltar, smasherAltar;
+    private long spiderLastEnd, smasherLastEnd;
+    private AltarHologram spiderHologram, smasherHologram;
     private GuildTop guildTop;
     private AltarHologram hologram;
     private Location altar;
@@ -606,6 +606,23 @@ public final class SmpBoss extends JavaPlugin {
             getConfig().set("config-version", 52);
             saveConfig();
         }
+        if (getConfig().getInt("config-version", 1) < 53) {
+            // Adam Smasher : ses implants, son butin, ses réglages ; le Projet Capricorne n'est plus que chez lui
+            var def = getConfig().getDefaults();
+            if (def != null) {
+                for (String id : new String[]{Cyberware.SANDE, Cyberware.PROTO, Cyberware.CHASSIS, Cyberware.MANTIS, Cyberware.GORILLA, Cyberware.HEART,
+                        Cyberware.KEREN, Cyberware.KIROSHI, Cyberware.TENDONS, Cyberware.SUBDERM, Cyberware.PUMP, Cyberware.SYNAPSE, "puce_combat", Cyberware.TITAN}) {
+                    copyDefault(def, "relics.list." + id);
+                }
+                for (String k : new String[]{"smasher", "smasher-loot", "cyberware"}) if (!getConfig().contains(k, true)) copyDefault(def, k);
+            }
+            for (String pool : new String[]{"loot.pools.prestige", "spider-loot.pools.prestige"}) {
+                List<java.util.Map<?, ?>> l = new ArrayList<>(getConfig().getMapList(pool));
+                if (l.removeIf(m -> Capricorne.ID.equals(String.valueOf(m.get("relic"))))) getConfig().set(pool, l);
+            }
+            getConfig().set("config-version", 53);
+            saveConfig();
+        }
         store = new Store(this);
         items = new BossItems(this);
         relics = new Relics(this);
@@ -630,6 +647,7 @@ public final class SmpBoss extends JavaPlugin {
         relics.load();
         loadAltar();
         loadSpiderAltar();
+        smasherAltar = loadAltarFile(new File(getDataFolder(), "altar-smasher.yml"));
         registerRecipe();
         getServer().getPluginManager().registerEvents(new BossListener(this), this);
         getServer().getPluginManager().registerEvents(new DropsMenu.Listen(this), this);
@@ -638,6 +656,7 @@ public final class SmpBoss extends JavaPlugin {
         Bukkit.getScheduler().runTaskTimer(this, () -> {
             if (arena != null) arena.portalTick();
             if (spiderArena != null) spiderArena.portalTick();
+            if (smasherArena != null) smasherArena.portalTick();
         }, 40L, 5L);
         Bukkit.getScheduler().runTaskTimer(this, hologram::tick, 40L, 10L);
         arena = new Arena(this);
@@ -655,6 +674,16 @@ public final class SmpBoss extends JavaPlugin {
         Bukkit.getScheduler().runTaskTimer(this, spiderGuard::sweep, 105L, 100L);
         spiderHologram = new AltarHologram(this, true);
         Bukkit.getScheduler().runTaskTimer(this, spiderHologram::tick, 45L, 10L);
+        // Adam Smasher : l'île de Night City sous son dôme
+        smasherArena = new Arena(this, true, true);
+        ArenaGuard smasherGuard = new ArenaGuard(this, smasherArena);
+        getServer().getPluginManager().registerEvents(smasherGuard, this);
+        Bukkit.getScheduler().runTaskTimer(this, smasherArena::ambience, 47L, 10L);
+        Bukkit.getScheduler().runTaskTimer(this, smasherArena::tint, 47L, 10L);
+        Bukkit.getScheduler().runTaskTimer(this, smasherGuard::sweep, 107L, 100L);
+        smasherHologram = new AltarHologram(this, true, true);
+        Bukkit.getScheduler().runTaskTimer(this, smasherHologram::tick, 47L, 10L);
+        getServer().getPluginManager().registerEvents(new Cyberware(this), this);
         invButtons = new InvButtons(this);
         getServer().getPluginManager().registerEvents(invButtons, this);
         Bukkit.getScheduler().runTaskTimer(this, invButtons::tick, 40L, 40L);
@@ -679,8 +708,10 @@ public final class SmpBoss extends JavaPlugin {
         }
         if (arena != null) arena.shutdown();
         if (spiderArena != null) spiderArena.shutdown();
+        if (smasherArena != null) smasherArena.shutdown();
         if (hologram != null) hologram.remove();
         if (spiderHologram != null) spiderHologram.remove();
+        if (smasherHologram != null) smasherHologram.remove();
         if (relics != null) relics.removeAll();
         for (Player p : Bukkit.getOnlinePlayers()) {
             if (invButtons != null) {
@@ -798,6 +829,14 @@ public final class SmpBoss extends JavaPlugin {
     public static boolean hudBusy(java.util.UUID id) {
         Long t = HUD.get(id);
         return t != null && System.currentTimeMillis() - t < 1800;
+    }
+
+    /** Copie une valeur (ou toute une section) du config.yml du plugin dans le config.yml du serveur. */
+    private void copyDefault(org.bukkit.configuration.Configuration def, String path) {
+        if (def.isConfigurationSection(path)) {
+            var sec = def.getConfigurationSection(path);
+            for (String k : sec.getKeys(true)) if (!sec.isConfigurationSection(k)) getConfig().set(path + "." + k, sec.get(k));
+        } else if (def.contains(path)) getConfig().set(path, def.get(path));
     }
 
     public String msg(String key) {
@@ -926,7 +965,7 @@ public final class SmpBoss extends JavaPlugin {
 
     /** Ligne d'état de l'autel (texte flottant). */
     String altarStatus() {
-        if (king instanceof SpiderQueen && king.active()) return msg("spider.king-status-busy");
+        if ((king instanceof SpiderQueen || king instanceof AdamSmasher) && king.active()) return msg("spider.king-status-busy");
         long left = lastEnd + getConfig().getLong("boss.cooldown-minutes", 15) * 60_000L - System.currentTimeMillis();
         if (left > 0) return msg("altar.status-cooldown").replace("<minutes>", String.valueOf(left / 60_000 + 1));
         if (getConfig().getBoolean("boss.night-only", false) && altar != null) {
@@ -939,7 +978,7 @@ public final class SmpBoss extends JavaPlugin {
     /** Statut court du boss (MiniMessage) pour le scoreboard (SmpBoard le lit). */
     public String scoreboardStatus() {
         if (king instanceof PumpkinKing && king.active()) return msg("scoreboard.fight").replace("<phase>", String.valueOf(king.phase()));
-        if (king instanceof SpiderQueen && king.active()) return msg("scoreboard.waiting");
+        if ((king instanceof SpiderQueen || king instanceof AdamSmasher) && king.active()) return msg("scoreboard.waiting");
         if (altar == null || altar.getWorld() == null) return msg("scoreboard.closed");
         long left = lastEnd + getConfig().getLong("boss.cooldown-minutes", 15) * 60_000L - System.currentTimeMillis();
         if (left > 0) {
@@ -955,7 +994,7 @@ public final class SmpBoss extends JavaPlugin {
 
     /** Statut du boss pour l'hologramme du portail : en combat, disponible, ou dans combien de temps. */
     String bossStatus() {
-        if (king instanceof SpiderQueen && king.active()) return msg("spider.king-status-busy");
+        if ((king instanceof SpiderQueen || king instanceof AdamSmasher) && king.active()) return msg("spider.king-status-busy");
         if (king != null && king.active()) {
             return msg("portal.status-fight").replace("<phase>", String.valueOf(king.phase()))
                     .replace("<hp>", String.valueOf((long) Math.ceil(Math.max(0, king.hp())))).replace("<max>", String.valueOf((long) king.maxHp()))
@@ -1070,11 +1109,12 @@ public final class SmpBoss extends JavaPlugin {
         }
         if (name.equals("drops")) {
             boolean sp = a.length >= 1 && (a[0].toLowerCase(Locale.ROOT).startsWith("araign") || a[0].equalsIgnoreCase("reine"));
-            if (sender instanceof Player p) DropsMenu.open(this, p, 0, sp);
+            boolean sm = a.length >= 1 && a[0].toLowerCase(Locale.ROOT).startsWith("smash");
+            if (sender instanceof Player p) DropsMenu.open(this, p, 0, sp, sm);
             return true;
         }
-        if (name.equals("arenearaignee") || name.equals("arenecitrouille")) {
-            Arena ar = name.equals("arenearaignee") ? spiderArena : arena;
+        if (name.equals("arenearaignee") || name.equals("arenecitrouille") || name.equals("arenesmasher")) {
+            Arena ar = name.equals("arenesmasher") ? smasherArena : name.equals("arenearaignee") ? spiderArena : arena;
             boolean adm = sender.hasPermission("smpboss.admin");
             String first = a.length == 0 ? "" : a[0].toLowerCase(Locale.ROOT);
             if (a.length == 0 || !adm || (first.equals("tp") && a.length == 1)) {
@@ -1095,7 +1135,8 @@ public final class SmpBoss extends JavaPlugin {
         if (name.equals("arene")) {
             if (sender instanceof Player p) {
                 boolean sp = a.length >= 1 && (a[0].toLowerCase(Locale.ROOT).startsWith("araign") || a[0].equalsIgnoreCase("reine"));
-                (sp ? spiderArena : arena).join(p);
+                boolean sm = a.length >= 1 && a[0].toLowerCase(Locale.ROOT).startsWith("smash");
+                (sm ? smasherArena : sp ? spiderArena : arena).join(p);
             }
             return true;
         }
@@ -1131,6 +1172,7 @@ public final class SmpBoss extends JavaPlugin {
             }
             case "arene", "arène", "arena" -> arena.command(sender, a);
             case "araignee", "araignée", "spider", "reine" -> spiderCommand(sender, a);
+            case "smasher", "adam" -> smasherCommand(sender, a);
             case "topguildes" -> {
                 if (a.length >= 2 && a[1].equalsIgnoreCase("reset")) {
                     guildTop.reset();
@@ -1171,6 +1213,7 @@ public final class SmpBoss extends JavaPlugin {
                 if (TojiSpear.INSTANCE != null) TojiSpear.INSTANCE.resetCooldowns(id);
                 if (Capricorne.INSTANCE != null) Capricorne.INSTANCE.resetCooldowns(id);
                 if (BoogieBomb.INSTANCE != null) BoogieBomb.INSTANCE.resetCooldowns(id);
+                if (Cyberware.INSTANCE != null) Cyberware.INSTANCE.resetCooldowns(id);
                 if (weapons != null) weapons.resetCooldowns(id);
                 sender.sendMessage(parse("<green>Recharges de <white>" + t.getName() + "</white> remises à zéro <gray>(Éveil, lance, armes, Capricorne, Boogie Bombe)."));
                 if (t != sender) t.sendMessage(parse("<gold>⏳ Tes recharges ont été remises à zéro."));
@@ -1245,6 +1288,11 @@ public final class SmpBoss extends JavaPlugin {
                         }
                         case "faucille", "sickle" -> items.sickle();
                         case "oeil", "oeil_maudit", "yeux", "eye" -> items.cursedEye(n);
+                        case "puce", "puce_smasher", "chip" -> {
+                            ItemStack s = items.chip();
+                            s.setAmount(Math.min(16, n));
+                            yield s;
+                        }
                         case "cocon", "cocoon" -> {
                             ItemStack s = items.cocoon();
                             s.setAmount(Math.min(16, n));
@@ -1344,7 +1392,7 @@ public final class SmpBoss extends JavaPlugin {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command cmd, String label, String[] a) {
         List<String> out = new ArrayList<>();
-        if (cmd.getName().equalsIgnoreCase("arenearaignee") || cmd.getName().equalsIgnoreCase("arenecitrouille")) {
+        if (cmd.getName().equalsIgnoreCase("arenearaignee") || cmd.getName().equalsIgnoreCase("arenecitrouille") || cmd.getName().equalsIgnoreCase("arenesmasher")) {
             if (!sender.hasPermission("smpboss.admin")) return out;
             if (a.length == 1) out.addAll(List.of("tp", "construire", "annuler", "setspawn", "portail", "sortie", "recuperer", "definir", "supprimer"));
             else if (a.length == 2 && a[0].equalsIgnoreCase("portail")) out.addAll(List.of("poser", "retirer", "pos1", "pos2", "info", "supprimer"));
@@ -1381,7 +1429,7 @@ public final class SmpBoss extends JavaPlugin {
         }
         else if (a.length == 3 && a[0].equalsIgnoreCase("give")) {
             out.addAll(List.of("graine", "citrouille", "faucille", "sonicbow", "tranchemace", "briseterre", "faux", "crocdegivre", "arctempete", "hollowpurple", "fuga", "lamecitrouille", "arcfeuxfollets", "hachemaudite",
-                    "oeil", "cocon", "dague", "toiles", "fauxtisseuse", "crocreine", "sceptre", "lance", "tribaton", "tenue_toji", "tenue_gojo", "tenue_sukuna", "pioche3x3", "pioche5x5"));
+                    "oeil", "cocon", "puce", "dague", "toiles", "fauxtisseuse", "crocreine", "sceptre", "lance", "tribaton", "tenue_toji", "tenue_gojo", "tenue_sukuna", "pioche3x3", "pioche5x5"));
             for (String id : relics.all().keySet()) out.add("relique:" + id);
         }
         String last = a.length == 0 ? "" : a[a.length - 1].toLowerCase(Locale.ROOT);
@@ -1454,6 +1502,7 @@ public final class SmpBoss extends JavaPlugin {
     public Arena arenaAt(Location l) {
         if (arena != null && arena.defined() && arena.contains(l)) return arena;
         if (spiderArena != null && spiderArena.defined() && spiderArena.contains(l)) return spiderArena;
+        if (smasherArena != null && smasherArena.defined() && smasherArena.contains(l)) return smasherArena;
         return null;
     }
 
@@ -1535,6 +1584,122 @@ public final class SmpBoss extends JavaPlugin {
     void spiderEnded() {
         spiderLastEnd = System.currentTimeMillis();
         king = null;
+    }
+
+    // ================================================================= ADAM SMASHER
+
+    public Arena smasherArena() {
+        return smasherArena;
+    }
+
+    public Location smasherAltar() {
+        return smasherAltar == null ? null : smasherAltar.clone();
+    }
+
+    public boolean isSmasherAltar(Block b) {
+        return smasherAltar != null && b != null && b.getWorld() == smasherAltar.getWorld() && b.getX() == smasherAltar.getBlockX()
+                && b.getY() == smasherAltar.getBlockY() && b.getZ() == smasherAltar.getBlockZ();
+    }
+
+    private Location loadAltarFile(File f) {
+        if (!f.exists()) return null;
+        YamlConfiguration y = YamlConfiguration.loadConfiguration(f);
+        World w = Bukkit.getWorld(y.getString("world", "world"));
+        return w == null ? null : new Location(w, y.getInt("x"), y.getInt("y"), y.getInt("z"));
+    }
+
+    void setSmasherAltar(Location l) {
+        smasherAltar = l == null ? null : l.clone();
+        YamlConfiguration y = new YamlConfiguration();
+        if (smasherAltar != null) {
+            y.set("world", smasherAltar.getWorld().getName());
+            y.set("x", smasherAltar.getBlockX());
+            y.set("y", smasherAltar.getBlockY());
+            y.set("z", smasherAltar.getBlockZ());
+        }
+        try {
+            y.save(new File(getDataFolder(), "altar-smasher.yml"));
+        } catch (java.io.IOException e) {
+            getLogger().warning("altar-smasher.yml : " + e.getMessage());
+        }
+    }
+
+    String smasherStatus() {
+        if (king instanceof AdamSmasher s && s.active()) {
+            return msg("smasher.status-fight").replace("<phase>", String.valueOf(s.phase()))
+                    .replace("<hp>", String.valueOf((long) Math.ceil(Math.max(0, s.hp())))).replace("<max>", String.valueOf((long) s.maxHp()));
+        }
+        if (king != null && king.active()) return msg("smasher.status-other");
+        if (smasherAltar == null || smasherAltar.getWorld() == null) return msg("portal.status-closed");
+        long left = smasherLastEnd + getConfig().getLong("smasher.cooldown-minutes", 20) * 60_000L - System.currentTimeMillis();
+        if (left > 0) {
+            long sec = left / 1000;
+            return msg("portal.status-cooldown").replace("<time>", String.format("%d:%02d", sec / 60, sec % 60));
+        }
+        return msg("smasher.status-ready");
+    }
+
+    /** Un joueur pose la Puce militaire sur l'autel de Smasher. */
+    public void trySummonSmasher(Player p) {
+        if (king != null && king.active()) {
+            p.sendMessage(parse(msg(king instanceof AdamSmasher ? "smasher.summon-already" : "smasher.summon-other")));
+            return;
+        }
+        long left = smasherLastEnd + getConfig().getLong("smasher.cooldown-minutes", 20) * 60_000L - System.currentTimeMillis();
+        if (left > 0) {
+            p.sendMessage(parse(msg("summon.cooldown").replace("<minutes>", String.valueOf(left / 60_000 + 1))));
+            return;
+        }
+        ItemStack hand = p.getInventory().getItemInMainHand();
+        if (!items.isChip(hand)) return;
+        hand.setAmount(hand.getAmount() - 1);
+        king = new AdamSmasher(this, smasherAltar);
+        king.start(p);
+    }
+
+    void smasherEnded() {
+        smasherLastEnd = System.currentTimeMillis();
+        king = null;
+    }
+
+    private void smasherCommand(CommandSender sender, String[] a) {
+        String sub = a.length < 2 ? "" : a[1].toLowerCase(Locale.ROOT);
+        switch (sub) {
+            case "autel", "altar" -> {
+                if (!(sender instanceof Player p)) return;
+                Block b = p.getTargetBlockExact(6);
+                if (b == null || b.getType().isAir()) {
+                    sender.sendMessage(parse("<red>Regarde le bloc qui servira d'autel (à moins de 6 blocs)."));
+                    return;
+                }
+                setSmasherAltar(b.getLocation());
+                sender.sendMessage(parse("<#ff2a6d>Autel d'Adam Smasher placé sur ce bloc. <gray>Clic droit dessus avec une Puce militaire."));
+            }
+            case "invoquer", "summon" -> {
+                if (smasherAltar == null) {
+                    sender.sendMessage(parse("<red>Pas d'autel : /arenesmasher construire, ou /boss smasher autel"));
+                    return;
+                }
+                if (king != null && king.active()) {
+                    sender.sendMessage(parse("<red>Un boss est déjà en cours."));
+                    return;
+                }
+                king = new AdamSmasher(this, smasherAltar);
+                king.start(sender instanceof Player p ? p : Bukkit.getOnlinePlayers().stream().findFirst().orElse(null));
+            }
+            case "stop" -> {
+                if (king instanceof AdamSmasher s) s.leave("smasher.stopped");
+                smasherLastEnd = 0;
+                sender.sendMessage(parse("<green>Adam Smasher arrêté (temps d'attente remis à zéro)."));
+            }
+            default -> {
+                sender.sendMessage(parse("<#ff2a6d><b>⚡ Adam Smasher"));
+                sender.sendMessage(parse("<#ff2a6d>/arenesmasher construire [taille] [ici|ciel|Y]</#ff2a6d> <gray>- construit l'île de Night City (l'autel au centre)"));
+                sender.sendMessage(parse("<#ff2a6d>/arenesmasher portail|sortie|tp|setspawn|annuler ...</#ff2a6d> <gray>- réglages de son arène"));
+                sender.sendMessage(parse("<#ff2a6d>/boss smasher autel|invoquer|stop</#ff2a6d>"));
+                sender.sendMessage(parse("<gray>Joueurs : <white>/arene smasher</white> · objet : <white>/boss give <joueur> puce</white>"));
+            }
+        }
     }
 
     public Set<RelicMenu> openMenus() {

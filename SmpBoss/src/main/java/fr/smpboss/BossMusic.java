@@ -37,7 +37,7 @@ final class BossMusic {
         long len = 0;
         Arena arena = null;
         if (c.getBoolean("music.enabled", true) && k != null && k.active()) {
-            boolean spider = k instanceof SpiderQueen;
+            boolean spider = k instanceof SpiderQueen || k instanceof AdamSmasher;
             want = spider ? QUEEN : PUMPKIN;
             len = (long) (c.getDouble(spider ? "music.spider-seconds" : "music.pumpkin-seconds", spider ? 67.2 : 60.48) * 1000);
             arena = k.bossArena();

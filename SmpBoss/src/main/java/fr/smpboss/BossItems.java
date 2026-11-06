@@ -72,7 +72,26 @@ public final class BossItems {
         return it;
     }
 
-    private final NamespacedKey eyeKey = new NamespacedKey("smpboss", "cursed_eye"), cocoonKey = new NamespacedKey("smpboss", "cocoon");
+    private final NamespacedKey eyeKey = new NamespacedKey("smpboss", "cursed_eye"), cocoonKey = new NamespacedKey("smpboss", "cocoon"),
+            chipKey = new NamespacedKey("smpboss", "smasher_chip");
+
+    /** Puce militaire : posée sur l'autel de Night City, elle appelle Adam Smasher. */
+    public ItemStack chip() {
+        ItemStack it = new ItemStack(Material.ECHO_SHARD);
+        ItemMeta m = it.getItemMeta();
+        m.displayName(parse(plugin.msg("smasher.items.chip.name")));
+        m.lore(lines(plugin.getConfig().getStringList("messages.smasher.items.chip.lore")));
+        m.setEnchantmentGlintOverride(true);
+        m.setMaxStackSize(16);
+        m.getPersistentDataContainer().set(chipKey, PersistentDataType.BYTE, (byte) 1);
+        SmpBoss.modelData(m, "puce_smasher");
+        it.setItemMeta(m);
+        return it;
+    }
+
+    public boolean isChip(ItemStack it) {
+        return it != null && it.hasItemMeta() && it.getItemMeta().getPersistentDataContainer().has(chipKey, PersistentDataType.BYTE);
+    }
 
     /** Œil maudit : lâché par les araignées. 8 + une toile = cocon sacrificiel (pour la Reine). */
     public ItemStack cursedEye(int amount) {

@@ -261,6 +261,13 @@ final class BossListener implements Listener {
             else if (a == Action.RIGHT_CLICK_BLOCK) SmpBoss.hud(p, parse(plugin.msg("spider.cocoon-hint")));
             return;
         }
+        // autel d'Adam Smasher : la Puce militaire
+        if (plugin.items().isChip(hand)) {
+            e.setCancelled(true);
+            if (a == Action.RIGHT_CLICK_BLOCK && plugin.isSmasherAltar(e.getClickedBlock())) plugin.trySummonSmasher(p);
+            else if (a == Action.RIGHT_CLICK_BLOCK) SmpBoss.hud(p, parse(plugin.msg("smasher.chip-hint")));
+            return;
+        }
         // relique : l'ajouter à sa collection
         String relicId = plugin.items().relicId(hand);
         if (relicId != null && !relicId.equals("backpack-display")) {

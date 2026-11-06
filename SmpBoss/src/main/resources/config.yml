@@ -1,4 +1,4 @@
-config-version: 52
+config-version: 53
 
 # =====================================================================
 #  SmpBoss - le Roi Citrouille
@@ -239,7 +239,6 @@ loot:
     prestige:
       - {relic: couronne_roi_eternel, title: "Le Roi Éternel"}
       - {relic: ailes_eclipse, title: "Survivant de l'Apocalypse"}
-      - {relic: projet_capricorne, title: "Au-delà du Black Wall"}
 
 # ---------------------------------------------------------------- Armes du Roi (butin rare, gardées à la mort)
 weapons:
@@ -896,6 +895,135 @@ relics:
              "<red>✖ Mais plus AUCUN objet : <gray>ni bloc, ni nourriture, ni potion,",
              "<gray>ni totem, ni arc, ni autre arme, ni pouvoir de relique."]
 
+    # ---------------- implants de Night City (Adam Smasher)
+    sandevistan_martinez:
+      name: "Sandevistan de Martinez"
+      rarity: prestige
+      icon: PRISMARINE_CRYSTALS
+      visual: ""
+      lore: ["<gray>Le Sandevistan militaire d'un gamin de Santo Domingo.", "<gray>Personne n'aurait dû survivre à ça.",
+             "<#3cff78>⌚ <white>Accroupi en sprintant", "<gray>Le temps <white>s'arrête presque</white> autour de toi (24 blocs) :",
+             "<gray>tout est ralenti, les flèches flottent, et toi", "<gray>tu fonces : <white>+50 % de dégâts</white>, <white>-25 % de dégâts reçus</white>.",
+             "<gray>10 s, aucun contrecoup. <dark_gray>(50 s)", "<dark_gray>Les boss et Toji ne sont pas ralentis."]
+      damage: 20
+      health: 6
+      armor: 4
+      speed: 15
+      regen: 2
+    sandevistan_prototype:
+      name: "Sandevistan prototype"
+      rarity: secret
+      icon: PRISMARINE_SHARD
+      visual: ""
+      lore: ["<gray>Un Sandevistan de contrebande, mal calibré.", "<#ff2a6d>⌚ <white>Accroupi en sprintant",
+             "<gray>Le temps ralentit autour de toi (16 blocs)", "<gray>pendant 6 s : <white>+25 % de dégâts</white>.",
+             "<red>Contrecoup : <gray>faiblesse et nausée après. <dark_gray>(1 min 30)"]
+      damage: 12
+      health: 4
+      armor: 2
+      speed: 10
+    chassis_smasher:
+      name: "Châssis de Smasher"
+      rarity: secret
+      icon: NETHERITE_INGOT
+      visual: ""
+      lore: ["<gray>Un morceau du corps d'Adam Smasher.", "<gray>Il n'y a presque plus rien d'humain là-dedans.",
+             "<#ff2a6d>⛨ <white>-15 % de dégâts des coups", "<#ff2a6d>⛨ <white>-50 % des explosions, presque aucun recul"]
+      health: 10
+      armor: 8
+      damage: 8
+    lames_mantis:
+      name: "Lames Mantis"
+      rarity: legendary
+      icon: QUARTZ
+      visual: ""
+      lore: ["<gray>Des lames qui sortent des avant-bras.", "<#ff2a6d>⚔ <white>30 % des coups : entaille <gray>(+35 %)",
+             "<gray>et la cible <red>saigne</red> 3 s.", "<gray>+20 % en tombant sur ta cible."]
+      damage: 12
+      speed: 5
+    bras_gorilla:
+      name: "Bras Gorilla"
+      rarity: legendary
+      icon: RAW_IRON
+      visual: ""
+      lore: ["<gray>Des bras hydrauliques. Rien ne te résiste.", "<#ff2a6d>👊 <white>Tes coups projettent loin",
+             "<gray>et un coup sur 5 est un <white>uppercut</white> qui fait voler."]
+      damage: 10
+      health: 3
+    second_coeur:
+      name: "Second Cœur"
+      rarity: legendary
+      icon: HEART_OF_THE_SEA
+      visual: ""
+      lore: ["<gray>Un cœur de secours, prêt à repartir.", "<#ff2a6d>❤ <white>Un coup mortel ne te tue pas :",
+             "<gray>tu restes debout avec 40 % de vie. <dark_gray>(10 min)", "<dark_gray>(le totem passe d'abord)"]
+      health: 5
+      regen: 1
+    kerenzikov:
+      name: "Kerenzikov"
+      rarity: epic
+      icon: CLOCK
+      visual: ""
+      lore: ["<gray>Des réflexes boostés.", "<#05d9e8>↯ <white>En sprint ou accroupi : 25 % de chance",
+             "<gray>d'<white>esquiver</white> un coup. <dark_gray>(6 s)"]
+      speed: 8
+      damage: 4
+    optiques_kiroshi:
+      name: "Optiques Kiroshi"
+      rarity: epic
+      icon: GLOW_INK_SAC
+      visual: ""
+      lore: ["<gray>Des yeux neufs.", "<#05d9e8>👁 <white>Vision de nuit", "<gray>et ceux que tu frappes sont <white>marqués</white> (ils brillent 4 s)."]
+      damage: 5
+      health: 2
+    tendons_renforces:
+      name: "Tendons renforcés"
+      rarity: epic
+      icon: RABBIT_FOOT
+      visual: ""
+      lore: ["<gray>Des jambes faites pour sauter.", "<#05d9e8>⇧ <white>Saut amélioré", "<gray>et <white>-60 %</white> de dégâts de chute."]
+      speed: 7
+      health: 2
+    armure_subdermique:
+      name: "Armure subdermique"
+      rarity: epic
+      icon: NETHERITE_SCRAP
+      visual: ""
+      lore: ["<gray>Des plaques sous la peau.", "<#05d9e8>⛨ <white>-20 % de dégâts des projectiles"]
+      armor: 5
+      health: 3
+    pompe_sanguine:
+      name: "Pompe sanguine"
+      rarity: rare
+      icon: REDSTONE
+      visual: ""
+      lore: ["<gray>Elle remet ton sang en route.", "<#fcee0a>✚ <white>Chaque kill te rend 1,5 cœur"]
+      regen: 1
+      health: 2
+    synapses_boost:
+      name: "Synapses boostées"
+      rarity: rare
+      icon: GLOWSTONE_DUST
+      visual: ""
+      lore: ["<gray>Ton cerveau tourne plus vite.", "<#fcee0a>⚡ <white>Célérité permanente"]
+      speed: 6
+      damage: 3
+    puce_combat:
+      name: "Puce de combat"
+      rarity: rare
+      icon: GOLD_NUGGET
+      visual: ""
+      lore: ["<gray>Un logiciel de combat bas de gamme.", "<gray>Ça marche quand même."]
+      damage: 6
+    peau_titane:
+      name: "Peau de titane"
+      rarity: rare
+      icon: IRON_NUGGET
+      visual: ""
+      lore: ["<gray>Une peau qui ne brûle plus.", "<#fcee0a>🔥 <white>-40 % de dégâts de feu et de lave"]
+      armor: 3
+      health: 2
+
 # ---------------------------------------------------------------- Sac (relique secrète)
 backpack:
   # sac à dos visible (modèle en blocs : tissu, rabat orange, couverture roulée, mini citrouille)
@@ -1019,8 +1147,113 @@ spider-loot:
     legendary: [{relic: pattes_reine}, {relic: cape_toile}, {relic: black_flash}, {relic: masque_mille_yeux}, {relic: fuseau_tisseuse}, {relic: boogie_bombe}]
     secret: [{relic: couronne_reine, title: "Héritier de la Toile"}, {relic: restriction_celeste, title: "Zéro Énergie Occulte"}]
     prestige: [{relic: coeur_abysse, title: "Cœur de l'Abysse"}, {relic: black_flash_consecutif, title: "Black Flash"},
-               {relic: ailes_toile, title: "Ailes de la Toile"}, {relic: oeil_rouge_abysse, title: "L'Œil Rouge"},
-               {relic: projet_capricorne, title: "Au-delà du Black Wall"}]
+               {relic: ailes_toile, title: "Ailes de la Toile"}, {relic: oeil_rouge_abysse, title: "L'Œil Rouge"}]
+
+
+# ================================================================ ⚡ ADAM SMASHER (Night City)
+# /arenesmasher construire [taille] ciel  ->  l'île flottante sous son dôme, l'autel au centre
+# Invocation : clic droit sur l'autel avec une Puce militaire (/boss give <joueur> puce)
+smasher:
+  arena-radius: 24
+  cooldown-minutes: 20
+  health-per-player: 4500
+  extra-player-health: 0.7
+  max-minutes: 20
+  speed: 0.27
+  melee-damage: 14
+  size: 2.0                # 2x la taille d'un joueur
+  size-phase-2: 2.2
+  size-phase-3: 2.4
+  phase-2-at: 0.66
+  phase-3-at: 0.33
+  enrage-at: 0.12
+  # XP de saison à chaque victoire (SmpSaison)
+  season-xp: 500
+  attack-interval:
+    1: 60
+    2: 48
+    3: 38
+  burst-shots: 8
+  missiles: 5
+  charge-length: 20
+  emp-radius: 13
+  emp-seconds: 6
+  troops: 2
+  troops-max: 8
+  trooper-health: 30
+  damage:
+    multiplier: 1.8
+    phase-1-multiplier: 1.25
+    phase-2-multiplier: 1.4
+    phase-3-multiplier: 1.3
+    armor-pierce: 0.3
+    phase-shockwave: 4
+    burst: 3
+    missile: 8
+    charge: 11
+    slam: 13
+    emp: 5
+    blink: 9
+
+smasher-loot:
+  always-commands: ["tokens give %player% 20", "eco give %player% 30000"]
+  chances:
+    prestige: 0.01
+    secret: 0.5
+    legendary: 1.5
+    epic: 6
+    rare: 25
+  pools:
+    rare: [{relic: pompe_sanguine}, {relic: synapses_boost}, {relic: puce_combat}, {relic: peau_titane}]
+    epic: [{relic: kerenzikov}, {relic: optiques_kiroshi}, {relic: tendons_renforces}, {relic: armure_subdermique}]
+    legendary: [{relic: lames_mantis}, {relic: bras_gorilla}, {relic: second_coeur}]
+    secret: [{relic: sandevistan_prototype, title: "Cyberpsycho"}, {relic: chassis_smasher, title: "Plus de métal que d'homme"}]
+    prestige: [{relic: sandevistan_martinez, title: "Légende de Night City"}, {relic: projet_capricorne, title: "Au-delà du Black Wall"}]
+
+# implants (reliques de Night City)
+cyberware:
+  sandevistan:
+    seconds: 10
+    cooldown-seconds: 50
+    radius: 24
+    slowness: 6
+    damage: 1.5
+    damage-taken: 0.75
+  prototype:
+    seconds: 6
+    cooldown-seconds: 90
+    radius: 16
+    slowness: 3
+    damage: 1.25
+    backlash-seconds: 5
+  mantis:
+    chance: 0.3
+    damage: 1.35
+    bleed-seconds: 3
+    bleed-damage: 1.5
+  gorilla:
+    knockback: 0.8
+    uppercut-every: 5
+    uppercut-damage: 1.4
+  second-coeur:
+    cooldown-minutes: 10
+    health: 0.4
+  kerenzikov:
+    chance: 0.25
+    cooldown-seconds: 6
+  kiroshi:
+    mark-seconds: 4
+  chassis:
+    damage-taken: 0.85
+    knockback: 0.3
+  subdermique:
+    projectile-taken: 0.8
+  tendons:
+    fall-taken: 0.4
+  titane:
+    fire-taken: 0.6
+  pompe:
+    heal: 3
 
 
 # ================================================================ 📳 TREMBLEMENT DE L'ÉCRAN (Hollow, Fûga, boss...)
@@ -1844,6 +2077,74 @@ messages:
       shadow-dash: "<#3a6bff>🕷 <b>Ruée de l'ombre</b> <gray>· quitte la ligne"
       ceiling-drop: "<#3a6bff>🕸 <b>Chute du plafond</b> <gray>· sors du cercle !"
       fang-nova: "<#46eb82>☠ <b>Crocs de l'Abysse</b> <gray>· saute par-dessus les vagues"
+  smasher:
+    name: "<gradient:#ff2a6d:#05d9e8><b>⚡ Adam Smasher ⚡"
+    trooper: "<#ff2a6d>Soldat de Smasher"
+    summoning: "<gradient:#ff2a6d:#05d9e8><b>⚡ <player> a branché une puce militaire... Adam Smasher arrive sur le toit !</b></gradient> <gray>/arene smasher"
+    bar-1: "<#ff2a6d><b>⚡ Adam Smasher</b> "
+    bar-2: "<#ff5fa2><b>⚡ Mode combat</b> "
+    bar-3: "<#ff1e32><b>⚡ Surchauffe</b> "
+    title-start: "<gradient:#ff2a6d:#05d9e8><b>ADAM SMASHER"
+    subtitle-start: "<gray>Il n'y a plus rien d'humain là-dedans."
+    title-phase-2: "<#ff5fa2><b>MODE COMBAT"
+    subtitle-phase-2: "<gray>Les implants s'allument : attention à l'IEM."
+    title-phase-3: "<#ff1e32><b>SURCHAUFFE"
+    subtitle-phase-3: "<gray>Il saute derrière vous... regardez le sol."
+    title-enrage: "<#ff1e32><b>RAGE"
+    subtitle-enrage: "<gray>Il frappe plus vite et plus fort !"
+    title-defeat: "<gradient:#ff2a6d:#05d9e8><b>SMASHER EST TOMBÉ"
+    subtitle-defeat: "<gray>Night City se souviendra de vous."
+    defeated: "<gradient:#ff2a6d:#05d9e8><b>⚡ Adam Smasher est vaincu !</b></gradient>"
+    vanished: "<gray>⚡ Adam Smasher a disparu."
+    left: "<gray>⚡ Personne sur le toit... Adam Smasher repart."
+    timeout: "<gray>⚡ Le combat a duré trop longtemps : Adam Smasher repart."
+    stopped: "<gray>⚡ Adam Smasher a été arrêté par le staff."
+    emp-hit: "<#05d9e8>⚡ <b>IEM</b> <gray>· tes implants sont coupés <white><seconds> s"
+    chip-hint: "<gray>Branche la puce sur <#ff2a6d>l'autel de Smasher</#ff2a6d> (au centre de Night City : <white>/arene smasher</white>)."
+    summon-already: "<red>Adam Smasher est déjà sur le toit !"
+    summon-other: "<red>Un autre boss est en plein combat : <white>Smasher attendra qu'il soit vaincu."
+    status-other: "<gold>⚔ Un autre boss combat en ce moment"
+    status-ready: "<green><b>✔ DISPONIBLE MAINTENANT"
+    status-fight: "<red><b>⚔ EN COMBAT ⚔</b>\n<gray>Phase <white><phase></white>/3  <dark_gray>·</dark_gray>  <red>❤</red> <white><hp></white><gray>/<max>"
+    portal-hologram: "<gradient:#ff2a6d:#05d9e8><b>⚡ BOSS FIGHT ⚡</b></gradient>\n<#ff5fa2><b>Adam Smasher</b>\n\n<status>\n\n<dark_gray>Entre dans le portail pour monter à Night City"
+    altar-hologram: "<gradient:#ff2a6d:#05d9e8><b>⚡ Autel de Smasher ⚡</b></gradient>\n<gray>Clic droit avec une <#ff2a6d>Puce militaire\n<status>"
+    drops-title: "<dark_gray>⚡ Butin d'Adam Smasher"
+    drops-info-lore:
+      - "<gray>Chaque victoire (≥ 5 % des dégâts) :"
+      - "<white>• <gray>de l'argent et des jetons, toujours"
+      - "<white>• <gray>un tirage de rareté, puis un implant au hasard :"
+      - "  <#6d8cff>❂ Prestige <white><prestige> %"
+      - "  <white>✧ Mythical <white><secret> %"
+      - "  <gold>★ Légendaire <white><legendary> %"
+      - "  <light_purple>◆ Épique <white><epic> %"
+      - "  <aqua>◇ Rare <white><rare> %"
+      - ""
+      - "<gray>Garantie : un <gold>Légendaire</gold> au bout de <white><pity-legendary></white> victoires"
+      - "<gray>sans, un <white>Mythical</white> au bout de <white><pity-secret></white>."
+      - "<dark_gray>(compteur commun à tous les boss)"
+    items:
+      chip:
+        name: "<gradient:#ff2a6d:#05d9e8><b>Puce militaire"
+        lore:
+          - "<gray>Une puce volée, encore chaude."
+          - "<gray>Branche-la sur <#ff2a6d>l'autel de Smasher</#ff2a6d>"
+          - "<gray>pour l'appeler sur le toit."
+    attack:
+      burst: "<#ff1e32>⌖ <b>Rafale</b> <gray>· le laser rouge te vise : bouge !"
+      missiles: "<#ff1e32>☄ <b>Missiles</b> <gray>· sors des cercles rouges"
+      charge: "<#ff2a6d>➹ <b>Charge</b> <gray>· quitte la ligne"
+      slam: "<#ff2a6d>⬇ <b>Écrasement</b> <gray>· il va retomber sur toi !"
+      emp: "<#05d9e8>⚡ <b>IEM</b> <gray>· sors du cercle cyan"
+      troops: "<#ff2a6d>☠ <b>Renforts</b> <gray>· des soldats arrivent"
+      blink: "<#05d9e8>↯ <b>Saut Kerenzikov</b> <gray>· il apparaît derrière toi"
+  cyberware:
+    offline: "<#05d9e8>⚡ <gray>Implants coupés..."
+    sandevistan-on: "<#3cff78><b>⌚ SANDEVISTAN</b> <gray>· le temps s'arrête"
+    prototype-on: "<#ff2a6d><b>⌚ SANDEVISTAN</b> <gray>· prototype en marche"
+    sandevistan-off: "<dark_gray>⌚ Sandevistan coupé"
+    emp-cut: "<#05d9e8>⚡ <b>IEM</b> <gray>· ton Sandevistan a sauté !"
+    dodge: "<#05d9e8>↯ <b>Esquive</b> <gray>· Kerenzikov"
+    second-heart: "<#ff2a6d><b>❤ SECOND CŒUR</b> <gray>· tu restes debout <dark_gray>(10 min)"
   lance-ciel:
     restriction-on: "<#c8d2e6><b>RESTRICTION CÉLESTE</b> <gray>· plus aucun pouvoir, mais ton corps est au maximum"
     restriction-off: "<dark_gray>Restriction Céleste levée"
