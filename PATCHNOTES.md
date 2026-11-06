@@ -22,7 +22,7 @@
 > ◇ **Rare** : Pompe sanguine · Synapses boostées · Puce de combat · Peau de titane
 
 ⚙ **EMPLACEMENTS D'IMPLANTS** — `/reliques`
-> Les implants ont **leurs 3 emplacements à eux** (la bande cyan, à droite) : ils se mettent **en plus de tes reliques**. Tu peux donc garder tes 2 reliques **et** mettre le Sandevistan, les Lames Mantis et le Second Cœur. Un seul Sandevistan à la fois.
+> Les implants ont **leurs 3 emplacements à eux** (la bande cyan, à droite) : ils se mettent **en plus de tes reliques**. Tu peux donc garder tes 2 reliques **et** mettre le Sandevistan, les Lames Mantis et le Second Cœur. Un seul Sandevistan à la fois. Le **Projet Capricorne** compte aussi comme un implant.
 
 🎫 **XP DE SAISON DES ÉVÉNEMENTS**
 > **KOTH** : 400 XP par gagnant, 75 pour ceux qui ont tenu la zone · **prime encaissée** 150 · **quête du jour** 40 · **quête de la semaine** 250 · **Adam Smasher** 500.

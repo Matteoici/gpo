@@ -1921,7 +1921,8 @@ messages:
     info-implants: "<#05d9e8>Implants : <white><n>/<max>"
     implant-empty-name: "<#05d9e8><b>Emplacement d'implant"
     implant-empty-lore:
-      - "<gray>Les implants de Night City (Adam Smasher)"
+      - "<gray>Les implants de Night City (Adam Smasher,"
+      - "<gray>Projet Capricorne compris)"
       - "<gray>se mettent ici, <white>en plus</white> de tes reliques."
       - "<dark_gray>Un seul Sandevistan à la fois."
     info-owned: "<gray>Possédées : <white><n>"

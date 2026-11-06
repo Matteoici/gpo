@@ -60,7 +60,7 @@ final class Cyberware implements Listener {
 
     /** Tous les implants : ils se mettent dans les emplacements d'implants, en plus des reliques. */
     static final java.util.Set<String> IMPLANTS = java.util.Set.of(SANDE, PROTO, CHASSIS, MANTIS, GORILLA, HEART, KEREN, KIROSHI, TENDONS,
-            SUBDERM, PUMP, SYNAPSE, "puce_combat", TITAN);
+            SUBDERM, PUMP, SYNAPSE, "puce_combat", TITAN, Capricorne.ID);
 
     static Cyberware INSTANCE;
 
