@@ -6,7 +6,7 @@
 > Une nouvelle île flottante : une ville de néons sous un **dôme fermé**, avec ses tours, ses panneaux et son ascenseur. Au centre, l'autel d'**Adam Smasher**.
 
 ⚡ **ADAM SMASHER** (nouveau boss)
-> Branche une **Puce militaire** sur son autel. Un colosse de métal **2 fois plus grand que toi**, en 3 phases :
+> Branche une **Puce militaire** sur son autel. Un **colosse cybernétique de 4 blocs entièrement modélisé** (visière rouge, réacteur qui pulse, bras-canon, il marche, vise et lève les bras), en 3 phases :
 > • **Rafale** : un laser rouge te suit… puis la mitrailleuse tire dans la ligne
 > • **Missiles** : sors des cercles rouges
 > • **Charge** et **Écrasement** : regarde le sol
