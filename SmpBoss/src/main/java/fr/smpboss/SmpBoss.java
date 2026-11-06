@@ -1046,15 +1046,15 @@ public final class SmpBoss extends JavaPlugin {
         String sub = a.length < 2 ? "" : a[1].toLowerCase(Locale.ROOT);
         switch (sub) {
             case "autel", "altar" -> {
-                // console : /boss smasher autel <monde> <x> <y> <z>
+                // console : /boss araignee autel <monde> <x> <y> <z>
                 if (a.length >= 6) {
                     World w = Bukkit.getWorld(a[2]);
                     try {
                         if (w == null) throw new NumberFormatException();
-                        setSmasherAltar(new Location(w, Integer.parseInt(a[3]), Integer.parseInt(a[4]), Integer.parseInt(a[5])));
-                        sender.sendMessage(parse("<#ff2a6d>Autel d'Adam Smasher placé en " + a[2] + " " + a[3] + " " + a[4] + " " + a[5] + "."));
+                        setSpiderAltar(new Location(w, Integer.parseInt(a[3]), Integer.parseInt(a[4]), Integer.parseInt(a[5])));
+                        sender.sendMessage(parse("<aqua>Autel de la Reine placé en " + a[2] + " " + a[3] + " " + a[4] + " " + a[5] + "."));
                     } catch (NumberFormatException e) {
-                        sender.sendMessage(parse("<red>/boss smasher autel <monde> <x> <y> <z>"));
+                        sender.sendMessage(parse("<red>/boss araignee autel <monde> <x> <y> <z>"));
                     }
                     return;
                 }
@@ -1678,6 +1678,18 @@ public final class SmpBoss extends JavaPlugin {
         String sub = a.length < 2 ? "" : a[1].toLowerCase(Locale.ROOT);
         switch (sub) {
             case "autel", "altar" -> {
+                // console : /boss smasher autel <monde> <x> <y> <z>
+                if (a.length >= 6) {
+                    World w = Bukkit.getWorld(a[2]);
+                    try {
+                        if (w == null) throw new NumberFormatException();
+                        setSmasherAltar(new Location(w, Integer.parseInt(a[3]), Integer.parseInt(a[4]), Integer.parseInt(a[5])));
+                        sender.sendMessage(parse("<#ff2a6d>Autel d'Adam Smasher placé en " + a[2] + " " + a[3] + " " + a[4] + " " + a[5] + "."));
+                    } catch (NumberFormatException e) {
+                        sender.sendMessage(parse("<red>/boss smasher autel <monde> <x> <y> <z>"));
+                    }
+                    return;
+                }
                 if (!(sender instanceof Player p)) return;
                 Block b = p.getTargetBlockExact(6);
                 if (b == null || b.getType().isAir()) {
