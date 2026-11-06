@@ -304,5 +304,26 @@
     "stream": true
    }
   ]
+ },
+ "cyber.sande_on": {
+  "sounds": [
+   {
+    "name": "limitless:cyber/sande_on"
+   }
+  ]
+ },
+ "cyber.sande_loop": {
+  "sounds": [
+   {
+    "name": "limitless:cyber/sande_loop"
+   }
+  ]
+ },
+ "cyber.sande_off": {
+  "sounds": [
+   {
+    "name": "limitless:cyber/sande_off"
+   }
+  ]
  }
 }

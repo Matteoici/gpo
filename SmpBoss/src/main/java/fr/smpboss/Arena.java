@@ -723,6 +723,8 @@ public final class Arena {
     /** Sortie automatique : le cadre au fond du crâne / de la tête d'araignée (arène construite par le plugin). */
     int[] autoExit() {
         if (!defined || !backupFile.exists()) return null;
+        // Night City : la porte de l'ascenseur (SmasherDesign.elevator, z = -(r + 3), dedans de -2 à +2, haut de 6)
+        if (smasher) return new int[]{cx - 2, cy + 1, cz - (floorRadius + 4), cx + 2, cy + 5, cz - (floorRadius + 3)};
         int pz = spider ? cz - (floorRadius + 22) : cz - (floorRadius + 12);
         return new int[]{cx - 1, cy + 1, pz, cx + 1, cy + 4, pz};
     }

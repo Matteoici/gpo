@@ -69,12 +69,18 @@ final class Cyberware implements Listener {
     private final Map<UUID, Boolean> runningPrestige = new HashMap<>();
     private final Map<UUID, Integer> gorillaHits = new HashMap<>();
     private final Set<UUID> slowedProjectiles = new HashSet<>();
+    private final SandeFx fx;
 
     Cyberware(SmpBoss plugin) {
         INSTANCE = this;
         this.plugin = plugin;
+        this.fx = new SandeFx(plugin);
         Bukkit.getScheduler().runTaskTimer(plugin, this::tick, 1L, 1L);
         Bukkit.getScheduler().runTaskTimer(plugin, this::passives, 20L, 40L);
+    }
+
+    void shutdown() {
+        fx.stopAll();
     }
 
     void resetCooldowns(UUID id) {
@@ -156,6 +162,7 @@ final class Cyberware implements Listener {
         World w = p.getWorld();
         w.playSound(p.getLocation(), Sound.BLOCK_BEACON_ACTIVATE, SoundCategory.PLAYERS, 1.5f, 2f);
         w.playSound(p.getLocation(), Sound.BLOCK_RESPAWN_ANCHOR_CHARGE, SoundCategory.PLAYERS, 1.2f, 1.8f);
+        fx.start(p, prestige, secs);
         // battement grave pour ceux qui sont ralentis
         double r = cfg(k + "radius", prestige ? 24 : 16);
         for (Player o : w.getPlayers()) {
@@ -184,7 +191,8 @@ final class Cyberware implements Listener {
             int slow = (int) cfg(k + "slowness", prestige ? 6 : 3);
             Location c = p.getLocation();
             World w = p.getWorld();
-            // images rémanentes : vert, rose, cyan, décalées (comme sur l'écran)
+            fx.tick(p, prestige, running.get(id) - now);
+            // images rémanentes en particules (en plus des copies)
             if (now % 2 == 0) {
                 Vector back = c.getDirection().setY(0);
                 if (back.lengthSquared() > 0.01) back.normalize().multiply(-0.25);
@@ -224,6 +232,7 @@ final class Cyberware implements Listener {
 
     private void stop(Player p, boolean emp) {
         UUID id = p.getUniqueId();
+        fx.stop(p);
         running.remove(id);
         boolean prestige = Boolean.TRUE.equals(runningPrestige.remove(id));
         p.removePotionEffect(PotionEffectType.SPEED);

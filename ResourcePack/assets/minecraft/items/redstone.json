@@ -10,6 +10,13 @@
      "type": "minecraft:model",
      "model": "limitless:item/items/relic_black_flash"
     }
+   },
+   {
+    "when": "relic_pompe_sanguine",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/relic_pompe_sanguine"
+    }
    }
   ],
   "fallback": {

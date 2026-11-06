@@ -712,6 +712,7 @@ public final class SmpBoss extends JavaPlugin {
         if (hologram != null) hologram.remove();
         if (spiderHologram != null) spiderHologram.remove();
         if (smasherHologram != null) smasherHologram.remove();
+        if (Cyberware.INSTANCE != null) Cyberware.INSTANCE.shutdown();
         if (relics != null) relics.removeAll();
         for (Player p : Bukkit.getOnlinePlayers()) {
             if (invButtons != null) {

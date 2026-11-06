@@ -10,6 +10,13 @@
      "type": "minecraft:model",
      "model": "limitless:item/items/relic_coeur_abysse"
     }
+   },
+   {
+    "when": "relic_second_coeur",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/relic_second_coeur"
+    }
    }
   ],
   "fallback": {

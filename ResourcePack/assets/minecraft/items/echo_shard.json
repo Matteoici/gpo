@@ -5,6 +5,13 @@
   "index": 0,
   "cases": [
    {
+    "when": "puce_smasher",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/puce_smasher"
+    }
+   },
+   {
     "when": "relic_projet_capricorne",
     "model": {
      "type": "minecraft:model",

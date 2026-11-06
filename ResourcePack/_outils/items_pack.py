@@ -27,8 +27,13 @@ RELICS = {'trainee_flammes': 'blaze_powder', 'amulette_recolte': 'golden_carrot'
           'pattes_reine': 'black_candle', 'cape_toile': 'blue_banner', 'couronne_reine': 'netherite_helmet', 'coeur_abysse': 'heart_of_the_sea',
           'black_flash': 'redstone', 'black_flash_consecutif': 'nether_star',
           'soie_lunaire': 'white_dye', 'venin_cristallise': 'lime_dye', 'masque_mille_yeux': 'black_dye', 'fuseau_tisseuse': 'lead',
-          'ailes_toile': 'phantom_membrane', 'oeil_rouge_abysse': 'ender_eye', 'projet_capricorne': 'echo_shard', 'restriction_celeste': 'iron_chain', 'boogie_bombe': 'firework_star'}
-FLAT = ['oeil_maudit', 'cocon', 'hollow_purple', 'graine', 'egg_rare', 'egg_epique', 'egg_legendaire', 'egg_mythique'] + ['relic_' + r for r in RELICS]
+          'ailes_toile': 'phantom_membrane', 'oeil_rouge_abysse': 'ender_eye', 'projet_capricorne': 'echo_shard', 'restriction_celeste': 'iron_chain', 'boogie_bombe': 'firework_star',
+          # implants de Night City (Adam Smasher) : icônes dans smasher.py
+          'sandevistan_martinez': 'prismarine_crystals', 'sandevistan_prototype': 'prismarine_shard', 'chassis_smasher': 'netherite_ingot',
+          'lames_mantis': 'quartz', 'bras_gorilla': 'raw_iron', 'second_coeur': 'heart_of_the_sea', 'kerenzikov': 'clock',
+          'optiques_kiroshi': 'glow_ink_sac', 'tendons_renforces': 'rabbit_foot', 'armure_subdermique': 'netherite_scrap',
+          'pompe_sanguine': 'redstone', 'synapses_boost': 'glowstone_dust', 'puce_combat': 'gold_nugget', 'peau_titane': 'iron_nugget'}
+FLAT = ['oeil_maudit', 'cocon', 'puce_smasher', 'hollow_purple', 'graine', 'egg_rare', 'egg_epique', 'egg_legendaire', 'egg_mythique'] + ['relic_' + r for r in RELICS]
 BOWS = ['sonic_bow', 'arc_tempete', 'arc_feux_follets', 'arc_toiles']
 
 for n in HANDHELD:
@@ -212,6 +217,7 @@ use('netherite_sword', ['tranche_mace', 'boss_blade', 'croc_reine', 'lance_ciel'
 use('iron_sword', ['dague_venin'])
 use('fermented_spider_eye', ['oeil_maudit'])
 use('cobweb', ['cocon'])
+use('echo_shard', ['puce_smasher'])
 use('black_concrete', ['spider_head', 'spider_abdomen', 'spider_leg_upper', 'spider_leg_lower'] + SMASHER3D)
 use('sea_lantern', ['spider_hide'])
 use('white_wool', ['spider_eggsac'])
