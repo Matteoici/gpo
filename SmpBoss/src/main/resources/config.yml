@@ -556,6 +556,8 @@ armory:
 
 relics:
   max-equipped: 2
+  # emplacements d'implants (Night City), en plus des reliques : 0 à 3
+  implant-slots: 3
   list:
     trainee_flammes:
       name: "Traînée de Flammes"
@@ -1868,6 +1870,8 @@ messages:
     equipped: "<green>Équipée : <relic>"
     unequipped: "<yellow>Retirée : <relic>"
     full: "<red>Tu as déjà <max> reliques équipées. Retires-en une d'abord."
+    implants-full: "<red>Tes <max> emplacements d'implants sont pris. Retires-en un d'abord."
+    one-sandevistan: "<red>Un seul Sandevistan à la fois : retire l'autre d'abord."
     not-owned: "<red>Tu n'as pas cette relique."
     extract-confirm: "<gold>Transformer <relic> <gold>en objet pour l'échanger ? <gray>Appuie encore sur <white>Q</white> dans les 5 secondes. <dark_gray>(elle quitte ta collection)"
     extracted: "<green><relic> <green>est dans ton inventaire. <gray>Échange-la, vends-la ou donne-la ; clic droit avec pour la récupérer."
@@ -1914,6 +1918,12 @@ messages:
     title: "<dark_gray>Reliques"
     info-name: "<gold><b>Mes reliques"
     info-equipped: "<gray>Équipées : <white><n>/<max>"
+    info-implants: "<#05d9e8>Implants : <white><n>/<max>"
+    implant-empty-name: "<#05d9e8><b>Emplacement d'implant"
+    implant-empty-lore:
+      - "<gray>Les implants de Night City (Adam Smasher)"
+      - "<gray>se mettent ici, <white>en plus</white> de tes reliques."
+      - "<dark_gray>Un seul Sandevistan à la fois."
     info-owned: "<gray>Possédées : <white><n>"
     info-kills: "<gray>Rois Citrouille vaincus : <white><n>"
     info-pity-legendary: "<gray>Légendaire garanti dans : <rainbow><n></rainbow> <gray>victoires"

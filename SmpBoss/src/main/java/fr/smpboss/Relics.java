@@ -34,7 +34,8 @@ public final class Relics {
     private final Map<String, Relic> catalog = new LinkedHashMap<>();
     private final NamespacedKey healthKey, speedKey, damageKey, armorKey;
     private final Map<UUID, Long> lastHurt = new HashMap<>();
-    public int maxEquipped;
+    public int maxEquipped, implantSlots;
+    private final java.util.Set<String> implantIds = new java.util.HashSet<>();
 
     Relics(SmpBoss plugin) {
         this.plugin = plugin;
@@ -48,6 +49,9 @@ public final class Relics {
         catalog.clear();
         var c = plugin.getConfig();
         maxEquipped = Math.max(1, c.getInt("relics.max-equipped", 2));
+        implantSlots = Math.max(0, Math.min(3, c.getInt("relics.implant-slots", 3)));
+        implantIds.clear();
+        implantIds.addAll(Cyberware.IMPLANTS);
         ConfigurationSection s = c.getConfigurationSection("relics.list");
         if (s == null) return;
         for (String id : s.getKeys(false)) {
@@ -59,6 +63,7 @@ public final class Relics {
                     r.getStringList("lore"), r.getDouble("health"), r.getDouble("speed"), r.getDouble("regen"),
                     r.getString("trail"), r.getBoolean("backpack"), r.getString("visual", defaultVisual(id, r, icon)),
                     r.getDouble("damage"), r.getDouble("armor")));
+            if (r.getBoolean("implant", false)) implantIds.add(id.toLowerCase(Locale.ROOT));
         }
     }
 
@@ -88,11 +93,44 @@ public final class Relics {
 
     // ================================================================= collection
 
+    /** Un implant (Night City) : il va dans les emplacements d'implants, pas dans ceux des reliques. */
+    public boolean isImplant(String id) {
+        return implantSlots > 0 && id != null && implantIds.contains(id.toLowerCase(Locale.ROOT));
+    }
+
+    /** Reliques équipées (sans les implants), dans l'ordre. */
+    public List<String> equippedRelics(PlayerData d) {
+        List<String> out = new java.util.ArrayList<>();
+        for (String id : d.equipped) if (!isImplant(id)) out.add(id);
+        return out;
+    }
+
+    /** Implants équipés, dans l'ordre. */
+    public List<String> equippedImplants(PlayerData d) {
+        List<String> out = new java.util.ArrayList<>();
+        for (String id : d.equipped) if (isImplant(id)) out.add(id);
+        return out;
+    }
+
+    private static boolean sande(String id) {
+        return Cyberware.SANDE.equals(id) || Cyberware.PROTO.equals(id);
+    }
+
+    /** null = on peut l'équiper, sinon la clé du message qui dit pourquoi pas. */
+    private String cannotEquip(PlayerData d, String id) {
+        if (isImplant(id)) {
+            if (equippedImplants(d).size() >= implantSlots) return "relics.implants-full";
+            if (sande(id)) for (String o : d.equipped) if (sande(o)) return "relics.one-sandevistan";
+            return null;
+        }
+        return equippedRelics(d).size() >= maxEquipped ? "relics.full" : null;
+    }
+
     /** Ajoute la relique à la collection du joueur. false = il l'a déjà. */
     public boolean claim(Player p, Relic r) {
         PlayerData d = plugin.store().of(p.getUniqueId());
         if (!d.relics.add(r.id())) return false;
-        if (d.equipped.size() < maxEquipped) d.equipped.add(r.id());
+        if (cannotEquip(d, r.id()) == null) d.equipped.add(r.id());
         plugin.store().dirty();
         apply(p);
         return true;
@@ -123,7 +161,8 @@ public final class Relics {
         if (d.equipped.remove(id)) {
             key = "relics.unequipped";
         } else {
-            if (d.equipped.size() >= maxEquipped) return "relics.full";
+            String why = cannotEquip(d, id);
+            if (why != null) return why;
             d.equipped.add(id);
             key = "relics.equipped";
         }

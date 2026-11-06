@@ -58,6 +58,10 @@ final class Cyberware implements Listener {
     static final Color GREEN = Color.fromRGB(60, 255, 120), PINK = Color.fromRGB(255, 42, 109), CYAN = Color.fromRGB(5, 217, 232),
             YELLOW = Color.fromRGB(252, 238, 10);
 
+    /** Tous les implants : ils se mettent dans les emplacements d'implants, en plus des reliques. */
+    static final java.util.Set<String> IMPLANTS = java.util.Set.of(SANDE, PROTO, CHASSIS, MANTIS, GORILLA, HEART, KEREN, KIROSHI, TENDONS,
+            SUBDERM, PUMP, SYNAPSE, "puce_combat", TITAN);
+
     static Cyberware INSTANCE;
 
     private final SmpBoss plugin;

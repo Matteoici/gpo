@@ -35,6 +35,17 @@ public final class RelicMenu implements InventoryHolder {
 
     private static final int INFO = 4, BAG = 13, LABEL = 22, PREV = 45, TOGGLE = 47, EFFECTS = 48, CLOSE = 49, ARMORY = 50, STASH = 51, NEXT = 53;
     private static final int[] COLLECTION = {28, 29, 30, 31, 32, 33, 34, 37, 38, 39, 40, 41, 42, 43};
+    /** Emplacements d'implants (Night City), sur la bande du milieu, à droite du nom. */
+    private static final int[] IMPLANT_SLOTS = {23, 24, 25};
+
+    private List<String> eqRelics(PlayerData d) {
+        return plugin.relics().equippedRelics(d);
+    }
+
+    private int[] implantSlots() {
+        int n = plugin.relics().implantSlots;
+        return java.util.Arrays.copyOf(IMPLANT_SLOTS, Math.min(n, IMPLANT_SLOTS.length));
+    }
     private static final Material BAND = Material.ORANGE_STAINED_GLASS_PANE;
     private static final Material[] RAINBOW = {Material.RED_STAINED_GLASS_PANE, Material.ORANGE_STAINED_GLASS_PANE,
             Material.YELLOW_STAINED_GLASS_PANE, Material.LIME_STAINED_GLASS_PANE, Material.LIGHT_BLUE_STAINED_GLASS_PANE,
@@ -105,9 +116,17 @@ public final class RelicMenu implements InventoryHolder {
         }
         // zone équipée
         int[] eq = equipSlots();
+        List<String> er = eqRelics(d);
         for (int i = 0; i < eq.length; i++) {
-            Relic r = plugin.relics().get(i < d.equipped.size() ? d.equipped.get(i) : null);
+            Relic r = plugin.relics().get(i < er.size() ? er.get(i) : null);
             inv.setItem(eq[i], r == null ? emptySlot() : icon(r, true, true));
+        }
+        // implants
+        int[] im = implantSlots();
+        List<String> ei = plugin.relics().equippedImplants(d);
+        for (int i = 0; i < im.length; i++) {
+            Relic r = plugin.relics().get(i < ei.size() ? ei.get(i) : null);
+            inv.setItem(im[i], r == null ? emptyImplant() : icon(r, true, true));
         }
         drawFrames();
         if (bagInRow()) {
@@ -154,17 +173,25 @@ public final class RelicMenu implements InventoryHolder {
         drawFrames();
         PlayerData d = plugin.store().of(viewer.getUniqueId());
         int[] eq = equipSlots();
-        for (int i = 0; i < eq.length && i < d.equipped.size(); i++) {
-            Relic r = plugin.relics().get(d.equipped.get(i));
+        List<String> er = eqRelics(d);
+        for (int i = 0; i < eq.length && i < er.size(); i++) {
+            Relic r = plugin.relics().get(er.get(i));
             if (r != null && r.rarity().ordinal() >= Rarity.LEGENDARY.ordinal()) inv.setItem(eq[i], icon(r, true, true));
+        }
+        int[] im = implantSlots();
+        List<String> ei = plugin.relics().equippedImplants(d);
+        for (int i = 0; i < im.length && i < ei.size(); i++) {
+            Relic r = plugin.relics().get(ei.get(i));
+            if (r != null && r.rarity().ordinal() >= Rarity.LEGENDARY.ordinal()) inv.setItem(im[i], icon(r, true, true));
         }
     }
 
     private void drawFrames() {
         PlayerData d = plugin.store().of(viewer.getUniqueId());
         int[] eq = equipSlots();
+        List<String> er = eqRelics(d);
         for (int i = 0; i < eq.length; i++) {
-            Relic r = plugin.relics().get(i < d.equipped.size() ? d.equipped.get(i) : null);
+            Relic r = plugin.relics().get(i < er.size() ? er.get(i) : null);
             int c = eq[i];
             int[] around = {c - 1, c + 1};
             for (int k = 0; k < around.length; k++) {
@@ -236,8 +263,10 @@ public final class RelicMenu implements InventoryHolder {
         ItemMeta m = it.getItemMeta();
         m.displayName(parse(plugin.msg("menu.info-name")));
         List<Component> lore = new ArrayList<>();
-        lore.add(parse(plugin.msg("menu.info-equipped").replace("<n>", String.valueOf(d.equipped.size()))
+        lore.add(parse(plugin.msg("menu.info-equipped").replace("<n>", String.valueOf(eqRelics(d).size()))
                 .replace("<max>", String.valueOf(slots()))));
+        if (plugin.relics().implantSlots > 0) lore.add(parse(plugin.msg("menu.info-implants")
+                .replace("<n>", String.valueOf(plugin.relics().equippedImplants(d).size())).replace("<max>", String.valueOf(plugin.relics().implantSlots))));
         lore.add(parse(plugin.msg("menu.info-owned").replace("<n>", String.valueOf(d.relics.size()))));
         lore.add(parse(plugin.msg("menu.info-kills").replace("<n>", String.valueOf(d.kills))));
         int pl = plugin.getConfig().getInt("loot.pity.legendary", 150), ps = plugin.getConfig().getInt("loot.pity.secret", 300);
@@ -264,6 +293,17 @@ public final class RelicMenu implements InventoryHolder {
         List<Component> lore = new ArrayList<>();
         for (String s : plugin.getConfig().getStringList("messages.menu.collection-lore")) lore.add(parse(s));
         if (pages() > 1) lore.add(parse("<dark_gray>Page " + (page + 1) + "/" + pages()));
+        m.lore(lore);
+        it.setItemMeta(m);
+        return it;
+    }
+
+    private ItemStack emptyImplant() {
+        ItemStack it = new ItemStack(Material.CYAN_STAINED_GLASS_PANE);
+        ItemMeta m = it.getItemMeta();
+        m.displayName(parse(plugin.msg("menu.implant-empty-name")));
+        List<Component> lore = new ArrayList<>();
+        for (String l : plugin.getConfig().getStringList("messages.menu.implant-empty-lore")) lore.add(parse(l));
         m.lore(lore);
         it.setItemMeta(m);
         return it;
@@ -355,7 +395,11 @@ public final class RelicMenu implements InventoryHolder {
         Relic r = null;
         boolean owned = true;
         int[] eq = equipSlots();
-        for (int i = 0; i < eq.length; i++) if (eq[i] == slot && i < d.equipped.size()) r = plugin.relics().get(d.equipped.get(i));
+        List<String> er = eqRelics(d);
+        for (int i = 0; i < eq.length; i++) if (eq[i] == slot && i < er.size()) r = plugin.relics().get(er.get(i));
+        int[] im = implantSlots();
+        List<String> ei = plugin.relics().equippedImplants(d);
+        for (int i = 0; i < im.length; i++) if (im[i] == slot && i < ei.size()) r = plugin.relics().get(ei.get(i));
         List<Relic> all = catalog();
         for (int i = 0; i < COLLECTION.length; i++) {
             int idx = page * COLLECTION.length + i;
@@ -384,7 +428,7 @@ public final class RelicMenu implements InventoryHolder {
         }
         String key = plugin.relics().toggle(viewer, r.id());
         viewer.sendMessage(parse(plugin.msg(key).replace("<relic>", r.rarity().name(r.name(), 0))
-                .replace("<max>", String.valueOf(slots()))));
+                .replace("<max>", String.valueOf(plugin.relics().isImplant(r.id()) ? plugin.relics().implantSlots : slots()))));
         viewer.playSound(Sound.sound(Key.key("minecraft", key.equals("relics.equipped")
                 ? "item.armor.equip_netherite" : "ui.button.click"), Sound.Source.MASTER, 1f, 1.2f));
         draw();
