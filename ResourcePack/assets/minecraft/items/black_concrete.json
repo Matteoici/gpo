@@ -31,6 +31,76 @@
      "type": "minecraft:model",
      "model": "limitless:item/items/spider_leg_lower"
     }
+   },
+   {
+    "when": "smasher_torso",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/smasher_torso"
+    }
+   },
+   {
+    "when": "smasher_head",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/smasher_head"
+    }
+   },
+   {
+    "when": "smasher_pelvis",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/smasher_pelvis"
+    }
+   },
+   {
+    "when": "smasher_shoulder",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/smasher_shoulder"
+    }
+   },
+   {
+    "when": "smasher_arm",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/smasher_arm"
+    }
+   },
+   {
+    "when": "smasher_forearm",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/smasher_forearm"
+    }
+   },
+   {
+    "when": "smasher_cannon",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/smasher_cannon"
+    }
+   },
+   {
+    "when": "smasher_thigh",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/smasher_thigh"
+    }
+   },
+   {
+    "when": "smasher_shin",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/smasher_shin"
+    }
+   },
+   {
+    "when": "smasher_foot",
+    "model": {
+     "type": "minecraft:model",
+     "model": "limitless:item/items/smasher_foot"
+    }
    }
   ],
   "fallback": {

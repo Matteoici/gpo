@@ -19,6 +19,7 @@ import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Firework;
+import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Pillager;
@@ -27,11 +28,7 @@ import org.bukkit.entity.TextDisplay;
 import org.bukkit.entity.Zombie;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ArmorMeta;
 import org.bukkit.inventory.meta.FireworkMeta;
-import org.bukkit.inventory.meta.trim.ArmorTrim;
-import org.bukkit.inventory.meta.trim.TrimMaterial;
-import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -56,7 +53,7 @@ import static fr.smpboss.SmpBoss.parse;
 
 /**
  * Adam Smasher : le boss de Night City, sur le toit de l'île flottante sous son dôme.
- * Un colosse de métal (2x la taille d'un joueur), tout en netherite. Toutes ses attaques sont annoncées :
+ * Un colosse cybernétique (design original, modèles du pack, environ 4 blocs de haut) animé autour d'un zombie invisible. Toutes ses attaques sont annoncées :
  * Rafale (un laser rouge te suit, puis la mitrailleuse tire dans cette ligne), Missiles (cercles rouges au sol),
  * Charge (une ligne au sol), Écrasement (il saute et retombe sur toi), IEM (phase 2 : coupe les implants),
  * Renforts (soldats) et, en phase 3, ses Sauts Kerenzikov (il apparaît derrière toi).
@@ -77,6 +74,7 @@ public final class AdamSmasher implements Boss {
     private final Map<UUID, Double> damage = new HashMap<>();
 
     private Zombie boss;
+    private Rig rig;
     private BossBar bar;
     private DamageBoard board;
     private double hp, maxHp;
@@ -198,8 +196,11 @@ public final class AdamSmasher implements Boss {
             base(z, Attribute.STEP_HEIGHT, 1.5);
             z.customName(parse(msg("name")));
             z.setCustomNameVisible(true);
-            dress(z.getEquipment());
+            z.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0, false, false, false));
+            EntityEquipment eq = z.getEquipment();
+            if (eq != null) eq.clear();
         });
+        rig = new Rig(sky);
         bar = BossBar.bossBar(parse(msg("bar-1")), 1f, BossBar.Color.RED, BossBar.Overlay.NOTCHED_10);
         airborne = true;
         repeat(1, 30, i -> {
@@ -220,32 +221,6 @@ public final class AdamSmasher implements Boss {
         tasks.add(Bukkit.getScheduler().runTaskTimer(plugin, this::tick, 1L, 1L));
     }
 
-    /** Tout en netherite, gravé de rouge (aucun logo). */
-    private static void dress(EntityEquipment eq) {
-        if (eq == null) return;
-        ItemStack[] parts = {new ItemStack(Material.NETHERITE_HELMET), new ItemStack(Material.NETHERITE_CHESTPLATE),
-                new ItemStack(Material.NETHERITE_LEGGINGS), new ItemStack(Material.NETHERITE_BOOTS)};
-        for (ItemStack it : parts) {
-            if (it.getItemMeta() instanceof ArmorMeta am) {
-                try {
-                    am.setTrim(new ArmorTrim(TrimMaterial.REDSTONE, TrimPattern.SILENCE));
-                } catch (Throwable ignored) {
-                }
-                it.setItemMeta(am);
-            }
-        }
-        eq.setHelmet(parts[0]);
-        eq.setChestplate(parts[1]);
-        eq.setLeggings(parts[2]);
-        eq.setBoots(parts[3]);
-        eq.setItemInMainHand(new ItemStack(Material.CROSSBOW));
-        eq.setHelmetDropChance(0);
-        eq.setChestplateDropChance(0);
-        eq.setLeggingsDropChance(0);
-        eq.setBootsDropChance(0);
-        eq.setItemInMainHandDropChance(0);
-    }
-
     // ================================================================= boucle
 
     private void tick() {
@@ -257,6 +232,7 @@ public final class AdamSmasher implements Boss {
         tick++;
         Location c = boss.getLocation();
         World w = c.getWorld();
+        rig.update(c, boss.getBodyYaw(), size / 2.0);
         if (invulnerable > 0) invulnerable--;
         if (tick % 10 == 0) {
             bar.name(parse(msg("bar-" + phase) + plugin.msg("boss.bar-hp").replace("<hp>", String.valueOf((long) Math.ceil(Math.max(0, hp))))
@@ -271,11 +247,7 @@ public final class AdamSmasher implements Boss {
         if (board != null && tick % 10 == 0) board.update(near, hp, maxHp, damage, minPct());
         // l'œil rouge, la vapeur du dos
         if (tick % 4 == 0) {
-            double rad = Math.toRadians(boss.getBodyYaw());
-            Location eye = c.clone().add(-Math.sin(rad) * 0.3 * size, 1.62 * size, Math.cos(rad) * 0.3 * size);
-            w.spawnParticle(Particle.DUST, eye, 1, 0.03, 0.03, 0.03, 0, new Particle.DustOptions(RED, 0.9f), true);
-            Location back = c.clone().add(Math.sin(rad) * 0.35 * size, 1.4 * size, -Math.cos(rad) * 0.35 * size);
-            w.spawnParticle(phase >= 3 ? Particle.FLAME : Particle.SMOKE, back, 2, 0.1, 0.05, 0.1, 0.01, null, true);
+            for (Location ex : rig.exhausts()) w.spawnParticle(phase >= 3 ? Particle.FLAME : Particle.SMOKE, ex, 2, 0.06, 0.05, 0.06, 0.02, null, true);
         }
         if (enraged && tick % 3 == 0) w.spawnParticle(Particle.DUST, c.clone().add(0, size, 0), 5, 0.4 * size, 0.6 * size, 0.4 * size, 0,
                 new Particle.DustOptions(RED, 1.6f), true);
@@ -406,6 +378,164 @@ public final class AdamSmasher implements Boss {
         nextAttack = 20;
     }
 
+    // ================================================================= le corps (modèles du pack)
+
+    /**
+     * Le colosse : 15 morceaux (objets du pack posés sur du béton noir), placés chaque tick autour du zombie invisible
+     * qui sert de boîte de collision. Marche (jambes et bras en alternance), canon levé (Rafale), bras levés (Écrasement, IEM),
+     * genou à terre (défaite). Sans le pack : des blocs noirs en forme de colosse.
+     */
+    private final class Rig {
+        final ItemDisplay pelvis, torso, head;
+        final ItemDisplay[] shoulders = new ItemDisplay[2], arms = new ItemDisplay[2], fores = new ItemDisplay[2],
+                thighs = new ItemDisplay[2], shins = new ItemDisplay[2], feet = new ItemDisplay[2];
+        double clock, aim, raise, kneel;
+        double aimTarget, raiseTarget, kneelTarget;
+        Location last, muzzleAt;
+        private Location exL, exR;
+
+        Rig(Location at) {
+            pelvis = part(at, "smasher_pelvis");
+            torso = part(at, "smasher_torso");
+            head = part(at, "smasher_head");
+            for (int i = 0; i < 2; i++) {
+                shoulders[i] = part(at, "smasher_shoulder");
+                arms[i] = part(at, "smasher_arm");
+                fores[i] = part(at, i == 1 ? "smasher_cannon" : "smasher_forearm");
+                thighs[i] = part(at, "smasher_thigh");
+                shins[i] = part(at, "smasher_shin");
+                feet[i] = part(at, "smasher_foot");
+            }
+            last = at.clone();
+        }
+
+        private ItemDisplay part(Location at, String model) {
+            ItemStack it = new ItemStack(Material.BLACK_CONCRETE);
+            var meta = it.getItemMeta();
+            SmpBoss.modelData(meta, model);
+            it.setItemMeta(meta);
+            Location l = at.clone();
+            l.setYaw(0);
+            l.setPitch(0);
+            ItemDisplay d = at.getWorld().spawn(l, ItemDisplay.class, e -> {
+                e.setPersistent(false);
+                e.getPersistentDataContainer().set(bossKey, PersistentDataType.BYTE, (byte) 2);
+                e.setItemStack(it);
+                e.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.NONE);
+                e.setTeleportDuration(1);
+                e.setInterpolationDuration(1);
+                e.setBrightness(new Display.Brightness(12, 15));
+                e.setViewRange(4f);
+                e.setShadowRadius(0);
+            });
+            props.add(d);
+            return d;
+        }
+
+        private void set(ItemDisplay d, Location at, Quaternionf rot, Vector3f scale) {
+            if (!d.isValid()) return;
+            Location l = at.clone();
+            l.setYaw(0);
+            l.setPitch(0);
+            d.teleport(l);
+            d.setInterpolationDelay(0);
+            d.setInterpolationDuration(1);
+            d.setTransformation(new Transformation(new Vector3f(), rot, scale, new Quaternionf()));
+        }
+
+        private void seg(ItemDisplay d, Location a, Location b, double thick) {
+            Vector v = b.toVector().subtract(a.toVector());
+            double len = v.length();
+            if (len < 1e-3) return;
+            Quaternionf q = new Quaternionf().rotationTo(new Vector3f(0, 1, 0), new Vector3f((float) v.getX(), (float) v.getY(), (float) v.getZ()).normalize());
+            set(d, a.clone().add(v.multiply(0.5)), q, new Vector3f((float) thick, (float) len, (float) thick));
+        }
+
+        List<Location> exhausts() {
+            List<Location> out = new ArrayList<>();
+            if (exL != null) out.add(exL);
+            if (exR != null) out.add(exR);
+            return out;
+        }
+
+        /** base = pieds, yaw = regard, S = échelle (1 = 4 blocs de haut). */
+        void update(Location base, float yaw, double S) {
+            double moved = horizontalDist(base, last);
+            last = base.clone();
+            boolean moving = moved > 0.02 && kneel < 0.3;
+            clock += moving ? Math.min(0.5, 0.12 + moved * 1.2) : 0;
+            aim += (aimTarget - aim) * 0.25;
+            raise += (raiseTarget - raise) * 0.2;
+            kneel += (kneelTarget - kneel) * 0.12;
+            double rad = Math.toRadians(yaw);
+            Vector f = new Vector(-Math.sin(rad), 0, Math.cos(rad));
+            Vector r = new Vector(-Math.cos(rad), 0, -Math.sin(rad));
+            Vector up = new Vector(0, 1, 0);
+            Quaternionf facing = new Quaternionf().rotateY((float) -rad);
+            double bob = (moving ? Math.abs(Math.sin(clock)) * 0.07 : Math.sin(tick * 0.08) * 0.02) - kneel * 0.55;
+            double lean = (moving ? 0.1 : 0) + kneel * 0.25;
+            float s = (float) S;
+            set(pelvis, at(base, f, r, S, 2.0 + bob, 0, 0), facing, new Vector3f(1.15f * s, 0.6f * s, 0.8f * s));
+            set(torso, at(base, f, r, S, 2.9 + bob, 0.06 + lean * 0.4, 0), new Quaternionf(facing).rotateX((float) lean),
+                    new Vector3f(1.65f * s, 1.35f * s, 1.05f * s));
+            set(head, at(base, f, r, S, 3.9 + bob, 0.16 + lean * 0.9, 0), new Quaternionf(facing).rotateX((float) (-lean * 0.5)),
+                    new Vector3f(1.15f * s, 1.15f * s, 1.15f * s));
+            exL = at(base, f, r, S, 3.75 + bob, -0.65, -0.35);
+            exR = at(base, f, r, S, 3.75 + bob, -0.65, 0.35);
+            // bras : 0 = poing, 1 = canon
+            for (int i = 0; i < 2; i++) {
+                int side = i == 1 ? 1 : -1;
+                boolean cannon = i == 1;
+                Location sh = at(base, f, r, S, 3.3 + bob, 0.05 + lean * 0.5, side * 0.95);
+                set(shoulders[i], sh.clone().add(up.clone().multiply(0.18 * S)).add(r.clone().multiply(side * 0.06 * S)), facing,
+                        new Vector3f(0.66f * s, 0.55f * s, 0.74f * s));
+                double sw = moving ? Math.sin(clock + (side > 0 ? 0 : Math.PI)) * 0.45 : Math.sin(tick * 0.05 + side) * 0.04;
+                double sw2 = sw + 0.45;
+                if (cannon && aim > 0.01) {
+                    sw = sw * (1 - aim) + 1.5 * aim;
+                    sw2 = sw2 * (1 - aim) + 1.5 * aim;
+                }
+                if (raise > 0.01) {
+                    sw = sw * (1 - raise) + 2.7 * raise;
+                    sw2 = sw2 * (1 - raise) + 2.9 * raise;
+                }
+                Vector out = r.clone().multiply(side * 0.1 * S);
+                Location el = sh.clone().add(up.clone().multiply(-Math.cos(sw) * 0.85 * S)).add(f.clone().multiply(Math.sin(sw) * 0.85 * S)).add(out);
+                double l2 = cannon ? 1.05 : 0.85;
+                Location hand = el.clone().add(up.clone().multiply(-Math.cos(sw2) * l2 * S)).add(f.clone().multiply(Math.sin(sw2) * l2 * S));
+                if (cannon && aim > 0.01) hand.add(r.clone().multiply(-side * 0.06 * S * aim));
+                seg(arms[i], sh, el, 0.44 * S);
+                seg(fores[i], el, hand, (cannon ? 0.56 : 0.48) * S);
+                if (cannon) muzzleAt = hand.clone().add(hand.toVector().subtract(el.toVector()).normalize().multiply(0.1 * S));
+            }
+            // jambes
+            for (int i = 0; i < 2; i++) {
+                int side = i == 1 ? 1 : -1;
+                Location hip = at(base, f, r, S, 1.92 + bob, 0, side * 0.36);
+                double ph = clock + (side > 0 ? 0 : Math.PI);
+                double ls = moving ? Math.sin(ph) * 0.42 : 0, bend = moving ? Math.max(0, -Math.cos(ph)) * 0.55 : 0;
+                ls += kneel * (side > 0 ? 0.9 : -0.1);
+                bend += kneel * (side > 0 ? 1.6 : 0.2);
+                Location kn = hip.clone().add(up.clone().multiply(-Math.cos(ls) * 0.95 * S)).add(f.clone().multiply(Math.sin(ls) * 0.95 * S));
+                Location an = kn.clone().add(up.clone().multiply(-Math.cos(ls - bend) * 0.8 * S)).add(f.clone().multiply(Math.sin(ls - bend) * 0.8 * S));
+                seg(thighs[i], hip, kn, 0.52 * S);
+                seg(shins[i], kn, an, 0.44 * S);
+                set(feet[i], an.clone().add(0, -0.08 * S, 0).add(f.clone().multiply(0.12 * S)), facing, new Vector3f(0.52f * s, 0.32f * s, 0.82f * s));
+            }
+        }
+
+        private Location at(Location base, Vector f, Vector r, double S, double h, double fw, double rt) {
+            return base.clone().add(0, h * S, 0).add(f.clone().multiply(fw * S)).add(r.clone().multiply(rt * S));
+        }
+
+        void remove() {
+            pelvis.remove();
+            torso.remove();
+            head.remove();
+            for (ItemDisplay[] g : new ItemDisplay[][]{shoulders, arms, fores, thighs, shins, feet}) for (ItemDisplay d : g) d.remove();
+        }
+    }
+
     // ================================================================= attaques
 
     /** Rafale : un laser rouge suit une cible (en retard), se fige, puis la mitrailleuse tire dans la ligne. */
@@ -414,6 +544,7 @@ public final class AdamSmasher implements Boss {
         if (t == null) return;
         announce("burst");
         boss.setAI(false);
+        rig.aimTarget = 1;
         sound(boss.getLocation(), "block.beacon.ambient", 2f, 2f);
         Vector[] aim = {t.getEyeLocation().toVector().subtract(muzzle().toVector()).normalize()};
         int lock = 26;
@@ -434,12 +565,14 @@ public final class AdamSmasher implements Boss {
                 Vector d = aim[0].clone().add(new Vector(rnd(0.03), rnd(0.03), rnd(0.03))).normalize();
                 shoot(m, d, 44, cfg("damage.burst", 3));
             }, () -> {
+                rig.aimTarget = 0;
                 if (boss != null && boss.isValid()) boss.setAI(true);
             });
         });
     }
 
     private Location muzzle() {
+        if (rig != null && rig.muzzleAt != null) return rig.muzzleAt.clone();
         Location c = boss.getLocation();
         double rad = Math.toRadians(boss.getBodyYaw());
         return c.clone().add(-Math.sin(rad) * 0.45 * size - Math.cos(rad) * 0.35 * size, 1.15 * size, Math.cos(rad) * 0.45 * size - Math.sin(rad) * 0.35 * size);
@@ -583,6 +716,7 @@ public final class AdamSmasher implements Boss {
         Location dest = ground(keepIn(t.getLocation(), cfg("arena-radius", 24) - 2));
         double r = 6.5;
         ring(dest, r, MAGENTA, 32);
+        rig.raiseTarget = 1;
         sound(start, "entity.iron_golem.attack", 3f, 0.5f);
         int air = 32;
         repeat(1, air, i -> {
@@ -595,6 +729,9 @@ public final class AdamSmasher implements Boss {
             airborne = false;
             if (boss == null || !boss.isValid()) return;
             boss.teleport(dest);
+            rig.raiseTarget = 0;
+            rig.kneelTarget = 0.35;
+            later(12, () -> rig.kneelTarget = 0);
             shockwave(dest, r, 1.3, cfg("damage.slam", 13), MAGENTA);
             later(10, () -> {
                 if (boss != null && boss.isValid()) boss.setAI(true);
@@ -609,12 +746,14 @@ public final class AdamSmasher implements Boss {
         Location c = boss.getLocation();
         double r = cfg("emp-radius", 13);
         ring(ground(c), r, CYAN, 40);
+        rig.raiseTarget = 0.55;
         sound(c, "block.beacon.power_select", 3f, 1.6f);
         repeat(5, 8, i -> {
             c.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, c.clone().add(0, size, 0), 20, 0.6, 0.8, 0.6, 0.4, null, true);
             sound(c, "block.note_block.bit", 2f, 0.6f + i * 0.15f);
         }, () -> {
             if (boss == null || !boss.isValid()) return;
+            rig.raiseTarget = 0;
             sound(c, "entity.warden.sonic_boom", 3f, 1.3f);
             WeaponFx fx = fx();
             if (fx != null) fx.wave(c.clone().add(0, 0.4, 0), "w_shock_flat", CYAN, 1, (float) (r * 2.2), 8, null, Display.Billboard.FIXED);
@@ -750,6 +889,9 @@ public final class AdamSmasher implements Boss {
         titleAll("title-defeat", "subtitle-defeat");
         for (Entity m : minions) m.remove();
         minions.clear();
+        rig.aimTarget = 0;
+        rig.raiseTarget = 0;
+        rig.kneelTarget = 1;
         sound(c, "entity.iron_golem.death", 4f, 0.4f);
         BukkitTask[] task = new BukkitTask[1];
         int[] i = {0};
@@ -767,6 +909,7 @@ public final class AdamSmasher implements Boss {
                 return;
             }
             // il grésille, tombe à genoux, explose
+            rig.update(boss.getLocation(), boss.getBodyYaw(), size / 2.0);
             Location l = boss.getLocation().add(0, size, 0);
             l.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, l, 12, 0.4 * size, 0.6 * size, 0.4 * size, 0.3, null, true);
             if (k % 6 == 0) {
@@ -866,6 +1009,7 @@ public final class AdamSmasher implements Boss {
         props.clear();
         for (Entity m : minions) m.remove();
         minions.clear();
+        if (rig != null) rig.remove();
         if (boss != null) boss.remove();
     }
 

@@ -5,3 +5,4 @@ Ordre pour regénérer le pack (depuis ce dossier, avec les textures vanilla 26.
   python3 sfx.py <pack>           (sons perso, APRES pack.py car il complète sounds.json)
   python3 items_pack.py <pack> <VAN>/assets/minecraft/items
   python3 pass_gui.py <pack> <VAN>/assets/minecraft/textures   (menu du passe de saison, avant items_pack.py)
+  python3 smasher.py <pack>       (textures du colosse d'Adam Smasher, après items2.py ; ses modèles sont dans items_pack.py)

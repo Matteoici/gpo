@@ -1,0 +1,350 @@
+{
+ "textures": {
+  "p": "limitless:item/items/smasher_plate",
+  "d": "limitless:item/items/smasher_dark",
+  "r": "limitless:item/items/smasher_red",
+  "particle": "limitless:item/items/smasher_plate"
+ },
+ "elements": [
+  {
+   "from": [
+    1,
+    3,
+    2
+   ],
+   "to": [
+    15,
+    13,
+    14
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#d"
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#d"
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#d"
+    },
+    "west": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#d"
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#d"
+    },
+    "down": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#d"
+    }
+   }
+  },
+  {
+   "from": [
+    0.6,
+    9,
+    1.6
+   ],
+   "to": [
+    15.4,
+    11,
+    14.4
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#r"
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#r"
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#r"
+    },
+    "west": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#r"
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#r"
+    },
+    "down": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#r"
+    }
+   }
+  },
+  {
+   "from": [
+    5,
+    1,
+    12
+   ],
+   "to": [
+    11,
+    9,
+    14.6
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#p"
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#p"
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#p"
+    },
+    "west": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#p"
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#p"
+    },
+    "down": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#p"
+    }
+   }
+  },
+  {
+   "from": [
+    1.5,
+    2,
+    4
+   ],
+   "to": [
+    4,
+    8,
+    12
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#p"
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#p"
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#p"
+    },
+    "west": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#p"
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#p"
+    },
+    "down": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#p"
+    }
+   }
+  },
+  {
+   "from": [
+    12,
+    2,
+    4
+   ],
+   "to": [
+    14.5,
+    8,
+    12
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#p"
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#p"
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#p"
+    },
+    "west": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#p"
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#p"
+    },
+    "down": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#p"
+    }
+   }
+  }
+ ]
+}

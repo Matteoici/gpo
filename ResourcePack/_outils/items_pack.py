@@ -105,6 +105,87 @@ w(f'{MOD}/spider_eggsac.json', {
 w(f'{MOD}/spider_hide.json', {'textures': {'particle': T + 'spider_chitin'}, 'elements': []})
 SPIDER3D = ['spider_head', 'spider_abdomen', 'spider_leg_upper', 'spider_leg_lower', 'spider_eggsac', 'spider_hide']
 
+# ---- Adam Smasher : colosse cybernétique (design original), un objet par morceau du corps
+# Les morceaux "posés" (bassin, torse, tête, épaulières, pieds) sont centrés sur (8, 8, 8), face avant = sud (+Z).
+# Les membres (bras, avant-bras, canon, cuisses, tibias) vont de y=0 (articulation du haut) à y=16 (bout).
+SM = {'p': T + 'smasher_plate', 'd': T + 'smasher_dark', 'r': T + 'smasher_red', 'j': T + 'smasher_joint',
+      'b': T + 'smasher_barrel', 'm': T + 'smasher_muzzle', 'v': T + 'smasher_visor', 'c': T + 'smasher_core'}
+def smodel(name, tex, elems):
+    t = {k: SM[k] for k in tex}; t['particle'] = SM['p']
+    w(f'{MOD}/{name}.json', {'textures': t, 'elements': elems})
+def glowbox(a, b, face, tex):
+    return box(a, b, {face: F(tex)}, light_emission=15, shade=False)
+smodel('smasher_torso', 'pdrcbjm', [
+    box((0, 7, 1), (16, 16, 15), allf('#p')),                 # poitrine
+    box((3, 0, 3), (13, 7, 13), allf('#j')),                  # taille (vérins)
+    box((2, 1, 2), (14, 3, 14), allf('#d')),
+    box((1, 9, 14.6), (15, 15.6, 15.6), allf('#d')),          # plastron
+    box((6, 10.5, 15.6), (10, 14, 16.2), allf('#d')),
+    glowbox((6.5, 11, 16.25), (9.5, 13.5, 16.25), 'south', '#c'),  # réacteur
+    box((0.6, 8, 14.8), (4, 9, 15.8), allf('#r')),            # liserés rouges
+    box((12, 8, 14.8), (15.4, 9, 15.8), allf('#r')),
+    box((-0.4, 12, 3), (0.6, 15, 13), allf('#r')),
+    box((15.4, 12, 3), (16.4, 15, 13), allf('#r')),
+    box((2, 8, -0.5), (14, 15, 1), allf('#d')),               # dos
+    box((3, 11, -3), (6, 19, 0), allf('#b')),                 # cheminées
+    box((10, 11, -3), (13, 19, 0), allf('#b')),
+    box((3.5, 19, -2.5), (5.5, 19.5, -0.5), allf('#m')),
+    box((10.5, 19, -2.5), (12.5, 19.5, -0.5), allf('#m')),
+    box((5, 15.5, 4), (11, 17, 12), allf('#j'))])              # col
+smodel('smasher_head', 'pdrv', [
+    box((4, 3, 4), (12, 12, 12.5), allf('#p')),               # casque
+    box((4.5, 3, 9), (11.5, 6.5, 13.5), allf('#d')),          # mâchoire blindée
+    box((3.6, 7.2, 11.8), (12.4, 9.6, 13), allf('#d')),       # cadre de visière
+    glowbox((4, 7.6, 13.05), (12, 9.2, 13.05), 'south', '#v'),
+    box((7.2, 12, 5), (8.8, 13.4, 12), allf('#r')),           # crête
+    box((3, 6, 6), (4, 10, 9), allf('#d')),                   # oreillettes
+    box((12, 6, 6), (13, 10, 9), allf('#d')),
+    box((12.3, 9, 6.5), (12.9, 14, 7.1), allf('#r'))])        # antenne
+smodel('smasher_pelvis', 'pdr', [
+    box((1, 3, 2), (15, 13, 14), allf('#d')),
+    box((0.6, 9, 1.6), (15.4, 11, 14.4), allf('#r')),         # ceinture
+    box((5, 1, 12), (11, 9, 14.6), allf('#p')),               # plaque avant
+    box((1.5, 2, 4), (4, 8, 12), allf('#p')),                 # hanches
+    box((12, 2, 4), (14.5, 8, 12), allf('#p'))])
+smodel('smasher_shoulder', 'pdr', [
+    box((0, 3, 0), (16, 13, 16), allf('#p')),
+    box((-0.4, 3, -0.4), (16.4, 5, 16.4), allf('#r')),
+    box((2, 13, 2), (14, 14.5, 14), allf('#d')),
+    box((6, 14.5, 4), (10, 16, 12), allf('#d'))])
+smodel('smasher_arm', 'pjrd', [
+    box((2, 0, 2), (14, 16, 14), allf('#j')),
+    box((1, 2, 1), (15, 12, 15), allf('#p')),
+    box((0.8, 6, 0.8), (15.2, 7.2, 15.2), allf('#r')),
+    box((1.5, 13, 1.5), (14.5, 16, 14.5), allf('#d'))])       # coude
+smodel('smasher_forearm', 'pdj', [
+    box((2.5, 0, 2.5), (13.5, 10, 13.5), allf('#p')),
+    box((1.5, 2, 1.5), (14.5, 8, 14.5), allf('#d')),
+    box((1, 10, 1), (15, 16, 15), allf('#j')),                # poing
+    box((0.5, 12.5, 0.5), (15.5, 15.5, 15.5), allf('#d'))])
+smodel('smasher_cannon', 'pdbmr', [
+    box((0.5, 0, 0.5), (15.5, 7, 15.5), allf('#p')),          # boîtier
+    box((0, 2, 0), (16, 4, 16), allf('#r')),
+    box((3, 7, 3), (13, 16, 13), allf('#b')),                 # canon
+    box((2, 13.5, 2), (14, 16, 14), allf('#d')),
+    box((3, 16.02, 3), (13, 16.02, 13), {'up': F('#m')}),
+    box((13, 1, 6), (16.5, 9, 10), allf('#d'))])              # chargeur
+smodel('smasher_thigh', 'pjrd', [
+    box((2, 0, 2), (14, 16, 14), allf('#j')),
+    box((1, 1, 1), (15, 12, 15), allf('#p')),
+    box((0.7, 4, 0.7), (15.3, 5.2, 15.3), allf('#r')),
+    box((1.5, 12.5, 1.5), (14.5, 16, 14.5), allf('#d'))])     # genou
+smodel('smasher_shin', 'pdj', [
+    box((3, 0, 3), (13, 16, 13), allf('#j')),
+    box((1.5, 1, 1.5), (14.5, 12, 14.5), allf('#p')),
+    box((2, 3, 1), (14, 10, 2), allf('#d')),
+    box((2, 3, 14), (14, 10, 15), allf('#d'))])
+smodel('smasher_foot', 'pdr', [
+    box((1, 3, 0), (15, 13, 16), allf('#d')),
+    box((0.5, 3, 11), (15.5, 10, 16.5), allf('#p')),          # pointe
+    box((2, 13, 2), (14, 14, 12), allf('#r'))])
+SMASHER3D = ['smasher_torso', 'smasher_head', 'smasher_pelvis', 'smasher_shoulder', 'smasher_arm', 'smasher_forearm',
+             'smasher_cannon', 'smasher_thigh', 'smasher_shin', 'smasher_foot']
+
 def m(model):
     return {'type': 'minecraft:model', 'model': model}
 
@@ -118,7 +199,7 @@ def bow_tree(prefix):
 
 def custom(n):
     if n.startswith(('pass_', 'ui_', 'job_')): return m(f'limitless:item/pass/{n}')
-    if n in ('boss_pumpkin', 'boss_crown') or n in SPIDER3D: return m(f'limitless:item/items/{n}')
+    if n in ('boss_pumpkin', 'boss_crown') or n in SPIDER3D or n in SMASHER3D: return m(f'limitless:item/items/{n}')
     return bow_tree(f'limitless:item/items/{n}') if n in BOWS else m(f'limitless:item/items/{n}')
 
 # matériau vanilla -> objets custom qui l'utilisent ; le repli = la définition vanilla 26.2 exacte
@@ -131,7 +212,7 @@ use('netherite_sword', ['tranche_mace', 'boss_blade', 'croc_reine', 'lance_ciel'
 use('iron_sword', ['dague_venin'])
 use('fermented_spider_eye', ['oeil_maudit'])
 use('cobweb', ['cocon'])
-use('black_concrete', ['spider_head', 'spider_abdomen', 'spider_leg_upper', 'spider_leg_lower'])
+use('black_concrete', ['spider_head', 'spider_abdomen', 'spider_leg_upper', 'spider_leg_lower'] + SMASHER3D)
 use('sea_lantern', ['spider_hide'])
 use('white_wool', ['spider_eggsac'])
 use('jack_o_lantern', ['boss_pumpkin'])
